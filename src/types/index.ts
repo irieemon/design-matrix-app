@@ -10,6 +10,7 @@ export interface IdeaCard {
   updated_at: string
   editing_by?: string | null  // user currently editing this card
   editing_at?: string | null  // when editing started
+  is_collapsed?: boolean  // whether card shows minimal info
 }
 
 export interface User {

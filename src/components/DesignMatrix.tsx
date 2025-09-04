@@ -8,9 +8,10 @@ interface DesignMatrixProps {
   currentUser?: string
   onEditIdea: (idea: IdeaCard) => void
   onDeleteIdea: (ideaId: string) => void
+  onToggleCollapse: (ideaId: string) => void
 }
 
-const DesignMatrix: React.FC<DesignMatrixProps> = ({ ideas, activeId, currentUser, onEditIdea, onDeleteIdea }) => {
+const DesignMatrix: React.FC<DesignMatrixProps> = ({ ideas, activeId, currentUser, onEditIdea, onDeleteIdea, onToggleCollapse }) => {
   const { setNodeRef } = useDroppable({
     id: 'matrix'
   })
@@ -97,6 +98,7 @@ const DesignMatrix: React.FC<DesignMatrixProps> = ({ ideas, activeId, currentUse
                 currentUser={currentUser}
                 onEdit={() => onEditIdea(idea)}
                 onDelete={() => onDeleteIdea(idea.id)}
+                onToggleCollapse={onToggleCollapse}
               />
             </div>
           )

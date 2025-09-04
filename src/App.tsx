@@ -152,6 +152,23 @@ function App() {
     setEditingIdea(null)
   }
 
+  const toggleCollapse = async (ideaId: string) => {
+    const idea = ideas.find(i => i.id === ideaId)
+    if (!idea) return
+
+    const newCollapsedState = !idea.is_collapsed
+
+    // Immediately update local state for instant feedback
+    setIdeas(prev => prev.map(i => 
+      i.id === ideaId ? { ...i, is_collapsed: newCollapsedState } : i
+    ))
+
+    // Update in database
+    await DatabaseService.updateIdea(ideaId, {
+      is_collapsed: newCollapsedState
+    })
+  }
+
   const activeIdea = activeId ? ideas.find(i => i.id === activeId) : null
 
   const renderPageContent = () => {
@@ -179,6 +196,7 @@ function App() {
                   currentUser={currentUser || undefined}
                   onEditIdea={setEditingIdea}
                   onDeleteIdea={deleteIdea}
+                  onToggleCollapse={toggleCollapse}
                 />
                 
                 <DragOverlay
