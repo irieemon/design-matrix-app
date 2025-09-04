@@ -49,8 +49,7 @@ class AIService {
 
     console.log('✅ OpenAI API key found, making API request...')
 
-    const prompt = `You are a business strategy consultant helping to develop detailed project ideas. Given the brief title "${title}", create a comprehensive business idea.
-
+    const prompt = `You are a business and technology strategy consultant helping to develop detailed project ideas. Given the brief title "${title}", build out details for the card in the lense of what this idea means and some key insights. Think of a mini use case with some business value drivers.
 CRITICAL: Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
 
 {
