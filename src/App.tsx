@@ -86,8 +86,9 @@ function App() {
     const newY = idea.y + delta.y
     
     // Round to integers and add reasonable bounds (allow some overflow but not too much)
-    const finalX = Math.max(-50, Math.min(800, Math.round(newX)))
-    const finalY = Math.max(-50, Math.min(800, Math.round(newY)))
+    // Matrix is full width (~1200px on most screens) and 600px height
+    const finalX = Math.max(-100, Math.min(1400, Math.round(newX))) // Allow wider range for X
+    const finalY = Math.max(-50, Math.min(650, Math.round(newY)))   // Match matrix height (600px + padding)
 
     // Immediately update local state for instant feedback
     setIdeas(prev => prev.map(i => 
