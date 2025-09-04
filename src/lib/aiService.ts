@@ -1,3 +1,5 @@
+import { IdeaCard } from '../types'
+
 interface AIIdeaResponse {
   content: string
   details: string
@@ -333,6 +335,223 @@ Be specific and insightful, not generic.`
     })
     
     return result
+  }
+
+  static async generateInsights(ideas: IdeaCard[]): Promise<any> {
+    console.log('🔍 AIService: Generating insights for', ideas.length, 'ideas...')
+
+    // Create idea analysis summary
+    const ideaAnalysis = this.analyzeIdeas(ideas)
+    
+    const prompt = `Analyze these ${ideas.length} business ideas positioned on a priority matrix and provide strategic insights.
+
+MATRIX POSITIONING:
+- Quick Wins (high value, low effort): ${ideaAnalysis.quickWins} ideas
+- Strategic (high value, high effort): ${ideaAnalysis.strategic} ideas
+- Reconsider (low value, low effort): ${ideaAnalysis.reconsider} ideas
+- Avoid (low value, high effort): ${ideaAnalysis.avoid} ideas
+
+IDEAS BREAKDOWN:
+${ideas.map(idea => 
+  `"${idea.content}" - ${this.getQuadrantName(idea)} quadrant, Priority: ${idea.priority}`
+).join('\n')}
+
+Provide a comprehensive strategic report in JSON format with:
+{
+  "executiveSummary": "2-3 sentence high-level overview",
+  "keyInsights": [
+    {"insight": "Key observation", "impact": "Business impact"},
+    // 3-5 key insights
+  ],
+  "priorityRecommendations": {
+    "immediate": ["Action items for next 30 days"],
+    "shortTerm": ["Actions for next 3 months"],
+    "longTerm": ["Strategic initiatives for 6-12 months"]
+  },
+  "riskAssessment": {
+    "highRisk": ["Major risks to address"],
+    "opportunities": ["Key opportunities to leverage"]
+  },
+  "suggestedRoadmap": [
+    {"phase": "Phase 1", "duration": "1-2 months", "focus": "Description", "ideas": ["idea names"]},
+    {"phase": "Phase 2", "duration": "3-4 months", "focus": "Description", "ideas": ["idea names"]},
+    // Continue phases as needed
+  ],
+  "resourceAllocation": {
+    "quickWins": "Resource recommendation for quick wins",
+    "strategic": "Resource recommendation for strategic initiatives"
+  },
+  "nextSteps": ["Specific actionable next steps"]
+}`
+
+    const config = getAIConfig()
+    
+    try {
+      if (config.provider === 'openai') {
+        console.log('🤖 AIService: Using OpenAI for insights generation...')
+        
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${config.apiKey}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a strategic business consultant specializing in prioritization frameworks and roadmap planning. Provide detailed, actionable insights based on idea positioning and business value assessment.'
+              },
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 2000
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error(`OpenAI API error: ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log('✅ AIService: Received OpenAI insights response')
+        
+        const content = data.choices[0]?.message?.content
+        if (!content) {
+          throw new Error('No content in OpenAI response')
+        }
+
+        // Parse JSON from response (handle code blocks)
+        return this.parseAIResponse(content)
+        
+      } else if (config.provider === 'anthropic') {
+        console.log('🤖 AIService: Using Anthropic for insights generation...')
+        // Anthropic implementation would go here
+        throw new Error('Anthropic insights not implemented yet')
+      }
+    } catch (error) {
+      console.error('❌ AIService: Error generating insights:', error)
+      console.log('🔄 AIService: Falling back to enhanced mock insights...')
+      
+      return this.generateMockInsights(ideaAnalysis)
+    }
+  }
+
+  private static parseAIResponse(content: string): any {
+    let cleanedContent = content.trim()
+    
+    // Remove markdown code block formatting if present
+    if (cleanedContent.startsWith('```json')) {
+      cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+    } else if (cleanedContent.startsWith('```')) {
+      cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/\s*```$/, '')
+    }
+    
+    return JSON.parse(cleanedContent)
+  }
+
+  private static analyzeIdeas(ideas: IdeaCard[]) {
+    const analysis = {
+      quickWins: ideas.filter(i => i.x <= 260 && i.y < 260).length,
+      strategic: ideas.filter(i => i.x > 260 && i.y < 260).length,
+      reconsider: ideas.filter(i => i.x <= 260 && i.y >= 260).length,
+      avoid: ideas.filter(i => i.x > 260 && i.y >= 260).length,
+      totalIdeas: ideas.length,
+      highPriority: ideas.filter(i => i.priority === 'high' || i.priority === 'strategic').length,
+      contributors: [...new Set(ideas.map(i => i.created_by))].length
+    }
+    
+    return analysis
+  }
+
+  private static getQuadrantName(idea: IdeaCard): string {
+    if (idea.x <= 260 && idea.y < 260) return 'Quick Wins'
+    if (idea.x > 260 && idea.y < 260) return 'Strategic'
+    if (idea.x <= 260 && idea.y >= 260) return 'Reconsider'
+    return 'Avoid'
+  }
+
+  private static generateMockInsights(analysis: any) {
+    return {
+      executiveSummary: `Portfolio analysis of ${analysis.totalIdeas} ideas shows ${analysis.quickWins} quick wins and ${analysis.strategic} strategic initiatives. Focus recommended on immediate value delivery while building long-term strategic capabilities.`,
+      keyInsights: [
+        {
+          insight: `${Math.round((analysis.quickWins / analysis.totalIdeas) * 100)}% of ideas are positioned as Quick Wins`,
+          impact: "High potential for immediate ROI and momentum building"
+        },
+        {
+          insight: `${analysis.strategic} strategic initiatives identified`,
+          impact: "Balanced approach between short-term gains and long-term value"
+        },
+        {
+          insight: `${analysis.contributors} contributors across ${analysis.totalIdeas} ideas`,
+          impact: "Good team engagement and diverse perspective inputs"
+        }
+      ],
+      priorityRecommendations: {
+        immediate: [
+          "Execute all Quick Wins ideas to build momentum",
+          "Assign dedicated owners to top 3 strategic initiatives",
+          "Create detailed project plans for high-priority items"
+        ],
+        shortTerm: [
+          "Begin strategic initiatives with clearest ROI",
+          "Establish regular review cycles for progress tracking",
+          "Reallocate resources from 'Avoid' quadrant ideas"
+        ],
+        longTerm: [
+          "Develop capabilities needed for strategic initiatives",
+          "Create innovation pipeline for future opportunities",
+          "Build measurement framework for success tracking"
+        ]
+      },
+      riskAssessment: {
+        highRisk: [
+          "Resource constraints may limit parallel execution",
+          "Strategic initiatives require sustained commitment",
+          "Stakeholder alignment needed for major changes"
+        ],
+        opportunities: [
+          "Quick wins can fund strategic investments",
+          "Strong team engagement enables rapid execution",
+          "Balanced portfolio reduces overall risk"
+        ]
+      },
+      suggestedRoadmap: [
+        {
+          phase: "Foundation Phase",
+          duration: "1-2 months",
+          focus: "Execute quick wins and prepare strategic foundation",
+          ideas: ["Quick Wins ideas", "Initial planning for strategic items"]
+        },
+        {
+          phase: "Strategic Launch",
+          duration: "3-6 months", 
+          focus: "Launch strategic initiatives with proven quick win momentum",
+          ideas: ["Top strategic priorities", "Resource reallocation"]
+        },
+        {
+          phase: "Scale & Optimize",
+          duration: "6-12 months",
+          focus: "Scale successful initiatives and optimize portfolio",
+          ideas: ["Scaled strategic implementations", "Continuous improvement"]
+        }
+      ],
+      resourceAllocation: {
+        quickWins: "Allocate 30% of resources to quick wins for immediate impact and funding",
+        strategic: "Dedicate 60% of resources to strategic initiatives with long-term focus"
+      },
+      nextSteps: [
+        "Schedule stakeholder alignment meeting within 1 week",
+        "Assign project owners to top 5 priority ideas",
+        "Create detailed project plans for next quarter",
+        "Establish success metrics and review cadence"
+      ]
+    }
   }
 }
 

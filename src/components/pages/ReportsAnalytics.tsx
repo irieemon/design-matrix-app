@@ -1,6 +1,8 @@
-import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Download } from 'lucide-react'
+import { useState } from 'react'
+import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Download, Sparkles } from 'lucide-react'
 import { IdeaCard } from '../../types'
 import { exportToCSV } from '../../utils/csvUtils'
+import AIInsightsModal from '../AIInsightsModal'
 
 interface ReportsAnalyticsProps {
   ideas: IdeaCard[]
@@ -8,6 +10,8 @@ interface ReportsAnalyticsProps {
 }
 
 const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser }) => {
+  const [showAIInsights, setShowAIInsights] = useState(false)
+  
   const handleExportReport = () => {
     exportToCSV(ideas)
   }
@@ -248,16 +252,34 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser 
             <h3 className="text-lg font-semibold text-slate-900 mb-1">Export Reports</h3>
             <p className="text-sm text-slate-600">Download detailed analytics and reports</p>
           </div>
-          <button 
-            onClick={handleExportReport}
-            disabled={ideas.length === 0}
-            className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Download className="w-4 h-4" />
-            <span className="font-medium">Export Report</span>
-          </button>
+          <div className="flex space-x-3">
+            <button 
+              onClick={() => setShowAIInsights(true)}
+              disabled={ideas.length === 0}
+              className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="font-medium">AI Insights</span>
+            </button>
+            <button 
+              onClick={handleExportReport}
+              disabled={ideas.length === 0}
+              className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" />
+              <span className="font-medium">Export Report</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* AI Insights Modal */}
+      {showAIInsights && (
+        <AIInsightsModal 
+          ideas={ideas}
+          onClose={() => setShowAIInsights(false)}
+        />
+      )}
     </div>
   )
 }
