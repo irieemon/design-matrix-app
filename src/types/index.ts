@@ -1,11 +1,19 @@
 export interface IdeaCard {
   id: string
   content: string
+  details: string  // additional details about the idea
   x: number  // pixel position (0-520 usable area)
   y: number  // pixel position (0-520 usable area)
   priority: 'low' | 'moderate' | 'high' | 'strategic' | 'innovation'
+  created_by: string  // user name who created the idea
   created_at: string
   updated_at: string
+}
+
+export interface User {
+  id: string
+  name: string
+  created_at: string
 }
 
 export interface Position {

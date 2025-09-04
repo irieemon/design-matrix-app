@@ -9,6 +9,7 @@ interface AddIdeaModalProps {
 
 const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ onClose, onAdd }) => {
   const [content, setContent] = useState('')
+  const [details, setDetails] = useState('')
   const [x, setX] = useState(260) // Center of 520px usable area
   const [y, setY] = useState(260) // Center of 520px usable area
   const [priority, setPriority] = useState<IdeaCard['priority']>('moderate')
@@ -19,13 +20,16 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ onClose, onAdd }) => {
 
     onAdd({
       content: content.trim(),
+      details: details.trim(),
       x,
       y,
-      priority
+      priority,
+      created_by: 'Anonymous' // Will be overridden by parent component
     })
 
     // Reset form
     setContent('')
+    setDetails('')
     setX(260)
     setY(260)
     setPriority('moderate')
@@ -33,7 +37,7 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ onClose, onAdd }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
@@ -50,63 +54,35 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ onClose, onAdd }) => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Idea Content */}
+          {/* Idea Title */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Describe your idea
+              Idea Title
             </label>
-            <textarea
+            <input
+              type="text"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="What's your innovative idea?"
+              placeholder="Brief title for your idea"
               required
             />
           </div>
 
-          {/* Position Sliders */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* X Position */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                X Position
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="520"
-                value={x}
-                onChange={(e) => setX(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>Left</span>
-                <span className="font-medium">{x}</span>
-                <span>Right</span>
-              </div>
-            </div>
-
-            {/* Y Position */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Y Position
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="520"
-                value={y}
-                onChange={(e) => setY(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>Top</span>
-                <span className="font-medium">{y}</span>
-                <span>Bottom</span>
-              </div>
-            </div>
+          {/* Idea Details */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Details
+            </label>
+            <textarea
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Describe your idea in more detail..."
+            />
           </div>
+
 
           {/* Priority */}
           <div>
@@ -126,15 +102,11 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ onClose, onAdd }) => {
             </select>
           </div>
 
-          {/* Position Preview */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Position</h4>
-            <div className="text-sm text-gray-600">
-              X: {x}, Y: {y}
-              {x > 260 && y < 260 && " (Top Right)"}
-              {x <= 260 && y < 260 && " (Top Left)"}  
-              {x <= 260 && y >= 260 && " (Bottom Left)"}
-              {x > 260 && y >= 260 && " (Bottom Right)"}
+          {/* Info */}
+          <div className="bg-slate-50 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-slate-700 mb-2">💡 Tip</h4>
+            <div className="text-sm text-slate-600">
+              After creating your idea, you can drag it to any position on the matrix to set its value vs complexity positioning.
             </div>
           </div>
 

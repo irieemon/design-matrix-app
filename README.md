@@ -1,132 +1,85 @@
-# 🎯 Design Matrix - Interactive Idea Prioritization Tool
+# Prioritas
 
-A modern, interactive design thinking tool built with React that allows you to prioritize ideas using a value vs. complexity matrix.
+**Smart Prioritization Suite for Teams**
+
+A modern, collaborative prioritization tool built with React, TypeScript, and Supabase. Prioritas helps teams visualize and prioritize ideas using an interactive priority matrix with real-time collaboration features.
 
 ## ✨ Features
 
-- **🖱️ Drag & Drop**: Smooth, intuitive card repositioning on the matrix
-- **👆 Double-Click Editing**: Quick access to edit any idea
-- **📊 Real-time Visualization**: See ideas organized by quadrants (Quick Wins, Strategic, Avoid, Reconsider)
-- **💾 Persistent Storage**: All ideas saved in Supabase with real-time sync
-- **🎨 Modern UI**: Clean, professional interface with Tailwind CSS
-- **📱 Responsive**: Works great on desktop and mobile devices
+- **🎯 Interactive Priority Matrix** - Drag and drop ideas across value vs effort quadrants
+- **👥 Real-time Collaboration** - Multiple users can work together simultaneously
+- **📊 Smart Analytics** - Built-in reports and insights on idea distribution
+- **💾 Data Management** - CSV import/export for easy data portability  
+- **🎨 Modern UI** - Clean, responsive design with dark sidebar navigation
+- **⚡ Fast Performance** - Built with Vite for lightning-fast development and builds
 
 ## 🚀 Quick Start
 
-1. **Install dependencies**:
+### Prerequisites
+
+- Node.js 18+ 
+- npm or yarn
+- Supabase account (free tier available)
+
+### Installation
+
+1. **Clone the repository**
    ```bash
-   cd design-matrix-app
+   git clone <your-repo-url>
+   cd prioritas
+   ```
+
+2. **Install dependencies**
+   ```bash
    npm install
    ```
 
-2. **Set up Supabase**:
-   - Create a new project at [supabase.com](https://supabase.com)
-   - Copy `.env.example` to `.env.local`
-   - Add your Supabase URL and anon key to `.env.local`
-   - Run the SQL from `database/schema.sql` in your Supabase SQL editor
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Add your Supabase credentials to `.env`:
+   ```env
+   VITE_SUPABASE_URL=https://your-project-id.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key-here
+   ```
 
-3. **Start development server**:
+4. **Start the development server**
    ```bash
    npm run dev
    ```
 
-4. **Open your browser**:
-   Navigate to `http://localhost:5173`
+## 🏗️ Tech Stack
 
-## 🎮 How to Use
-
-### Adding Ideas
-1. Click the **"Add Idea"** button in the header
-2. Describe your idea
-3. Set the implementation difficulty (0-10)
-4. Set the business value (0-10)
-5. Choose a priority level
-6. Click "Add Idea"
-
-### Interacting with Ideas
-- **Double-click any card** → Opens edit modal
-- **Drag cards** → Repositions them on the matrix
-- **Hover over card** → Shows delete button
-- **Click delete (×)** → Removes the idea
-
-### Matrix Quadrants
-- 🟢 **Quick Wins**: High value, low difficulty - Do these first!
-- 🔵 **Strategic**: High value, high difficulty - Plan carefully
-- 🔴 **Avoid**: Low value, low difficulty - Skip to focus resources
-- 🟠 **Reconsider**: Low value, high difficulty - Maybe later
-
-## 🛠️ Technical Stack
-
-- **Frontend**: React 18 + TypeScript
-- **Drag & Drop**: @dnd-kit (best-in-class React drag library)
-- **Styling**: Tailwind CSS
+- **Frontend**: React 18, TypeScript, Tailwind CSS
+- **Drag & Drop**: @dnd-kit/core
+- **Database**: Supabase (PostgreSQL)
 - **Build Tool**: Vite
+- **Hosting**: Vercel
 - **Icons**: Lucide React
-- **Backend**: Supabase (PostgreSQL with real-time subscriptions)
 
-## 📦 Project Structure
+## 🎯 The Priority Matrix
 
-```
-src/
-├── components/
-│   ├── DesignMatrix.tsx      # Main matrix visualization
-│   ├── IdeaCardComponent.tsx # Individual idea cards
-│   ├── AddIdeaModal.tsx      # Modal for adding new ideas
-│   └── EditIdeaModal.tsx     # Modal for editing ideas
-├── types/
-│   └── index.ts              # TypeScript interfaces
-├── App.tsx                   # Main app component
-└── main.tsx                  # Entry point
-```
+Prioritas uses a 2x2 matrix to help teams categorize ideas:
+
+- **🟢 Quick Wins** (High Value, Low Effort) - Do these first for immediate impact
+- **🔵 Strategic** (High Value, High Effort) - Plan carefully for long-term value  
+- **🟡 Reconsider** (Low Value, Low Effort) - Maybe later when priorities shift
+- **🔴 Avoid** (Low Value, High Effort) - Skip these to focus resources
 
 ## 🚀 Deployment
 
-Ready to deploy anywhere:
+This project is configured for automatic deployment to Vercel when you push to the main branch.
 
-### Vercel (Recommended)
-```bash
-npm run build
-# Connect to Vercel and deploy
+### Environment Variables for Production
+
+Set these in your Vercel dashboard:
 ```
-
-### Netlify
-```bash
-npm run build
-# Drag the `dist` folder to Netlify
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
-
-## ✅ Features Complete
-
-- **🔄 Real-time Collaboration**: ✅ Multiple users editing simultaneously
-- **☁️ Cloud Storage**: ✅ Supabase backend integration
-- **📊 Live Statistics**: ✅ Real-time quadrant analysis
-
-## 🔜 Coming Soon
-
-- **📊 Advanced Analytics**: Detailed insights on your idea portfolio  
-- **🔒 User Authentication**: Personal accounts and team workspaces
-- **📱 Mobile App**: Native iOS and Android versions
-
-## 🎨 Why This is Better Than Streamlit
-
-✅ **Smooth Interactions**: Real drag & drop, no iframe limitations  
-✅ **Professional Polish**: Modern UI that users will love  
-✅ **Real-time Ready**: Built for multi-user collaboration  
-✅ **Mobile Friendly**: Works perfectly on all devices  
-✅ **Scalable**: Can grow with your needs  
-✅ **Fast**: Instant interactions, no page refreshes  
-
-## 🤝 Contributing
-
-This is a modern, extensible codebase. Easy to add features like:
-- Team collaboration
-- Advanced filtering
-- Custom quadrant labels  
-- Data export/import
-- Integration with project management tools
 
 ---
 
-**Ready to prioritize your ideas like a pro?** 🎯
-
-Run `npm run dev` and start organizing your thoughts in the most intuitive way possible!# design-matrix-app
+**Prioritas** - Making prioritization simple, visual, and collaborative.

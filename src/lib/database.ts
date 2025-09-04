@@ -46,6 +46,8 @@ export class DatabaseService {
   // Update an existing idea
   static async updateIdea(id: string, updates: Partial<Omit<IdeaCard, 'id' | 'created_at'>>): Promise<IdeaCard | null> {
     try {
+      console.log('Updating idea:', id, 'with updates:', updates)
+      
       const { data, error } = await supabase
         .from('ideas')
         .update({
@@ -61,6 +63,7 @@ export class DatabaseService {
         return null
       }
 
+      console.log('Update successful:', data)
       return data
     } catch (error) {
       console.error('Database error:', error)
@@ -90,7 +93,7 @@ export class DatabaseService {
 
   // Subscribe to real-time changes
   static subscribeToIdeas(callback: (ideas: IdeaCard[]) => void) {
-    const subscription = supabase
+    const channel = supabase
       .channel('ideas_changes')
       .on(
         'postgres_changes',
@@ -99,15 +102,19 @@ export class DatabaseService {
           schema: 'public',
           table: 'ideas'
         },
-        () => {
+        (payload) => {
+          console.log('Real-time change detected:', payload)
           // Refetch all ideas when any change occurs
           this.getAllIdeas().then(callback)
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        console.log('Subscription status:', status)
+      })
 
     return () => {
-      supabase.removeChannel(subscription)
+      console.log('Unsubscribing from real-time updates')
+      supabase.removeChannel(channel)
     }
   }
 }
