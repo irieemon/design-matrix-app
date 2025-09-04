@@ -12,8 +12,8 @@ interface EditIdeaModalProps {
 const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, onClose, onUpdate, onDelete }) => {
   const [content, setContent] = useState(idea.content)
   const [details, setDetails] = useState(idea.details || '')
-  const [x, setX] = useState(idea.x)
-  const [y, setY] = useState(idea.y)
+  const [x] = useState(idea.x)
+  const [y] = useState(idea.y)
   const [priority, setPriority] = useState(idea.priority)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 

@@ -194,7 +194,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser 
           </div>
           
           <div className="space-y-4">
-            {topContributors.length > 0 ? topContributors.map(([contributor, count], index) => (
+            {topContributors.length > 0 ? topContributors.map(([contributor, count]) => (
               <div key={contributor} className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center text-white text-sm font-medium">

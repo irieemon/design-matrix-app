@@ -49,7 +49,7 @@ export const parseCSV = (csvContent: string, currentUser: string): Omit<IdeaCard
   const lines = csvContent.trim().split('\n')
   if (lines.length <= 1) return [] // No data rows
 
-  const headers = lines[0].split(',').map(h => h.trim())
+  // const headers = lines[0].split(',').map(h => h.trim())
   const ideas: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>[] = []
 
   for (let i = 1; i < lines.length; i++) {
