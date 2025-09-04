@@ -25,6 +25,8 @@ export class DatabaseService {
   // Create a new idea
   static async createIdea(idea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>): Promise<IdeaCard | null> {
     try {
+      console.log('🗃️ DatabaseService: Creating idea:', idea)
+      
       const { data, error } = await supabase
         .from('ideas')
         .insert([idea])
@@ -32,13 +34,14 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('Error creating idea:', error)
+        console.error('❌ DatabaseService: Error creating idea:', error)
         return null
       }
 
+      console.log('✅ DatabaseService: Idea created successfully:', data)
       return data
     } catch (error) {
-      console.error('Database error:', error)
+      console.error('❌ DatabaseService: Database error:', error)
       return null
     }
   }

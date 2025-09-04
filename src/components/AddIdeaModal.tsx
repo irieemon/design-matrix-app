@@ -24,7 +24,10 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ onClose, onAdd }) => {
       x,
       y,
       priority,
-      created_by: 'Anonymous' // Will be overridden by parent component
+      created_by: 'Anonymous', // Will be overridden by parent component
+      is_collapsed: false, // Default to expanded view
+      editing_by: null, // Not being edited initially
+      editing_at: null // Not being edited initially
     })
 
     // Reset form

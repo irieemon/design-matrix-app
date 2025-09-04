@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
-import { Target, Plus, Lightbulb } from 'lucide-react'
+import { Target, Plus, Lightbulb, Sparkles } from 'lucide-react'
 import { IdeaCard } from './types'
 import DesignMatrix from './components/DesignMatrix'
 import IdeaCardComponent from './components/IdeaCardComponent'
 import AddIdeaModal from './components/AddIdeaModal'
+import AIIdeaModal from './components/AIIdeaModal'
 import EditIdeaModal from './components/EditIdeaModal'
 import WelcomeScreen from './components/WelcomeScreen'
 import Sidebar from './components/Sidebar'
@@ -17,6 +18,7 @@ function App() {
   const [ideas, setIdeas] = useState<IdeaCard[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showAIModal, setShowAIModal] = useState(false)
   const [editingIdea, setEditingIdea] = useState<IdeaCard | null>(null)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState<string>('matrix')
@@ -100,16 +102,28 @@ function App() {
   }
 
   const addIdea = async (newIdea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>) => {
+    console.log('📥 App: Received new idea:', newIdea)
+    
     const ideaWithUser = {
       ...newIdea,
       created_by: currentUser || 'Anonymous'
     }
+    
+    console.log('💾 App: Creating idea in database...', ideaWithUser)
+    
     const createdIdea = await DatabaseService.createIdea(ideaWithUser)
+    
     if (createdIdea) {
+      console.log('✅ App: Idea created successfully, adding to state:', createdIdea)
       // Immediately add to local state for instant feedback
       setIdeas(prev => [...prev, createdIdea])
+    } else {
+      console.error('❌ App: Failed to create idea in database')
     }
+    
+    console.log('🔄 App: Closing modals...')
     setShowAddModal(false)
+    setShowAIModal(false)
   }
 
   const handleDataUpdated = () => {
@@ -179,8 +193,15 @@ function App() {
           <div className="bg-slate-50 min-h-screen">
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-6 py-8">
-              {/* Add Idea Button */}
-              <div className="flex justify-end mb-6">
+              {/* Add Idea Buttons */}
+              <div className="flex justify-end gap-3 mb-6">
+                <button
+                  onClick={() => setShowAIModal(true)}
+                  className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-5 py-2.5 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-sm"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span className="font-medium">AI Idea</span>
+                </button>
                 <button
                   onClick={() => setShowAddModal(true)}
                   className="flex items-center space-x-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 transition-all duration-200 shadow-sm"
@@ -308,6 +329,13 @@ function App() {
       {showAddModal && (
         <AddIdeaModal 
           onClose={() => setShowAddModal(false)}
+          onAdd={addIdea}
+        />
+      )}
+
+      {showAIModal && (
+        <AIIdeaModal 
+          onClose={() => setShowAIModal(false)}
           onAdd={addIdea}
         />
       )}
