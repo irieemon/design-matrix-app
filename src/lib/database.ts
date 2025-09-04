@@ -181,8 +181,14 @@ export class DatabaseService {
     }
   }
 
-  // Subscribe to real-time changes
+  // Subscribe to real-time changes with polling fallback
   static subscribeToIdeas(callback: (ideas: IdeaCard[]) => void) {
+    console.log('Setting up real-time subscription with polling fallback...')
+    
+    let lastUpdateTime = new Date().toISOString()
+    let realTimeWorking = false
+    
+    // Real-time subscription
     const channel = supabase
       .channel('ideas_changes')
       .on(
@@ -194,17 +200,44 @@ export class DatabaseService {
         },
         (payload) => {
           console.log('Real-time change detected:', payload)
-          // Refetch all ideas when any change occurs
+          realTimeWorking = true
           this.getAllIdeas().then(callback)
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
         console.log('Subscription status:', status)
+        if (err) console.error('Subscription error:', err)
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to real-time updates!')
+        }
       })
 
+    // Polling fallback - check every 2 seconds if real-time isn't working
+    const pollInterval = setInterval(async () => {
+      if (!realTimeWorking) {
+        try {
+          const { data, error } = await supabase
+            .from('ideas')
+            .select('updated_at')
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .single()
+          
+          if (!error && data && data.updated_at > lastUpdateTime) {
+            console.log('Polling detected changes, refreshing ideas...')
+            lastUpdateTime = data.updated_at
+            this.getAllIdeas().then(callback)
+          }
+        } catch (pollError) {
+          console.warn('Polling error:', pollError)
+        }
+      }
+    }, 2000)
+
     return () => {
-      console.log('Unsubscribing from real-time updates')
+      console.log('Unsubscribing from real-time updates and stopping polling')
       supabase.removeChannel(channel)
+      clearInterval(pollInterval)
     }
   }
 }
