@@ -91,6 +91,96 @@ export class DatabaseService {
     }
   }
 
+  // Lock/unlock idea for editing
+  static async lockIdeaForEditing(ideaId: string, userName: string): Promise<boolean> {
+    try {
+      // First check if it's already locked by someone else
+      const { data: existingIdea, error: fetchError } = await supabase
+        .from('ideas')
+        .select('editing_by, editing_at')
+        .eq('id', ideaId)
+        .single()
+
+      if (fetchError) {
+        console.error('Error checking idea lock:', fetchError)
+        return false
+      }
+
+      // Check if it's locked by someone else (within the last 5 minutes)
+      if (existingIdea.editing_by && existingIdea.editing_by !== userName) {
+        const editingAt = new Date(existingIdea.editing_at || '')
+        const now = new Date()
+        const timeDiff = now.getTime() - editingAt.getTime()
+        const fiveMinutes = 5 * 60 * 1000
+
+        // If locked within the last 5 minutes by someone else, deny lock
+        if (timeDiff < fiveMinutes) {
+          return false
+        }
+      }
+
+      // Lock the idea for editing
+      const { error } = await supabase
+        .from('ideas')
+        .update({
+          editing_by: userName,
+          editing_at: new Date().toISOString()
+        })
+        .eq('id', ideaId)
+
+      if (error) {
+        console.error('Error locking idea:', error)
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error('Database error:', error)
+      return false
+    }
+  }
+
+  static async unlockIdea(ideaId: string, userName: string): Promise<boolean> {
+    try {
+      // Only unlock if the current user is the one who locked it
+      const { error } = await supabase
+        .from('ideas')
+        .update({
+          editing_by: null,
+          editing_at: null
+        })
+        .eq('id', ideaId)
+        .eq('editing_by', userName)
+
+      if (error) {
+        console.error('Error unlocking idea:', error)
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error('Database error:', error)
+      return false
+    }
+  }
+
+  // Clean up stale locks (older than 5 minutes)
+  static async cleanupStaleLocks(): Promise<void> {
+    try {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+
+      await supabase
+        .from('ideas')
+        .update({
+          editing_by: null,
+          editing_at: null
+        })
+        .lt('editing_at', fiveMinutesAgo)
+    } catch (error) {
+      console.error('Error cleaning up stale locks:', error)
+    }
+  }
+
   // Subscribe to real-time changes
   static subscribeToIdeas(callback: (ideas: IdeaCard[]) => void) {
     const channel = supabase

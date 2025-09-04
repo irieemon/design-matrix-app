@@ -1,33 +1,63 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Edit3, Trash2 } from 'lucide-react'
 import { IdeaCard } from '../types'
+import { DatabaseService } from '../lib/database'
 
 interface EditIdeaModalProps {
   idea: IdeaCard
+  currentUser: string
   onClose: () => void
   onUpdate: (idea: IdeaCard) => void
   onDelete: (ideaId: string) => void
 }
 
-const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, onClose, onUpdate, onDelete }) => {
+const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClose, onUpdate, onDelete }) => {
   const [content, setContent] = useState(idea.content)
   const [details, setDetails] = useState(idea.details || '')
   const [x] = useState(idea.x)
   const [y] = useState(idea.y)
   const [priority, setPriority] = useState(idea.priority)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isLocked, setIsLocked] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Lock the idea when modal opens
+  useEffect(() => {
+    const lockIdea = async () => {
+      const locked = await DatabaseService.lockIdeaForEditing(idea.id, currentUser)
+      setIsLocked(locked)
+      if (!locked) {
+        // Show a message that someone else is editing
+        alert(`This idea is currently being edited by ${idea.editing_by}. Please try again later.`)
+        onClose()
+      }
+    }
+    
+    lockIdea()
+
+    // Cleanup: unlock when modal closes
+    return () => {
+      if (isLocked) {
+        DatabaseService.unlockIdea(idea.id, currentUser)
+      }
+    }
+  }, [idea.id, currentUser, onClose, isLocked])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!content.trim()) return
 
+    // Unlock before updating
+    await DatabaseService.unlockIdea(idea.id, currentUser)
+    
     onUpdate({
       ...idea,
       content: content.trim(),
       details: details.trim(),
       x,
       y,
-      priority
+      priority,
+      editing_by: null,
+      editing_at: null
     })
   }
 

@@ -5,11 +5,12 @@ import IdeaCardComponent from './IdeaCardComponent'
 interface DesignMatrixProps {
   ideas: IdeaCard[]
   activeId?: string | null
+  currentUser?: string
   onEditIdea: (idea: IdeaCard) => void
   onDeleteIdea: (ideaId: string) => void
 }
 
-const DesignMatrix: React.FC<DesignMatrixProps> = ({ ideas, activeId, onEditIdea, onDeleteIdea }) => {
+const DesignMatrix: React.FC<DesignMatrixProps> = ({ ideas, activeId, currentUser, onEditIdea, onDeleteIdea }) => {
   const { setNodeRef } = useDroppable({
     id: 'matrix'
   })
@@ -93,6 +94,7 @@ const DesignMatrix: React.FC<DesignMatrixProps> = ({ ideas, activeId, onEditIdea
             >
               <IdeaCardComponent 
                 idea={idea}
+                currentUser={currentUser}
                 onEdit={() => onEditIdea(idea)}
                 onDelete={() => onDeleteIdea(idea.id)}
               />

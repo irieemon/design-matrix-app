@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS users (
 -- Add missing columns to existing table (migrations)
 ALTER TABLE ideas ADD COLUMN IF NOT EXISTS details TEXT DEFAULT '';
 ALTER TABLE ideas ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT 'Anonymous';
+ALTER TABLE ideas ADD COLUMN IF NOT EXISTS editing_by TEXT DEFAULT NULL;
+ALTER TABLE ideas ADD COLUMN IF NOT EXISTS editing_at TIMESTAMPTZ DEFAULT NULL;
 
 -- Add RLS (Row Level Security) - for now allow all operations
 ALTER TABLE ideas ENABLE ROW LEVEL SECURITY;

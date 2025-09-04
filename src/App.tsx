@@ -41,7 +41,16 @@ function App() {
       
       // Subscribe to real-time updates
       const unsubscribe = DatabaseService.subscribeToIdeas(setIdeas)
-      return unsubscribe
+      
+      // Clean up stale locks every 30 seconds
+      const lockCleanupInterval = setInterval(() => {
+        DatabaseService.cleanupStaleLocks()
+      }, 30000)
+      
+      return () => {
+        unsubscribe()
+        clearInterval(lockCleanupInterval)
+      }
     }
   }, [currentUser])
 
@@ -167,6 +176,7 @@ function App() {
                 <DesignMatrix 
                   ideas={ideas}
                   activeId={activeId}
+                  currentUser={currentUser || undefined}
                   onEditIdea={setEditingIdea}
                   onDeleteIdea={deleteIdea}
                 />
@@ -182,6 +192,7 @@ function App() {
                       <IdeaCardComponent 
                         idea={activeIdea} 
                         isDragging
+                        currentUser={currentUser || undefined}
                         onEdit={() => {}}
                         onDelete={() => {}}
                       />
@@ -286,6 +297,7 @@ function App() {
       {editingIdea && (
         <EditIdeaModal 
           idea={editingIdea}
+          currentUser={currentUser || 'Anonymous'}
           onClose={() => setEditingIdea(null)}
           onUpdate={updateIdea}
           onDelete={deleteIdea}

@@ -8,6 +8,8 @@ export interface IdeaCard {
   created_by: string  // user name who created the idea
   created_at: string
   updated_at: string
+  editing_by?: string | null  // user currently editing this card
+  editing_at?: string | null  // when editing started
 }
 
 export interface User {
