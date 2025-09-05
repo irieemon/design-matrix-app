@@ -1,11 +1,11 @@
 import { useDraggable } from '@dnd-kit/core'
 import { Edit3, Trash2, User, ChevronDown, ChevronUp } from 'lucide-react'
-import { IdeaCard } from '../types'
+import { IdeaCard, User as UserType } from '../types'
 
 interface IdeaCardProps {
   idea: IdeaCard
   isDragging?: boolean
-  currentUser?: string
+  currentUser?: UserType | null
   onEdit: () => void
   onDelete: () => void
   onToggleCollapse?: (ideaId: string) => void
@@ -28,8 +28,8 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = ({ idea, isDragging, currentU
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
   } : undefined
 
-  const isLockedByOther = idea.editing_by && idea.editing_by !== currentUser
-  const isLockedBySelf = idea.editing_by === currentUser
+  const isLockedByOther = idea.editing_by && idea.editing_by !== currentUser?.id
+  const isLockedBySelf = idea.editing_by === currentUser?.id
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault()

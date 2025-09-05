@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { Target, Plus, Lightbulb, Sparkles, FolderOpen } from 'lucide-react'
-import { IdeaCard, Project } from './types'
+import { IdeaCard, Project, User, AuthUser } from './types'
 import DesignMatrix from './components/DesignMatrix'
 import IdeaCardComponent from './components/IdeaCardComponent'
 import AddIdeaModal from './components/AddIdeaModal'
 import AIIdeaModal from './components/AIIdeaModal'
 import EditIdeaModal from './components/EditIdeaModal'
-import WelcomeScreen from './components/WelcomeScreen'
+import AuthScreen from './components/auth/AuthScreen'
 import Sidebar from './components/Sidebar'
 import ProjectHeader from './components/ProjectHeader'
 import DataManagement from './components/pages/DataManagement'
@@ -16,6 +16,7 @@ import UserSettings from './components/pages/UserSettings'
 import ProjectManagement from './components/ProjectManagement'
 import ProjectRoadmap from './components/ProjectRoadmap'
 import { DatabaseService } from './lib/database'
+import { supabase, getUserProfile } from './lib/supabase'
 
 function App() {
   const [ideas, setIdeas] = useState<IdeaCard[]>([])
@@ -23,7 +24,9 @@ function App() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showAIModal, setShowAIModal] = useState(false)
   const [editingIdea, setEditingIdea] = useState<IdeaCard | null>(null)
-  const [currentUser, setCurrentUser] = useState<string | null>(null)
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [, setAuthUser] = useState<AuthUser | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState<string>('matrix')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
@@ -37,24 +40,141 @@ function App() {
     })
   )
 
-  // Load ideas from Supabase on mount
+  // Initialize Supabase auth and handle session changes
   useEffect(() => {
-    // Check if user exists in localStorage
-    const savedUser = localStorage.getItem('prioritasUser')
-    if (savedUser) {
-      setCurrentUser(savedUser)
-      // Don't load ideas until a project is selected - they'll be loaded by the currentProject effect
-      
-      // Clean up stale locks every 30 seconds
-      const lockCleanupInterval = setInterval(() => {
-        DatabaseService.cleanupStaleLocks()
-      }, 30000)
-      
-      return () => {
-        clearInterval(lockCleanupInterval)
+    let mounted = true
+
+    const initializeAuth = async () => {
+      try {
+        console.log('🚀 Initializing authentication...')
+        // Get current session with timeout and graceful fallback
+        const sessionPromise = supabase.auth.getSession()
+        const timeoutPromise = new Promise((resolve) => 
+          setTimeout(() => resolve({ data: { session: null }, error: null }), 3000)
+        )
+        
+        const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]) as any
+        console.log('🔐 Session check result:', { session: session?.user?.email, error })
+        
+        if (error) {
+          console.error('❌ Error getting session:', error)
+        }
+
+        if (session?.user && mounted) {
+          console.log('✅ User already signed in:', session.user.email)
+          await handleAuthUser(session.user)
+        } else {
+          console.log('❌ No active session found')
+          // Try legacy localStorage user for backwards compatibility
+          const savedUser = localStorage.getItem('prioritasUser')
+          if (savedUser && mounted) {
+            console.log('🔄 Found legacy user, migrating:', savedUser)
+            // Create a temporary user object for backwards compatibility
+            setCurrentUser({
+              id: 'legacy-user',
+              email: savedUser,
+              full_name: savedUser,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+          } else {
+            console.log('❌ No legacy user found - showing login screen')
+          }
+        }
+      } catch (error) {
+        console.error('💥 Error initializing auth:', error)
+      } finally {
+        console.log('🔓 Auth initialization complete, setting loading to false')
+        if (mounted) setIsLoading(false)
       }
     }
-  }, [currentUser])
+
+    initializeAuth()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return
+
+      console.log('🔐 Auth state changed:', event, session?.user?.email)
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        await handleAuthUser(session.user)
+      } else if (event === 'SIGNED_OUT') {
+        setAuthUser(null)
+        setCurrentUser(null)
+        setCurrentProject(null)
+        setIdeas([])
+        localStorage.removeItem('prioritasUser') // Clean up legacy
+      }
+    })
+
+    // Clean up stale locks every 30 seconds
+    const lockCleanupInterval = setInterval(() => {
+      DatabaseService.cleanupStaleLocks()
+    }, 30000)
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+      clearInterval(lockCleanupInterval)
+    }
+  }, [])
+
+  // Handle authenticated user
+  const handleAuthUser = async (authUser: any) => {
+    try {
+      console.log('🔐 handleAuthUser called with:', authUser.email, authUser.id)
+      setAuthUser(authUser)
+      
+      // Create fallback user immediately to prevent hanging
+      const fallbackUser = {
+        id: authUser.id,
+        email: authUser.email,
+        full_name: authUser.user_metadata?.full_name || authUser.email,
+        avatar_url: authUser.user_metadata?.avatar_url || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      console.log('🔧 Created fallback user:', { 
+        id: fallbackUser.id, 
+        email: fallbackUser.email,
+        idType: typeof fallbackUser.id 
+      })
+      
+      // Try to get user profile from database, but don't wait too long
+      console.log('👤 Looking up user profile for ID:', authUser.id)
+      try {
+        const profile = await getUserProfile(authUser.id)
+        console.log('👤 Profile lookup result:', profile)
+        
+        if (profile) {
+          console.log('✅ Using database profile:', profile.full_name || profile.email)
+          setCurrentUser(profile)
+        } else {
+          console.log('⚠️ No database profile found, using fallback user with UUID:', fallbackUser.id)
+          setCurrentUser(fallbackUser)
+        }
+      } catch (profileError) {
+        console.error('❌ Profile lookup failed, using fallback:', profileError)
+        setCurrentUser(fallbackUser)
+      }
+      
+    } catch (error) {
+      console.error('💥 Error in handleAuthUser:', error)
+      // Even if everything fails, set a basic user to prevent infinite loading
+      setCurrentUser({
+        id: authUser?.id || 'unknown',
+        email: authUser?.email || 'unknown@example.com',
+        full_name: authUser?.email || 'Unknown User',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+    } finally {
+      console.log('🔓 Setting loading to false')
+      setIsLoading(false)
+    }
+  }
 
   const loadIdeas = async (projectId?: string) => {
     if (projectId) {
@@ -111,11 +231,10 @@ function App() {
     }
   }
 
-  const handleUserCreated = async (userName: string) => {
-    setCurrentUser(userName)
-    localStorage.setItem('prioritasUser', userName)
-    // Don't load ideas until a project is selected
-    setIdeas([])
+  const handleAuthSuccess = async (authUser: any) => {
+    console.log('🎉 Authentication successful:', authUser.email)
+    // The handleAuthUser function will be called by the auth state listener
+    // so we don't need to do anything else here
   }
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -158,7 +277,7 @@ function App() {
     
     const ideaWithUser = {
       ...newIdea,
-      created_by: currentUser || 'Anonymous',
+      created_by: currentUser?.id || null,
       project_id: currentProject?.id
     }
     
@@ -183,14 +302,27 @@ function App() {
     loadIdeas()
   }
 
-  const handleUserUpdate = (newName: string) => {
-    setCurrentUser(newName)
+  const handleUserUpdate = (updatedUser: Partial<User>) => {
+    if (currentUser) {
+      setCurrentUser({ ...currentUser, ...updatedUser })
+    }
   }
 
-  const handleLogout = () => {
-    setCurrentUser(null)
-    localStorage.removeItem('prioritasUser')
-    setCurrentPage('matrix')
+  const handleLogout = async () => {
+    try {
+      console.log('🚪 Logging out...')
+      await supabase.auth.signOut()
+      // The auth state change listener will handle the rest
+    } catch (error) {
+      console.error('Error logging out:', error)
+      // Fallback: clear state manually
+      setCurrentUser(null)
+      setAuthUser(null)
+      setCurrentProject(null)
+      setIdeas([])
+      localStorage.removeItem('prioritasUser')
+      setCurrentPage('matrix')
+    }
   }
 
   const updateIdea = async (updatedIdea: IdeaCard) => {
@@ -247,28 +379,30 @@ function App() {
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-6 py-8">
               {/* Project Header */}
-              <ProjectHeader 
-                currentUser={currentUser || 'Anonymous'}
-                currentProject={currentProject}
-                onProjectChange={handleProjectSelect}
-                onIdeasCreated={(newIdeas) => setIdeas(prev => [...prev, ...newIdeas])}
-              />
+              {currentUser && (
+                <ProjectHeader 
+                  currentUser={currentUser}
+                  currentProject={currentProject}
+                  onProjectChange={handleProjectSelect}
+                  onIdeasCreated={(newIdeas) => setIdeas(prev => [...prev, ...newIdeas])}
+                />
+              )}
               
               {/* Conditional Content Based on Project Selection */}
               {!currentProject ? (
                 <div className="text-center py-16">
                   <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-12">
                     <FolderOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-slate-900 mb-2">Select a Project</h3>
+                    <h3 className="text-xl font-semibold text-slate-900 mb-2">No Project Selected</h3>
                     <p className="text-slate-600 mb-6">
-                      Choose a project from the header above or create a new one to start working with your priority matrix.
+                      Select an existing project or create a new one to start working. All tools (Design Matrix, Roadmap, etc.) are organized around your projects.
                     </p>
                     <button
                       onClick={() => setCurrentPage('projects')}
                       className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors shadow-sm"
                     >
-                      <Plus className="w-5 h-5" />
-                      <span>Create New Project</span>
+                      <FolderOpen className="w-5 h-5" />
+                      <span>Go to Projects</span>
                     </button>
                   </div>
                 </div>
@@ -295,7 +429,7 @@ function App() {
                 <DesignMatrix 
                   ideas={ideas}
                   activeId={activeId}
-                  currentUser={currentUser || undefined}
+                  currentUser={currentUser}
                   onEditIdea={setEditingIdea}
                   onDeleteIdea={deleteIdea}
                   onToggleCollapse={toggleCollapse}
@@ -312,7 +446,7 @@ function App() {
                       <IdeaCardComponent 
                         idea={activeIdea} 
                         isDragging
-                        currentUser={currentUser || undefined}
+                        currentUser={currentUser}
                         onEdit={() => {}}
                         onDelete={() => {}}
                       />
@@ -356,21 +490,29 @@ function App() {
           </div>
         )
       case 'data':
+        if (!currentProject) {
+          setCurrentPage('projects')
+          return null
+        }
         return (
           <div className="bg-slate-50 min-h-screen">
             <DataManagement 
               ideas={ideas}
-              currentUser={currentUser || 'Anonymous'}
+              currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
               onDataUpdated={handleDataUpdated}
             />
           </div>
         )
       case 'reports':
+        if (!currentProject) {
+          setCurrentPage('projects')
+          return null
+        }
         return (
           <div className="bg-slate-50 min-h-screen">
             <ReportsAnalytics 
               ideas={ideas}
-              currentUser={currentUser || 'Anonymous'}
+              currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
               currentProject={currentProject}
             />
           </div>
@@ -378,27 +520,33 @@ function App() {
       case 'projects':
         return (
           <div className="bg-slate-50 min-h-screen">
-            <ProjectManagement 
-              currentUser={currentUser || 'Anonymous'}
-              currentProject={currentProject}
-              onProjectSelect={handleProjectSelect}
-              onProjectCreated={(project, ideas) => {
-                console.log('🎯 App: Project created:', project.name, project.id)
-                setCurrentProject(project)
-                if (ideas) {
-                  setIdeas(prev => [...prev, ...ideas])
-                }
-                setCurrentPage('matrix')
-              }}
-              onNavigateToMatrix={() => setCurrentPage('matrix')}
-            />
+            {currentUser && (
+              <ProjectManagement 
+                currentUser={currentUser}
+                currentProject={currentProject}
+                onProjectSelect={handleProjectSelect}
+                onProjectCreated={(project, ideas) => {
+                  console.log('🎯 App: Project created:', project.name, project.id)
+                  setCurrentProject(project)
+                  if (ideas) {
+                    setIdeas(prev => [...prev, ...ideas])
+                  }
+                  setCurrentPage('matrix')
+                }}
+                onNavigateToMatrix={() => setCurrentPage('matrix')}
+              />
+            )}
           </div>
         )
       case 'roadmap':
+        if (!currentProject) {
+          setCurrentPage('projects')
+          return null
+        }
         return (
           <div className="bg-slate-50 min-h-screen">
             <ProjectRoadmap 
-              currentUser={currentUser || 'Anonymous'}
+              currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
               currentProject={currentProject}
               ideas={ideas}
             />
@@ -408,7 +556,7 @@ function App() {
         return (
           <div className="bg-slate-50 min-h-screen">
             <UserSettings 
-              currentUser={currentUser || 'Anonymous'}
+              currentUser={currentUser}
               onLogout={handleLogout}
               onUserUpdate={handleUserUpdate}
             />
@@ -420,21 +568,37 @@ function App() {
     }
   }
 
-  // Show welcome screen if no user is set
+  // Show loading screen while initializing
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-4">
+            <Target className="w-8 h-8 text-white animate-pulse" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Prioritas</h1>
+          <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show auth screen if no user is authenticated
   if (!currentUser) {
-    return <WelcomeScreen onUserCreated={handleUserCreated} />
+    return <AuthScreen onAuthSuccess={handleAuthSuccess} />
   }
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Sidebar 
         currentPage={currentPage}
-        currentUser={currentUser}
+        currentUser={currentUser?.email || currentUser?.full_name || 'User'}
+        currentProject={currentProject}
         onPageChange={setCurrentPage}
         onLogout={handleLogout}
         onToggleCollapse={setSidebarCollapsed}
       />
-      <div className={`${sidebarCollapsed ? 'pl-16' : 'pl-64'} transition-all duration-300`}>
+      <div className={`${sidebarCollapsed ? 'pl-20' : 'pl-72'} transition-all duration-300`}>
         {renderPageContent()}
       </div>
 
@@ -457,7 +621,7 @@ function App() {
       {editingIdea && (
         <EditIdeaModal 
           idea={editingIdea}
-          currentUser={currentUser || 'Anonymous'}
+          currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
           onClose={() => setEditingIdea(null)}
           onUpdate={updateIdea}
           onDelete={deleteIdea}

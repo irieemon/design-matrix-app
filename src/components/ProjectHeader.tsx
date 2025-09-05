@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Edit2, Check, X, Plus, Sparkles } from 'lucide-react'
-import { Project, IdeaCard } from '../types'
+import { Project, IdeaCard, User } from '../types'
 import { DatabaseService } from '../lib/database'
 import AIStarterModal from './AIStarterModal'
 
 interface ProjectHeaderProps {
-  currentUser: string
+  currentUser: User
   currentProject?: Project | null
   onProjectChange?: (project: Project | null) => void
   onIdeasCreated?: (ideas: IdeaCard[]) => void
@@ -29,7 +29,8 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
       project_type: 'other',
       status: 'active',
       priority_level: 'medium',
-      created_by: currentUser
+      visibility: 'private',
+      owner_id: currentUser.id
     })
 
     if (newProject) {
@@ -234,7 +235,7 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
           )}
           {currentProject && (
             <div className="text-xs text-slate-500 mt-2">
-              Created by {currentProject.created_by} • {new Date(currentProject.created_at).toLocaleDateString()}
+              Created by {currentProject.owner?.full_name || currentProject.owner?.email || 'Unknown'} • {new Date(currentProject.created_at).toLocaleDateString()}
             </div>
           )}
         </div>

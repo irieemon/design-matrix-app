@@ -597,7 +597,7 @@ Provide a comprehensive strategic report in JSON format with:
     }
   }
 
-  static async analyzeProjectAndGenerateIdeas(projectName: string, projectDescription: string, additionalContext?: string): Promise<any> {
+  static async analyzeProjectAndGenerateIdeas(projectName: string, projectDescription: string, additionalContext?: string, selectedProjectType?: string): Promise<any> {
     console.log('🔍 AIService: Analyzing project and generating ideas...', { projectName, projectDescription, additionalContext })
 
     // Enhanced project-aware prompt that creates contextually relevant ideas
@@ -605,16 +605,36 @@ Provide a comprehensive strategic report in JSON format with:
 
 PROJECT: "${projectName}"
 DESCRIPTION: "${projectDescription}"
+${selectedProjectType && selectedProjectType !== 'auto' ? `SELECTED PROJECT TYPE: "${selectedProjectType}"` : ''}
 ${additionalContext ? `ADDITIONAL CONTEXT: "${additionalContext}"` : ''}
 
-Analyze this project and provide strategic guidance in JSON format. Generate 6-8 contextually relevant ideas based on the PROJECT TYPE and DESCRIPTION.
+**TASK 1: PROJECT TYPE ANALYSIS**
+${selectedProjectType && selectedProjectType !== 'auto' ? 
+`Use the specified project type "${selectedProjectType}" for analysis.` :
+`Analyze the project description and recommend the MOST APPROPRIATE project type from:
+- software (Software Development)
+- product_development (Physical Product Development)  
+- business_plan (Business Planning & Strategy)
+- marketing (Marketing Campaign)
+- operations (Operations Improvement)
+- research (Research & Development)
+- other (if none fit perfectly)
+
+If recommending "other", provide detailed reasoning for custom user stories.`}
+
+**TASK 2: IDEA GENERATION**
+Generate 6-8 contextually relevant ideas based on the PROJECT TYPE:
 
 CRITICAL REQUIREMENTS:
 - For marketing projects: Generate marketing-specific ideas (campaigns, content, SEO, social media, brand awareness, lead generation)
-- For software projects: Generate tech-specific ideas (features, architecture, user experience, integrations, security, scalability)
-- For business projects: Generate operations ideas (processes, efficiency, automation, training, analytics, quality)
+- For software projects: Generate tech-specific ideas (features, architecture, user experience, integrations, security, scalability)  
+- For product_development: Generate product ideas (design, prototyping, testing, manufacturing, materials, user research)
+- For business_plan: Generate strategy ideas (market research, financials, operations, partnerships, growth strategies)
+- For operations: Generate process ideas (efficiency, automation, training, analytics, quality control)
+- For research: Generate research ideas (methodology, data collection, analysis, validation, publication)
+- For other: Generate domain-specific ideas based on the actual project description
 
-DO NOT mix project types - a marketing campaign should NOT suggest VR applications or software architecture.
+DO NOT mix project types - each project should have domain-specific ideas only.
 
 Respond with this JSON structure:
 
@@ -628,7 +648,10 @@ Respond with this JSON structure:
     "industry": "detected industry/sector",
     "scope": "project scope assessment", 
     "timeline": "estimated timeline",
-    "primaryGoals": ["goal1", "goal2"]
+    "primaryGoals": ["goal1", "goal2"],
+    ${selectedProjectType && selectedProjectType !== 'auto' ? '' : 
+    `"recommendedProjectType": "software|product_development|business_plan|marketing|operations|research|other",
+    "projectTypeReasoning": "Detailed explanation of why this project type fits best",`}
   },
   "generatedIdeas": [
     {
@@ -904,11 +927,14 @@ Respond with this JSON structure:
     return (baseIdeas as any)[typeKey] || (baseIdeas as any)['General Business']
   }
 
-  static async generateRoadmap(projectName: string, projectDescription: string, ideas: any[]): Promise<any> {
+  static async generateRoadmap(projectName: string, projectDescription: string, ideas: any[], projectType?: string, aiAnalysis?: any): Promise<any> {
     const config = getAIConfig()
+    
+    console.log('🔍 Roadmap generation - Provider:', config.provider, 'Has API Key:', !!config.apiKey)
     
     if (config.provider === 'openai' && config.apiKey) {
       // Real OpenAI implementation
+      console.log('🚀 Using real OpenAI API for roadmap generation')
       try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
@@ -921,15 +947,45 @@ Respond with this JSON structure:
             messages: [
               {
                 role: 'system',
-                content: `You are a strategic product manager and roadmap expert. Create a comprehensive project roadmap that converts priority matrix ideas into actionable user stories and deliverables.
+                content: `You are a senior Business Analyst and ${this.getProjectExpertise(projectType, aiAnalysis)} with deep domain expertise. Your task is to perform a comprehensive analysis of the project ideas and create a strategic roadmap that demonstrates thorough business analysis thinking.
                 
-                CRITICAL REQUIREMENTS:
-                1. Analyze the provided ideas and group them into logical Epic-level user stories
-                2. Create a timeline with phases (Phase 1, Phase 2, etc.)
-                3. Each phase should have clear deliverables and success criteria
-                4. Consider dependencies between ideas and logical implementation order
-                5. Provide realistic time estimates based on complexity
-                6. Include risk assessment and mitigation strategies
+                PROJECT CONTEXT: ${this.getProjectContext(projectType, aiAnalysis)}
+                
+                BUSINESS ANALYST APPROACH - YOU MUST:
+                1. **DEEP IDEA ANALYSIS**: Carefully analyze each provided idea to understand:
+                   - The underlying business need/problem being solved
+                   - Technical/operational complexity and dependencies
+                   - Resource requirements and constraints
+                   - Business value and strategic importance
+                   - Risk factors and mitigation needs
+                
+                2. **STRATEGIC GROUPING**: Group related ideas into coherent ${this.getEpicTerminology(projectType)}s based on:
+                   - Functional relationships and dependencies  
+                   - Implementation complexity and sequencing
+                   - Business value delivery cadence
+                   - Resource allocation optimization
+                   - Risk distribution and mitigation
+                
+                3. **CONTEXTUAL EPIC CREATION**: Each ${this.getEpicTerminology(projectType).toLowerCase()} must be:
+                   - Highly specific to the project domain (${projectType || 'this industry'})
+                   - Directly derived from the actual ideas provided
+                   - Include specific technical/business requirements
+                   - Address real implementation challenges
+                   - Consider stakeholder needs and constraints
+                
+                4. **DETAILED USER STORIES**: Create ${this.getProjectTerminology(projectType)} that are:
+                   - Specific to the project domain and context
+                   - Based on actual stakeholder needs (not generic templates)
+                   - Include acceptance criteria thinking
+                   - Reference specific features/capabilities from the ideas
+                
+                5. **REALISTIC DELIVERABLES**: List concrete, measurable deliverables that:
+                   - Map directly to the provided ideas
+                   - Are specific to the ${projectType || 'project'} domain
+                   - Include technical specifications, documentation, and validation criteria
+                   - Consider compliance, testing, and quality requirements
+                
+                ANALYSIS DEPTH: Don't use generic templates. Analyze the specific ideas provided and create roadmap elements that demonstrate you understand the project's unique challenges, opportunities, and requirements.
                 
                 Return ONLY valid JSON with this exact structure:
                 {
@@ -972,25 +1028,65 @@ Respond with this JSON structure:
               },
               {
                 role: 'user',
-                content: `Project: ${projectName}
-                Description: ${projectDescription}
-                
-                Ideas to convert into roadmap:
-                ${ideas.map(idea => `- ${idea.content}: ${idea.details} (Priority: ${idea.priority})`).join('\n')}
-                
-                Generate a comprehensive project roadmap with user stories and deliverables.`
+                content: `PROJECT ANALYSIS REQUEST
+
+**Project Name**: ${projectName}
+**Project Description**: ${projectDescription}
+**Project Type**: ${projectType || 'Not specified'}
+${aiAnalysis ? `**AI Analysis**: Industry: ${aiAnalysis.projectAnalysis?.industry || 'N/A'}, Scope: ${aiAnalysis.projectAnalysis?.scope || 'N/A'}, Timeline: ${aiAnalysis.projectAnalysis?.timeline || 'N/A'}` : ''}
+
+**IDEAS FOR ANALYSIS** (${ideas.length} total):
+${ideas.map((idea, index) => `
+${index + 1}. **${idea.content}** (Priority: ${idea.priority?.toUpperCase()})
+   Details: ${idea.details}
+   Matrix Position: (${idea.x}, ${idea.y})
+   ${idea.reasoning ? `AI Reasoning: ${idea.reasoning}` : ''}
+`).join('\n')}
+
+**BUSINESS ANALYST TASK**: 
+CRITICAL: You MUST analyze the specific ideas listed above. Do NOT create generic work packages or templates.
+
+${projectType === 'other' ? 
+`**SPECIAL INSTRUCTIONS FOR CUSTOM PROJECT TYPE:**
+This project doesn't fit standard categories. Based on the project name "${projectName}" and description "${projectDescription}", analyze what type of domain this actually represents. Then create roadmap content that reflects the ACTUAL domain requirements:
+
+- If it's about physical products → use manufacturing/design terminology
+- If it's about events → use event planning terminology  
+- If it's about education → use curriculum/learning terminology
+- If it's about healthcare → use medical/clinical terminology
+- If it's about finance → use financial/investment terminology
+- etc.
+
+Create user stories that start with roles relevant to this specific domain, not generic "As a user" statements.` :
+`Focus on ${projectType} domain expertise and terminology.`}
+
+For each epic you create:
+1. **Use specific idea content** - Reference the exact ideas by their content (e.g., "${ideas[0]?.content || 'actual idea content'}")
+2. **Create contextual titles** - Epic titles should reflect the actual domain and specific ideas, not generic "Work Package X.Y" 
+3. **Write detailed descriptions** - Include technical specifics, domain expertise, and implementation details relevant to the actual ideas
+4. **Group related ideas** - Combine complementary ideas into logical implementation groups
+
+Example of what I want:
+- Epic Title: "${ideas[0]?.content || 'Actual idea title'}" (not "Work Package 1.1")
+- Description: Detailed analysis of this specific idea including technical approach, domain considerations, and implementation strategy
+
+Group these ${ideas.length} ideas into logical, implementation-focused ${this.getEpicTerminology(projectType).toLowerCase()}s that demonstrate deep understanding of the actual project requirements, not generic project management templates.`
               }
             ],
             temperature: 0.7,
-            max_tokens: 2000
+            max_tokens: 4000
           })
         })
 
+        console.log('📊 OpenAI roadmap API call status:', response.status)
         if (!response.ok) {
+          const errorText = await response.text()
+          console.error('❌ OpenAI roadmap API error:', response.status, errorText)
           throw new Error(`OpenAI API error: ${response.status}`)
         }
 
         const data = await response.json()
+        console.log('✅ OpenAI roadmap response received, tokens used:', data.usage?.total_tokens || 'unknown')
         const content = data.choices[0]?.message?.content
 
         if (!content) {
@@ -999,115 +1095,543 @@ Respond with this JSON structure:
 
         return JSON.parse(content)
       } catch (error) {
-        console.error('OpenAI Roadmap Generation Error:', error)
+        console.error('❌ OpenAI Roadmap Generation Error:', error)
+        console.log('🎭 Falling back to mock roadmap generation')
         // Fall back to mock
-        return this.generateMockRoadmap(projectName, projectDescription, ideas)
+        return this.generateMockRoadmap(projectName, projectDescription, ideas, projectType, aiAnalysis)
       }
     } else {
+      console.log('🎭 Using mock roadmap generation (no OpenAI API key)')
       // Mock implementation
-      return this.generateMockRoadmap(projectName, projectDescription, ideas)
+      return this.generateMockRoadmap(projectName, projectDescription, ideas, projectType, aiAnalysis)
     }
   }
 
-  private static generateMockRoadmap(projectName: string, _projectDescription: string, ideas: any[]) {
-    console.log('🗺️ Mock AI: Generating roadmap for project:', projectName)
-    console.log('📋 Mock AI: Processing', ideas.length, 'ideas into user stories')
+  private static getProjectExpertise(projectType?: string, aiAnalysis?: any): string {
+    if (aiAnalysis?.projectAnalysis?.industry) {
+      return `${aiAnalysis.projectAnalysis.industry} expert`
+    }
     
-    // Group ideas by priority/complexity
-    const highPriorityIdeas = ideas.filter(i => i.priority === 'high' || i.priority === 'strategic')
-    const moderateIdeas = ideas.filter(i => i.priority === 'moderate')
-    const lowPriorityIdeas = ideas.filter(i => i.priority === 'low' || i.priority === 'innovation')
+    switch (projectType) {
+      case 'software': return 'software development expert'
+      case 'product_development': return 'product development expert'
+      case 'business_plan': return 'business strategy consultant'
+      case 'marketing': return 'marketing strategist'
+      case 'operations': return 'operations consultant'
+      case 'research': return 'research and development expert'
+      default: return 'project management expert'
+    }
+  }
+
+  private static getProjectTerminology(projectType?: string): string {
+    switch (projectType) {
+      case 'software': return 'user stories'
+      case 'product_development': return 'development milestones'
+      case 'business_plan': return 'strategic initiatives'
+      case 'marketing': return 'campaign activities'
+      case 'operations': return 'process improvements'
+      case 'research': return 'research objectives'
+      default: return 'action items'
+    }
+  }
+
+  private static getEpicTerminology(projectType?: string): string {
+    switch (projectType) {
+      case 'software': return 'Epic'
+      case 'product_development': return 'Feature Set'
+      case 'business_plan': return 'Strategic Theme'
+      case 'marketing': return 'Campaign'
+      case 'operations': return 'Process Area'
+      case 'research': return 'Research Track'
+      default: return 'Work Package'
+    }
+  }
+
+  private static getProjectMethodology(projectType?: string): string {
+    switch (projectType) {
+      case 'software': return 'Agile/Scrum'
+      case 'product_development': return 'Stage-Gate'
+      case 'business_plan': return 'Strategic Planning'
+      case 'marketing': return 'Campaign Management'
+      case 'operations': return 'Continuous Improvement'
+      case 'research': return 'Research Methodology'
+      default: return 'Project Management'
+    }
+  }
+
+  private static getProjectContext(projectType?: string, aiAnalysis?: any): string {
+    if (aiAnalysis?.projectAnalysis) {
+      const analysis = aiAnalysis.projectAnalysis
+      return `This is a ${analysis.industry || projectType || 'general'} project with a focus on ${analysis.scope || 'various aspects'} over a ${analysis.timeline || 'standard'} timeframe. Primary goals include: ${analysis.primaryGoals?.join(', ') || 'achieving project objectives'}.`
+    }
     
-    return {
-      roadmapAnalysis: {
-        totalDuration: "3-4 months",
-        phases: [
+    switch (projectType) {
+      case 'software': 
+        return 'This is a software development project requiring technical implementation, user experience design, and system architecture.'
+      case 'product_development': 
+        return 'This is a product development project involving design, prototyping, testing, and manufacturing considerations.'
+      case 'business_plan': 
+        return 'This is a business planning project requiring market analysis, financial modeling, and strategic positioning.'
+      case 'marketing': 
+        return 'This is a marketing project focusing on brand awareness, customer engagement, and campaign effectiveness.'
+      case 'operations': 
+        return 'This is an operations project aimed at improving processes, efficiency, and organizational effectiveness.'
+      case 'research': 
+        return 'This is a research and development project involving investigation, experimentation, and knowledge discovery.'
+      case 'other':
+        return 'This is a specialized project with unique domain requirements. The roadmap should be tailored to the specific project context and goals rather than following generic templates.'
+      default: 
+        return 'This is a multi-faceted project requiring careful planning and execution across various domains.'
+    }
+  }
+
+  private static getProjectDuration(projectType?: string): string {
+    switch (projectType) {
+      case 'software': return "3-4 months"
+      case 'product_development': return "6-12 months"  
+      case 'business_plan': return "2-3 months"
+      case 'marketing': return "3-6 months"
+      case 'operations': return "4-6 months"
+      case 'research': return "6-18 months"
+      case 'other': return "4-8 months"
+      default: return "3-6 months"
+    }
+  }
+
+  private static getPhaseDuration(projectType?: string, phase: number): string {
+    const durations: Record<string, string[]> = {
+      'software': ["4-6 weeks", "4-5 weeks", "3-4 weeks"],
+      'product_development': ["8-12 weeks", "12-16 weeks", "8-10 weeks"], 
+      'business_plan': ["3-4 weeks", "4-6 weeks", "2-3 weeks"],
+      'marketing': ["4-8 weeks", "6-10 weeks", "4-6 weeks"],
+      'operations': ["6-8 weeks", "8-10 weeks", "4-6 weeks"],
+      'research': ["8-16 weeks", "16-24 weeks", "12-16 weeks"],
+      'other': ["6-8 weeks", "8-12 weeks", "6-8 weeks"]
+    }
+    
+    const defaultDurations = ["4-6 weeks", "6-8 weeks", "4-5 weeks"]
+    const phaseDurations = durations[projectType || 'default'] || defaultDurations
+    
+    return phaseDurations[phase - 1] || "4-6 weeks"
+  }
+
+  private static getPhaseDescription(projectType?: string, phase: number): string {
+    const descriptions: Record<string, string[]> = {
+      'software': [
+        "Establish core functionality and deliver immediate value",
+        "Expand functionality and improve user experience", 
+        "Implement innovative features and prepare for scale"
+      ],
+      'product_development': [
+        "Concept development and initial prototyping",
+        "Design refinement and testing validation",
+        "Manufacturing preparation and market launch"
+      ],
+      'business_plan': [
+        "Market research and competitive analysis", 
+        "Financial modeling and strategy development",
+        "Implementation planning and launch preparation"
+      ],
+      'marketing': [
+        "Campaign planning and creative development",
+        "Launch execution and optimization", 
+        "Performance analysis and scaling"
+      ],
+      'operations': [
+        "Process analysis and improvement identification",
+        "Implementation and performance monitoring",
+        "Optimization and continuous improvement"
+      ],
+      'research': [
+        "Literature review and methodology design",
+        "Data collection and analysis",
+        "Results validation and publication"
+      ],
+      'other': [
+        "Foundation and initial setup",
+        "Core implementation and development",
+        "Optimization and completion"
+      ]
+    }
+    
+    const defaultDescriptions = [
+      "Foundation and initial implementation",
+      "Enhancement and refinement", 
+      "Innovation and scaling"
+    ]
+    
+    const phaseDescriptions = descriptions[projectType || 'default'] || defaultDescriptions
+    return phaseDescriptions[phase - 1] || "Phase implementation"
+  }
+
+  private static getEpicTitle(projectType?: string, phase: number, epic: number): string {
+    const titles: Record<string, Record<number, Record<number, string>>> = {
+      'software': {
+        1: { 1: "Core Platform Setup", 2: "Essential Features" },
+        2: { 1: "Advanced Features", 2: "Performance & Security" },
+        3: { 1: "Innovation Features" }
+      },
+      'product_development': {
+        1: { 1: "Initial Design & Concepts", 2: "Prototype Development" },
+        2: { 1: "Testing & Validation", 2: "Manufacturing Preparation" },
+        3: { 1: "Production Launch" }
+      },
+      'business_plan': {
+        1: { 1: "Market Analysis", 2: "Competitive Positioning" },
+        2: { 1: "Financial Projections", 2: "Implementation Strategy" },
+        3: { 1: "Launch Execution" }
+      },
+      'marketing': {
+        1: { 1: "Campaign Strategy", 2: "Creative Development" },
+        2: { 1: "Launch Execution", 2: "Performance Optimization" },
+        3: { 1: "Scaling & Growth" }
+      },
+      'operations': {
+        1: { 1: "Process Assessment", 2: "Improvement Design" },
+        2: { 1: "Implementation", 2: "Monitoring & Control" },
+        3: { 1: "Continuous Improvement" }
+      },
+      'research': {
+        1: { 1: "Research Framework", 2: "Methodology Design" },
+        2: { 1: "Data Collection", 2: "Analysis & Insights" },
+        3: { 1: "Publication & Dissemination" }
+      }
+    }
+    
+    return titles[projectType || 'default']?.[phase]?.[epic] || `Work Package ${phase}.${epic}`
+  }
+
+  private static getEpicDescription(projectType?: string, phase: number, epic: number): string {
+    const descriptions: Record<string, Record<number, Record<number, string>>> = {
+      'product_development': {
+        1: { 
+          1: "Analyze performance requirements, regulatory constraints, and driver ergonomics to establish comprehensive design specifications. Includes aerodynamic modeling, structural analysis, and safety regulation compliance planning.",
+          2: "Build functional prototypes focusing on critical subsystems validation. Emphasis on chassis dynamics, powertrain integration, and safety systems testing with iterative design refinement."
+        },
+        2: {
+          1: "Execute comprehensive testing protocols including track performance, crash safety, and regulatory compliance validation. Data-driven optimization of aerodynamics, handling characteristics, and driver interface systems.",
+          2: "Establish production-ready manufacturing processes, supply chain partnerships, and quality control systems. Focus on scalable production methods, cost optimization, and component standardization."
+        },
+        3: {
+          1: "Execute market launch strategy with emphasis on performance validation, customer delivery systems, and post-delivery support infrastructure. Include dealer network setup and service capability development."
+        }
+      },
+      'marketing': {
+        1: {
+          1: "Conduct comprehensive market analysis including competitor positioning, customer segmentation, and channel opportunity assessment. Develop data-driven buyer personas and messaging framework.",
+          2: "Create integrated creative campaign strategy including brand positioning, visual identity, content strategy, and multi-channel creative asset development with A/B testing framework."
+        },
+        2: {
+          1: "Execute full-scale campaign launch across identified channels with real-time performance monitoring, budget optimization, and rapid iteration based on performance metrics.",
+          2: "Implement advanced analytics, attribution modeling, and conversion optimization strategies. Focus on ROI maximization and customer acquisition cost optimization."
+        }
+      }
+    }
+    
+    return descriptions[projectType || 'default']?.[phase]?.[epic] || 
+           `Execute specialized deliverables combining domain expertise with strategic business analysis for phase ${phase}, work package ${epic}`
+  }
+
+  private static getContextualStories(projectType?: string, phase: number, epic: number): string[] {
+    switch (projectType) {
+      case 'product_development':
+        if (phase === 1 && epic === 1) {
+          return [
+            "As a race car driver, I need a cockpit design that provides optimal visibility, ergonomic controls within reach, and crash protection that meets FIA safety standards",
+            "As a design engineer, I need detailed aerodynamic specifications including downforce targets, drag coefficients, and airflow optimization for front/rear wing configurations",
+            "As a manufacturing engineer, I need comprehensive technical drawings with material specifications, tolerances, and assembly procedures for chassis construction",
+            "As a safety officer, I need designs that incorporate roll cage specifications, fire suppression systems, and crash energy absorption zones"
+          ]
+        }
+        if (phase === 1 && epic === 2) {
+          return [
+            "As a test driver, I need a functional prototype with validated steering response, brake performance, and suspension tuning that allows safe track testing",
+            "As a powertrain engineer, I need engine integration with validated power delivery, cooling systems, and exhaust routing that meets performance targets",
+            "As a data analyst, I need telemetry systems that capture real-time performance metrics including speed, G-forces, engine parameters, and tire temperatures",
+            "As a team principal, I need a prototype that demonstrates competitive lap times and reliability metrics for stakeholder validation"
+          ]
+        }
+        if (phase === 2 && epic === 1) {
+          return [
+            "As a test engineer, I need comprehensive track testing data showing lap times, cornering speeds, and performance benchmarks against competitor vehicles",
+            "As a safety inspector, I need crash test validation demonstrating compliance with racing safety standards and driver protection systems",
+            "As a performance analyst, I need aerodynamic tunnel testing results with optimization recommendations for maximum downforce and minimum drag"
+          ]
+        }
+        break
+      case 'marketing':
+        if (phase === 1 && epic === 1) {
+          return [
+            "As a market researcher, I need detailed competitor analysis including pricing strategies, feature comparisons, and market positioning gaps",
+            "As a customer insights analyst, I need buyer personas based on demographic data, purchasing behavior, and motivation factors",
+            "As a channel strategist, I need ROI analysis of digital vs traditional marketing channels with audience reach and conversion metrics"
+          ]
+        }
+        break
+      default:
+        return [
+          `As a domain expert, I need comprehensive requirements analysis that addresses specific ${projectType || 'project'} challenges and constraints`,
+          `As a stakeholder, I need clear value delivery milestones with measurable business outcomes and success criteria`,
+          `As an implementation team, I need detailed technical specifications with dependencies, risks, and resource requirements clearly defined`
+        ]
+    }
+    return [
+      "As a stakeholder, I need clear objectives with measurable success criteria",
+      "As an implementation team, I need detailed technical requirements and constraints",
+      "As a project manager, I need realistic timelines with dependency analysis"
+    ]
+  }
+
+  private static getContextualDeliverables(projectType?: string, phase: number, epic: number): string[] {
+    switch (projectType) {
+      case 'product_development':
+        if (phase === 1 && epic === 1) {
+          return [
+            "Complete technical specification document (200+ pages) including aerodynamics, chassis, powertrain, and safety systems",
+            "3D CAD models with full assembly drawings and component specifications using SolidWorks/CATIA",
+            "Material selection analysis with weight optimization, cost analysis, and supplier qualification matrix",
+            "FIA safety compliance documentation including roll cage specifications, fire suppression, and crash structure design",
+            "Aerodynamic analysis report with CFD modeling results and wind tunnel test plan",
+            "Powertrain integration specifications including engine mounting, cooling, and exhaust routing"
+          ]
+        }
+        if (phase === 1 && epic === 2) {
+          return [
+            "Alpha prototype chassis with validated structural integrity and safety systems integration",
+            "Performance validation report with track testing data, lap times, and handling characteristics",
+            "Telemetry system with real-time data acquisition for speed, G-forces, engine parameters, and tire temperatures",
+            "Component stress testing results including suspension loads, brake performance, and powertrain durability",
+            "Driver feedback analysis with ergonomic assessment and control system validation",
+            "System integration validation covering electrical, hydraulic, and mechanical subsystems"
+          ]
+        }
+        if (phase === 2 && epic === 1) {
+          return [
+            "Comprehensive track testing report with performance benchmarks vs competitor analysis",
+            "Safety validation certification including crash test results and FIA compliance verification",
+            "Aerodynamic optimization report with wind tunnel test data and on-track validation",
+            "Reliability testing summary with failure analysis, MTBF calculations, and improvement recommendations"
+          ]
+        }
+        break
+      case 'marketing':
+        if (phase === 1 && epic === 1) {
+          return [
+            "Comprehensive market analysis report (50+ pages) with competitor pricing, positioning, and SWOT analysis",
+            "Detailed buyer personas with demographic analysis, purchasing behavior, and decision-making factors",
+            "Multi-channel strategy document with ROI projections, audience reach analysis, and budget allocation",
+            "Brand positioning framework with messaging hierarchy, value propositions, and differentiation strategy"
+          ]
+        }
+        break
+      case 'software':
+        if (phase === 1 && epic === 1) {
+          return [
+            "System architecture documentation with scalability analysis and security framework",
+            "API specification with endpoint documentation, authentication protocols, and rate limiting",
+            "Database design with entity relationships, indexing strategy, and data migration plan",
+            "Development environment setup with CI/CD pipeline, testing framework, and deployment automation"
+          ]
+        }
+        break
+      default:
+        return [
+          `Domain-specific technical specifications with detailed requirements and acceptance criteria`,
+          `Comprehensive project documentation including architecture, design decisions, and implementation guides`,
+          `Validation and testing results with performance metrics, quality assurance, and stakeholder sign-off`,
+          `Risk assessment and mitigation plan with contingency strategies and resource optimization recommendations`
+        ]
+    }
+    return [
+      "Detailed technical specifications with measurable acceptance criteria",
+      "Comprehensive validation documentation with test results and quality metrics", 
+      "Stakeholder review and approval with change management procedures"
+    ]
+  }
+
+  private static getContextualRisks(projectType?: string, phase: number): string[] {
+    switch (projectType) {
+      case 'product_development':
+        if (phase === 1) {
+          return [
+            "Aerodynamic design complexity may require multiple CFD iterations affecting 4-week timeline extension risk",
+            "Carbon fiber supply chain disruptions could impact chassis material costs by 25-40%",
+            "FIA safety regulation changes mid-development requiring design modifications and re-certification",
+            "Integration challenges between chassis, powertrain, and safety systems leading to prototype delays",
+            "Supplier qualification delays for critical components (engine, transmission, electronics)",
+            "Weight optimization vs. structural integrity trade-offs requiring extensive material testing"
+          ]
+        } else if (phase === 2) {
+          return [
+            "Track testing weather dependencies could compress validation timeline by 2-3 weeks",
+            "Component failure during testing requiring redesign and manufacturing lead time delays",
+            "Competitor benchmarking data unavailability limiting performance validation accuracy",
+            "Manufacturing process scalability issues affecting transition from prototype to production",
+            "Quality control system implementation challenges with measurement accuracy and repeatability"
+          ]
+        }
+        return ["Design complexity exceeding timeline", "Material availability and cost", "Safety regulation compliance"]
+      case 'marketing':
+        return [
+          "Market sentiment shifts due to economic conditions affecting target audience purchasing power",
+          "Competitive product launches disrupting positioning strategy and requiring campaign pivots",
+          "Creative asset approval bottlenecks with legal/compliance review extending timeline by 2-4 weeks",
+          "Digital platform algorithm changes impacting organic reach and requiring budget reallocation",
+          "Attribution modeling complexity affecting ROI measurement accuracy and optimization decisions"
+        ]
+      case 'research':
+        return [
+          "Participant recruitment challenges due to specific demographic requirements affecting sample size",
+          "Data collection methodology limitations discovered during pilot testing requiring protocol revision",
+          "Ethical review board feedback requiring significant protocol modifications and timeline extension",
+          "Data quality issues requiring additional validation steps and statistical analysis complexity"
+        ]
+      default:
+        return [
+          "Technical complexity escalation requiring specialized expertise and extended development timeline",
+          "Resource availability constraints during peak demand periods affecting critical path activities",
+          "Stakeholder alignment challenges on requirements scope leading to scope creep and budget overruns",
+          "Integration dependencies with external systems creating bottlenecks and coordination overhead"
+        ]
+    }
+  }
+
+  private static getContextualSuccessCriteria(projectType?: string, phase: number): string[] {
+    switch (projectType) {
+      case 'product_development':
+        if (phase === 1) {
+          return [
+            "Complete design specifications approved by engineering review board with <5% requirement changes needed",
+            "CAD models pass structural analysis with safety factor >1.5x and weight targets within 10% of specification",
+            "Material selection validated with cost analysis showing <15% variance from budget allocation",
+            "FIA safety compliance documentation complete with pre-approval from certification body",
+            "Aerodynamic CFD analysis shows >90% correlation with target downforce and drag coefficients",
+            "Prototype fabrication timeline confirmed with supplier commitments and quality agreements"
+          ]
+        } else if (phase === 2) {
+          return [
+            "Track testing demonstrates lap times within 2% of performance targets with consistent repeatability",
+            "Safety validation passes all crash tests with driver safety metrics exceeding FIA minimums by 20%",
+            "Aerodynamic performance validated with <5% variance between CFD predictions and wind tunnel results",
+            "System reliability testing shows >95% uptime during 500+ hour validation protocol",
+            "Manufacturing process qualification complete with capability studies showing Cpk >1.33"
+          ]
+        }
+        return ["Design specifications approved", "Prototype meets performance targets", "Safety standards validated"]
+      case 'marketing':
+        return [
+          "Market research validates target audience size >500K with purchasing intent >40% within price range",
+          "Campaign creative assets achieve >85% approval rating in focus group testing with target demographics", 
+          "Channel strategy validated with projected ROI >300% and customer acquisition cost <$150 per lead",
+          "Brand positioning framework demonstrates >20% differentiation advantage over key competitors",
+          "Launch readiness confirmed with all stakeholder approvals and budget allocation within 5% variance"
+        ]
+      case 'research':
+        return [
+          "Research methodology peer-reviewed with >90% approval from subject matter experts",
+          "Data collection framework validates sample size adequacy with statistical power >80%",
+          "Ethical approval obtained with <3 rounds of revision and full IRB committee endorsement",
+          "Pilot study confirms data quality metrics with <10% missing data and >95% reliability coefficients"
+        ]
+      default:
+        return [
+          "Core project objectives achieved with measurable KPI targets met within 10% variance",
+          "Quality standards validated through independent review with >95% compliance score",
+          "Stakeholder satisfaction survey results show >85% approval with clear value delivery confirmation",
+          "Project timeline maintained with <15% variance and all critical path milestones achieved"
+        ]
+    }
+  }
+
+  private static getSprintLength(projectType?: string): string {
+    switch (projectType) {
+      case 'software': return "2 weeks"
+      case 'product_development': return "4 weeks"
+      case 'business_plan': return "1 week"
+      case 'marketing': return "2 weeks"
+      case 'operations': return "3 weeks"
+      case 'research': return "4 weeks"
+      default: return "2 weeks"
+    }
+  }
+
+  private static getTeamRecommendations(projectType?: string): string {
+    switch (projectType) {
+      case 'software': 
+        return "Cross-functional team of 4-6 members: Product Manager, 2-3 Developers, Designer, QA Engineer"
+      case 'product_development':
+        return "Multidisciplinary team of 6-8 members: Project Manager, Design Engineers, CAD Specialist, Materials Engineer, Manufacturing Engineer, Test Engineer"
+      case 'business_plan':
+        return "Strategic team of 3-4 members: Business Analyst, Market Researcher, Financial Analyst, Strategy Consultant"
+      case 'marketing':
+        return "Creative team of 4-5 members: Marketing Manager, Creative Director, Content Creator, Data Analyst, Campaign Specialist"
+      case 'operations':
+        return "Process improvement team of 3-5 members: Operations Manager, Process Analyst, Change Management Specialist, Quality Engineer"
+      case 'research':
+        return "Research team of 4-6 members: Principal Researcher, Research Associates, Data Analyst, Subject Matter Expert, Research Coordinator"
+      default:
+        return "Cross-functional team of 4-6 members with relevant domain expertise"
+    }
+  }
+
+  private static getContextualMilestones(projectType?: string): any[] {
+    switch (projectType) {
+      case 'product_development':
+        return [
           {
-            phase: "Phase 1: Foundation & Quick Wins",
-            duration: "4-6 weeks",
-            description: "Establish core functionality and deliver immediate value",
-            epics: [
-              {
-                title: "Core Platform Setup",
-                description: "Establish the foundational systems and architecture",
-                userStories: [
-                  "As a user, I can access the platform securely",
-                  "As an admin, I can configure basic settings",
-                  "As a user, I can navigate the main interface"
-                ],
-                deliverables: ["Authentication system", "Basic UI framework", "Core navigation"],
-                priority: "High",
-                complexity: "High",
-                relatedIdeas: highPriorityIdeas.slice(0, 2).map(i => i.content)
-              },
-              {
-                title: "Essential Features",
-                description: "Implement the most critical user-facing features",
-                userStories: [
-                  "As a user, I can perform primary actions",
-                  "As a user, I can view essential information",
-                  "As a user, I can save my progress"
-                ],
-                deliverables: ["Primary feature set", "Data persistence", "User feedback system"],
-                priority: "High", 
-                complexity: "Medium",
-                relatedIdeas: highPriorityIdeas.slice(2).map(i => i.content)
-              }
-            ],
-            risks: ["Technical complexity", "Resource availability", "Integration challenges"],
-            successCriteria: ["Core functionality working", "User can complete primary workflow", "System stability achieved"]
+            milestone: "Design Approval",
+            timeline: "Week 8",
+            description: "Final design specifications approved and ready for prototyping"
           },
           {
-            phase: "Phase 2: Enhancement & Integration",
-            duration: "4-5 weeks", 
-            description: "Expand functionality and improve user experience",
-            epics: [
-              {
-                title: "Advanced Features",
-                description: "Add sophisticated capabilities and integrations",
-                userStories: [
-                  "As a user, I can access advanced tools",
-                  "As a user, I can integrate with external systems",
-                  "As a user, I can customize my experience"
-                ],
-                deliverables: ["Advanced feature set", "Third-party integrations", "Customization options"],
-                priority: "Medium",
-                complexity: "Medium",
-                relatedIdeas: moderateIdeas.map(i => i.content)
-              }
-            ],
-            risks: ["Integration complexity", "Performance issues", "User adoption"],
-            successCriteria: ["All moderate priority features implemented", "Performance benchmarks met", "User satisfaction targets achieved"]
+            milestone: "Prototype Complete",
+            timeline: "Week 16",
+            description: "Functional prototype built and tested"
           },
           {
-            phase: "Phase 3: Innovation & Scale",
-            duration: "3-4 weeks",
-            description: "Implement innovative features and prepare for scale",
-            epics: [
-              {
-                title: "Innovation Features",
-                description: "Cutting-edge capabilities and future-ready enhancements",
-                userStories: [
-                  "As a power user, I can leverage advanced analytics",
-                  "As an organization, I can scale the solution",
-                  "As a user, I can access innovative tools"
-                ],
-                deliverables: ["Innovation features", "Analytics dashboard", "Scalability improvements"],
-                priority: "Low",
-                complexity: "High", 
-                relatedIdeas: lowPriorityIdeas.map(i => i.content)
-              }
-            ],
-            risks: ["Technology adoption", "Market readiness", "Resource constraints"],
-            successCriteria: ["Innovation features delivered", "System can handle scale", "Future roadmap defined"]
+            milestone: "Production Ready",
+            timeline: "Week 24",
+            description: "Manufacturing process validated and ready for production"
           }
         ]
-      },
-      executionStrategy: {
-        methodology: "Agile/Scrum",
-        sprintLength: "2 weeks",
-        teamRecommendations: "Cross-functional team of 4-6 members: Product Manager, 2-3 Developers, Designer, QA Engineer",
-        keyMilestones: [
+      case 'marketing':
+        return [
+          {
+            milestone: "Campaign Strategy Approval",
+            timeline: "Week 6",
+            description: "Campaign strategy and creative direction approved"
+          },
+          {
+            milestone: "Campaign Launch",
+            timeline: "Week 12",
+            description: "Campaign launched across all channels"
+          },
+          {
+            milestone: "Performance Review",
+            timeline: "Week 18",
+            description: "Campaign performance analyzed and optimizations implemented"
+          }
+        ]
+      case 'research':
+        return [
+          {
+            milestone: "Methodology Approval",
+            timeline: "Week 8",
+            description: "Research methodology validated and ethical approvals obtained"
+          },
+          {
+            milestone: "Data Collection Complete",
+            timeline: "Week 24",
+            description: "All data collection activities completed"
+          },
+          {
+            milestone: "Results Published",
+            timeline: "Week 36",
+            description: "Research findings analyzed and published"
+          }
+        ]
+      default:
+        return [
           {
             milestone: "MVP Release",
             timeline: "Week 6",
@@ -1115,7 +1639,7 @@ Respond with this JSON structure:
           },
           {
             milestone: "Feature Complete",
-            timeline: "Week 10", 
+            timeline: "Week 10",
             description: "All planned features implemented and tested"
           },
           {
@@ -1124,6 +1648,98 @@ Respond with this JSON structure:
             description: "Full solution ready for production deployment"
           }
         ]
+    }
+  }
+
+  private static generateMockRoadmap(projectName: string, _projectDescription: string, ideas: any[], projectType?: string, aiAnalysis?: any) {
+    console.log('🗺️ Mock AI: Generating roadmap for project:', projectName)
+    console.log('📋 Mock AI: Processing', ideas.length, 'ideas into user stories')
+    console.log('💡 Mock AI: Available ideas:', ideas.map(i => `"${i.content}" (${i.priority})`).join(', '))
+    
+    // Group ideas by priority/complexity
+    const highPriorityIdeas = ideas.filter(i => i.priority === 'high' || i.priority === 'strategic')
+    const moderateIdeas = ideas.filter(i => i.priority === 'moderate')
+    const lowPriorityIdeas = ideas.filter(i => i.priority === 'low' || i.priority === 'innovation')
+    
+    // Generate context-aware roadmap content
+    const epicTerm = this.getEpicTerminology(projectType)
+    const actionTerm = this.getProjectTerminology(projectType)
+    const methodology = this.getProjectMethodology(projectType)
+    
+    return {
+      roadmapAnalysis: {
+        totalDuration: this.getProjectDuration(projectType),
+        phases: [
+          {
+            phase: "Phase 1: Foundation & Quick Wins",
+            duration: this.getPhaseDuration(projectType, 1),
+            description: this.getPhaseDescription(projectType, 1),
+            epics: [
+              {
+                title: highPriorityIdeas[0]?.content || this.getEpicTitle(projectType, 1, 1),
+                description: `Implementation of "${highPriorityIdeas[0]?.content || 'core functionality'}" - ${this.getEpicDescription(projectType, 1, 1)}${highPriorityIdeas[0]?.details ? '. Details: ' + highPriorityIdeas[0].details : ''}`,
+                userStories: this.getContextualStories(projectType, 1, 1),
+                deliverables: this.getContextualDeliverables(projectType, 1, 1),
+                priority: "High",
+                complexity: "High",
+                relatedIdeas: highPriorityIdeas.slice(0, 2).map(i => i.content)
+              },
+              {
+                title: highPriorityIdeas[1]?.content || this.getEpicTitle(projectType, 1, 2),
+                description: `Development of "${highPriorityIdeas[1]?.content || 'secondary features'}" - ${this.getEpicDescription(projectType, 1, 2)}${highPriorityIdeas[1]?.details ? '. Details: ' + highPriorityIdeas[1].details : ''}`,
+                userStories: this.getContextualStories(projectType, 1, 2),
+                deliverables: this.getContextualDeliverables(projectType, 1, 2),
+                priority: "High", 
+                complexity: "Medium",
+                relatedIdeas: highPriorityIdeas.slice(2).map(i => i.content)
+              }
+            ],
+            risks: this.getContextualRisks(projectType, 1),
+            successCriteria: this.getContextualSuccessCriteria(projectType, 1)
+          },
+          {
+            phase: "Phase 2: Enhancement & Integration",
+            duration: this.getPhaseDuration(projectType, 2),
+            description: this.getPhaseDescription(projectType, 2),
+            epics: [
+              {
+                title: moderateIdeas[0]?.content || this.getEpicTitle(projectType, 2, 1),
+                description: `Enhancement and optimization of "${moderateIdeas[0]?.content || 'core systems'}" - ${this.getEpicDescription(projectType, 2, 1)}${moderateIdeas[0]?.details ? '. Details: ' + moderateIdeas[0].details : ''}`,
+                userStories: this.getContextualStories(projectType, 2, 1),
+                deliverables: this.getContextualDeliverables(projectType, 2, 1),
+                priority: "Medium",
+                complexity: "Medium",
+                relatedIdeas: moderateIdeas.map(i => i.content)
+              }
+            ],
+            risks: this.getContextualRisks(projectType, 2),
+            successCriteria: this.getContextualSuccessCriteria(projectType, 2)
+          },
+          {
+            phase: "Phase 3: Innovation & Scale",
+            duration: this.getPhaseDuration(projectType, 3),
+            description: this.getPhaseDescription(projectType, 3),
+            epics: [
+              {
+                title: lowPriorityIdeas[0]?.content || this.getEpicTitle(projectType, 3, 1),
+                description: `Future innovation with "${lowPriorityIdeas[0]?.content || 'advanced capabilities'}" - ${this.getEpicDescription(projectType, 3, 1)}${lowPriorityIdeas[0]?.details ? '. Details: ' + lowPriorityIdeas[0].details : ''}`,
+                userStories: this.getContextualStories(projectType, 3, 1),
+                deliverables: this.getContextualDeliverables(projectType, 3, 1),
+                priority: "Low",
+                complexity: "High", 
+                relatedIdeas: lowPriorityIdeas.map(i => i.content)
+              }
+            ],
+            risks: this.getContextualRisks(projectType, 3),
+            successCriteria: this.getContextualSuccessCriteria(projectType, 3)
+          }
+        ]
+      },
+      executionStrategy: {
+        methodology: methodology,
+        sprintLength: this.getSprintLength(projectType),
+        teamRecommendations: this.getTeamRecommendations(projectType),
+        keyMilestones: this.getContextualMilestones(projectType)
       }
     }
   }

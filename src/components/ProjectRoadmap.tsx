@@ -74,11 +74,14 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       const data = await AIService.generateRoadmap(
         currentProject.name,
         currentProject.description || '',
-        ideas
+        ideas,
+        currentProject.project_type,
+        currentProject.ai_analysis
       )
       
       setRoadmapData(data)
       console.log('✅ Roadmap generated successfully')
+      console.log('📊 Roadmap data structure:', JSON.stringify(data, null, 2))
     } catch (err) {
       console.error('Error generating roadmap:', err)
       setError('Failed to generate roadmap. Please try again.')
@@ -88,13 +91,18 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   }
 
   const togglePhaseExpansion = (phaseIndex: number) => {
+    console.log('🔄 Toggling phase expansion for index:', phaseIndex)
+    console.log('📋 Current expanded phases:', Array.from(expandedPhases))
     const newExpanded = new Set(expandedPhases)
     if (newExpanded.has(phaseIndex)) {
       newExpanded.delete(phaseIndex)
+      console.log('➖ Collapsing phase', phaseIndex)
     } else {
       newExpanded.add(phaseIndex)
+      console.log('➕ Expanding phase', phaseIndex)
     }
     setExpandedPhases(newExpanded)
+    console.log('📋 New expanded phases:', Array.from(newExpanded))
   }
 
   const getPriorityColor = (priority: string) => {
@@ -246,7 +254,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                       
                       <div className="flex-1">
                         <div 
-                          className="cursor-pointer"
+                          className="cursor-pointer hover:bg-slate-50 rounded-lg p-3 -m-3 transition-colors"
                           onClick={() => togglePhaseExpansion(phaseIndex)}
                         >
                           <div className="flex items-center justify-between mb-2">
@@ -262,7 +270,11 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                               />
                             </div>
                           </div>
-                          <p className="text-slate-600 mb-4">{phase.description}</p>
+                          <p className="text-slate-600 mb-2">{phase.description}</p>
+                          <p className="text-xs text-slate-400 flex items-center space-x-1">
+                            <span>Click to {expandedPhases.has(phaseIndex) ? 'collapse' : 'expand'} details</span>
+                            <ArrowRight className={`w-3 h-3 transition-transform ${expandedPhases.has(phaseIndex) ? 'rotate-90' : ''}`} />
+                          </p>
                         </div>
                         
                         {/* Expanded Phase Content */}

@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { Settings, Save, LogOut, UserCircle, Calendar, Shield } from 'lucide-react'
+import { User } from '../../types'
 
 interface UserSettingsProps {
-  currentUser: string
+  currentUser: User | null
   onLogout: () => void
-  onUserUpdate?: (newName: string) => void
+  onUserUpdate?: (updatedUser: Partial<User>) => void
 }
 
 const UserSettings: React.FC<UserSettingsProps> = ({ currentUser, onLogout, onUserUpdate }) => {
-  const [displayName, setDisplayName] = useState(currentUser)
-  const [email, setEmail] = useState('')
+  const [displayName, setDisplayName] = useState(currentUser?.full_name || currentUser?.email || '')
+  const [email, setEmail] = useState(currentUser?.email || '')
   const [isEditing, setIsEditing] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
@@ -25,7 +26,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser, onLogout, onUs
       
       // Call parent update function if provided
       if (onUserUpdate) {
-        onUserUpdate(displayName)
+        onUserUpdate({ full_name: displayName })
       }
       
       setIsEditing(false)
@@ -74,7 +75,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser, onLogout, onUs
               <div className="flex space-x-2">
                 <button
                   onClick={() => {
-                    setDisplayName(currentUser)
+                    setDisplayName(currentUser?.full_name || currentUser?.email || '')
                     setIsEditing(false)
                     setSaveStatus('idle')
                   }}

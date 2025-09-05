@@ -1,11 +1,11 @@
 import { useDroppable } from '@dnd-kit/core'
-import { IdeaCard } from '../types'
+import { IdeaCard, User } from '../types'
 import IdeaCardComponent from './IdeaCardComponent'
 
 interface DesignMatrixProps {
   ideas: IdeaCard[]
   activeId?: string | null
-  currentUser?: string
+  currentUser?: User | null
   onEditIdea: (idea: IdeaCard) => void
   onDeleteIdea: (ideaId: string) => void
   onToggleCollapse: (ideaId: string) => void

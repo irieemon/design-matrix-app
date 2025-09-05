@@ -30,7 +30,8 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
   }
 
   const contributorData = ideas.reduce((acc, idea) => {
-    acc[idea.created_by] = (acc[idea.created_by] || 0) + 1
+    const contributor = idea.created_by || 'Unknown'
+    acc[contributor] = (acc[contributor] || 0) + 1
     return acc
   }, {} as Record<string, number>)
 

@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { X, Sparkles, ArrowRight, MessageCircle, Lightbulb, Loader } from 'lucide-react'
 import { AIService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
-import { Project, IdeaCard } from '../types'
+import { Project, IdeaCard, User } from '../types'
 
 interface AIStarterModalProps {
-  currentUser: string
+  currentUser: User
   onClose: () => void
   onProjectCreated: (project: Project, ideas: IdeaCard[]) => void
 }
@@ -23,6 +23,8 @@ interface ProjectAnalysis {
     scope: string
     timeline: string
     primaryGoals: string[]
+    recommendedProjectType?: string
+    projectTypeReasoning?: string
   }
   generatedIdeas: Array<{
     content: string
@@ -38,6 +40,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
   const [step, setStep] = useState<'initial' | 'questions' | 'generating' | 'review'>('initial')
   const [projectName, setProjectName] = useState('')
   const [projectDescription, setProjectDescription] = useState('')
+  const [selectedProjectType, setSelectedProjectType] = useState<string>('auto')
   const [analysis, setAnalysis] = useState<ProjectAnalysis | null>(null)
   const [questionAnswers, setQuestionAnswers] = useState<Record<number, string>>({})
   const [isLoading, setIsLoading] = useState(false)
@@ -51,7 +54,12 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
 
     try {
       console.log('🎯 Starting AI project analysis...')
-      const result = await AIService.analyzeProjectAndGenerateIdeas(projectName, projectDescription)
+      const result = await AIService.analyzeProjectAndGenerateIdeas(
+        projectName, 
+        projectDescription,
+        undefined,  // additionalContext
+        selectedProjectType === 'auto' ? undefined : selectedProjectType
+      )
       setAnalysis(result)
 
       if (result.needsClarification) {
@@ -83,7 +91,8 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
       const result = await AIService.analyzeProjectAndGenerateIdeas(
         projectName,
         projectDescription,
-        additionalContext
+        additionalContext,
+        selectedProjectType === 'auto' ? undefined : selectedProjectType
       )
       
       setAnalysis(result)
@@ -103,15 +112,22 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
     setError(null)
 
     try {
+      // Determine final project type
+      const finalProjectType = selectedProjectType === 'auto' 
+        ? (analysis.projectAnalysis.recommendedProjectType || 'other')
+        : selectedProjectType
+
       // Create the project
-      console.log('🏗️ Creating project...')
+      console.log('🏗️ Creating project with type:', finalProjectType)
       const project = await DatabaseService.createProject({
         name: projectName,
         description: projectDescription,
-        project_type: 'other',
+        project_type: finalProjectType,
         status: 'active',
         priority_level: 'medium',
-        created_by: currentUser
+        visibility: 'private',
+        owner_id: currentUser.id,
+        ai_analysis: analysis.projectAnalysis
       })
 
       if (!project) {
@@ -129,10 +145,11 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
           x: Math.round(ideaData.x),
           y: Math.round(ideaData.y),
           priority: ideaData.priority,
-          created_by: currentUser,
+          created_by: currentUser.id,
           is_collapsed: false,
           editing_by: null,
-          editing_at: null
+          editing_at: null,
+          project_id: project.id
         })
 
         if (newIdea) {
@@ -187,6 +204,29 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
           placeholder="Describe your project goals, target audience, scope, timeline, or any other relevant details..."
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-2">
+          Project Type
+        </label>
+        <select
+          value={selectedProjectType}
+          onChange={(e) => setSelectedProjectType(e.target.value)}
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+        >
+          <option value="auto">🤖 Let AI recommend the best type</option>
+          <option value="software">💻 Software Development</option>
+          <option value="product_development">🛠️ Product Development</option>
+          <option value="business_plan">📊 Business Plan</option>
+          <option value="marketing">📢 Marketing Campaign</option>
+          <option value="operations">⚙️ Operations Improvement</option>
+          <option value="research">🔬 Research & Development</option>
+          <option value="other">❓ Other</option>
+        </select>
+        <p className="text-xs text-slate-500 mt-1">
+          This helps generate more relevant roadmaps and user stories
+        </p>
       </div>
 
       <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
@@ -301,6 +341,22 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
                 <span className="ml-2 font-medium">{analysis.projectAnalysis.timeline}</span>
               </div>
             </div>
+            
+            {/* Show project type recommendation if auto was selected */}
+            {selectedProjectType === 'auto' && analysis.projectAnalysis.recommendedProjectType && (
+              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center space-x-2 mb-2">
+                  <span className="text-blue-700 text-sm font-medium">🤖 AI Recommended Project Type:</span>
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                    {analysis.projectAnalysis.recommendedProjectType}
+                  </span>
+                </div>
+                {analysis.projectAnalysis.projectTypeReasoning && (
+                  <p className="text-blue-700 text-xs">{analysis.projectAnalysis.projectTypeReasoning}</p>
+                )}
+              </div>
+            )}
+            
             <div className="mt-3">
               <span className="text-slate-500 text-sm">Primary Goals:</span>
               <div className="flex flex-wrap gap-2 mt-1">

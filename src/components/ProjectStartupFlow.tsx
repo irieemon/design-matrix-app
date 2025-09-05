@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { X, ArrowRight, ArrowLeft, Calendar, Users, DollarSign, Tag, Sparkles, Lightbulb, CheckCircle } from 'lucide-react'
-import { Project, ProjectType, IdeaCard } from '../types'
+import { Project, ProjectType, IdeaCard, User } from '../types'
 import { DatabaseService } from '../lib/database'
 import { AIService } from '../lib/aiService'
 
 interface ProjectStartupFlowProps {
-  currentUser: string
+  currentUser: User
   onClose: () => void
   onProjectCreated: (project: Project, ideas?: IdeaCard[]) => void
 }
@@ -127,7 +127,8 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
         team_size: formData.team_size ? parseInt(formData.team_size) : undefined,
         priority_level: formData.priority_level,
         tags: formData.tags.length > 0 ? formData.tags : undefined,
-        created_by: currentUser,
+        visibility: 'private',
+        owner_id: currentUser.id,
         is_ai_generated: formData.enableAI,
         ai_analysis: aiAnalysis?.projectAnalysis || undefined
       }
@@ -152,7 +153,7 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
             x: Math.round(ideaData.x),
             y: Math.round(ideaData.y),
             priority: ideaData.priority,
-            created_by: currentUser,
+            created_by: currentUser.id,
             is_collapsed: false,
             editing_by: null,
             editing_at: null,

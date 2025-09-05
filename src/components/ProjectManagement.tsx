@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Plus, FolderOpen, Calendar, Users, DollarSign, Edit2, Trash2, Archive, MoreVertical, Search, Filter } from 'lucide-react'
-import { Project, IdeaCard, ProjectType } from '../types'
+import { Plus, FolderOpen, Calendar, Users, DollarSign, Edit2, Trash2, Archive, MoreVertical, Search, Filter, Sparkles } from 'lucide-react'
+import { Project, IdeaCard, ProjectType, User } from '../types'
 import { DatabaseService } from '../lib/database'
 import ProjectStartupFlow from './ProjectStartupFlow'
+import AIStarterModal from './AIStarterModal'
 
 interface ProjectManagementProps {
-  currentUser: string
+  currentUser: User
   currentProject: Project | null
   onProjectSelect: (project: Project) => void
   onProjectCreated: (project: Project, ideas?: IdeaCard[]) => void
@@ -45,6 +46,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
 }) => {
   const [projects, setProjects] = useState<Project[]>([])
   const [showStartupFlow, setShowStartupFlow] = useState(false)
+  const [showAIStarter, setShowAIStarter] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<Project['status'] | 'all'>('all')
@@ -77,6 +79,12 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
     setProjects(prev => [project, ...prev])
     onProjectCreated(project, ideas)
     setShowStartupFlow(false)
+  }
+
+  const handleAIProjectCreated = (project: Project, ideas: IdeaCard[]) => {
+    setProjects(prev => [project, ...prev])
+    onProjectCreated(project, ideas)
+    setShowAIStarter(false)
   }
 
   const handleProjectSelect = (project: Project) => {
@@ -165,13 +173,22 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Project Management</h1>
           <p className="text-slate-600">Manage all your priority matrix projects</p>
         </div>
-        <button
-          onClick={() => setShowStartupFlow(true)}
-          className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors shadow-sm"
-        >
-          <Plus className="w-5 h-5" />
-          <span className="font-medium">New Project</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowAIStarter(true)}
+            className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-colors shadow-sm"
+          >
+            <Sparkles className="w-5 h-5" />
+            <span className="font-medium">AI Starter</span>
+          </button>
+          <button
+            onClick={() => setShowStartupFlow(true)}
+            className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors shadow-sm"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="font-medium">New Project</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters and Search */}
@@ -233,13 +250,22 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
               : "Try adjusting your search or filters"}
           </p>
           {projects.length === 0 && (
-            <button
-              onClick={() => setShowStartupFlow(true)}
-              className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Create Project</span>
-            </button>
+            <div className="flex items-center justify-center space-x-3">
+              <button
+                onClick={() => setShowAIStarter(true)}
+                className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-colors"
+              >
+                <Sparkles className="w-5 h-5" />
+                <span>AI Starter</span>
+              </button>
+              <button
+                onClick={() => setShowStartupFlow(true)}
+                className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Manual Setup</span>
+              </button>
+            </div>
           )}
         </div>
       ) : (
@@ -413,7 +439,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
                     Updated {formatDate(project.updated_at)}
                   </span>
                   <span className="text-xs text-slate-500">
-                    by {project.created_by}
+                    by {project.owner?.full_name || project.owner?.email || 'Unknown'}
                   </span>
                 </div>
               </div>
@@ -428,6 +454,15 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
           currentUser={currentUser}
           onClose={() => setShowStartupFlow(false)}
           onProjectCreated={handleProjectCreated}
+        />
+      )}
+
+      {/* AI Starter Modal */}
+      {showAIStarter && (
+        <AIStarterModal
+          currentUser={currentUser}
+          onClose={() => setShowAIStarter(false)}
+          onProjectCreated={handleAIProjectCreated}
         />
       )}
     </div>

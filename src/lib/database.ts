@@ -2,13 +2,19 @@ import { supabase } from './supabase'
 import type { IdeaCard, Project } from '../types'
 
 export class DatabaseService {
-  // Fetch all ideas from Supabase
-  static async getAllIdeas(): Promise<IdeaCard[]> {
+  // Fetch ideas for a specific project (supports user-based access control via RLS)
+  static async getIdeasByProject(projectId?: string): Promise<IdeaCard[]> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('ideas')
         .select('*')
         .order('created_at', { ascending: false })
+
+      if (projectId) {
+        query = query.eq('project_id', projectId)
+      }
+
+      const { data, error } = await query
 
       if (error) {
         console.error('Error fetching ideas:', error)
@@ -22,14 +28,27 @@ export class DatabaseService {
     }
   }
 
+  // Legacy method for backward compatibility
+  static async getAllIdeas(): Promise<IdeaCard[]> {
+    return this.getIdeasByProject()
+  }
+
   // Create a new idea
   static async createIdea(idea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>): Promise<IdeaCard | null> {
     try {
       console.log('🗃️ DatabaseService: Creating idea:', idea)
       
+      // Generate ID for the idea (using shortened UUID for text field)
+      const ideaWithId = {
+        ...idea,
+        id: crypto.randomUUID().replace(/-/g, '').substring(0, 16),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
       const { data, error } = await supabase
         .from('ideas')
-        .insert([idea])
+        .insert([ideaWithId])
         .select()
         .single()
 
@@ -95,7 +114,7 @@ export class DatabaseService {
   }
 
   // Lock/unlock idea for editing
-  static async lockIdeaForEditing(ideaId: string, userName: string): Promise<boolean> {
+  static async lockIdeaForEditing(ideaId: string, userId: string): Promise<boolean> {
     try {
       // First check if it's already locked by someone else
       const { data: existingIdea, error: fetchError } = await supabase
@@ -110,7 +129,7 @@ export class DatabaseService {
       }
 
       // Check if it's locked by someone else (within the last 5 minutes)
-      if (existingIdea.editing_by && existingIdea.editing_by !== userName) {
+      if (existingIdea.editing_by && existingIdea.editing_by !== userId) {
         const editingAt = new Date(existingIdea.editing_at || '')
         const now = new Date()
         const timeDiff = now.getTime() - editingAt.getTime()
@@ -126,7 +145,7 @@ export class DatabaseService {
       const { error } = await supabase
         .from('ideas')
         .update({
-          editing_by: userName,
+          editing_by: userId,
           editing_at: new Date().toISOString()
         })
         .eq('id', ideaId)
@@ -143,7 +162,7 @@ export class DatabaseService {
     }
   }
 
-  static async unlockIdea(ideaId: string, userName: string): Promise<boolean> {
+  static async unlockIdea(ideaId: string, userId: string): Promise<boolean> {
     try {
       // Only unlock if the current user is the one who locked it
       const { error } = await supabase
@@ -153,7 +172,7 @@ export class DatabaseService {
           editing_at: null
         })
         .eq('id', ideaId)
-        .eq('editing_by', userName)
+        .eq('editing_by', userId)
 
       if (error) {
         console.error('Error unlocking idea:', error)
@@ -221,9 +240,13 @@ export class DatabaseService {
         }
       })
 
-    // Polling fallback - check every 2 seconds if real-time isn't working
+    // Polling fallback - temporarily disabled due to database connection issues
     const pollInterval = setInterval(async () => {
       if (!realTimeWorking) {
+        console.log('📊 Polling disabled - database connection issues detected')
+        // Skip polling until database issues are resolved
+        return
+        
         try {
           const { data, error } = await supabase
             .from('ideas')
@@ -320,13 +343,16 @@ export class DatabaseService {
 
   static async createProject(project: Omit<Project, 'id' | 'created_at' | 'updated_at'>): Promise<Project | null> {
     try {
+      const projectWithId = {
+        ...project,
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
       const { data, error } = await supabase
         .from('projects')
-        .insert([{
-          ...project,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
+        .insert([projectWithId])
         .select()
         .single()
 
