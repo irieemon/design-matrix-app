@@ -1,4 +1,4 @@
-import { Target, Home, User, Database, BarChart3, FolderOpen, LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Target, Home, User, Database, BarChart3, FolderOpen, LogOut, ChevronLeft, ChevronRight, Map } from 'lucide-react'
 import { useState } from 'react'
 
 interface SidebarProps {
@@ -28,6 +28,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, onPageChang
       id: 'projects',
       label: 'Projects',
       icon: FolderOpen
+    },
+    {
+      id: 'roadmap',
+      label: 'Roadmap',
+      icon: Map
     },
     {
       id: 'data',

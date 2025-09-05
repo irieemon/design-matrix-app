@@ -903,6 +903,230 @@ Respond with this JSON structure:
     console.log('📋 Mock AI: Selected idea set:', typeKey, 'with', (baseIdeas as any)[typeKey]?.length || 0, 'ideas')
     return (baseIdeas as any)[typeKey] || (baseIdeas as any)['General Business']
   }
+
+  static async generateRoadmap(projectName: string, projectDescription: string, ideas: any[]): Promise<any> {
+    const config = getAIConfig()
+    
+    if (config.provider === 'openai' && config.apiKey) {
+      // Real OpenAI implementation
+      try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${config.apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: config.model,
+            messages: [
+              {
+                role: 'system',
+                content: `You are a strategic product manager and roadmap expert. Create a comprehensive project roadmap that converts priority matrix ideas into actionable user stories and deliverables.
+                
+                CRITICAL REQUIREMENTS:
+                1. Analyze the provided ideas and group them into logical Epic-level user stories
+                2. Create a timeline with phases (Phase 1, Phase 2, etc.)
+                3. Each phase should have clear deliverables and success criteria
+                4. Consider dependencies between ideas and logical implementation order
+                5. Provide realistic time estimates based on complexity
+                6. Include risk assessment and mitigation strategies
+                
+                Return ONLY valid JSON with this exact structure:
+                {
+                  "roadmapAnalysis": {
+                    "totalDuration": "X months",
+                    "phases": [
+                      {
+                        "phase": "Phase 1: Foundation",
+                        "duration": "4-6 weeks",
+                        "description": "Core infrastructure and high-priority features",
+                        "epics": [
+                          {
+                            "title": "Epic Title",
+                            "description": "Epic description",
+                            "userStories": ["Story 1", "Story 2"],
+                            "deliverables": ["Deliverable 1", "Deliverable 2"],
+                            "priority": "High",
+                            "complexity": "Medium",
+                            "relatedIdeas": ["idea content 1", "idea content 2"]
+                          }
+                        ],
+                        "risks": ["Risk 1", "Risk 2"],
+                        "successCriteria": ["Criteria 1", "Criteria 2"]
+                      }
+                    ]
+                  },
+                  "executionStrategy": {
+                    "methodology": "Agile/Scrum",
+                    "sprintLength": "2 weeks",
+                    "teamRecommendations": "Team composition suggestions",
+                    "keyMilestones": [
+                      {
+                        "milestone": "MVP Release",
+                        "timeline": "Week 8",
+                        "description": "First working version"
+                      }
+                    ]
+                  }
+                }`
+              },
+              {
+                role: 'user',
+                content: `Project: ${projectName}
+                Description: ${projectDescription}
+                
+                Ideas to convert into roadmap:
+                ${ideas.map(idea => `- ${idea.content}: ${idea.details} (Priority: ${idea.priority})`).join('\n')}
+                
+                Generate a comprehensive project roadmap with user stories and deliverables.`
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 2000
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error(`OpenAI API error: ${response.status}`)
+        }
+
+        const data = await response.json()
+        const content = data.choices[0]?.message?.content
+
+        if (!content) {
+          throw new Error('No content received from OpenAI')
+        }
+
+        return JSON.parse(content)
+      } catch (error) {
+        console.error('OpenAI Roadmap Generation Error:', error)
+        // Fall back to mock
+        return this.generateMockRoadmap(projectName, projectDescription, ideas)
+      }
+    } else {
+      // Mock implementation
+      return this.generateMockRoadmap(projectName, projectDescription, ideas)
+    }
+  }
+
+  private static generateMockRoadmap(projectName: string, _projectDescription: string, ideas: any[]) {
+    console.log('🗺️ Mock AI: Generating roadmap for project:', projectName)
+    console.log('📋 Mock AI: Processing', ideas.length, 'ideas into user stories')
+    
+    // Group ideas by priority/complexity
+    const highPriorityIdeas = ideas.filter(i => i.priority === 'high' || i.priority === 'strategic')
+    const moderateIdeas = ideas.filter(i => i.priority === 'moderate')
+    const lowPriorityIdeas = ideas.filter(i => i.priority === 'low' || i.priority === 'innovation')
+    
+    return {
+      roadmapAnalysis: {
+        totalDuration: "3-4 months",
+        phases: [
+          {
+            phase: "Phase 1: Foundation & Quick Wins",
+            duration: "4-6 weeks",
+            description: "Establish core functionality and deliver immediate value",
+            epics: [
+              {
+                title: "Core Platform Setup",
+                description: "Establish the foundational systems and architecture",
+                userStories: [
+                  "As a user, I can access the platform securely",
+                  "As an admin, I can configure basic settings",
+                  "As a user, I can navigate the main interface"
+                ],
+                deliverables: ["Authentication system", "Basic UI framework", "Core navigation"],
+                priority: "High",
+                complexity: "High",
+                relatedIdeas: highPriorityIdeas.slice(0, 2).map(i => i.content)
+              },
+              {
+                title: "Essential Features",
+                description: "Implement the most critical user-facing features",
+                userStories: [
+                  "As a user, I can perform primary actions",
+                  "As a user, I can view essential information",
+                  "As a user, I can save my progress"
+                ],
+                deliverables: ["Primary feature set", "Data persistence", "User feedback system"],
+                priority: "High", 
+                complexity: "Medium",
+                relatedIdeas: highPriorityIdeas.slice(2).map(i => i.content)
+              }
+            ],
+            risks: ["Technical complexity", "Resource availability", "Integration challenges"],
+            successCriteria: ["Core functionality working", "User can complete primary workflow", "System stability achieved"]
+          },
+          {
+            phase: "Phase 2: Enhancement & Integration",
+            duration: "4-5 weeks", 
+            description: "Expand functionality and improve user experience",
+            epics: [
+              {
+                title: "Advanced Features",
+                description: "Add sophisticated capabilities and integrations",
+                userStories: [
+                  "As a user, I can access advanced tools",
+                  "As a user, I can integrate with external systems",
+                  "As a user, I can customize my experience"
+                ],
+                deliverables: ["Advanced feature set", "Third-party integrations", "Customization options"],
+                priority: "Medium",
+                complexity: "Medium",
+                relatedIdeas: moderateIdeas.map(i => i.content)
+              }
+            ],
+            risks: ["Integration complexity", "Performance issues", "User adoption"],
+            successCriteria: ["All moderate priority features implemented", "Performance benchmarks met", "User satisfaction targets achieved"]
+          },
+          {
+            phase: "Phase 3: Innovation & Scale",
+            duration: "3-4 weeks",
+            description: "Implement innovative features and prepare for scale",
+            epics: [
+              {
+                title: "Innovation Features",
+                description: "Cutting-edge capabilities and future-ready enhancements",
+                userStories: [
+                  "As a power user, I can leverage advanced analytics",
+                  "As an organization, I can scale the solution",
+                  "As a user, I can access innovative tools"
+                ],
+                deliverables: ["Innovation features", "Analytics dashboard", "Scalability improvements"],
+                priority: "Low",
+                complexity: "High", 
+                relatedIdeas: lowPriorityIdeas.map(i => i.content)
+              }
+            ],
+            risks: ["Technology adoption", "Market readiness", "Resource constraints"],
+            successCriteria: ["Innovation features delivered", "System can handle scale", "Future roadmap defined"]
+          }
+        ]
+      },
+      executionStrategy: {
+        methodology: "Agile/Scrum",
+        sprintLength: "2 weeks",
+        teamRecommendations: "Cross-functional team of 4-6 members: Product Manager, 2-3 Developers, Designer, QA Engineer",
+        keyMilestones: [
+          {
+            milestone: "MVP Release",
+            timeline: "Week 6",
+            description: "Minimum viable product with core functionality"
+          },
+          {
+            milestone: "Feature Complete",
+            timeline: "Week 10", 
+            description: "All planned features implemented and tested"
+          },
+          {
+            milestone: "Production Ready",
+            timeline: "Week 12",
+            description: "Full solution ready for production deployment"
+          }
+        ]
+      }
+    }
+  }
 }
 
 // Environment-based configuration

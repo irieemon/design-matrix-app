@@ -14,6 +14,7 @@ import DataManagement from './components/pages/DataManagement'
 import ReportsAnalytics from './components/pages/ReportsAnalytics'
 import UserSettings from './components/pages/UserSettings'
 import ProjectManagement from './components/ProjectManagement'
+import ProjectRoadmap from './components/ProjectRoadmap'
 import { DatabaseService } from './lib/database'
 
 function App() {
@@ -390,6 +391,16 @@ function App() {
                 setCurrentPage('matrix')
               }}
               onNavigateToMatrix={() => setCurrentPage('matrix')}
+            />
+          </div>
+        )
+      case 'roadmap':
+        return (
+          <div className="bg-slate-50 min-h-screen">
+            <ProjectRoadmap 
+              currentUser={currentUser || 'Anonymous'}
+              currentProject={currentProject}
+              ideas={ideas}
             />
           </div>
         )
