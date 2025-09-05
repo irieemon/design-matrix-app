@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { X, Sparkles, Wand2, Lightbulb, Target, RefreshCw } from 'lucide-react'
-import { IdeaCard } from '../types'
+import { IdeaCard, Project } from '../types'
 import { aiService } from '../lib/aiService'
 
 interface AIIdeaModalProps {
   onClose: () => void
   onAdd: (idea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>) => void
+  currentProject?: Project | null
 }
 
-const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd }) => {
+const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProject }) => {
   const [title, setTitle] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedIdea, setGeneratedIdea] = useState<{
@@ -23,9 +24,15 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd }) => {
     setIsGenerating(true)
     
     try {
-      // Use the AI service to generate ideas
-      console.log('🎯 AIIdeaModal: Calling AI service...')
-      const aiResponse = await aiService.generateIdea(title.trim())
+      // Use the AI service to generate ideas with project context
+      console.log('🎯 AIIdeaModal: Calling AI service with project context...')
+      const projectContext = currentProject ? {
+        name: currentProject.name,
+        description: currentProject.description || '',
+        type: currentProject.project_type
+      } : undefined
+      
+      const aiResponse = await aiService.generateIdea(title.trim(), projectContext)
       console.log('✅ AIIdeaModal: AI response received:', aiResponse)
       setGeneratedIdea(aiResponse)
     } catch (error) {

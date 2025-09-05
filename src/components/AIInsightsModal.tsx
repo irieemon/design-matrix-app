@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { X, Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Calendar, Users, Lightbulb, Download } from 'lucide-react'
-import { IdeaCard } from '../types'
+import { IdeaCard, Project } from '../types'
 import { AIService } from '../lib/aiService'
 import { exportInsightsToPDF } from '../utils/pdfExport'
 
 interface AIInsightsModalProps {
   ideas: IdeaCard[]
+  currentProject: Project | null
   onClose: () => void
 }
 
@@ -37,7 +38,7 @@ interface InsightsReport {
   nextSteps: string[]
 }
 
-const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, onClose }) => {
+const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject, onClose }) => {
   const [isLoading, setIsLoading] = useState(true)
   const [insights, setInsights] = useState<InsightsReport | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -64,7 +65,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, onClose }) => 
 
   const handleDownloadPDF = () => {
     if (insights) {
-      exportInsightsToPDF(insights, ideas.length)
+      exportInsightsToPDF(insights, ideas.length, currentProject)
     }
   }
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
-import { Target, Plus, Lightbulb, Sparkles } from 'lucide-react'
-import { IdeaCard } from './types'
+import { Target, Plus, Lightbulb, Sparkles, FolderOpen } from 'lucide-react'
+import { IdeaCard, Project } from './types'
 import DesignMatrix from './components/DesignMatrix'
 import IdeaCardComponent from './components/IdeaCardComponent'
 import AddIdeaModal from './components/AddIdeaModal'
@@ -9,9 +9,11 @@ import AIIdeaModal from './components/AIIdeaModal'
 import EditIdeaModal from './components/EditIdeaModal'
 import WelcomeScreen from './components/WelcomeScreen'
 import Sidebar from './components/Sidebar'
+import ProjectHeader from './components/ProjectHeader'
 import DataManagement from './components/pages/DataManagement'
 import ReportsAnalytics from './components/pages/ReportsAnalytics'
 import UserSettings from './components/pages/UserSettings'
+import ProjectManagement from './components/ProjectManagement'
 import { DatabaseService } from './lib/database'
 
 function App() {
@@ -23,6 +25,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState<string>('matrix')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [currentProject, setCurrentProject] = useState<Project | null>(null)
 
   // Configure drag sensors with distance threshold
   const sensors = useSensors(
@@ -39,10 +42,7 @@ function App() {
     const savedUser = localStorage.getItem('prioritasUser')
     if (savedUser) {
       setCurrentUser(savedUser)
-      loadIdeas()
-      
-      // Subscribe to real-time updates
-      const unsubscribe = DatabaseService.subscribeToIdeas(setIdeas)
+      // Don't load ideas until a project is selected - they'll be loaded by the currentProject effect
       
       // Clean up stale locks every 30 seconds
       const lockCleanupInterval = setInterval(() => {
@@ -50,21 +50,64 @@ function App() {
       }, 30000)
       
       return () => {
-        unsubscribe()
         clearInterval(lockCleanupInterval)
       }
     }
   }, [currentUser])
 
-  const loadIdeas = async () => {
-    const ideas = await DatabaseService.getAllIdeas()
-    setIdeas(ideas)
+  const loadIdeas = async (projectId?: string) => {
+    if (projectId) {
+      console.log('📂 Loading ideas for project:', projectId)
+      const ideas = await DatabaseService.getProjectIdeas(projectId)
+      console.log('📋 Raw ideas returned from database:', ideas)
+      setIdeas(ideas)
+      console.log('✅ Loaded', ideas.length, 'ideas for project', projectId)
+      console.log('📋 Ideas details:', ideas.map(i => ({ id: i.id, content: i.content, project_id: i.project_id })))
+    } else {
+      // If no project is selected, show no ideas
+      console.log('📂 No project selected, clearing ideas')
+      setIdeas([])
+    }
+  }
+
+  // Load ideas when current project changes
+  useEffect(() => {
+    console.log('🔄 Project changed effect triggered. Current project:', currentProject?.name, currentProject?.id)
+    if (currentProject) {
+      console.log('📂 Project selected, loading ideas for:', currentProject.name, currentProject.id)
+      loadIdeas(currentProject.id)
+    } else {
+      // Clear ideas when no project is selected
+      console.log('📂 No project selected, clearing ideas')
+      loadIdeas()
+    }
+  }, [currentProject])
+
+  // Set up project-specific real-time subscription
+  useEffect(() => {
+    if (!currentUser) return
+
+    console.log('🔄 Setting up project-specific subscription for:', currentProject?.id || 'all projects')
+    const unsubscribe = DatabaseService.subscribeToIdeas(setIdeas, currentProject?.id)
+    
+    return () => {
+      console.log('🔄 Cleaning up subscription')
+      unsubscribe()
+    }
+  }, [currentUser, currentProject?.id])
+
+  const handleProjectSelect = (project: Project) => {
+    console.log('🎯 App: handleProjectSelect called with:', project.name, project.id)
+    console.log('🎯 App: Previous currentProject:', currentProject?.name, currentProject?.id)
+    setCurrentProject(project)
+    console.log('🎯 App: setCurrentProject called with:', project.name, project.id)
   }
 
   const handleUserCreated = async (userName: string) => {
     setCurrentUser(userName)
     localStorage.setItem('prioritasUser', userName)
-    loadIdeas()
+    // Don't load ideas until a project is selected
+    setIdeas([])
   }
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -107,7 +150,8 @@ function App() {
     
     const ideaWithUser = {
       ...newIdea,
-      created_by: currentUser || 'Anonymous'
+      created_by: currentUser || 'Anonymous',
+      project_id: currentProject?.id
     }
     
     console.log('💾 App: Creating idea in database...', ideaWithUser)
@@ -194,23 +238,51 @@ function App() {
           <div className="bg-slate-50 min-h-screen">
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-6 py-8">
-              {/* Add Idea Buttons */}
-              <div className="flex justify-end gap-3 mb-6">
-                <button
-                  onClick={() => setShowAIModal(true)}
-                  className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-5 py-2.5 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-sm"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span className="font-medium">AI Idea</span>
-                </button>
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="flex items-center space-x-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 transition-all duration-200 shadow-sm"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="font-medium">Create New Idea</span>
-                </button>
-              </div>
+              {/* Project Header */}
+              <ProjectHeader 
+                currentUser={currentUser || 'Anonymous'}
+                currentProject={currentProject}
+                onProjectChange={handleProjectSelect}
+                onIdeasCreated={(newIdeas) => setIdeas(prev => [...prev, ...newIdeas])}
+              />
+              
+              {/* Conditional Content Based on Project Selection */}
+              {!currentProject ? (
+                <div className="text-center py-16">
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-12">
+                    <FolderOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-slate-900 mb-2">Select a Project</h3>
+                    <p className="text-slate-600 mb-6">
+                      Choose a project from the header above or create a new one to start working with your priority matrix.
+                    </p>
+                    <button
+                      onClick={() => setCurrentPage('projects')}
+                      className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors shadow-sm"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span>Create New Project</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Add Idea Buttons */}
+                  <div className="flex justify-end gap-3 mb-6">
+                    <button
+                      onClick={() => setShowAIModal(true)}
+                      className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-5 py-2.5 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-sm"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span className="font-medium">AI Idea</span>
+                    </button>
+                    <button
+                      onClick={() => setShowAddModal(true)}
+                      className="flex items-center space-x-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 transition-all duration-200 shadow-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span className="font-medium">Create New Idea</span>
+                    </button>
+                  </div>
               <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                 <DesignMatrix 
                   ideas={ideas}
@@ -270,6 +342,8 @@ function App() {
                   </div>
                 ))}
               </div>
+              </>
+              )}
             </main>
           </div>
         )
@@ -289,6 +363,26 @@ function App() {
             <ReportsAnalytics 
               ideas={ideas}
               currentUser={currentUser || 'Anonymous'}
+              currentProject={currentProject}
+            />
+          </div>
+        )
+      case 'projects':
+        return (
+          <div className="bg-slate-50 min-h-screen">
+            <ProjectManagement 
+              currentUser={currentUser || 'Anonymous'}
+              currentProject={currentProject}
+              onProjectSelect={handleProjectSelect}
+              onProjectCreated={(project, ideas) => {
+                console.log('🎯 App: Project created:', project.name, project.id)
+                setCurrentProject(project)
+                if (ideas) {
+                  setIdeas(prev => [...prev, ...ideas])
+                }
+                setCurrentPage('matrix')
+              }}
+              onNavigateToMatrix={() => setCurrentPage('matrix')}
             />
           </div>
         )
@@ -338,6 +432,7 @@ function App() {
         <AIIdeaModal 
           onClose={() => setShowAIModal(false)}
           onAdd={addIdea}
+          currentProject={currentProject}
         />
       )}
 

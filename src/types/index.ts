@@ -11,12 +11,48 @@ export interface IdeaCard {
   editing_by?: string | null  // user currently editing this card
   editing_at?: string | null  // when editing started
   is_collapsed?: boolean  // whether card shows minimal info
+  project_id?: string  // associated project ID
 }
 
 export interface User {
   id: string
   name: string
   created_at: string
+}
+
+export type ProjectType = 
+  | 'software'
+  | 'business_plan' 
+  | 'product_development'
+  | 'marketing'
+  | 'operations'
+  | 'research'
+  | 'other'
+
+export type ProjectStatus = 'active' | 'completed' | 'paused' | 'archived'
+
+export interface Project {
+  id: string
+  name: string
+  description?: string
+  project_type: ProjectType
+  status: ProjectStatus
+  start_date?: string
+  target_date?: string
+  budget?: number
+  team_size?: number
+  priority_level: 'low' | 'medium' | 'high' | 'critical'
+  tags?: string[]
+  created_by: string
+  created_at: string
+  updated_at: string
+  is_ai_generated?: boolean
+  ai_analysis?: {
+    industry: string
+    scope: string
+    timeline: string
+    primaryGoals: string[]
+  }
 }
 
 export interface Position {

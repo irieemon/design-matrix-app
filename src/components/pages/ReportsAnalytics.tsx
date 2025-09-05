@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Download, Sparkles } from 'lucide-react'
-import { IdeaCard } from '../../types'
+import { IdeaCard, Project } from '../../types'
 import { exportToCSV } from '../../utils/csvUtils'
 import AIInsightsModal from '../AIInsightsModal'
 
 interface ReportsAnalyticsProps {
   ideas: IdeaCard[]
   currentUser: string
+  currentProject: Project | null
 }
 
-const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser }) => {
+const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser, currentProject }) => {
   const [showAIInsights, setShowAIInsights] = useState(false)
   
   const handleExportReport = () => {
@@ -277,6 +278,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser 
       {showAIInsights && (
         <AIInsightsModal 
           ideas={ideas}
+          currentProject={currentProject}
           onClose={() => setShowAIInsights(false)}
         />
       )}

@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf'
+import { Project } from '../types'
 
 interface InsightsReport {
   executiveSummary: string
@@ -28,7 +29,7 @@ interface InsightsReport {
   nextSteps: string[]
 }
 
-export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number) => {
+export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number, project: Project | null = null) => {
   const doc = new jsPDF()
   let yPosition = 20
   const pageHeight = doc.internal.pageSize.height
@@ -56,8 +57,18 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number)
   // Header
   doc.setFontSize(20)
   doc.setFont('helvetica', 'bold')
-  doc.text('AI Strategic Insights Report', marginLeft, yPosition)
-  yPosition += 10
+  const reportTitle = project ? `${project.name} - Strategic Insights Report` : 'AI Strategic Insights Report'
+  doc.text(reportTitle, marginLeft, yPosition)
+  yPosition += 8
+
+  if (project && project.description) {
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'italic')
+    doc.setTextColor(64, 64, 64) // Gray color
+    const descHeight = addWrappedText(project.description, marginLeft, yPosition, contentWidth, 12)
+    yPosition += descHeight + 6
+    doc.setTextColor(0, 0, 0) // Reset to black
+  }
 
   doc.setFontSize(12)
   doc.setFont('helvetica', 'normal')
@@ -84,11 +95,11 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number)
   yPosition += 10
 
   insights.keyInsights.forEach((item, index) => {
-    checkPageBreak(20)
+    checkPageBreak(25)
     doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
-    doc.text(`${index + 1}. ${item.insight}`, marginLeft, yPosition)
-    yPosition += 6
+    const insightHeight = addWrappedText(`${index + 1}. ${item.insight}`, marginLeft, yPosition, contentWidth, 11)
+    yPosition += insightHeight + 4
     
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
@@ -294,6 +305,7 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number)
   }
 
   // Save the PDF
-  const fileName = `AI_Insights_Report_${new Date().toISOString().split('T')[0]}.pdf`
+  const projectPrefix = project ? `${project.name.replace(/[^a-zA-Z0-9]/g, '_')}_` : ''
+  const fileName = `${projectPrefix}AI_Insights_Report_${new Date().toISOString().split('T')[0]}.pdf`
   doc.save(fileName)
 }
