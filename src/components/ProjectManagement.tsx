@@ -49,7 +49,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<Project['status'] | 'all'>('all')
   const [typeFilter, setTypeFilter] = useState<ProjectType | 'all'>('all')
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [, setSelectedProject] = useState<Project | null>(null)
   const [showProjectMenu, setShowProjectMenu] = useState<string | null>(null)
 
   useEffect(() => {
@@ -257,7 +257,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
                 console.log('🖱️ Click event:', e.target)
                 handleProjectSelect(project)
               }}
-              onDoubleClick={(e) => {
+              onDoubleClick={() => {
                 console.log('🖱️🖱️ Project card double-clicked!', project.name, project.id)
                 handleProjectSelect(project)
               }}

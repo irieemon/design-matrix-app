@@ -108,6 +108,9 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
       const project = await DatabaseService.createProject({
         name: projectName,
         description: projectDescription,
+        project_type: 'other',
+        status: 'active',
+        priority_level: 'medium',
         created_by: currentUser
       })
 

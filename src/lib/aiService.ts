@@ -832,7 +832,7 @@ Respond with this JSON structure:
     }
   }
 
-  private static generateIdeasForProjectType(projectType: any, name: string, description: string) {
+  private static generateIdeasForProjectType(projectType: any, name: string, _description: string) {
     console.log('🎯 Mock AI: Generating ideas for project type:', projectType.industry)
     
     const baseIdeas = {
@@ -900,8 +900,8 @@ Respond with this JSON structure:
       typeKey = 'Product Development'
     }
     
-    console.log('📋 Mock AI: Selected idea set:', typeKey, 'with', baseIdeas[typeKey].length, 'ideas')
-    return baseIdeas[typeKey] || baseIdeas['General Business']
+    console.log('📋 Mock AI: Selected idea set:', typeKey, 'with', (baseIdeas as any)[typeKey]?.length || 0, 'ideas')
+    return (baseIdeas as any)[typeKey] || (baseIdeas as any)['General Business']
   }
 }
 

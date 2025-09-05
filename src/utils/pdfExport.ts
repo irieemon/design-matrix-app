@@ -218,7 +218,7 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number,
   doc.text('Implementation Roadmap', marginLeft, yPosition)
   yPosition += 15
 
-  insights.suggestedRoadmap.forEach((phase, index) => {
+  insights.suggestedRoadmap.forEach((phase) => {
     checkPageBreak(30)
     doc.setFontSize(12)
     doc.setFont('helvetica', 'bold')

@@ -96,11 +96,18 @@ function App() {
     }
   }, [currentUser, currentProject?.id])
 
-  const handleProjectSelect = (project: Project) => {
-    console.log('🎯 App: handleProjectSelect called with:', project.name, project.id)
-    console.log('🎯 App: Previous currentProject:', currentProject?.name, currentProject?.id)
-    setCurrentProject(project)
-    console.log('🎯 App: setCurrentProject called with:', project.name, project.id)
+  const handleProjectSelect = (project: Project | null) => {
+    if (project) {
+      console.log('🎯 App: handleProjectSelect called with:', project.name, project.id)
+      console.log('🎯 App: Previous currentProject:', currentProject?.name, currentProject?.id)
+      setCurrentProject(project)
+      console.log('🎯 App: setCurrentProject called with:', project.name, project.id)
+      loadIdeas(project.id)
+    } else {
+      console.log('🎯 App: handleProjectSelect called with null, clearing project')
+      setCurrentProject(null)
+      loadIdeas()
+    }
   }
 
   const handleUserCreated = async (userName: string) => {

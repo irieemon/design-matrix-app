@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Edit2, Check, X, Plus, Sparkles } from 'lucide-react'
 import { Project, IdeaCard } from '../types'
 import { DatabaseService } from '../lib/database'
@@ -26,6 +26,9 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
     const newProject = await DatabaseService.createProject({
       name: editName.trim(),
       description: editDescription.trim() || undefined,
+      project_type: 'other',
+      status: 'active',
+      priority_level: 'medium',
       created_by: currentUser
     })
 
