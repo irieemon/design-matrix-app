@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { X, Sparkles, ArrowRight, MessageCircle, Lightbulb, Loader } from 'lucide-react'
 import { AIService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
-import { Project, IdeaCard, User } from '../types'
+import { Project, IdeaCard, User, ProjectType } from '../types'
 
 interface AIStarterModalProps {
   currentUser: User
@@ -40,7 +40,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
   const [step, setStep] = useState<'initial' | 'questions' | 'generating' | 'review'>('initial')
   const [projectName, setProjectName] = useState('')
   const [projectDescription, setProjectDescription] = useState('')
-  const [selectedProjectType, setSelectedProjectType] = useState<string>('auto')
+  const [selectedProjectType, setSelectedProjectType] = useState<ProjectType | 'auto'>('auto')
   const [analysis, setAnalysis] = useState<ProjectAnalysis | null>(null)
   const [questionAnswers, setQuestionAnswers] = useState<Record<number, string>>({})
   const [isLoading, setIsLoading] = useState(false)
@@ -114,8 +114,8 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
     try {
       // Determine final project type
       const finalProjectType = selectedProjectType === 'auto' 
-        ? (analysis.projectAnalysis.recommendedProjectType || 'other')
-        : selectedProjectType
+        ? (analysis.projectAnalysis.recommendedProjectType || 'other') as ProjectType
+        : selectedProjectType as ProjectType
 
       // Create the project
       console.log('🏗️ Creating project with type:', finalProjectType)
@@ -212,7 +212,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         </label>
         <select
           value={selectedProjectType}
-          onChange={(e) => setSelectedProjectType(e.target.value)}
+          onChange={(e) => setSelectedProjectType(e.target.value as ProjectType | 'auto')}
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
         >
           <option value="auto">🤖 Let AI recommend the best type</option>

@@ -226,7 +226,7 @@ export class DatabaseService {
           
           // Refresh ideas based on project context
           const refreshPromise = projectId 
-            ? this.getProjectIdeas(projectId)
+            ? this.getProjectIdeas(projectId!)
             : this.getAllIdeas()
           
           refreshPromise.then(callback)
@@ -255,13 +255,13 @@ export class DatabaseService {
             .limit(1)
             .single()
           
-          if (!error && data && data.updated_at > lastUpdateTime) {
+          if (!error && data && data!.updated_at && data!.updated_at > lastUpdateTime) {
             console.log('Polling detected changes, refreshing ideas...')
-            lastUpdateTime = data.updated_at
+            lastUpdateTime = data!.updated_at!
             
             // Refresh ideas based on project context
             const refreshPromise = projectId 
-              ? this.getProjectIdeas(projectId)
+              ? this.getProjectIdeas(projectId!)
               : this.getAllIdeas()
             
             refreshPromise.then(callback)

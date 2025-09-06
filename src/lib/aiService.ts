@@ -1198,7 +1198,7 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
     }
   }
 
-  private static getPhaseDuration(projectType?: string, phase: number): string {
+  private static getPhaseDuration(phase: number, projectType?: string): string {
     const durations: Record<string, string[]> = {
       'software': ["4-6 weeks", "4-5 weeks", "3-4 weeks"],
       'product_development': ["8-12 weeks", "12-16 weeks", "8-10 weeks"], 
@@ -1215,7 +1215,7 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
     return phaseDurations[phase - 1] || "4-6 weeks"
   }
 
-  private static getPhaseDescription(projectType?: string, phase: number): string {
+  private static getPhaseDescription(phase: number, projectType?: string): string {
     const descriptions: Record<string, string[]> = {
       'software': [
         "Establish core functionality and deliver immediate value",
@@ -1264,7 +1264,7 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
     return phaseDescriptions[phase - 1] || "Phase implementation"
   }
 
-  private static getEpicTitle(projectType?: string, phase: number, epic: number): string {
+  private static getEpicTitle(phase: number, epic: number, projectType?: string): string {
     const titles: Record<string, Record<number, Record<number, string>>> = {
       'software': {
         1: { 1: "Core Platform Setup", 2: "Essential Features" },
@@ -1301,7 +1301,7 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
     return titles[projectType || 'default']?.[phase]?.[epic] || `Work Package ${phase}.${epic}`
   }
 
-  private static getEpicDescription(projectType?: string, phase: number, epic: number): string {
+  private static getEpicDescription(phase: number, epic: number, projectType?: string): string {
     const descriptions: Record<string, Record<number, Record<number, string>>> = {
       'product_development': {
         1: { 
@@ -1332,7 +1332,7 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
            `Execute specialized deliverables combining domain expertise with strategic business analysis for phase ${phase}, work package ${epic}`
   }
 
-  private static getContextualStories(projectType?: string, phase: number, epic: number): string[] {
+  private static getContextualStories(phase: number, epic: number, projectType?: string): string[] {
     switch (projectType) {
       case 'product_development':
         if (phase === 1 && epic === 1) {
@@ -1382,7 +1382,7 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
     ]
   }
 
-  private static getContextualDeliverables(projectType?: string, phase: number, epic: number): string[] {
+  private static getContextualDeliverables(phase: number, epic: number, projectType?: string): string[] {
     switch (projectType) {
       case 'product_development':
         if (phase === 1 && epic === 1) {
@@ -1449,7 +1449,7 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
     ]
   }
 
-  private static getContextualRisks(projectType?: string, phase: number): string[] {
+  private static getContextualRisks(phase: number, projectType?: string): string[] {
     switch (projectType) {
       case 'product_development':
         if (phase === 1) {
@@ -1496,7 +1496,7 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
     }
   }
 
-  private static getContextualSuccessCriteria(projectType?: string, phase: number): string[] {
+  private static getContextualSuccessCriteria(phase: number, projectType?: string): string[] {
     switch (projectType) {
       case 'product_development':
         if (phase === 1) {
@@ -1651,7 +1651,7 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
     }
   }
 
-  private static generateMockRoadmap(projectName: string, _projectDescription: string, ideas: any[], projectType?: string, aiAnalysis?: any) {
+  private static generateMockRoadmap(projectName: string, _projectDescription: string, ideas: any[], projectType?: string, _aiAnalysis?: any) {
     console.log('🗺️ Mock AI: Generating roadmap for project:', projectName)
     console.log('📋 Mock AI: Processing', ideas.length, 'ideas into user stories')
     console.log('💡 Mock AI: Available ideas:', ideas.map(i => `"${i.content}" (${i.priority})`).join(', '))
@@ -1662,8 +1662,8 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
     const lowPriorityIdeas = ideas.filter(i => i.priority === 'low' || i.priority === 'innovation')
     
     // Generate context-aware roadmap content
-    const epicTerm = this.getEpicTerminology(projectType)
-    const actionTerm = this.getProjectTerminology(projectType)
+    // const epicTerm = this.getEpicTerminology(projectType)
+    // const actionTerm = this.getProjectTerminology(projectType)
     const methodology = this.getProjectMethodology(projectType)
     
     return {
@@ -1672,66 +1672,66 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
         phases: [
           {
             phase: "Phase 1: Foundation & Quick Wins",
-            duration: this.getPhaseDuration(projectType, 1),
-            description: this.getPhaseDescription(projectType, 1),
+            duration: this.getPhaseDuration(1, projectType),
+            description: this.getPhaseDescription(1, projectType),
             epics: [
               {
-                title: highPriorityIdeas[0]?.content || this.getEpicTitle(projectType, 1, 1),
-                description: `Implementation of "${highPriorityIdeas[0]?.content || 'core functionality'}" - ${this.getEpicDescription(projectType, 1, 1)}${highPriorityIdeas[0]?.details ? '. Details: ' + highPriorityIdeas[0].details : ''}`,
-                userStories: this.getContextualStories(projectType, 1, 1),
-                deliverables: this.getContextualDeliverables(projectType, 1, 1),
+                title: highPriorityIdeas[0]?.content || this.getEpicTitle(1, 1, projectType),
+                description: `Implementation of "${highPriorityIdeas[0]?.content || 'core functionality'}" - ${this.getEpicDescription(1, 1, projectType)}${highPriorityIdeas[0]?.details ? '. Details: ' + highPriorityIdeas[0].details : ''}`,
+                userStories: this.getContextualStories(1, 1, projectType),
+                deliverables: this.getContextualDeliverables(1, 1, projectType),
                 priority: "High",
                 complexity: "High",
                 relatedIdeas: highPriorityIdeas.slice(0, 2).map(i => i.content)
               },
               {
-                title: highPriorityIdeas[1]?.content || this.getEpicTitle(projectType, 1, 2),
-                description: `Development of "${highPriorityIdeas[1]?.content || 'secondary features'}" - ${this.getEpicDescription(projectType, 1, 2)}${highPriorityIdeas[1]?.details ? '. Details: ' + highPriorityIdeas[1].details : ''}`,
-                userStories: this.getContextualStories(projectType, 1, 2),
-                deliverables: this.getContextualDeliverables(projectType, 1, 2),
+                title: highPriorityIdeas[1]?.content || this.getEpicTitle(1, 2, projectType),
+                description: `Development of "${highPriorityIdeas[1]?.content || 'secondary features'}" - ${this.getEpicDescription(1, 2, projectType)}${highPriorityIdeas[1]?.details ? '. Details: ' + highPriorityIdeas[1].details : ''}`,
+                userStories: this.getContextualStories(1, 2, projectType),
+                deliverables: this.getContextualDeliverables(1, 2, projectType),
                 priority: "High", 
                 complexity: "Medium",
                 relatedIdeas: highPriorityIdeas.slice(2).map(i => i.content)
               }
             ],
-            risks: this.getContextualRisks(projectType, 1),
-            successCriteria: this.getContextualSuccessCriteria(projectType, 1)
+            risks: this.getContextualRisks(1, projectType),
+            successCriteria: this.getContextualSuccessCriteria(1, projectType)
           },
           {
             phase: "Phase 2: Enhancement & Integration",
-            duration: this.getPhaseDuration(projectType, 2),
-            description: this.getPhaseDescription(projectType, 2),
+            duration: this.getPhaseDuration(2, projectType),
+            description: this.getPhaseDescription(2, projectType),
             epics: [
               {
-                title: moderateIdeas[0]?.content || this.getEpicTitle(projectType, 2, 1),
-                description: `Enhancement and optimization of "${moderateIdeas[0]?.content || 'core systems'}" - ${this.getEpicDescription(projectType, 2, 1)}${moderateIdeas[0]?.details ? '. Details: ' + moderateIdeas[0].details : ''}`,
-                userStories: this.getContextualStories(projectType, 2, 1),
-                deliverables: this.getContextualDeliverables(projectType, 2, 1),
+                title: moderateIdeas[0]?.content || this.getEpicTitle(2, 1, projectType),
+                description: `Enhancement and optimization of "${moderateIdeas[0]?.content || 'core systems'}" - ${this.getEpicDescription(2, 1, projectType)}${moderateIdeas[0]?.details ? '. Details: ' + moderateIdeas[0].details : ''}`,
+                userStories: this.getContextualStories(2, 1, projectType),
+                deliverables: this.getContextualDeliverables(2, 1, projectType),
                 priority: "Medium",
                 complexity: "Medium",
                 relatedIdeas: moderateIdeas.map(i => i.content)
               }
             ],
-            risks: this.getContextualRisks(projectType, 2),
-            successCriteria: this.getContextualSuccessCriteria(projectType, 2)
+            risks: this.getContextualRisks(2, projectType),
+            successCriteria: this.getContextualSuccessCriteria(2, projectType)
           },
           {
             phase: "Phase 3: Innovation & Scale",
-            duration: this.getPhaseDuration(projectType, 3),
-            description: this.getPhaseDescription(projectType, 3),
+            duration: this.getPhaseDuration(3, projectType),
+            description: this.getPhaseDescription(3, projectType),
             epics: [
               {
-                title: lowPriorityIdeas[0]?.content || this.getEpicTitle(projectType, 3, 1),
-                description: `Future innovation with "${lowPriorityIdeas[0]?.content || 'advanced capabilities'}" - ${this.getEpicDescription(projectType, 3, 1)}${lowPriorityIdeas[0]?.details ? '. Details: ' + lowPriorityIdeas[0].details : ''}`,
-                userStories: this.getContextualStories(projectType, 3, 1),
-                deliverables: this.getContextualDeliverables(projectType, 3, 1),
+                title: lowPriorityIdeas[0]?.content || this.getEpicTitle(3, 1, projectType),
+                description: `Future innovation with "${lowPriorityIdeas[0]?.content || 'advanced capabilities'}" - ${this.getEpicDescription(3, 1, projectType)}${lowPriorityIdeas[0]?.details ? '. Details: ' + lowPriorityIdeas[0].details : ''}`,
+                userStories: this.getContextualStories(3, 1, projectType),
+                deliverables: this.getContextualDeliverables(3, 1, projectType),
                 priority: "Low",
                 complexity: "High", 
                 relatedIdeas: lowPriorityIdeas.map(i => i.content)
               }
             ],
-            risks: this.getContextualRisks(projectType, 3),
-            successCriteria: this.getContextualSuccessCriteria(projectType, 3)
+            risks: this.getContextualRisks(3, projectType),
+            successCriteria: this.getContextualSuccessCriteria(3, projectType)
           }
         ]
       },
