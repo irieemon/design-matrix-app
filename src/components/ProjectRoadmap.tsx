@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown } from 'lucide-react'
-import { Project, IdeaCard, ProjectRoadmap } from '../types'
+import { Project, IdeaCard, ProjectRoadmap as ProjectRoadmapType } from '../types'
 import { AIService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 

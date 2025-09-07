@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Download, Sparkles } from 'lucide-react'
-import { IdeaCard, Project } from '../../types'
+import { useState, useEffect } from 'react'
+import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Download, Sparkles, History, Clock } from 'lucide-react'
+import { IdeaCard, Project, ProjectInsights as ProjectInsightsType } from '../../types'
 import { exportToCSV } from '../../utils/csvUtils'
+import { DatabaseService } from '../../lib/database'
 import AIInsightsModal from '../AIInsightsModal'
 
 interface ReportsAnalyticsProps {
@@ -12,9 +13,45 @@ interface ReportsAnalyticsProps {
 
 const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser, currentProject }) => {
   const [showAIInsights, setShowAIInsights] = useState(false)
+  const [insightsHistory, setInsightsHistory] = useState<ProjectInsightsType[]>([])
+  const [selectedInsightId, setSelectedInsightId] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   
+  // Load insights history when component mounts or project changes
+  useEffect(() => {
+    if (currentProject?.id) {
+      loadInsightsHistory()
+    }
+  }, [currentProject?.id])
+
+  const loadInsightsHistory = async () => {
+    if (!currentProject?.id) return
+    
+    setIsLoadingHistory(true)
+    try {
+      const history = await DatabaseService.getProjectInsights(currentProject.id)
+      setInsightsHistory(history)
+      console.log('📊 Loaded insights history:', history.length, 'versions')
+    } catch (error) {
+      console.error('Error loading insights history:', error)
+    } finally {
+      setIsLoadingHistory(false)
+    }
+  }
+
   const handleExportReport = () => {
     exportToCSV(ideas)
+  }
+
+  const handleInsightSaved = (insightId: string) => {
+    console.log('📊 Insight saved, reloading history...')
+    loadInsightsHistory()
+  }
+
+  const handleViewHistoricalInsight = (insightId: string) => {
+    setSelectedInsightId(insightId)
+    setShowAIInsights(true)
   }
 
   const priorityData = ideas.reduce((acc, idea) => {
@@ -247,6 +284,57 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
         </div>
       </div>
 
+      {/* Insights History Section */}
+      {insightsHistory.length > 0 && (
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-50 rounded-xl">
+                <History className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">AI Insights History</h3>
+                <p className="text-sm text-slate-600">{insightsHistory.length} saved insight{insightsHistory.length !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="text-slate-500 hover:text-slate-700 transition-colors"
+            >
+              {showHistory ? 'Hide' : 'Show'} History
+            </button>
+          </div>
+          
+          {showHistory && (
+            <div className="space-y-3">
+              {insightsHistory.map((insight) => (
+                <div key={insight.id} className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-slate-900">{insight.name}</h4>
+                      <div className="flex items-center space-x-4 mt-1 text-sm text-slate-500">
+                        <span className="flex items-center space-x-1">
+                          <Clock className="w-3 h-3" />
+                          <span>{new Date(insight.created_at).toLocaleDateString()}</span>
+                        </span>
+                        <span>{insight.ideas_analyzed} ideas analyzed</span>
+                        <span>Version {insight.version}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleViewHistoricalInsight(insight.id)}
+                      className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      View
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Export Actions */}
       <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
@@ -256,12 +344,15 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
           </div>
           <div className="flex space-x-3">
             <button 
-              onClick={() => setShowAIInsights(true)}
+              onClick={() => {
+                setSelectedInsightId(null) // Create new insight
+                setShowAIInsights(true)
+              }}
               disabled={ideas.length === 0}
               className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Sparkles className="w-4 h-4" />
-              <span className="font-medium">AI Insights</span>
+              <span className="font-medium">Generate AI Insights</span>
             </button>
             <button 
               onClick={handleExportReport}
@@ -280,7 +371,12 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
         <AIInsightsModal 
           ideas={ideas}
           currentProject={currentProject}
-          onClose={() => setShowAIInsights(false)}
+          selectedInsightId={selectedInsightId}
+          onClose={() => {
+            setShowAIInsights(false)
+            setSelectedInsightId(null)
+          }}
+          onInsightSaved={handleInsightSaved}
         />
       )}
     </div>

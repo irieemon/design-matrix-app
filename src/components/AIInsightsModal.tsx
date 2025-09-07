@@ -79,8 +79,12 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">AI Strategic Insights</h2>
-              <p className="text-sm text-gray-600">Analysis of {ideas.length} ideas in your priority matrix</p>
+              <h2 className="text-xl font-bold text-gray-900">
+                {isHistorical ? 'Historical AI Insights' : 'AI Strategic Insights'}
+              </h2>
+              <p className="text-sm text-gray-600">
+                {isHistorical ? 'Previously generated analysis' : `Analysis of ${ideas.length} ideas in your priority matrix`}
+              </p>
             </div>
           </div>
           <button
