@@ -53,11 +53,7 @@ function App() {
         await new Promise(resolve => setTimeout(resolve, 100))
         
         // Check if user is already authenticated by the auth state listener
-        if (authUser) {
-          console.log('✅ User already authenticated by auth state listener:', authUser.email)
-          if (mounted) setIsLoading(false)
-          return
-        }
+        // (No check needed here since authUser is set by the auth state listener)
         
         // Get current session with timeout and graceful fallback
         const sessionPromise = supabase.auth.getSession()
@@ -73,11 +69,7 @@ function App() {
         }
 
         // Double-check if user was authenticated while we were waiting
-        if (authUser) {
-          console.log('✅ User authenticated during session check:', authUser.email)
-          if (mounted) setIsLoading(false)
-          return
-        }
+        // (Let auth state listener handle this)
 
         if (session?.user && mounted) {
           console.log('✅ User already signed in:', session.user.email)
@@ -100,7 +92,7 @@ function App() {
             console.log('❌ No legacy user found - waiting for auth state')
             // Give auth state listener a chance to work before showing login
             setTimeout(() => {
-              if (mounted && !authUser) {
+              if (mounted) {
                 console.log('🔓 Final check: showing login screen')
                 setIsLoading(false)
               }
@@ -109,7 +101,7 @@ function App() {
         }
       } catch (error) {
         console.error('💥 Error initializing auth:', error)
-        if (mounted && !authUser) setIsLoading(false)
+        if (mounted) setIsLoading(false)
       }
     }
 
