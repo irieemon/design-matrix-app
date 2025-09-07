@@ -1198,7 +1198,8 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
           throw new Error('No content received from OpenAI')
         }
 
-        return JSON.parse(content)
+        // Parse JSON from response (handle code blocks)
+        return this.parseAIResponse(content)
       } catch (error) {
         console.error('❌ OpenAI Roadmap Generation Error:', error)
         console.log('🎭 Falling back to mock roadmap generation')
