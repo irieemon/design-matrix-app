@@ -26,19 +26,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentProj
       id: 'matrix',
       label: 'Design Matrix',
       icon: Home,
-      description: 'Priority matrix & idea management'
+      description: 'Priority matrix & ideas'
     },
     {
       id: 'roadmap',
       label: 'Roadmap',
       icon: Map,
       description: 'Strategic roadmap & epics'
-    },
-    {
-      id: 'data',
-      label: 'Data Management',
-      icon: Database,
-      description: 'Export & import data'
     },
     {
       id: 'reports',
@@ -51,6 +45,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentProj
       label: 'Team Collaboration',
       icon: Users,
       description: 'Manage team members & permissions'
+    },
+    {
+      id: 'data',
+      label: 'Data Management',
+      icon: Database,
+      description: 'Export & import data'
     }
   ]
 
@@ -83,7 +83,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentProj
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">Prioritas</h2>
-                <p className="text-xs text-slate-400">Project Management Suite</p>
               </div>
             </div>
             <button

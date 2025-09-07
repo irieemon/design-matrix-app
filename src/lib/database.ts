@@ -778,4 +778,170 @@ export class DatabaseService {
       supabase.removeChannel(channel)
     }
   }
+
+  // Roadmap Management
+  static async saveProjectRoadmap(projectId: string, roadmapData: any, createdBy: string, ideasAnalyzed: number): Promise<string | null> {
+    try {
+      console.log('🗺️ DatabaseService: Saving roadmap for project:', projectId)
+
+      // Get the next version number
+      const { data: existingRoadmaps } = await supabase
+        .from('project_roadmaps')
+        .select('version')
+        .eq('project_id', projectId)
+        .order('version', { ascending: false })
+        .limit(1)
+
+      const nextVersion = existingRoadmaps && existingRoadmaps.length > 0 ? existingRoadmaps[0].version + 1 : 1
+      
+      const roadmapName = `Roadmap v${nextVersion} - ${new Date().toLocaleDateString()}`
+
+      const { data, error } = await supabase
+        .from('project_roadmaps')
+        .insert([{
+          project_id: projectId,
+          version: nextVersion,
+          name: roadmapName,
+          roadmap_data: roadmapData,
+          created_by: createdBy,
+          ideas_analyzed: ideasAnalyzed
+        }])
+        .select('id')
+        .single()
+
+      if (error) {
+        console.error('❌ DatabaseService: Error saving roadmap:', error)
+        return null
+      }
+
+      console.log('✅ DatabaseService: Roadmap saved successfully:', data.id)
+      return data.id
+    } catch (error) {
+      console.error('💥 DatabaseService: Error in saveProjectRoadmap:', error)
+      return null
+    }
+  }
+
+  static async getProjectRoadmaps(projectId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('project_roadmaps')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('version', { ascending: false })
+
+      if (error) {
+        console.error('❌ DatabaseService: Error fetching roadmaps:', error)
+        return []
+      }
+
+      return data || []
+    } catch (error) {
+      console.error('💥 DatabaseService: Error in getProjectRoadmaps:', error)
+      return []
+    }
+  }
+
+  static async getProjectRoadmap(roadmapId: string): Promise<any | null> {
+    try {
+      const { data, error } = await supabase
+        .from('project_roadmaps')
+        .select('*')
+        .eq('id', roadmapId)
+        .single()
+
+      if (error) {
+        console.error('❌ DatabaseService: Error fetching roadmap:', error)
+        return null
+      }
+
+      return data
+    } catch (error) {
+      console.error('💥 DatabaseService: Error in getProjectRoadmap:', error)
+      return null
+    }
+  }
+
+  // Insights Management
+  static async saveProjectInsights(projectId: string, insightsData: any, createdBy: string, ideasAnalyzed: number): Promise<string | null> {
+    try {
+      console.log('📊 DatabaseService: Saving insights for project:', projectId)
+
+      // Get the next version number
+      const { data: existingInsights } = await supabase
+        .from('project_insights')
+        .select('version')
+        .eq('project_id', projectId)
+        .order('version', { ascending: false })
+        .limit(1)
+
+      const nextVersion = existingInsights && existingInsights.length > 0 ? existingInsights[0].version + 1 : 1
+      
+      const insightsName = `Insights v${nextVersion} - ${new Date().toLocaleDateString()}`
+
+      const { data, error } = await supabase
+        .from('project_insights')
+        .insert([{
+          project_id: projectId,
+          version: nextVersion,
+          name: insightsName,
+          insights_data: insightsData,
+          created_by: createdBy,
+          ideas_analyzed: ideasAnalyzed
+        }])
+        .select('id')
+        .single()
+
+      if (error) {
+        console.error('❌ DatabaseService: Error saving insights:', error)
+        return null
+      }
+
+      console.log('✅ DatabaseService: Insights saved successfully:', data.id)
+      return data.id
+    } catch (error) {
+      console.error('💥 DatabaseService: Error in saveProjectInsights:', error)
+      return null
+    }
+  }
+
+  static async getProjectInsights(projectId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('project_insights')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('version', { ascending: false })
+
+      if (error) {
+        console.error('❌ DatabaseService: Error fetching insights:', error)
+        return []
+      }
+
+      return data || []
+    } catch (error) {
+      console.error('💥 DatabaseService: Error in getProjectInsights:', error)
+      return []
+    }
+  }
+
+  static async getProjectInsight(insightId: string): Promise<any | null> {
+    try {
+      const { data, error } = await supabase
+        .from('project_insights')
+        .select('*')
+        .eq('id', insightId)
+        .single()
+
+      if (error) {
+        console.error('❌ DatabaseService: Error fetching insight:', error)
+        return null
+      }
+
+      return data
+    } catch (error) {
+      console.error('💥 DatabaseService: Error in getProjectInsight:', error)
+      return null
+    }
+  }
 }

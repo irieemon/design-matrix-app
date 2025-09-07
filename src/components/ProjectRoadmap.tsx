@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader } from 'lucide-react'
-import { Project, IdeaCard } from '../types'
+import { useState, useEffect } from 'react'
+import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown } from 'lucide-react'
+import { Project, IdeaCard, ProjectRoadmap } from '../types'
 import { AIService } from '../lib/aiService'
+import { DatabaseService } from '../lib/database'
 
 interface ProjectRoadmapProps {
   currentUser: string
@@ -52,6 +53,45 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedPhases, setExpandedPhases] = useState<Set<number>>(new Set())
+  const [roadmapHistory, setRoadmapHistory] = useState<ProjectRoadmap[]>([])
+  const [selectedRoadmapId, setSelectedRoadmapId] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
+
+  // Load existing roadmaps when component mounts or project changes
+  useEffect(() => {
+    if (currentProject?.id) {
+      loadRoadmapHistory()
+    }
+  }, [currentProject?.id])
+
+  const loadRoadmapHistory = async () => {
+    if (!currentProject?.id) return
+    
+    try {
+      const history = await DatabaseService.getProjectRoadmaps(currentProject.id)
+      setRoadmapHistory(history)
+      
+      // Load the most recent roadmap if available
+      if (history.length > 0 && !selectedRoadmapId) {
+        setSelectedRoadmapId(history[0].id)
+        setRoadmapData(history[0].roadmap_data)
+      }
+    } catch (error) {
+      console.error('Error loading roadmap history:', error)
+    }
+  }
+
+  const loadRoadmapVersion = async (roadmapId: string) => {
+    try {
+      const roadmap = await DatabaseService.getProjectRoadmap(roadmapId)
+      if (roadmap) {
+        setRoadmapData(roadmap.roadmap_data)
+        setSelectedRoadmapId(roadmapId)
+      }
+    } catch (error) {
+      console.error('Error loading roadmap version:', error)
+    }
+  }
 
   const generateRoadmap = async () => {
     if (!currentProject) {
@@ -81,7 +121,23 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       
       setRoadmapData(data)
       console.log('✅ Roadmap generated successfully')
-      console.log('📊 Roadmap data structure:', JSON.stringify(data, null, 2))
+      
+      // Save the roadmap to database
+      const savedRoadmapId = await DatabaseService.saveProjectRoadmap(
+        currentProject.id,
+        data,
+        currentUser, // Assuming currentUser is the user ID
+        ideas.length
+      )
+      
+      if (savedRoadmapId) {
+        console.log('✅ Roadmap saved to database')
+        setSelectedRoadmapId(savedRoadmapId)
+        // Reload history to show the new roadmap
+        await loadRoadmapHistory()
+      } else {
+        console.error('❌ Failed to save roadmap to database')
+      }
     } catch (err) {
       console.error('Error generating roadmap:', err)
       setError('Failed to generate roadmap. Please try again.')

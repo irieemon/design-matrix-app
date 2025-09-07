@@ -165,6 +165,67 @@ export interface DragData {
 
 export type QuadrantType = 'quick-wins' | 'strategic' | 'avoid' | 'reconsider'
 
+// Roadmap and Analytics types
+export interface Epic {
+  title: string
+  description: string
+  userStories: string[]
+  deliverables: string[]
+  priority: string
+  complexity: string
+  relatedIdeas: string[]
+}
+
+export interface Phase {
+  phase: string
+  duration: string
+  description: string
+  epics: Epic[]
+  risks: string[]
+  successCriteria: string[]
+}
+
+export interface Milestone {
+  milestone: string
+  timeline: string
+  description: string
+}
+
+export interface RoadmapData {
+  roadmapAnalysis: {
+    totalDuration: string
+    phases: Phase[]
+  }
+  executionStrategy: {
+    methodology: string
+    sprintLength: string
+    teamRecommendations: string
+    keyMilestones: Milestone[]
+  }
+}
+
+export interface ProjectRoadmap {
+  id: string
+  project_id: string
+  version: number
+  name: string
+  roadmap_data: RoadmapData
+  created_by: string
+  created_at: string
+  ideas_analyzed: number
+}
+
+export interface ProjectInsights {
+  id: string
+  project_id: string
+  version: number
+  name: string
+  insights_data: any // Will store the analytics/insights JSON
+  created_by: string
+  created_at: string
+  ideas_analyzed: number
+}
+
 export interface Quadrant {
   id: QuadrantType
   title: string
