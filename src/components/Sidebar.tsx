@@ -35,12 +35,6 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentProj
       description: 'Strategic roadmap & epics'
     },
     {
-      id: 'collaboration',
-      label: 'Team Collaboration',
-      icon: Users,
-      description: 'Manage team members & permissions'
-    },
-    {
       id: 'data',
       label: 'Data Management',
       icon: Database,
@@ -51,6 +45,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentProj
       label: 'Reports & Analytics', 
       icon: BarChart3,
       description: 'Insights & analysis'
+    },
+    {
+      id: 'collaboration',
+      label: 'Team Collaboration',
+      icon: Users,
+      description: 'Manage team members & permissions'
     }
   ]
 

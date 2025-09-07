@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { X, Sparkles, Wand2, Lightbulb, Target, RefreshCw } from 'lucide-react'
-import { IdeaCard, Project } from '../types'
+import { IdeaCard, Project, User } from '../types'
 import { aiService } from '../lib/aiService'
 
 interface AIIdeaModalProps {
   onClose: () => void
   onAdd: (idea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>) => void
   currentProject?: Project | null
+  currentUser?: User | null
 }
 
-const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProject }) => {
+const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProject, currentUser }) => {
   const [title, setTitle] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedIdea, setGeneratedIdea] = useState<{
@@ -69,8 +70,8 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
       x: Math.round(260 + Math.random() * 100 - 50), // Random position near center (rounded to integer)
       y: Math.round(260 + Math.random() * 100 - 50), // Random position near center (rounded to integer)
       priority: generatedIdea.priority,
-      created_by: 'Anonymous', // Will be overridden by App component
-      is_collapsed: false, // Default to expanded view
+      created_by: currentUser?.id || 'Anonymous',
+      is_collapsed: true, // Default to minimized view
       editing_by: null, // Not being edited initially
       editing_at: null // Not being edited initially
     }

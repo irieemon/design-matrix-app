@@ -23,11 +23,11 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
   // Lock the idea when modal opens
   useEffect(() => {
     const lockIdea = async () => {
-      const locked = await DatabaseService.lockIdeaForEditing(idea.id, currentUser)
+      const locked = await DatabaseService.lockIdeaForEditing(idea.id, currentUser?.id || '')
       setIsLocked(locked)
       if (!locked) {
         // Show a message that someone else is editing
-        alert(`This idea is currently being edited by ${idea.editing_by}. Please try again later.`)
+        alert(`This idea is currently being edited by ${idea.editing_by || 'another user'}. Please try again later.`)
         onClose()
       }
     }
@@ -37,7 +37,7 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
     // Cleanup: unlock when modal closes
     return () => {
       if (isLocked) {
-        DatabaseService.unlockIdea(idea.id, currentUser)
+        DatabaseService.unlockIdea(idea.id, currentUser?.id || '')
       }
     }
   }, [idea.id, currentUser, onClose, isLocked])
@@ -47,7 +47,7 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
     if (!content.trim()) return
 
     // Unlock before updating
-    await DatabaseService.unlockIdea(idea.id, currentUser)
+    await DatabaseService.unlockIdea(idea.id, currentUser?.id || '')
     
     onUpdate({
       ...idea,

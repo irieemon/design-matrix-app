@@ -154,7 +154,7 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
             y: Math.round(ideaData.y),
             priority: ideaData.priority,
             created_by: currentUser.id,
-            is_collapsed: false,
+            is_collapsed: true,
             editing_by: null,
             editing_at: null,
             project_id: project.id

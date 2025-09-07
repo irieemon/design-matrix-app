@@ -291,7 +291,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
               <div className="p-6">
                 {/* Project Header */}
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 min-w-0 flex-1">
                     <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-xl">
                       {PROJECT_TYPE_ICONS[project.project_type]}
                     </div>

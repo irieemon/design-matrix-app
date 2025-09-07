@@ -622,6 +622,7 @@ function App() {
         <AddIdeaModal 
           onClose={() => setShowAddModal(false)}
           onAdd={addIdea}
+          currentUser={currentUser}
         />
       )}
 
@@ -630,13 +631,14 @@ function App() {
           onClose={() => setShowAIModal(false)}
           onAdd={addIdea}
           currentProject={currentProject}
+          currentUser={currentUser}
         />
       )}
 
       {editingIdea && (
         <EditIdeaModal 
           idea={editingIdea}
-          currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
+          currentUser={currentUser}
           onClose={() => setEditingIdea(null)}
           onUpdate={updateIdea}
           onDelete={deleteIdea}

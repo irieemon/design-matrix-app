@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { X, Plus } from 'lucide-react'
-import { IdeaCard } from '../types'
+import { IdeaCard, User } from '../types'
 
 interface AddIdeaModalProps {
   onClose: () => void
   onAdd: (idea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>) => void
+  currentUser?: User | null
 }
 
-const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ onClose, onAdd }) => {
+const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ onClose, onAdd, currentUser }) => {
   const [content, setContent] = useState('')
   const [details, setDetails] = useState('')
   const [x, setX] = useState(260) // Center of 520px usable area
@@ -24,8 +25,8 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ onClose, onAdd }) => {
       x,
       y,
       priority,
-      created_by: 'Anonymous', // Will be overridden by parent component
-      is_collapsed: false, // Default to expanded view
+      created_by: currentUser?.id || 'Anonymous',
+      is_collapsed: true, // Default to minimized view
       editing_by: null, // Not being edited initially
       editing_at: null // Not being edited initially
     })
