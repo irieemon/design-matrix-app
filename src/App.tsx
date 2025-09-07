@@ -554,7 +554,7 @@ function App() {
           </div>
         )
       case 'collaboration':
-        if (!currentProject) {
+        if (!currentProject || !currentUser) {
           setCurrentPage('projects')
           return null
         }

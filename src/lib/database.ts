@@ -479,7 +479,7 @@ export class DatabaseService {
       
       // First, let's try to find if the user exists by checking if they have any projects
       // This is a workaround since we can't directly query auth.users
-      const { data: existingUsers, error: userLookupError } = await supabase
+      const { error: userLookupError } = await supabase
         .from('projects')
         .select('owner_id')
         .limit(1000) // Get a reasonable sample
