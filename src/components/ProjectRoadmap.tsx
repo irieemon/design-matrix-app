@@ -53,7 +53,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedPhases, setExpandedPhases] = useState<Set<number>>(new Set())
-  const [roadmapHistory, setRoadmapHistory] = useState<ProjectRoadmap[]>([])
+  const [roadmapHistory, setRoadmapHistory] = useState<ProjectRoadmapType[]>([])
   const [selectedRoadmapId, setSelectedRoadmapId] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
 
@@ -236,6 +236,67 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           </button>
         </div>
       </div>
+
+      {/* Roadmap History Section */}
+      {roadmapHistory.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-50 rounded-xl">
+                <History className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Roadmap History</h3>
+                <p className="text-sm text-slate-600">{roadmapHistory.length} saved roadmap{roadmapHistory.length !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="flex items-center space-x-2 text-slate-500 hover:text-slate-700 transition-colors"
+            >
+              <span className="text-sm">{showHistory ? 'Hide' : 'Show'} History</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+          
+          {showHistory && (
+            <div className="space-y-3">
+              {roadmapHistory.map((roadmap) => (
+                <div 
+                  key={roadmap.id} 
+                  className={`bg-slate-50 rounded-xl p-4 border transition-colors cursor-pointer hover:bg-slate-100 ${
+                    selectedRoadmapId === roadmap.id ? 'border-purple-200 bg-purple-50' : 'border-slate-200'
+                  }`}
+                  onClick={() => {
+                    setSelectedRoadmapId(roadmap.id)
+                    setRoadmapData(roadmap.roadmap_data)
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-slate-900">{roadmap.name}</h4>
+                      <div className="flex items-center space-x-4 mt-1 text-sm text-slate-500">
+                        <span className="flex items-center space-x-1">
+                          <Clock className="w-3 h-3" />
+                          <span>{new Date(roadmap.created_at).toLocaleDateString()}</span>
+                        </span>
+                        <span>{roadmap.ideas_analyzed} ideas analyzed</span>
+                        <span>Version {roadmap.version}</span>
+                      </div>
+                    </div>
+                    {selectedRoadmapId === roadmap.id && (
+                      <div className="flex items-center space-x-1 text-purple-600 bg-purple-100 px-2 py-1 rounded text-sm">
+                        <CheckCircle className="w-3 h-3" />
+                        <span>Active</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Error State */}
       {error && (
