@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { X, Edit3, Trash2 } from 'lucide-react'
-import { IdeaCard } from '../types'
+import { IdeaCard, User } from '../types'
 import { DatabaseService } from '../lib/database'
 
 interface EditIdeaModalProps {
   idea: IdeaCard
-  currentUser: string
+  currentUser: User | null
   onClose: () => void
   onUpdate: (idea: IdeaCard) => void
   onDelete: (ideaId: string) => void
