@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Calendar, Users, Lightbulb, Download } from 'lucide-react'
+import { X, Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Calendar, Users, Lightbulb, Download, Save } from 'lucide-react'
 import { IdeaCard, Project } from '../types'
 import { AIService } from '../lib/aiService'
 import { exportInsightsToPDF } from '../utils/pdfExport'
