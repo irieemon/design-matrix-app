@@ -235,7 +235,13 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
           )}
           {currentProject && (
             <div className="text-xs text-slate-500 mt-2">
-              Created by {currentProject.owner?.full_name || currentProject.owner?.email || 'Unknown'} • {new Date(currentProject.created_at).toLocaleDateString()}
+              Created by {
+                currentProject.owner?.full_name || 
+                currentProject.owner?.email || 
+                (currentProject.owner_id === currentUser?.id 
+                  ? (currentUser?.full_name || currentUser?.email || 'You')
+                  : 'Unknown')
+              } • {new Date(currentProject.created_at).toLocaleDateString()}
             </div>
           )}
         </div>

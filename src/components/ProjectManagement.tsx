@@ -439,7 +439,13 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
                     Updated {formatDate(project.updated_at)}
                   </span>
                   <span className="text-xs text-slate-500">
-                    by {project.owner?.full_name || project.owner?.email || 'Unknown'}
+                    by {
+                      project.owner?.full_name || 
+                      project.owner?.email || 
+                      (project.owner_id === currentUser?.id 
+                        ? (currentUser?.full_name || currentUser?.email || 'You')
+                        : 'Unknown')
+                    }
                   </span>
                 </div>
               </div>

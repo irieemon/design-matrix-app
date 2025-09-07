@@ -41,6 +41,17 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = ({ idea, isDragging, currentU
 
   const isLockedByOther = idea.editing_by && idea.editing_by !== currentUser?.id
   const isLockedBySelf = idea.editing_by === currentUser?.id
+  
+  // Debug logging for locking
+  if (idea.editing_by) {
+    console.log('🔒 Idea locking debug:', {
+      ideaId: idea.id,
+      editing_by: idea.editing_by,
+      currentUserId: currentUser?.id,
+      isLockedByOther,
+      isLockedBySelf
+    })
+  }
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault()

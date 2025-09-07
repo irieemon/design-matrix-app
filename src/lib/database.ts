@@ -222,7 +222,7 @@ export class DatabaseService {
           table: 'ideas'
         },
         (payload) => {
-          console.log('Real-time change detected:', payload)
+          console.log('🔴 Real-time change detected:', payload.eventType, payload.new, payload.old)
           realTimeWorking = true
           
           // Refresh ideas based on project context
@@ -241,12 +241,10 @@ export class DatabaseService {
         }
       })
 
-    // Polling fallback - temporarily disabled due to database connection issues
+    // Polling fallback for when real-time doesn't work
     const pollInterval = setInterval(async () => {
       if (!realTimeWorking) {
-        console.log('📊 Polling disabled - database connection issues detected')
-        // Skip polling until database issues are resolved
-        return
+        console.log('📊 Real-time not working, using polling fallback...')
         
         try {
           const { data, error } = await supabase
