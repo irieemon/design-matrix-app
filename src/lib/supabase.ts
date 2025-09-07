@@ -50,7 +50,7 @@ export const getUserProfile = async (userId: string) => {
       .single()
     
     const timeoutPromise = new Promise((resolve) => 
-      setTimeout(() => resolve({ data: null, error: { message: 'Profile lookup timeout' } }), 3000)
+      setTimeout(() => resolve({ data: null, error: { message: 'Profile lookup timeout' } }), 5000)
     )
     
     const { data, error } = await Promise.race([profilePromise, timeoutPromise]) as any
@@ -58,12 +58,77 @@ export const getUserProfile = async (userId: string) => {
     
     if (error) {
       console.error('❌ Error getting user profile:', error)
+      
+      // If it's a timeout or table doesn't exist, try to create the profile
+      if (error.message === 'Profile lookup timeout' || error.code === '42P01') {
+        console.log('🏗️ Attempting to create user profile for userId:', userId)
+        return await createUserProfile(userId)
+      }
+      
       return null
     }
     return data
   } catch (err) {
     console.error('💥 Exception in getUserProfile:', err)
     return null
+  }
+}
+
+export const createUserProfile = async (userId: string, email?: string) => {
+  console.log('🏗️ Creating user profile for userId:', userId)
+  
+  try {
+    // Try to get the current user's email from auth if not provided
+    if (!email) {
+      const { data: { user } } = await supabase.auth.getUser()
+      email = user?.email || 'unknown@example.com'
+    }
+    
+    const newProfile = {
+      id: userId,
+      email: email,
+      full_name: email?.split('@')[0] || 'User',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .insert([newProfile])
+      .select()
+      .single()
+    
+    if (error) {
+      console.error('❌ Error creating user profile:', error)
+      
+      // If table doesn't exist, return a fallback profile
+      if (error.code === '42P01') {
+        console.log('📄 Database table missing, using fallback profile')
+        return {
+          id: userId,
+          email: email,
+          full_name: email?.split('@')[0] || 'User',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      }
+      
+      return null
+    }
+    
+    console.log('✅ User profile created successfully:', data)
+    return data
+  } catch (err) {
+    console.error('💥 Exception creating user profile:', err)
+    
+    // Return fallback profile even if database operations fail
+    return {
+      id: userId,
+      email: email || 'unknown@example.com',
+      full_name: email?.split('@')[0] || 'User',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
   }
 }
 
