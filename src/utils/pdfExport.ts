@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf'
-import { Project } from '../types'
+import { Project, RoadmapData } from '../types'
 
 interface InsightsReport {
   executiveSummary: string
@@ -307,5 +307,256 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number,
   // Save the PDF
   const projectPrefix = project ? `${project.name.replace(/[^a-zA-Z0-9]/g, '_')}_` : ''
   const fileName = `${projectPrefix}AI_Insights_Report_${new Date().toISOString().split('T')[0]}.pdf`
+  doc.save(fileName)
+}
+
+export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, project: Project | null = null) => {
+  const doc = new jsPDF()
+  let yPosition = 20
+  const pageHeight = doc.internal.pageSize.height
+  const pageWidth = doc.internal.pageSize.width
+  const marginLeft = 20
+  const marginRight = 20
+  const contentWidth = pageWidth - marginLeft - marginRight
+
+  // Helper function to check if we need a new page
+  const checkPageBreak = (requiredSpace: number = 15) => {
+    if (yPosition + requiredSpace > pageHeight - 20) {
+      doc.addPage()
+      yPosition = 20
+    }
+  }
+
+  // Helper function to add wrapped text
+  const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number = 10) => {
+    doc.setFontSize(fontSize)
+    const lines = doc.splitTextToSize(text, maxWidth)
+    doc.text(lines, x, y)
+    return lines.length * (fontSize * 0.6) // Return height used
+  }
+
+  // Header
+  doc.setFontSize(20)
+  doc.setFont('helvetica', 'bold')
+  const reportTitle = project ? `${project.name} - Project Roadmap` : 'AI Project Roadmap'
+  doc.text(reportTitle, marginLeft, yPosition)
+  yPosition += 8
+
+  if (project && project.description) {
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'italic')
+    doc.setTextColor(64, 64, 64) // Gray color
+    const descHeight = addWrappedText(project.description, marginLeft, yPosition, contentWidth, 12)
+    yPosition += descHeight + 6
+    doc.setTextColor(0, 0, 0) // Reset to black
+  }
+
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Analysis of ${ideaCount} ideas • Generated on ${new Date().toLocaleDateString()}`, marginLeft, yPosition)
+  yPosition += 8
+
+  doc.setFontSize(10)
+  doc.setTextColor(64, 64, 64)
+  doc.text(`Total Duration: ${roadmapData.roadmapAnalysis.totalDuration}`, marginLeft, yPosition)
+  yPosition += 20
+
+  // Project Phases
+  checkPageBreak(40)
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
+  doc.text('Implementation Roadmap', marginLeft, yPosition)
+  yPosition += 15
+
+  roadmapData.roadmapAnalysis.phases.forEach((phase, index) => {
+    checkPageBreak(60)
+    
+    // Phase Header
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(102, 16, 242) // Purple
+    doc.text(`${phase.phase} (${phase.duration})`, marginLeft, yPosition)
+    doc.setTextColor(0, 0, 0)
+    yPosition += 10
+
+    // Phase Description
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'normal')
+    const descHeight = addWrappedText(phase.description, marginLeft + 5, yPosition, contentWidth - 5, 11)
+    yPosition += descHeight + 10
+
+    // Phase Epics
+    if (phase.epics && phase.epics.length > 0) {
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Key Epics:', marginLeft + 5, yPosition)
+      yPosition += 8
+
+      phase.epics.forEach((epic, epicIndex) => {
+        checkPageBreak(25)
+        
+        // Epic Title
+        doc.setFontSize(11)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(13, 110, 253) // Blue
+        const epicTitle = `${epicIndex + 1}. ${epic.title} (${epic.priority} priority)`
+        const epicTitleHeight = addWrappedText(epicTitle, marginLeft + 10, yPosition, contentWidth - 15, 11)
+        yPosition += epicTitleHeight + 4
+        doc.setTextColor(0, 0, 0)
+
+        // Epic Description
+        if (epic.description) {
+          doc.setFontSize(10)
+          doc.setFont('helvetica', 'normal')
+          const epicDescHeight = addWrappedText(epic.description, marginLeft + 15, yPosition, contentWidth - 20)
+          yPosition += epicDescHeight + 6
+        }
+
+        // User Stories
+        if (epic.userStories && epic.userStories.length > 0) {
+          doc.setFontSize(9)
+          doc.setFont('helvetica', 'bold')
+          doc.text('User Stories:', marginLeft + 15, yPosition)
+          yPosition += 5
+          
+          doc.setFont('helvetica', 'normal')
+          epic.userStories.forEach((story) => {
+            checkPageBreak(10)
+            const storyHeight = addWrappedText(`• ${story}`, marginLeft + 20, yPosition, contentWidth - 25, 9)
+            yPosition += storyHeight + 2
+          })
+          yPosition += 3
+        }
+
+        // Deliverables
+        if (epic.deliverables && epic.deliverables.length > 0) {
+          doc.setFontSize(9)
+          doc.setFont('helvetica', 'bold')
+          doc.text('Deliverables:', marginLeft + 15, yPosition)
+          yPosition += 5
+          
+          doc.setFont('helvetica', 'normal')
+          epic.deliverables.forEach((deliverable) => {
+            checkPageBreak(10)
+            const deliverableHeight = addWrappedText(`• ${deliverable}`, marginLeft + 20, yPosition, contentWidth - 25, 9)
+            yPosition += deliverableHeight + 2
+          })
+          yPosition += 5
+        }
+      })
+    }
+
+    // Risks
+    if (phase.risks && phase.risks.length > 0) {
+      checkPageBreak(20)
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(220, 53, 69) // Red
+      doc.text('Risks:', marginLeft + 5, yPosition)
+      doc.setTextColor(0, 0, 0)
+      yPosition += 8
+
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      phase.risks.forEach((risk) => {
+        checkPageBreak(10)
+        const riskHeight = addWrappedText(`• ${risk}`, marginLeft + 10, yPosition, contentWidth - 15)
+        yPosition += riskHeight + 3
+      })
+      yPosition += 5
+    }
+
+    // Success Criteria
+    if (phase.successCriteria && phase.successCriteria.length > 0) {
+      checkPageBreak(20)
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(25, 135, 84) // Green
+      doc.text('Success Criteria:', marginLeft + 5, yPosition)
+      doc.setTextColor(0, 0, 0)
+      yPosition += 8
+
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      phase.successCriteria.forEach((criteria) => {
+        checkPageBreak(10)
+        const criteriaHeight = addWrappedText(`• ${criteria}`, marginLeft + 10, yPosition, contentWidth - 15)
+        yPosition += criteriaHeight + 3
+      })
+      yPosition += 10
+    }
+
+    yPosition += 15 // Space between phases
+  })
+
+  // Execution Strategy
+  checkPageBreak(50)
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Execution Strategy', marginLeft, yPosition)
+  yPosition += 15
+
+  // Methodology
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(102, 16, 242) // Purple
+  doc.text(`Methodology: ${roadmapData.executionStrategy.methodology}`, marginLeft, yPosition)
+  doc.setTextColor(0, 0, 0)
+  yPosition += 10
+
+  // Sprint Length
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Sprint Length: ${roadmapData.executionStrategy.sprintLength}`, marginLeft, yPosition)
+  yPosition += 15
+
+  // Team Recommendations
+  checkPageBreak(20)
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Team Recommendations', marginLeft, yPosition)
+  yPosition += 8
+
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  const teamRecHeight = addWrappedText(roadmapData.executionStrategy.teamRecommendations, marginLeft + 5, yPosition, contentWidth - 5)
+  yPosition += teamRecHeight + 15
+
+  // Key Milestones
+  checkPageBreak(30)
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Key Milestones', marginLeft, yPosition)
+  yPosition += 10
+
+  roadmapData.executionStrategy.keyMilestones.forEach((milestone, index) => {
+    checkPageBreak(15)
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(13, 110, 253) // Blue
+    doc.text(`${index + 1}. ${milestone.milestone} (${milestone.timeline})`, marginLeft + 5, yPosition)
+    doc.setTextColor(0, 0, 0)
+    yPosition += 6
+
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    const milestoneHeight = addWrappedText(milestone.description, marginLeft + 10, yPosition, contentWidth - 15)
+    yPosition += milestoneHeight + 8
+  })
+
+  // Footer on all pages
+  const totalPages = doc.getNumberOfPages()
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i)
+    doc.setFontSize(8)
+    doc.setTextColor(128, 128, 128) // Gray
+    doc.text(`Generated by Prioritas AI • Page ${i} of ${totalPages}`, marginLeft, pageHeight - 10)
+    doc.text(new Date().toLocaleDateString(), pageWidth - marginRight - 30, pageHeight - 10)
+  }
+
+  // Save the PDF
+  const projectPrefix = project ? `${project.name.replace(/[^a-zA-Z0-9]/g, '_')}_` : ''
+  const fileName = `${projectPrefix}Project_Roadmap_${new Date().toISOString().split('T')[0]}.pdf`
   doc.save(fileName)
 }

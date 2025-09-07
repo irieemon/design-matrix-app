@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown } from 'lucide-react'
+import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown, Download } from 'lucide-react'
 import { Project, IdeaCard, ProjectRoadmap as ProjectRoadmapType } from '../types'
 import { AIService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
+import { exportRoadmapToPDF } from '../utils/pdfExport'
 
 interface ProjectRoadmapProps {
   currentUser: string
@@ -146,6 +147,12 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     }
   }
 
+  const handleExportToPDF = () => {
+    if (roadmapData && currentProject) {
+      exportRoadmapToPDF(roadmapData, ideas.length, currentProject)
+    }
+  }
+
   const togglePhaseExpansion = (phaseIndex: number) => {
     console.log('🔄 Toggling phase expansion for index:', phaseIndex)
     console.log('📋 Current expanded phases:', Array.from(expandedPhases))
@@ -222,18 +229,29 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
               Analyzing {ideas.length} ideas • Created by {currentUser}
             </p>
           </div>
-          <button
-            onClick={generateRoadmap}
-            disabled={isLoading}
-            className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <Loader className="w-5 h-5 animate-spin" />
-            ) : (
-              <Sparkles className="w-5 h-5" />
+          <div className="flex items-center space-x-3">
+            {roadmapData && (
+              <button
+                onClick={handleExportToPDF}
+                className="flex items-center space-x-2 bg-slate-600 text-white px-4 py-3 rounded-xl hover:bg-slate-700 transition-colors"
+              >
+                <Download className="w-5 h-5" />
+                <span>Export PDF</span>
+              </button>
             )}
-            <span>{isLoading ? 'Generating...' : 'Generate Roadmap'}</span>
-          </button>
+            <button
+              onClick={generateRoadmap}
+              disabled={isLoading}
+              className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <Loader className="w-5 h-5 animate-spin" />
+              ) : (
+                <Sparkles className="w-5 h-5" />
+              )}
+              <span>{isLoading ? 'Generating...' : 'Generate Roadmap'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
