@@ -66,6 +66,7 @@ function App() {
           await handleAuthUser(session.user)
         } else {
           console.log('❌ No active session found')
+          // Don't immediately show login screen - let auth state listener handle it
           // Try legacy localStorage user for backwards compatibility
           const savedUser = localStorage.getItem('prioritasUser')
           if (savedUser && mounted) {
@@ -79,7 +80,8 @@ function App() {
               updated_at: new Date().toISOString()
             })
           } else {
-            console.log('❌ No legacy user found - showing login screen')
+            console.log('❌ No legacy user found - waiting for auth state')
+            // Don't set loading to false here - let the auth state listener handle it
           }
         }
       } catch (error) {
@@ -100,12 +102,19 @@ function App() {
       
       if (event === 'SIGNED_IN' && session?.user) {
         await handleAuthUser(session.user)
+        // Ensure loading is stopped after successful authentication
+        setIsLoading(false)
       } else if (event === 'SIGNED_OUT') {
         setAuthUser(null)
         setCurrentUser(null)
         setCurrentProject(null)
         setIdeas([])
         localStorage.removeItem('prioritasUser') // Clean up legacy
+        setIsLoading(false)
+      } else if (event === 'INITIAL_SESSION' && !session) {
+        // No initial session found, stop loading and show login
+        console.log('🔓 No initial session, showing login screen')
+        setIsLoading(false)
       }
     })
 
