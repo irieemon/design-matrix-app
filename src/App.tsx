@@ -13,6 +13,7 @@ import ProjectHeader from './components/ProjectHeader'
 import DataManagement from './components/pages/DataManagement'
 import ReportsAnalytics from './components/pages/ReportsAnalytics'
 import UserSettings from './components/pages/UserSettings'
+import ProjectCollaboration from './components/pages/ProjectCollaboration'
 import ProjectManagement from './components/ProjectManagement'
 import ProjectRoadmap from './components/ProjectRoadmap'
 import { DatabaseService } from './lib/database'
@@ -549,6 +550,20 @@ function App() {
               currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
               currentProject={currentProject}
               ideas={ideas}
+            />
+          </div>
+        )
+      case 'collaboration':
+        if (!currentProject) {
+          setCurrentPage('projects')
+          return null
+        }
+        return (
+          <div className="bg-slate-50 min-h-screen">
+            <ProjectCollaboration
+              currentUser={currentUser}
+              currentProject={currentProject}
+              onNavigateBack={() => setCurrentPage('matrix')}
             />
           </div>
         )

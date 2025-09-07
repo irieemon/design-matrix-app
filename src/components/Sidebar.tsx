@@ -1,4 +1,4 @@
-import { Target, Home, User, Database, BarChart3, FolderOpen, LogOut, ChevronLeft, ChevronRight, Map } from 'lucide-react'
+import { Target, Home, User, Database, BarChart3, FolderOpen, LogOut, ChevronLeft, ChevronRight, Map, Users } from 'lucide-react'
 import { useState } from 'react'
 import { Project } from '../types'
 
@@ -33,6 +33,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentProj
       label: 'Roadmap',
       icon: Map,
       description: 'Strategic roadmap & epics'
+    },
+    {
+      id: 'collaboration',
+      label: 'Team Collaboration',
+      icon: Users,
+      description: 'Manage team members & permissions'
     },
     {
       id: 'data',

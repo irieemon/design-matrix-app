@@ -858,56 +858,136 @@ Respond with this JSON structure:
   private static generateIdeasForProjectType(projectType: any, name: string, _description: string) {
     console.log('🎯 Mock AI: Generating ideas for project type:', projectType.industry)
     
-    const baseIdeas = {
+    // Smart positioning algorithm for better card distribution
+    const generatePosition = (priority: string, index: number, _totalCount: number) => {
+      // Matrix boundaries: 0-520 for x and y
+      // Quadrants: High Impact/Low Effort (top-left), High Impact/High Effort (top-right)
+      //           Low Impact/Low Effort (bottom-left), Low Impact/High Effort (bottom-right)
+      
+      const quadrantWidth = 260 // Half of 520
+      const quadrantHeight = 260
+      const cardWidth = 200 // Idea card width (slightly smaller for better fit)
+      const cardHeight = 120 // Idea card height (slightly smaller for better fit)
+      const padding = 30 // Increased padding from edges
+      
+      let baseX = 0, baseY = 0
+      
+      // Determine quadrant based on priority - Matrix mapping:
+      // Top-left: High Impact, Low Effort (Quick Wins)
+      // Top-right: High Impact, High Effort (Major Projects)  
+      // Bottom-left: Low Impact, Low Effort (Fill-ins)
+      // Bottom-right: Low Impact, High Effort (Questionable/Avoid)
+      switch (priority) {
+        case 'strategic':
+          // High Impact, Low Effort (Quick Wins) - top-left
+          baseX = padding
+          baseY = padding
+          break
+        case 'innovation':
+          // High Impact, High Effort (Major Projects) - top-right  
+          baseX = quadrantWidth + padding
+          baseY = padding
+          break
+        case 'low':
+          // Low Impact, Low Effort (Fill-ins) - bottom-left
+          baseX = padding
+          baseY = quadrantHeight + padding
+          break
+        case 'high':
+          // High Impact, High Effort (Major Projects) - top-right
+          baseX = quadrantWidth + padding
+          baseY = padding
+          break
+        case 'moderate':
+        default:
+          // Low Impact, High Effort (Questionable) - bottom-right
+          baseX = quadrantWidth + padding  
+          baseY = quadrantHeight + padding
+          break
+      }
+      
+      // Calculate grid position within quadrant to avoid overlap
+      const availableWidth = quadrantWidth - padding * 2
+      const spacingX = 25 // Horizontal spacing between cards
+      const spacingY = 30 // Vertical spacing between cards
+      
+      const itemsPerRow = Math.max(1, Math.floor(availableWidth / (cardWidth + spacingX)))
+      const row = Math.floor(index / itemsPerRow)
+      const col = index % itemsPerRow
+      
+      // Add some randomization to make it look more natural (smaller range)
+      const randomOffsetX = Math.random() * 20 - 10
+      const randomOffsetY = Math.random() * 15 - 7.5
+      
+      const finalX = baseX + col * (cardWidth + spacingX) + randomOffsetX
+      const finalY = baseY + row * (cardHeight + spacingY) + randomOffsetY
+      
+      return {
+        x: Math.max(10, Math.min(520 - cardWidth, finalX)),
+        y: Math.max(10, Math.min(520 - cardHeight, finalY))
+      }
+    }
+    
+    // Define base ideas without positions (will be calculated dynamically)
+    // Balanced priority distribution: strategic (25%), high (25%), moderate (25%), low (15%), innovation (10%)
+    const rawIdeas = {
       'Marketing': [
-        { content: 'Social Media Campaign Launch', details: `Launch coordinated social media campaign across LinkedIn, Instagram, Twitter and TikTok for ${name}. Develop content calendar with daily posts, engagement strategy, influencer collaborations, and performance tracking. Focus on building brand awareness and driving qualified leads through targeted messaging and hashtag strategies.`, x: 120, y: 140, priority: 'high' as const },
-        { content: 'Content Marketing Strategy', details: `Create comprehensive content marketing hub for ${name} including blog posts, case studies, whitepapers, and video content. Establish thought leadership through educational resources, improve SEO rankings, and generate inbound leads. Requires content team and editorial calendar with weekly publishing schedule.`, x: 200, y: 180, priority: 'strategic' as const },
-        { content: 'Email Marketing Automation', details: `Set up automated email marketing system for ${name} with welcome sequences, nurture campaigns, and behavioral triggers. Include A/B testing for subject lines and content, segmentation based on user behavior, and integration with CRM. Expected to increase conversion rates by 25%.`, x: 140, y: 160, priority: 'moderate' as const },
-        { content: 'Paid Advertising Campaigns', details: `Launch targeted paid advertising campaigns for ${name} across Google Ads, Facebook, LinkedIn, and relevant industry platforms. Create compelling ad copy, landing pages, and conversion tracking. Focus on high-intent keywords and lookalike audiences for maximum ROI.`, x: 160, y: 200, priority: 'high' as const },
-        { content: 'Influencer Partnership Program', details: `Develop influencer partnership program for ${name} by identifying and collaborating with industry thought leaders and micro-influencers. Create partnership agreements, content guidelines, and performance metrics. Focus on authentic endorsements and co-created content for expanded reach.`, x: 280, y: 240, priority: 'moderate' as const },
-        { content: 'SEO & Organic Growth', details: `Implement comprehensive SEO strategy for ${name} including keyword research, on-page optimization, technical SEO improvements, and link building campaigns. Create pillar content and topic clusters to dominate search results for relevant industry terms and drive organic traffic.`, x: 220, y: 220, priority: 'strategic' as const },
-        { content: 'Brand Identity Refresh', details: `Modernize brand identity for ${name} including logo redesign, color palette update, typography selection, and brand guideline documentation. Ensure consistency across all marketing materials and touchpoints. Requires design team and stakeholder approval process.`, x: 300, y: 280, priority: 'moderate' as const },
-        { content: 'Quick Win PR Outreach', details: `Execute immediate PR outreach for ${name} by compiling targeted media lists and sending press releases to relevant publications. Focus on low-hanging fruit with existing industry contacts, local media, and trade publications for quick visibility wins.`, x: 80, y: 120, priority: 'low' as const }
+        { content: 'Social Media Campaign Launch', details: `Launch coordinated social media campaign across LinkedIn, Instagram, Twitter and TikTok for ${name}. Develop content calendar with daily posts, engagement strategy, influencer collaborations, and performance tracking. Focus on building brand awareness and driving qualified leads through targeted messaging and hashtag strategies.`, priority: 'strategic' as const },
+        { content: 'Content Marketing Strategy', details: `Create comprehensive content marketing hub for ${name} including blog posts, case studies, whitepapers, and video content. Establish thought leadership through educational resources, improve SEO rankings, and generate inbound leads. Requires content team and editorial calendar with weekly publishing schedule.`, priority: 'strategic' as const },
+        { content: 'Email Marketing Automation', details: `Set up automated email marketing system for ${name} with welcome sequences, nurture campaigns, and behavioral triggers. Include A/B testing for subject lines and content, segmentation based on user behavior, and integration with CRM. Expected to increase conversion rates by 25%.`, priority: 'strategic' as const },
+        { content: 'Paid Advertising Campaigns', details: `Launch targeted paid advertising campaigns for ${name} across Google Ads, Facebook, LinkedIn, and relevant industry platforms. Create compelling ad copy, landing pages, and conversion tracking. Focus on high-intent keywords and lookalike audiences for maximum ROI.`, priority: 'high' as const },
+        { content: 'Influencer Partnership Program', details: `Develop influencer partnership program for ${name} by identifying and collaborating with industry thought leaders and micro-influencers. Create partnership agreements, content guidelines, and performance metrics. Focus on authentic endorsements and co-created content for expanded reach.`, priority: 'high' as const },
+        { content: 'SEO & Organic Growth', details: `Implement comprehensive SEO strategy for ${name} including keyword research, on-page optimization, technical SEO improvements, and link building campaigns. Create pillar content and topic clusters to dominate search results for relevant industry terms and drive organic traffic.`, priority: 'high' as const },
+        { content: 'Brand Identity Refresh', details: `Modernize brand identity for ${name} including logo redesign, color palette update, typography selection, and brand guideline documentation. Ensure consistency across all marketing materials and touchpoints. Requires design team and stakeholder approval process.`, priority: 'moderate' as const },
+        { content: 'Quick Win PR Outreach', details: `Execute immediate PR outreach for ${name} by compiling targeted media lists and sending press releases to relevant publications. Focus on low-hanging fruit with existing industry contacts, local media, and trade publications for quick visibility wins.`, priority: 'low' as const },
+        { content: 'Customer Feedback Collection', details: `Set up systematic customer feedback collection for ${name} through surveys, interviews, and review monitoring. Create feedback analysis workflow and response protocols to improve satisfaction and identify improvement opportunities.`, priority: 'moderate' as const },
+        { content: 'Marketing Automation Platform', details: `Implement comprehensive marketing automation platform for ${name} with lead scoring, nurture campaigns, and customer journey mapping. Include integration with CRM and analytics for full-funnel visibility and optimization.`, priority: 'innovation' as const },
+        { content: 'Referral Program Launch', details: `Create customer referral program for ${name} with incentive structure, tracking system, and promotional materials. Focus on turning satisfied customers into brand advocates and reducing customer acquisition costs through word-of-mouth marketing.`, priority: 'moderate' as const },
+        { content: 'Video Marketing Initiative', details: `Develop video marketing strategy for ${name} including explainer videos, customer testimonials, behind-the-scenes content, and educational tutorials. Includes video production, editing, and distribution across multiple platforms.`, priority: 'low' as const }
       ],
       'Technology/Software': [
-        { content: 'User Authentication System', details: `Implement secure user authentication system for ${name} with OAuth integration, multi-factor authentication, password recovery, and session management. Essential security foundation that enables user personalization, data protection, and compliance with privacy regulations. Estimated 2-3 weeks development time.`, x: 150, y: 160, priority: 'high' as const },
-        { content: 'Core Feature MVP', details: `Build minimum viable product version of ${name} focusing on the essential user journey and primary value proposition. Include basic feature set needed to validate concept with early users and gather feedback for iterations. Foundation for all future development efforts.`, x: 200, y: 120, priority: 'strategic' as const },
-        { content: 'Analytics & Monitoring Dashboard', details: `Create comprehensive analytics dashboard for ${name} to monitor user behavior, feature usage, system performance, and business metrics. Include real-time data visualization, custom reports, alerting system, and integration with popular analytics tools like Google Analytics.`, x: 320, y: 200, priority: 'moderate' as const },
-        { content: 'Mobile-First Optimization', details: `Ensure ${name} delivers excellent mobile experience with responsive design, touch-optimized interactions, fast loading times, and mobile-specific features. Implement progressive web app capabilities and offline functionality for improved user engagement and retention.`, x: 180, y: 240, priority: 'moderate' as const },
-        { content: 'AI/ML Integration', details: `Integrate advanced AI and machine learning capabilities into ${name} for personalization, intelligent recommendations, predictive analytics, or automation features. Requires research phase, model training, and significant computational resources but offers competitive differentiation.`, x: 380, y: 320, priority: 'innovation' as const },
-        { content: 'User Onboarding Experience', details: `Design intuitive onboarding flow for ${name} with guided tutorials, interactive tooltips, progress indicators, and contextual help. Reduce time-to-value for new users and improve activation rates through strategic feature introduction and engagement hooks.`, x: 120, y: 140, priority: 'high' as const },
-        { content: 'API & Integration Layer', details: `Develop robust API infrastructure for ${name} enabling third-party integrations, webhooks, and ecosystem expansion. Include comprehensive documentation, rate limiting, authentication, and SDKs for popular programming languages. Supports partnerships and enterprise adoption.`, x: 340, y: 260, priority: 'strategic' as const },
-        { content: 'Performance Optimization', details: `Implement comprehensive performance optimization for ${name} including code splitting, lazy loading, caching strategies, CDN integration, and database query optimization. Target sub-2-second page load times and improved Core Web Vitals scores for better user experience and SEO.`, x: 180, y: 280, priority: 'moderate' as const }
+        { content: 'User Authentication System', details: `Implement secure user authentication system for ${name} with OAuth integration, multi-factor authentication, password recovery, and session management. Essential security foundation that enables user personalization, data protection, and compliance with privacy regulations. Estimated 2-3 weeks development time.`, priority: 'strategic' as const },
+        { content: 'Core Feature MVP', details: `Build minimum viable product version of ${name} focusing on the essential user journey and primary value proposition. Include basic feature set needed to validate concept with early users and gather feedback for iterations. Foundation for all future development efforts.`, priority: 'strategic' as const },
+        { content: 'Analytics & Monitoring Dashboard', details: `Create comprehensive analytics dashboard for ${name} to monitor user behavior, feature usage, system performance, and business metrics. Include real-time data visualization, custom reports, alerting system, and integration with popular analytics tools like Google Analytics.`, priority: 'moderate' as const },
+        { content: 'Mobile-First Optimization', details: `Ensure ${name} delivers excellent mobile experience with responsive design, touch-optimized interactions, fast loading times, and mobile-specific features. Implement progressive web app capabilities and offline functionality for improved user engagement and retention.`, priority: 'moderate' as const },
+        { content: 'AI/ML Integration', details: `Integrate advanced AI and machine learning capabilities into ${name} for personalization, intelligent recommendations, predictive analytics, or automation features. Requires research phase, model training, and significant computational resources but offers competitive differentiation.`, priority: 'innovation' as const },
+        { content: 'User Onboarding Experience', details: `Design intuitive onboarding flow for ${name} with guided tutorials, interactive tooltips, progress indicators, and contextual help. Reduce time-to-value for new users and improve activation rates through strategic feature introduction and engagement hooks.`, priority: 'strategic' as const },
+        { content: 'API & Integration Layer', details: `Develop robust API infrastructure for ${name} enabling third-party integrations, webhooks, and ecosystem expansion. Include comprehensive documentation, rate limiting, authentication, and SDKs for popular programming languages. Supports partnerships and enterprise adoption.`, priority: 'high' as const },
+        { content: 'Performance Optimization', details: `Implement comprehensive performance optimization for ${name} including code splitting, lazy loading, caching strategies, CDN integration, and database query optimization. Target sub-2-second page load times and improved Core Web Vitals scores for better user experience and SEO.`, priority: 'moderate' as const },
+        { content: 'Security & Privacy Compliance', details: `Implement comprehensive security measures for ${name} including data encryption, vulnerability assessments, privacy compliance (GDPR/CCPA), and security monitoring. Essential for building user trust and meeting regulatory requirements.`, priority: 'high' as const },
+        { content: 'Automated Testing & CI/CD', details: `Set up automated testing pipeline for ${name} with unit tests, integration tests, and deployment automation. Includes continuous integration, code quality checks, and staging environments for reliable software delivery.`, priority: 'low' as const },
+        { content: 'Database Architecture & Scaling', details: `Design scalable database architecture for ${name} with proper indexing, query optimization, backup strategies, and horizontal scaling capabilities. Critical for handling growth and ensuring data integrity.`, priority: 'high' as const },
+        { content: 'Real-time Features', details: `Implement real-time functionality for ${name} using WebSocket connections, live updates, and collaborative features. Enhances user experience with instant feedback and multi-user interactions.`, priority: 'innovation' as const }
       ],
       'Business Operations': [
-        { content: 'Process Documentation & SOPs', details: `Create comprehensive documentation for ${name} including standard operating procedures, workflow diagrams, quality control checkpoints, and compliance guidelines. Establish foundation for training, consistency, and continuous improvement initiatives across all team members.`, x: 120, y: 160, priority: 'moderate' as const },
-        { content: 'Workflow Automation System', details: `Implement automation tools for ${name} to eliminate repetitive manual tasks and streamline operations. Focus on high-volume, rule-based processes like data entry, approvals, notifications, and reporting. Expected to reduce processing time by 40% and minimize human errors.`, x: 200, y: 200, priority: 'strategic' as const },
-        { content: 'Team Training & Development Program', details: `Develop comprehensive training program for ${name} including skills assessment, learning paths, certification components, and progress tracking. Create onboarding materials for new hires and continuous education for existing team members to improve productivity and job satisfaction.`, x: 240, y: 180, priority: 'moderate' as const },
-        { content: 'Quick Efficiency Improvements', details: `Implement immediate process improvements for ${name} that require minimal investment: eliminate redundant steps, streamline communication flows, organize digital workspaces, and establish daily standups. Focus on low-hanging fruit for instant productivity gains.`, x: 80, y: 120, priority: 'low' as const },
-        { content: 'Business Intelligence Platform', details: `Deploy comprehensive business intelligence solution for ${name} with automated reporting, trend analysis, predictive analytics, and executive dashboards. Enable data-driven decision making across all departments with real-time insights and customizable KPI tracking.`, x: 340, y: 280, priority: 'strategic' as const },
-        { content: 'Quality Management Framework', details: `Establish quality control processes for ${name} including error tracking, root cause analysis, continuous improvement methodology, and customer feedback integration. Requires cultural change management and ongoing commitment but ensures consistent service delivery.`, x: 300, y: 300, priority: 'high' as const },
-        { content: 'Digital Transformation Initiative', details: `Lead digital transformation for ${name} by modernizing legacy systems, implementing cloud infrastructure, and adopting digital-first processes. Includes change management, staff training, and phased rollout strategy. High impact but requires significant investment and leadership commitment.`, x: 380, y: 340, priority: 'strategic' as const },
-        { content: 'Customer Service Optimization', details: `Optimize customer service operations for ${name} with helpdesk software, chatbot implementation, knowledge base creation, and response time improvements. Include customer satisfaction tracking and agent performance metrics to deliver exceptional support experience.`, x: 160, y: 200, priority: 'moderate' as const }
+        { content: 'Process Documentation & SOPs', details: `Create comprehensive documentation for ${name} including standard operating procedures, workflow diagrams, quality control checkpoints, and compliance guidelines. Establish foundation for training, consistency, and continuous improvement initiatives across all team members.`, priority: 'moderate' as const },
+        { content: 'Workflow Automation System', details: `Implement automation tools for ${name} to eliminate repetitive manual tasks and streamline operations. Focus on high-volume, rule-based processes like data entry, approvals, notifications, and reporting. Expected to reduce processing time by 40% and minimize human errors.`, priority: 'strategic' as const },
+        { content: 'Team Training & Development Program', details: `Develop comprehensive training program for ${name} including skills assessment, learning paths, certification components, and progress tracking. Create onboarding materials for new hires and continuous education for existing team members to improve productivity and job satisfaction.`, priority: 'moderate' as const },
+        { content: 'Quick Efficiency Improvements', details: `Implement immediate process improvements for ${name} that require minimal investment: eliminate redundant steps, streamline communication flows, organize digital workspaces, and establish daily standups. Focus on low-hanging fruit for instant productivity gains.`, priority: 'low' as const },
+        { content: 'Business Intelligence Platform', details: `Deploy comprehensive business intelligence solution for ${name} with automated reporting, trend analysis, predictive analytics, and executive dashboards. Enable data-driven decision making across all departments with real-time insights and customizable KPI tracking.`, priority: 'strategic' as const },
+        { content: 'Quality Management Framework', details: `Establish quality control processes for ${name} including error tracking, root cause analysis, continuous improvement methodology, and customer feedback integration. Requires cultural change management and ongoing commitment but ensures consistent service delivery.`, priority: 'high' as const },
+        { content: 'Digital Transformation Initiative', details: `Lead digital transformation for ${name} by modernizing legacy systems, implementing cloud infrastructure, and adopting digital-first processes. Includes change management, staff training, and phased rollout strategy. High impact but requires significant investment and leadership commitment.`, priority: 'strategic' as const },
+        { content: 'Customer Service Optimization', details: `Optimize customer service operations for ${name} with helpdesk software, chatbot implementation, knowledge base creation, and response time improvements. Include customer satisfaction tracking and agent performance metrics to deliver exceptional support experience.`, priority: 'moderate' as const }
       ],
       'Product Development': [
-        { content: 'Market Research & Validation', details: `Conduct comprehensive market research for ${name} including competitor analysis, customer interviews, surveys, and focus groups. Validate product-market fit, identify target segments, and gather requirements for MVP development. Critical foundation for all product decisions.`, x: 140, y: 160, priority: 'high' as const },
-        { content: 'Product MVP Development', details: `Build minimum viable product for ${name} focusing on core value proposition and essential features. Use agile development methodology with 2-week sprints, user story mapping, and continuous stakeholder feedback. Target 3-month timeline for first release.`, x: 200, y: 140, priority: 'strategic' as const },
-        { content: 'User Experience Design', details: `Create comprehensive UX/UI design system for ${name} including user personas, journey mapping, wireframes, prototypes, and usability testing. Ensure intuitive navigation, accessibility compliance, and consistent brand experience across all touchpoints.`, x: 180, y: 180, priority: 'high' as const },
-        { content: 'Product Analytics Setup', details: `Implement product analytics infrastructure for ${name} with event tracking, funnel analysis, cohort studies, and A/B testing capabilities. Enable data-driven product decisions through user behavior insights, feature adoption metrics, and retention analysis.`, x: 280, y: 220, priority: 'moderate' as const },
-        { content: 'Go-to-Market Strategy', details: `Develop comprehensive go-to-market plan for ${name} including pricing strategy, channel partnerships, launch timeline, marketing campaigns, and sales enablement. Create positioning documents and competitive differentiation messaging for successful market entry.`, x: 320, y: 200, priority: 'strategic' as const },
-        { content: 'Beta Testing Program', details: `Launch beta testing program for ${name} with selected early adopters and power users. Create feedback collection systems, bug reporting processes, and feature request tracking. Use insights to refine product before public launch and build community of advocates.`, x: 160, y: 200, priority: 'moderate' as const },
-        { content: 'Advanced Feature Roadmap', details: `Define advanced feature roadmap for ${name} based on user research, market trends, and strategic objectives. Prioritize features using scoring frameworks, resource allocation planning, and timeline estimation. Balance innovation with technical debt and maintenance requirements.`, x: 360, y: 280, priority: 'strategic' as const },
-        { content: 'Quality Assurance Framework', details: `Establish comprehensive QA processes for ${name} including automated testing, manual test scripts, performance benchmarks, and security audits. Implement continuous integration pipelines and quality gates to ensure reliable product releases and customer satisfaction.`, x: 240, y: 260, priority: 'moderate' as const }
+        { content: 'Market Research & Validation', details: `Conduct comprehensive market research for ${name} including competitor analysis, customer interviews, surveys, and focus groups. Validate product-market fit, identify target segments, and gather requirements for MVP development. Critical foundation for all product decisions.`, priority: 'high' as const },
+        { content: 'Product MVP Development', details: `Build minimum viable product for ${name} focusing on core value proposition and essential features. Use agile development methodology with 2-week sprints, user story mapping, and continuous stakeholder feedback. Target 3-month timeline for first release.`, priority: 'strategic' as const },
+        { content: 'User Experience Design', details: `Create comprehensive UX/UI design system for ${name} including user personas, journey mapping, wireframes, prototypes, and usability testing. Ensure intuitive navigation, accessibility compliance, and consistent brand experience across all touchpoints.`, priority: 'high' as const },
+        { content: 'Product Analytics Setup', details: `Implement product analytics infrastructure for ${name} with event tracking, funnel analysis, cohort studies, and A/B testing capabilities. Enable data-driven product decisions through user behavior insights, feature adoption metrics, and retention analysis.`, priority: 'moderate' as const },
+        { content: 'Go-to-Market Strategy', details: `Develop comprehensive go-to-market plan for ${name} including pricing strategy, channel partnerships, launch timeline, marketing campaigns, and sales enablement. Create positioning documents and competitive differentiation messaging for successful market entry.`, priority: 'strategic' as const },
+        { content: 'Beta Testing Program', details: `Launch beta testing program for ${name} with selected early adopters and power users. Create feedback collection systems, bug reporting processes, and feature request tracking. Use insights to refine product before public launch and build community of advocates.`, priority: 'moderate' as const },
+        { content: 'Advanced Feature Roadmap', details: `Define advanced feature roadmap for ${name} based on user research, market trends, and strategic objectives. Prioritize features using scoring frameworks, resource allocation planning, and timeline estimation. Balance innovation with technical debt and maintenance requirements.`, priority: 'strategic' as const },
+        { content: 'Quality Assurance Framework', details: `Establish comprehensive QA processes for ${name} including automated testing, manual test scripts, performance benchmarks, and security audits. Implement continuous integration pipelines and quality gates to ensure reliable product releases and customer satisfaction.`, priority: 'moderate' as const }
       ],
       'General Business': [
-        { content: 'Strategic Planning & Goal Setting', details: `Develop comprehensive strategic plan for ${name} including vision statement, SMART goals, success metrics, and quarterly milestones. Conduct SWOT analysis, competitive landscape review, and resource allocation planning to ensure focused execution and measurable results.`, x: 180, y: 160, priority: 'strategic' as const },
-        { content: 'Market Analysis & Competitive Intelligence', details: `Conduct thorough market analysis for ${name} including industry trends, competitor positioning, pricing strategies, and customer segments. Create competitive intelligence system with regular updates and actionable insights for strategic decision making.`, x: 220, y: 180, priority: 'moderate' as const },
-        { content: 'Financial Planning & Budgeting', details: `Establish comprehensive financial planning system for ${name} with detailed budgets, cash flow projections, ROI calculations, and financial controls. Include monthly reporting, variance analysis, and scenario planning for different growth trajectories.`, x: 260, y: 200, priority: 'high' as const },
-        { content: 'Team Building & Organization', details: `Design optimal organizational structure for ${name} including role definitions, reporting relationships, communication protocols, and performance management systems. Focus on talent acquisition, skills development, and culture building for sustainable growth.`, x: 200, y: 220, priority: 'moderate' as const },
-        { content: 'Partnership Development', details: `Identify and develop strategic partnerships for ${name} including vendor relationships, distribution channels, technology integrations, and joint ventures. Create partnership criteria, negotiation strategies, and ongoing management processes to accelerate growth.`, x: 300, y: 240, priority: 'strategic' as const },
-        { content: 'Risk Management & Compliance', details: `Implement comprehensive risk management framework for ${name} including risk assessment, mitigation strategies, insurance coverage, and compliance monitoring. Address operational, financial, legal, and reputational risks with appropriate controls and procedures.`, x: 340, y: 280, priority: 'high' as const },
-        { content: 'Quick Wins & Early Momentum', details: `Identify and execute quick wins for ${name} that require minimal investment but deliver immediate value. Focus on process improvements, communication enhancements, and resource optimization that can be implemented within 30 days to build momentum.`, x: 100, y: 140, priority: 'low' as const },
-        { content: 'Innovation & Future Planning', details: `Establish innovation pipeline for ${name} with trend monitoring, idea generation processes, experimentation frameworks, and future opportunity assessment. Allocate resources for R&D activities and emerging technology evaluation to maintain competitive advantage.`, x: 380, y: 320, priority: 'innovation' as const }
+        { content: 'Strategic Planning & Goal Setting', details: `Develop comprehensive strategic plan for ${name} including vision statement, SMART goals, success metrics, and quarterly milestones. Conduct SWOT analysis, competitive landscape review, and resource allocation planning to ensure focused execution and measurable results.`, priority: 'strategic' as const },
+        { content: 'Market Analysis & Competitive Intelligence', details: `Conduct thorough market analysis for ${name} including industry trends, competitor positioning, pricing strategies, and customer segments. Create competitive intelligence system with regular updates and actionable insights for strategic decision making.`, priority: 'moderate' as const },
+        { content: 'Financial Planning & Budgeting', details: `Establish comprehensive financial planning system for ${name} with detailed budgets, cash flow projections, ROI calculations, and financial controls. Include monthly reporting, variance analysis, and scenario planning for different growth trajectories.`, priority: 'high' as const },
+        { content: 'Team Building & Organization', details: `Design optimal organizational structure for ${name} including role definitions, reporting relationships, communication protocols, and performance management systems. Focus on talent acquisition, skills development, and culture building for sustainable growth.`, priority: 'moderate' as const },
+        { content: 'Partnership Development', details: `Identify and develop strategic partnerships for ${name} including vendor relationships, distribution channels, technology integrations, and joint ventures. Create partnership criteria, negotiation strategies, and ongoing management processes to accelerate growth.`, priority: 'strategic' as const },
+        { content: 'Risk Management & Compliance', details: `Implement comprehensive risk management framework for ${name} including risk assessment, mitigation strategies, insurance coverage, and compliance monitoring. Address operational, financial, legal, and reputational risks with appropriate controls and procedures.`, priority: 'high' as const },
+        { content: 'Quick Wins & Early Momentum', details: `Identify and execute quick wins for ${name} that require minimal investment but deliver immediate value. Focus on process improvements, communication enhancements, and resource optimization that can be implemented within 30 days to build momentum.`, priority: 'low' as const },
+        { content: 'Innovation & Future Planning', details: `Establish innovation pipeline for ${name} with trend monitoring, idea generation processes, experimentation frameworks, and future opportunity assessment. Allocate resources for R&D activities and emerging technology evaluation to maintain competitive advantage.`, priority: 'innovation' as const }
       ]
     }
 
@@ -923,8 +1003,33 @@ Respond with this JSON structure:
       typeKey = 'Product Development'
     }
     
-    console.log('📋 Mock AI: Selected idea set:', typeKey, 'with', (baseIdeas as any)[typeKey]?.length || 0, 'ideas')
-    return (baseIdeas as any)[typeKey] || (baseIdeas as any)['General Business']
+    // Get base ideas and apply smart positioning
+    const selectedIdeas = (rawIdeas as any)[typeKey] || (rawIdeas as any)['General Business']
+    
+    // Group ideas by priority for better positioning
+    const priorityGroups: {[key: string]: number} = {}
+    selectedIdeas.forEach((idea: any) => {
+      priorityGroups[idea.priority] = (priorityGroups[idea.priority] || 0) + 1
+    })
+    
+    // Apply positioning algorithm
+    const positionedIdeas = selectedIdeas.map((idea: any, index: number) => {
+      const priorityIndex = selectedIdeas.filter((i: any, idx: number) => 
+        idx < index && i.priority === idea.priority
+      ).length
+      
+      const position = generatePosition(idea.priority, priorityIndex, priorityGroups[idea.priority] || 1)
+      return {
+        ...idea,
+        x: Math.round(position.x),
+        y: Math.round(position.y)
+      }
+    })
+    
+    console.log('📋 Mock AI: Selected idea set:', typeKey, 'with', positionedIdeas.length, 'ideas')
+    console.log('🎯 Priority distribution:', priorityGroups)
+    
+    return positionedIdeas
   }
 
   static async generateRoadmap(projectName: string, projectDescription: string, ideas: any[], projectType?: string, aiAnalysis?: any): Promise<any> {
@@ -1332,7 +1437,117 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
            `Execute specialized deliverables combining domain expertise with strategic business analysis for phase ${phase}, work package ${epic}`
   }
 
-  private static getContextualStories(phase: number, epic: number, projectType?: string): string[] {
+  // Generate user stories based on specific idea content
+  private static generateIdeaBasedUserStories(ideaContent: string, _ideaDetails?: string, projectType?: string): string[] {
+    const stories: string[] = []
+    const lowerContent = ideaContent.toLowerCase()
+    
+    // Define user personas based on project type
+    const personas = this.getPersonasForProjectType(projectType)
+    
+    // Generate contextual stories based on the idea content
+    if (lowerContent.includes('dashboard') || lowerContent.includes('monitoring') || lowerContent.includes('analytics')) {
+      stories.push(
+        `As a ${personas.analyst}, I need a comprehensive dashboard that displays key metrics and trends so I can make data-driven decisions`,
+        `As a ${personas.manager}, I need real-time monitoring capabilities so I can respond quickly to issues and opportunities`,
+        `As a ${personas.user}, I need intuitive data visualization that helps me understand performance without technical expertise`
+      )
+    } else if (lowerContent.includes('interface') || lowerContent.includes('design') || lowerContent.includes('ux') || lowerContent.includes('ui')) {
+      stories.push(
+        `As a ${personas.user}, I need an intuitive interface that allows me to complete tasks efficiently without confusion`,
+        `As a ${personas.designer}, I need design systems and components that ensure consistency across the platform`,
+        `As a ${personas.manager}, I need user-friendly features that reduce training time and support costs`
+      )
+    } else if (lowerContent.includes('automation') || lowerContent.includes('workflow') || lowerContent.includes('process')) {
+      stories.push(
+        `As a ${personas.user}, I need automated processes that eliminate repetitive manual tasks and reduce errors`,
+        `As a ${personas.manager}, I need workflow optimization that increases team productivity and efficiency`,
+        `As a ${personas.admin}, I need process controls and monitoring to ensure automation runs smoothly`
+      )
+    } else if (lowerContent.includes('security') || lowerContent.includes('authentication') || lowerContent.includes('privacy')) {
+      stories.push(
+        `As a ${personas.user}, I need secure authentication that protects my data while being easy to use`,
+        `As a ${personas.admin}, I need comprehensive security controls to protect against threats and ensure compliance`,
+        `As a ${personas.manager}, I need security reporting and audit trails for governance and risk management`
+      )
+    } else if (lowerContent.includes('integration') || lowerContent.includes('api') || lowerContent.includes('connect')) {
+      stories.push(
+        `As a ${personas.developer}, I need robust API documentation and tools to integrate with existing systems`,
+        `As a ${personas.admin}, I need seamless data synchronization between platforms without manual intervention`,
+        `As a ${personas.user}, I need unified access to information from multiple sources in one place`
+      )
+    } else if (lowerContent.includes('mobile') || lowerContent.includes('app') || lowerContent.includes('responsive')) {
+      stories.push(
+        `As a ${personas.user}, I need mobile-optimized features that work seamlessly across all my devices`,
+        `As a ${personas.manager}, I need mobile access to critical functions so I can work effectively from anywhere`,
+        `As a ${personas.developer}, I need responsive design patterns that provide consistent experiences across platforms`
+      )
+    } else {
+      // Generic but contextual stories based on idea content
+      stories.push(
+        `As a ${personas.user}, I need ${ideaContent.toLowerCase()} functionality that solves my core business needs effectively`,
+        `As a ${personas.manager}, I need ${ideaContent.toLowerCase()} implementation that delivers measurable value to the organization`,
+        `As a ${personas.stakeholder}, I need clear success metrics and progress tracking for ${ideaContent.toLowerCase()}`
+      )
+    }
+    
+    return stories
+  }
+
+  private static getPersonasForProjectType(projectType?: string): {[key: string]: string} {
+    switch (projectType) {
+      case 'software':
+      case 'Technology/Software':
+        return {
+          user: 'end user',
+          developer: 'software developer', 
+          manager: 'product manager',
+          admin: 'system administrator',
+          analyst: 'data analyst',
+          designer: 'UX designer',
+          stakeholder: 'business stakeholder'
+        }
+      case 'marketing':
+      case 'Marketing':
+        return {
+          user: 'customer',
+          developer: 'marketing technologist',
+          manager: 'marketing manager', 
+          admin: 'campaign administrator',
+          analyst: 'marketing analyst',
+          designer: 'creative director',
+          stakeholder: 'brand manager'
+        }
+      case 'business_plan':
+      case 'Business Operations':
+        return {
+          user: 'employee',
+          developer: 'process analyst',
+          manager: 'operations manager',
+          admin: 'business administrator', 
+          analyst: 'business analyst',
+          designer: 'process designer',
+          stakeholder: 'executive sponsor'
+        }
+      default:
+        return {
+          user: 'user',
+          developer: 'developer',
+          manager: 'project manager',
+          admin: 'administrator',
+          analyst: 'analyst', 
+          designer: 'designer',
+          stakeholder: 'stakeholder'
+        }
+    }
+  }
+
+  private static getContextualStories(phase: number, epic: number, projectType?: string, ideaContent?: string, ideaDetails?: string): string[] {
+    // If we have specific idea content, generate contextual user stories
+    if (ideaContent) {
+      return this.generateIdeaBasedUserStories(ideaContent, ideaDetails, projectType)
+    }
+    
     switch (projectType) {
       case 'product_development':
         if (phase === 1 && epic === 1) {
@@ -1678,7 +1893,7 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
               {
                 title: highPriorityIdeas[0]?.content || this.getEpicTitle(1, 1, projectType),
                 description: `Implementation of "${highPriorityIdeas[0]?.content || 'core functionality'}" - ${this.getEpicDescription(1, 1, projectType)}${highPriorityIdeas[0]?.details ? '. Details: ' + highPriorityIdeas[0].details : ''}`,
-                userStories: this.getContextualStories(1, 1, projectType),
+                userStories: this.getContextualStories(1, 1, projectType, highPriorityIdeas[0]?.content, highPriorityIdeas[0]?.details),
                 deliverables: this.getContextualDeliverables(1, 1, projectType),
                 priority: "High",
                 complexity: "High",
@@ -1687,7 +1902,7 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
               {
                 title: highPriorityIdeas[1]?.content || this.getEpicTitle(1, 2, projectType),
                 description: `Development of "${highPriorityIdeas[1]?.content || 'secondary features'}" - ${this.getEpicDescription(1, 2, projectType)}${highPriorityIdeas[1]?.details ? '. Details: ' + highPriorityIdeas[1].details : ''}`,
-                userStories: this.getContextualStories(1, 2, projectType),
+                userStories: this.getContextualStories(1, 2, projectType, highPriorityIdeas[1]?.content, highPriorityIdeas[1]?.details),
                 deliverables: this.getContextualDeliverables(1, 2, projectType),
                 priority: "High", 
                 complexity: "Medium",
@@ -1705,7 +1920,7 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
               {
                 title: moderateIdeas[0]?.content || this.getEpicTitle(2, 1, projectType),
                 description: `Enhancement and optimization of "${moderateIdeas[0]?.content || 'core systems'}" - ${this.getEpicDescription(2, 1, projectType)}${moderateIdeas[0]?.details ? '. Details: ' + moderateIdeas[0].details : ''}`,
-                userStories: this.getContextualStories(2, 1, projectType),
+                userStories: this.getContextualStories(2, 1, projectType, moderateIdeas[0]?.content, moderateIdeas[0]?.details),
                 deliverables: this.getContextualDeliverables(2, 1, projectType),
                 priority: "Medium",
                 complexity: "Medium",
@@ -1723,7 +1938,7 @@ Group these ${ideas.length} ideas into logical, implementation-focused ${this.ge
               {
                 title: lowPriorityIdeas[0]?.content || this.getEpicTitle(3, 1, projectType),
                 description: `Future innovation with "${lowPriorityIdeas[0]?.content || 'advanced capabilities'}" - ${this.getEpicDescription(3, 1, projectType)}${lowPriorityIdeas[0]?.details ? '. Details: ' + lowPriorityIdeas[0].details : ''}`,
-                userStories: this.getContextualStories(3, 1, projectType),
+                userStories: this.getContextualStories(3, 1, projectType, lowPriorityIdeas[0]?.content, lowPriorityIdeas[0]?.details),
                 deliverables: this.getContextualDeliverables(3, 1, projectType),
                 priority: "Low",
                 complexity: "High", 

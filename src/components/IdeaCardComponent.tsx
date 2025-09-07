@@ -2,6 +2,17 @@ import { useDraggable } from '@dnd-kit/core'
 import { Edit3, Trash2, User, ChevronDown, ChevronUp } from 'lucide-react'
 import { IdeaCard, User as UserType } from '../types'
 
+// Utility function to get user display name
+const getUserDisplayName = (userId: string | null | undefined, currentUser: UserType | null | undefined): string => {
+  if (!userId) return 'Anonymous'
+  if (currentUser && userId === currentUser.id) return 'You'
+  // If it's a UUID (longer than 10 characters and contains hyphens), it's likely AI-generated
+  if (userId.length > 10 && (userId.includes('-') || userId.length === 32)) {
+    return 'AI Assistant'
+  }
+  return userId // fallback to showing the userId if it's not a UUID
+}
+
 interface IdeaCardProps {
   idea: IdeaCard
   isDragging?: boolean
@@ -159,7 +170,7 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = ({ idea, isDragging, currentU
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-500 flex items-center gap-1">
               <User className="w-3 h-3" />
-              {idea.created_by || 'Anonymous'}
+              {getUserDisplayName(idea.created_by, currentUser)}
             </span>
             <span className="text-slate-400">
               {new Date(idea.created_at).toLocaleDateString()}
@@ -171,7 +182,7 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = ({ idea, isDragging, currentU
       {/* Editing indicator */}
       {isLockedByOther && (
         <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-lg shadow-lg">
-          🔒 {idea.editing_by}
+          🔒 Someone editing
         </div>
       )}
       {isLockedBySelf && (

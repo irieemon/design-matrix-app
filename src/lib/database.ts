@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { IdeaCard, Project } from '../types'
+import { EmailService } from './emailService'
 
 export class DatabaseService {
   // Fetch ideas for a specific project (supports user-based access control via RLS)
@@ -464,6 +465,318 @@ export class DatabaseService {
     // Return unsubscribe function
     return () => {
       console.log('📡 Unsubscribing from project updates')
+      supabase.removeChannel(channel)
+    }
+  }
+
+  // Project Collaboration Methods
+  static async addProjectCollaborator(projectId: string, userEmail: string, role: string = 'viewer', invitedBy: string, projectName?: string, inviterName?: string, inviterEmail?: string): Promise<boolean> {
+    try {
+      console.log('🔍 Looking up user by email:', userEmail)
+      
+      // For now, we'll create a simplified invitation system
+      // In a real app, you would need a proper invitation system with email notifications
+      
+      // First, let's try to find if the user exists by checking if they have any projects
+      // This is a workaround since we can't directly query auth.users
+      const { data: existingUsers, error: userLookupError } = await supabase
+        .from('projects')
+        .select('owner_id')
+        .limit(1000) // Get a reasonable sample
+      
+      if (userLookupError) {
+        console.error('Error looking up users:', userLookupError)
+      }
+
+      // For demo purposes, we'll generate a mock user ID based on the email
+      // In a real implementation, this would be handled by a server-side function
+      const mockUserId = btoa(userEmail).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20)
+      console.log('🆔 Generated mock user ID:', mockUserId, 'for email:', userEmail)
+
+      // Store the email mapping in localStorage for demo purposes
+      const emailMappings = JSON.parse(localStorage.getItem('collaboratorEmailMappings') || '{}')
+      emailMappings[mockUserId] = userEmail
+      localStorage.setItem('collaboratorEmailMappings', JSON.stringify(emailMappings))
+
+      // Check if collaboration already exists by checking if we've invited this email before
+      // First check if this email already has a mapping (meaning we've invited them before)
+      const existingMockIds = Object.keys(emailMappings).filter(id => emailMappings[id] === userEmail)
+      console.log('🔍 Existing mock IDs for this email:', existingMockIds)
+
+      if (existingMockIds.length > 0) {
+        // Check if any of these mock IDs are already collaborators on this project
+        const { data: existingCollaborations } = await supabase
+          .from('project_collaborators')
+          .select('id, user_id')
+          .eq('project_id', projectId)
+          .in('user_id', existingMockIds)
+
+        if (existingCollaborations && existingCollaborations.length > 0) {
+          console.log('❌ This email is already a collaborator on this project')
+          return false
+        }
+      }
+
+      console.log('✅ No existing collaboration found, proceeding with invitation')
+
+      // Add collaborator with pending status
+      const { error } = await supabase
+        .from('project_collaborators')
+        .insert([{
+          project_id: projectId,
+          user_id: mockUserId,
+          role,
+          invited_by: invitedBy,
+          status: 'pending'
+        }])
+
+      if (error) {
+        console.error('❌ Error adding collaborator:', error)
+        console.error('❌ Error details:', error.message, error.details, error.code)
+        return false
+      }
+
+      console.log('✅ Collaborator invitation created successfully')
+      console.log('📋 Added collaborator with details:', { projectId, mockUserId, role, invitedBy })
+      
+      // Send real email invitation
+      console.log('📧 Sending real email invitation to:', userEmail)
+      
+      try {
+        const invitationUrl = EmailService.generateInvitationUrl(projectId)
+        const emailSuccess = await EmailService.sendCollaborationInvitation({
+          inviterName: inviterName || 'Project Owner',
+          inviterEmail: inviterEmail || 'noreply@prioritas.app',
+          inviteeEmail: userEmail,
+          projectName: projectName || 'Untitled Project',
+          role,
+          invitationUrl
+        })
+        
+        if (emailSuccess) {
+          console.log('✅ Real email invitation sent successfully!')
+        } else {
+          console.log('⚠️ Email sending failed, but invitation record was created')
+        }
+      } catch (emailError) {
+        console.error('❌ Error sending email invitation:', emailError)
+        console.log('⚠️ Database record created but email failed')
+      }
+      
+      return true
+    } catch (error) {
+      console.error('💥 Error adding project collaborator:', error)
+      console.error('💥 Stack trace:', error)
+      return false
+    }
+  }
+
+  static async getProjectCollaborators(projectId: string) {
+    try {
+      console.log('🔍 DatabaseService: Fetching collaborators for project:', projectId)
+      
+      const { data, error } = await supabase
+        .from('project_collaborators')
+        .select('*')
+        .eq('project_id', projectId)
+        .in('status', ['active', 'pending'])
+
+      console.log('📊 DatabaseService: Raw collaborator query result:', { data, error })
+
+      if (error) {
+        console.error('❌ DatabaseService: Error fetching collaborators:', error)
+        return []
+      }
+
+      if (!data || data.length === 0) {
+        console.log('📋 DatabaseService: No collaborators found for project:', projectId)
+        return []
+      }
+
+      // Since we can't join with auth.users, we'll create mock user data
+      // In a real app, this would be handled by a server-side function or proper user table
+      const emailMappings = JSON.parse(localStorage.getItem('collaboratorEmailMappings') || '{}')
+      console.log('🗂️ DatabaseService: Email mappings from localStorage:', emailMappings)
+      
+      const collaboratorsWithUserData = (data || []).map(collaborator => {
+        // Get the actual email from our localStorage mapping
+        const actualEmail = emailMappings[collaborator.user_id] || `user${collaborator.user_id.substring(0, 8)}@example.com`
+        const userName = actualEmail.split('@')[0]
+        
+        const result = {
+          ...collaborator,
+          user: {
+            id: collaborator.user_id,
+            email: actualEmail,
+            raw_user_meta_data: {
+              full_name: userName.charAt(0).toUpperCase() + userName.slice(1)
+            }
+          }
+        }
+        
+        console.log('👤 DatabaseService: Processed collaborator:', result)
+        return result
+      })
+
+      console.log('✅ DatabaseService: Returning collaborators with user data:', collaboratorsWithUserData)
+      return collaboratorsWithUserData
+    } catch (error) {
+      console.error('💥 DatabaseService: Error fetching project collaborators:', error)
+      return []
+    }
+  }
+
+  static async removeProjectCollaborator(projectId: string, userId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('project_collaborators')
+        .delete()
+        .eq('project_id', projectId)
+        .eq('user_id', userId)
+
+      if (error) {
+        console.error('Error removing collaborator:', error)
+        return false
+      }
+
+      console.log('✅ Collaborator removed successfully')
+      return true
+    } catch (error) {
+      console.error('Error removing project collaborator:', error)
+      return false
+    }
+  }
+
+  static async updateCollaboratorRole(projectId: string, userId: string, newRole: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('project_collaborators')
+        .update({ 
+          role: newRole,
+          updated_at: new Date().toISOString()
+        })
+        .eq('project_id', projectId)
+        .eq('user_id', userId)
+
+      if (error) {
+        console.error('Error updating collaborator role:', error)
+        return false
+      }
+
+      console.log('✅ Collaborator role updated successfully')
+      return true
+    } catch (error) {
+      console.error('Error updating collaborator role:', error)
+      return false
+    }
+  }
+
+  static async getUserProjectRole(projectId: string, userId: string): Promise<string | null> {
+    try {
+      // Check if user owns the project
+      const { data: project } = await supabase
+        .from('projects')
+        .select('owner_id')
+        .eq('id', projectId)
+        .single()
+
+      if (project && project.owner_id === userId) {
+        return 'owner'
+      }
+
+      // Check collaborator role
+      const { data: collaborator, error } = await supabase
+        .from('project_collaborators')
+        .select('role')
+        .eq('project_id', projectId)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single()
+
+      if (error || !collaborator) {
+        return null
+      }
+
+      return collaborator.role
+    } catch (error) {
+      console.error('Error getting user project role:', error)
+      return null
+    }
+  }
+
+  // Check if user has access to project
+  static async canUserAccessProject(projectId: string, userId: string): Promise<boolean> {
+    const role = await this.getUserProjectRole(projectId, userId)
+    return role !== null
+  }
+
+  // Get all projects where user is owner or collaborator
+  static async getUserProjects(userId: string): Promise<Project[]> {
+    try {
+      // Get projects where user is owner
+      const { data: ownedProjects, error: ownedError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('owner_id', userId)
+        .order('updated_at', { ascending: false })
+
+      // Get projects where user is collaborator
+      const { data: collaborations, error: collabError } = await supabase
+        .from('project_collaborators')
+        .select(`
+          project:projects(*)
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+
+      const collaboratedProjects = collaborations?.map(c => c.project).filter(Boolean) || []
+
+      if (ownedError || collabError) {
+        console.error('Error fetching user projects:', { ownedError, collabError })
+        return []
+      }
+
+      // Combine and deduplicate projects
+      const allProjects = [...(ownedProjects || []), ...collaboratedProjects]
+      const uniqueProjects = allProjects.filter((project, index, arr) => 
+        arr.findIndex(p => p.id === project.id) === index
+      )
+
+      return uniqueProjects
+    } catch (error) {
+      console.error('Error fetching user projects:', error)
+      return []
+    }
+  }
+
+  // Subscribe to collaborator changes
+  static subscribeToProjectCollaborators(projectId: string, callback: (collaborators: any[]) => void) {
+    console.log('📡 Setting up real-time subscription for project collaborators...')
+    
+    const channel = supabase
+      .channel(`project_collaborators_${projectId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'project_collaborators',
+          filter: `project_id=eq.${projectId}`
+        },
+        async (payload) => {
+          console.log('📡 Real-time collaborator update:', payload)
+          // Fetch updated collaborators and update
+          const collaborators = await this.getProjectCollaborators(projectId)
+          callback(collaborators)
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Project collaborators subscription status:', status)
+      })
+
+    // Return unsubscribe function
+    return () => {
+      console.log('📡 Unsubscribing from project collaborators updates')
       supabase.removeChannel(channel)
     }
   }
