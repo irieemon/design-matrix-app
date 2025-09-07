@@ -48,6 +48,17 @@ function App() {
     const initializeAuth = async () => {
       try {
         console.log('🚀 Initializing authentication...')
+        
+        // Add a small delay to let the auth state listener run first
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        // Check if user is already authenticated by the auth state listener
+        if (authUser) {
+          console.log('✅ User already authenticated by auth state listener:', authUser.email)
+          if (mounted) setIsLoading(false)
+          return
+        }
+        
         // Get current session with timeout and graceful fallback
         const sessionPromise = supabase.auth.getSession()
         const timeoutPromise = new Promise((resolve) => 
@@ -61,17 +72,22 @@ function App() {
           console.error('❌ Error getting session:', error)
         }
 
+        // Double-check if user was authenticated while we were waiting
+        if (authUser) {
+          console.log('✅ User authenticated during session check:', authUser.email)
+          if (mounted) setIsLoading(false)
+          return
+        }
+
         if (session?.user && mounted) {
           console.log('✅ User already signed in:', session.user.email)
           await handleAuthUser(session.user)
         } else {
           console.log('❌ No active session found')
-          // Don't immediately show login screen - let auth state listener handle it
           // Try legacy localStorage user for backwards compatibility
           const savedUser = localStorage.getItem('prioritasUser')
           if (savedUser && mounted) {
             console.log('🔄 Found legacy user, migrating:', savedUser)
-            // Create a temporary user object for backwards compatibility
             setCurrentUser({
               id: 'legacy-user',
               email: savedUser,
@@ -79,16 +95,21 @@ function App() {
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
+            setIsLoading(false)
           } else {
             console.log('❌ No legacy user found - waiting for auth state')
-            // Don't set loading to false here - let the auth state listener handle it
+            // Give auth state listener a chance to work before showing login
+            setTimeout(() => {
+              if (mounted && !authUser) {
+                console.log('🔓 Final check: showing login screen')
+                setIsLoading(false)
+              }
+            }, 1000)
           }
         }
       } catch (error) {
         console.error('💥 Error initializing auth:', error)
-      } finally {
-        console.log('🔓 Auth initialization complete, setting loading to false')
-        if (mounted) setIsLoading(false)
+        if (mounted && !authUser) setIsLoading(false)
       }
     }
 
