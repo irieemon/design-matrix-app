@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { Target, Plus, Lightbulb, Sparkles, FolderOpen } from 'lucide-react'
-import { IdeaCard, Project, User, AuthUser } from './types'
+import { IdeaCard, Project, User, AuthUser, ProjectFile } from './types'
 import DesignMatrix from './components/DesignMatrix'
 import IdeaCardComponent from './components/IdeaCardComponent'
 import AddIdeaModal from './components/AddIdeaModal'
@@ -32,6 +32,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState<string>('matrix')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
+  const [projectFiles, setProjectFiles] = useState<Record<string, ProjectFile[]>>({})
 
   // Configure drag sensors with distance threshold
   const sensors = useSensors(
@@ -41,6 +42,52 @@ function App() {
       },
     })
   )
+
+  // Load files from localStorage when component mounts
+  useEffect(() => {
+    try {
+      const savedFiles = localStorage.getItem('project-files')
+      if (savedFiles) {
+        setProjectFiles(JSON.parse(savedFiles))
+      }
+    } catch (error) {
+      console.error('Error loading project files from localStorage:', error)
+    }
+  }, [])
+
+  // Save files to localStorage whenever projectFiles changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('project-files', JSON.stringify(projectFiles))
+    } catch (error) {
+      console.error('Error saving project files to localStorage:', error)
+    }
+  }, [projectFiles])
+
+  // File management functions
+  const handleFilesUploaded = (newFiles: ProjectFile[]) => {
+    if (!currentProject?.id) return
+    
+    setProjectFiles(prev => ({
+      ...prev,
+      [currentProject.id]: [...(prev[currentProject.id] || []), ...newFiles]
+    }))
+  }
+
+  const handleDeleteFile = (fileId: string) => {
+    if (!currentProject?.id) return
+    
+    setProjectFiles(prev => ({
+      ...prev,
+      [currentProject.id]: (prev[currentProject.id] || []).filter(f => f.id !== fileId)
+    }))
+  }
+
+  // Get files for current project
+  const getCurrentProjectFiles = (): ProjectFile[] => {
+    if (!currentProject?.id) return []
+    return projectFiles[currentProject.id] || []
+  }
 
   // Initialize Supabase auth and handle session changes
   useEffect(() => {
@@ -542,6 +589,9 @@ function App() {
                   <ProjectFiles
                     currentUser={currentUser}
                     currentProject={currentProject}
+                    files={getCurrentProjectFiles()}
+                    onFilesUploaded={handleFilesUploaded}
+                    onDeleteFile={handleDeleteFile}
                     isEmbedded={true}
                   />
                 </div>
@@ -624,6 +674,9 @@ function App() {
             <ProjectFiles
               currentUser={currentUser}
               currentProject={currentProject}
+              files={getCurrentProjectFiles()}
+              onFilesUploaded={handleFilesUploaded}
+              onDeleteFile={handleDeleteFile}
             />
           </div>
         )

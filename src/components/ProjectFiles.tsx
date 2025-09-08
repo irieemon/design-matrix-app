@@ -8,32 +8,33 @@ import FileViewer from './FileViewer'
 interface ProjectFilesProps {
   currentProject: Project
   currentUser: User
-  initialFiles?: ProjectFile[]
+  files: ProjectFile[]
+  onFilesUploaded: (files: ProjectFile[]) => void
+  onDeleteFile: (fileId: string) => void
   isEmbedded?: boolean
 }
 
 const ProjectFiles: React.FC<ProjectFilesProps> = ({ 
   currentProject, 
-  currentUser, 
-  initialFiles = [],
+  currentUser,
+  files,
+  onFilesUploaded,
+  onDeleteFile,
   isEmbedded = false
 }) => {
-  const [files, setFiles] = useState<ProjectFile[]>(initialFiles)
   const [activeTab, setActiveTab] = useState<'upload' | 'manage'>('upload')
   const [viewingFile, setViewingFile] = useState<ProjectFile | null>(null)
 
   const handleFilesUploaded = (newFiles: ProjectFile[]) => {
-    setFiles(prev => [...prev, ...newFiles])
+    onFilesUploaded(newFiles)
     // Switch to manage tab to show the uploaded files
     setActiveTab('manage')
     console.log('Files uploaded:', newFiles)
-    // In a real app, you'd also save to database here
   }
 
   const handleDeleteFile = (fileId: string) => {
-    setFiles(prev => prev.filter(f => f.id !== fileId))
+    onDeleteFile(fileId)
     console.log('File deleted:', fileId)
-    // In a real app, you'd also delete from Supabase Storage and database
   }
 
   const handleViewFile = (file: ProjectFile) => {
