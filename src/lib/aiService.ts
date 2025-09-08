@@ -597,8 +597,8 @@ Provide a comprehensive strategic report in JSON format with:
     }
   }
 
-  static async analyzeProjectAndGenerateIdeas(projectName: string, projectDescription: string, additionalContext?: string, selectedProjectType?: string): Promise<any> {
-    console.log('🔍 AIService: Analyzing project and generating ideas...', { projectName, projectDescription, additionalContext })
+  static async analyzeProjectAndGenerateIdeas(projectName: string, projectDescription: string, additionalContext?: string, selectedProjectType?: string, ideaCount: number = 6, ideaTolerance: number = 50, projectFiles?: any[]): Promise<any> {
+    console.log('🔍 AIService: Analyzing project and generating ideas...', { projectName, projectDescription, additionalContext, ideaCount, ideaTolerance, filesCount: projectFiles?.length || 0 })
 
     // Enhanced project-aware prompt that creates contextually relevant ideas
     const prompt = `You are a strategic business consultant helping to set up a priority matrix for a new project.
@@ -607,6 +607,18 @@ PROJECT: "${projectName}"
 DESCRIPTION: "${projectDescription}"
 ${selectedProjectType && selectedProjectType !== 'auto' ? `SELECTED PROJECT TYPE: "${selectedProjectType}"` : ''}
 ${additionalContext ? `ADDITIONAL CONTEXT: "${additionalContext}"` : ''}
+IDEA REQUIREMENTS:
+- Generate exactly ${ideaCount} ideas
+- Tolerance Level: ${ideaTolerance}% (${ideaTolerance < 30 ? 'Conservative - focus on proven, low-risk ideas' : ideaTolerance < 70 ? 'Balanced - mix of safe and innovative ideas' : 'Experimental - include bold, high-risk/high-reward ideas'})
+
+${projectFiles && projectFiles.length > 0 ? `SUPPORTING FILES AND CONTENT:
+The following files have been uploaded as supporting materials for this project:
+${projectFiles.map(file => `
+- ${file.original_name} (${file.file_type.toUpperCase()}, ${Math.round(file.file_size / 1024)}KB)
+  ${file.content_preview ? `Content preview: ${file.content_preview.substring(0, 300)}...` : 'Binary file - content not extracted'}
+`).join('')}
+
+Please reference this supporting content when generating ideas and ensure the ideas are relevant to the information provided in these files.` : ''}
 
 **TASK 1: PROJECT TYPE ANALYSIS**
 ${selectedProjectType && selectedProjectType !== 'auto' ? 
@@ -662,7 +674,7 @@ Respond with this JSON structure:
       "priority": "low|moderate|high|strategic|innovation",
       "reasoning": "Why positioned here on the matrix and how it relates to project goals"
     }
-    // 6-8 ideas total, ALL relevant to project type
+    // Generate exactly ${ideaCount} ideas total, ALL relevant to project type and tolerance level
   ]
 }`
 

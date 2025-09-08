@@ -234,3 +234,21 @@ export interface Quadrant {
   emoji: string
   bgColor: string
 }
+
+export type FileType = 'pdf' | 'doc' | 'docx' | 'txt' | 'md' | 'image' | 'other'
+
+export interface ProjectFile {
+  id: string
+  project_id: string
+  name: string
+  original_name: string
+  file_type: FileType
+  file_size: number
+  mime_type: string
+  storage_path: string
+  content_preview?: string // For text content that can be extracted
+  uploaded_by: string
+  created_at: string
+  updated_at: string
+  uploader?: User
+}

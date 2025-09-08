@@ -45,6 +45,8 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
   const [questionAnswers, setQuestionAnswers] = useState<Record<number, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [ideaCount, setIdeaCount] = useState(6)
+  const [ideaTolerance, setIdeaTolerance] = useState(50) // 0-100 scale
 
   const handleInitialAnalysis = async () => {
     if (!projectName.trim() || !projectDescription.trim()) return
@@ -58,7 +60,9 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         projectName, 
         projectDescription,
         undefined,  // additionalContext
-        selectedProjectType === 'auto' ? undefined : selectedProjectType
+        selectedProjectType === 'auto' ? undefined : selectedProjectType,
+        ideaCount,
+        ideaTolerance
       )
       setAnalysis(result)
 
@@ -92,7 +96,9 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         projectName,
         projectDescription,
         additionalContext,
-        selectedProjectType === 'auto' ? undefined : selectedProjectType
+        selectedProjectType === 'auto' ? undefined : selectedProjectType,
+        ideaCount,
+        ideaTolerance
       )
       
       setAnalysis(result)
@@ -229,13 +235,54 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         </p>
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Number of Ideas: {ideaCount}
+          </label>
+          <input
+            type="range"
+            min="3"
+            max="12"
+            value={ideaCount}
+            onChange={(e) => setIdeaCount(parseInt(e.target.value))}
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider"
+          />
+          <div className="flex justify-between text-xs text-slate-400 mt-1">
+            <span>3</span>
+            <span>12</span>
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Idea Tolerance: {ideaTolerance}%
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={ideaTolerance}
+            onChange={(e) => setIdeaTolerance(parseInt(e.target.value))}
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider"
+          />
+          <div className="flex justify-between text-xs text-slate-400 mt-1">
+            <span>Conservative</span>
+            <span>Experimental</span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Higher tolerance includes more experimental or challenging ideas
+          </p>
+        </div>
+      </div>
+
       <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
         <div className="flex items-start space-x-2">
           <Lightbulb className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
           <div>
             <h4 className="text-sm font-medium text-purple-900 mb-1">How it works</h4>
             <p className="text-sm text-purple-700">
-              AI will analyze your project and generate 5-8 strategic ideas positioned on the priority matrix. 
+              AI will analyze your project and generate {ideaCount} strategic ideas positioned on the priority matrix. 
               If more context is needed, you'll be asked clarifying questions to ensure the best recommendations.
             </p>
           </div>

@@ -16,6 +16,7 @@ import UserSettings from './components/pages/UserSettings'
 import ProjectCollaboration from './components/pages/ProjectCollaboration'
 import ProjectManagement from './components/ProjectManagement'
 import ProjectRoadmap from './components/ProjectRoadmap'
+import ProjectFiles from './components/ProjectFiles'
 import { DatabaseService } from './lib/database'
 import { supabase } from './lib/supabase'
 
@@ -599,6 +600,19 @@ function App() {
               currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
               currentProject={currentProject}
               ideas={ideas}
+            />
+          </div>
+        )
+      case 'files':
+        if (!currentProject || !currentUser) {
+          setCurrentPage('projects')
+          return null
+        }
+        return (
+          <div className="bg-slate-50 min-h-screen">
+            <ProjectFiles
+              currentUser={currentUser}
+              currentProject={currentProject}
             />
           </div>
         )

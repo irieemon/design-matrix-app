@@ -47,6 +47,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentProj
       description: 'Manage team members & permissions'
     },
     {
+      id: 'files',
+      label: 'Project Files',
+      icon: FolderOpen,
+      description: 'Upload & manage supporting content'
+    },
+    {
       id: 'data',
       label: 'Data Management',
       icon: Database,

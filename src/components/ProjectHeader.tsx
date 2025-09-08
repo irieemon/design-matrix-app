@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Edit2, Check, X, Plus, Sparkles } from 'lucide-react'
+import { Edit2, Check, X, Plus, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
 import { Project, IdeaCard, User } from '../types'
 import { DatabaseService } from '../lib/database'
 import AIStarterModal from './AIStarterModal'
@@ -17,6 +17,7 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
   const [editDescription, setEditDescription] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [showAIStarter, setShowAIStarter] = useState(false)
+  const [isDescriptionCollapsed, setIsDescriptionCollapsed] = useState(false)
 
   // No longer loading project independently - using the currentProject prop instead
 
@@ -228,10 +229,29 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
   return (
     <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl shadow-sm border border-slate-200/60 p-6 mb-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-1">{currentProject?.name || 'No Project Selected'}</h1>
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl font-bold text-slate-900">{currentProject?.name || 'No Project Selected'}</h1>
+            {currentProject?.description && currentProject.description.length > 100 && (
+              <button
+                onClick={() => setIsDescriptionCollapsed(!isDescriptionCollapsed)}
+                className="flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                title={isDescriptionCollapsed ? "Show full description" : "Collapse description"}
+              >
+                {isDescriptionCollapsed ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronUp className="w-4 h-4" />
+                )}
+              </button>
+            )}
+          </div>
           {currentProject?.description && (
-            <p className="text-slate-600">{currentProject.description}</p>
+            <div className={`text-slate-600 transition-all duration-200 ${isDescriptionCollapsed && currentProject.description.length > 100 ? 'line-clamp-2' : ''}`}>
+              {isDescriptionCollapsed && currentProject.description.length > 100 
+                ? currentProject.description.substring(0, 100) + '...'
+                : currentProject.description}
+            </div>
           )}
           {currentProject && (
             <div className="text-xs text-slate-500 mt-2">
