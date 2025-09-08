@@ -43,9 +43,9 @@ const ProjectFiles: React.FC<ProjectFilesProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">Project Files</h2>
+          <h2 className="text-xl font-semibold text-slate-900">Supporting Files</h2>
           <p className="text-slate-500 mt-1">
-            Upload supporting documents and media for AI reference
+            Upload documents and resources to enhance AI-generated ideas and insights
           </p>
         </div>
         <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">

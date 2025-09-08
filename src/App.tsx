@@ -535,6 +535,16 @@ function App() {
                   </div>
                 ))}
               </div>
+
+              {/* Project Files Section */}
+              {currentUser && (
+                <div className="mt-10">
+                  <ProjectFiles
+                    currentUser={currentUser}
+                    currentProject={currentProject}
+                  />
+                </div>
+              )}
               </>
               )}
             </main>
@@ -600,19 +610,6 @@ function App() {
               currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
               currentProject={currentProject}
               ideas={ideas}
-            />
-          </div>
-        )
-      case 'files':
-        if (!currentProject || !currentUser) {
-          setCurrentPage('projects')
-          return null
-        }
-        return (
-          <div className="bg-slate-50 min-h-screen">
-            <ProjectFiles
-              currentUser={currentUser}
-              currentProject={currentProject}
             />
           </div>
         )
