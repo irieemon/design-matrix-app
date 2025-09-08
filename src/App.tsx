@@ -542,6 +542,7 @@ function App() {
                   <ProjectFiles
                     currentUser={currentUser}
                     currentProject={currentProject}
+                    isEmbedded={true}
                   />
                 </div>
               )}
@@ -610,6 +611,19 @@ function App() {
               currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
               currentProject={currentProject}
               ideas={ideas}
+            />
+          </div>
+        )
+      case 'files':
+        if (!currentProject || !currentUser) {
+          setCurrentPage('projects')
+          return null
+        }
+        return (
+          <div className="bg-slate-50 min-h-screen">
+            <ProjectFiles
+              currentUser={currentUser}
+              currentProject={currentProject}
             />
           </div>
         )

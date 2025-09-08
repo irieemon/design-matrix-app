@@ -9,12 +9,14 @@ interface ProjectFilesProps {
   currentProject: Project
   currentUser: User
   initialFiles?: ProjectFile[]
+  isEmbedded?: boolean
 }
 
 const ProjectFiles: React.FC<ProjectFilesProps> = ({ 
   currentProject, 
   currentUser, 
-  initialFiles = [] 
+  initialFiles = [],
+  isEmbedded = false
 }) => {
   const [files, setFiles] = useState<ProjectFile[]>(initialFiles)
   const [activeTab, setActiveTab] = useState<'upload' | 'manage'>('upload')
@@ -43,9 +45,14 @@ const ProjectFiles: React.FC<ProjectFilesProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">Supporting Files</h2>
+          <h2 className="text-xl font-semibold text-slate-900">
+            {isEmbedded ? 'Supporting Files' : 'File Management'}
+          </h2>
           <p className="text-slate-500 mt-1">
-            Upload documents and resources to enhance AI-generated ideas and insights
+            {isEmbedded 
+              ? 'Upload documents and resources to enhance AI-generated ideas and insights'
+              : 'Upload, organize, and manage all project files and supporting documents'
+            }
           </p>
         </div>
         <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">

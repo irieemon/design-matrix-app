@@ -29,6 +29,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentProj
       description: 'Priority matrix & ideas'
     },
     {
+      id: 'files',
+      label: 'File Management',
+      icon: FolderOpen,
+      description: 'Upload & organize project files'
+    },
+    {
       id: 'roadmap',
       label: 'Roadmap',
       icon: Map,
