@@ -27,16 +27,10 @@ const ProjectFiles: React.FC<ProjectFilesProps> = ({
 
   // Auto-switch to manage tab if files exist
   useEffect(() => {
-    console.log('🔧 ProjectFiles: Files changed', { 
-      filesCount: files.length, 
-      currentTab: activeTab,
-      projectId: currentProject.id 
-    })
     if (files.length > 0 && activeTab === 'upload') {
-      console.log('🔧 ProjectFiles: Switching to manage tab')
       setActiveTab('manage')
     }
-  }, [files.length, activeTab, currentProject.id])
+  }, [files.length, activeTab])
 
   const handleFilesUploaded = (newFiles: ProjectFile[]) => {
     onFilesUploaded(newFiles)
