@@ -82,17 +82,17 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     }
   }
 
-  const loadRoadmapVersion = async (roadmapId: string) => {
-    try {
-      const roadmap = await DatabaseService.getProjectRoadmap(roadmapId)
-      if (roadmap) {
-        setRoadmapData(roadmap.roadmap_data)
-        setSelectedRoadmapId(roadmapId)
-      }
-    } catch (error) {
-      console.error('Error loading roadmap version:', error)
-    }
-  }
+  // const loadRoadmapVersion = async (roadmapId: string) => {
+  //   try {
+  //     const roadmap = await DatabaseService.getProjectRoadmap(roadmapId)
+  //     if (roadmap) {
+  //       setRoadmapData(roadmap.roadmap_data)
+  //       setSelectedRoadmapId(roadmapId)
+  //     }
+  //   } catch (error) {
+  //     console.error('Error loading roadmap version:', error)
+  //   }
+  // }
 
   const generateRoadmap = async () => {
     if (!currentProject) {

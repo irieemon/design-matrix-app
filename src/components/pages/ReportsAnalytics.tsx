@@ -16,7 +16,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
   const [insightsHistory, setInsightsHistory] = useState<ProjectInsightsType[]>([])
   const [selectedInsightId, setSelectedInsightId] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  // const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   
   // Load insights history when component mounts or project changes
   useEffect(() => {
@@ -28,7 +28,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
   const loadInsightsHistory = async () => {
     if (!currentProject?.id) return
     
-    setIsLoadingHistory(true)
+    // setIsLoadingHistory(true)
     try {
       const history = await DatabaseService.getProjectInsights(currentProject.id)
       setInsightsHistory(history)
@@ -36,7 +36,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
     } catch (error) {
       console.error('Error loading insights history:', error)
     } finally {
-      setIsLoadingHistory(false)
+      // setIsLoadingHistory(false)
     }
   }
 
@@ -44,7 +44,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
     exportToCSV(ideas)
   }
 
-  const handleInsightSaved = (insightId: string) => {
+  const handleInsightSaved = (_insightId: string) => {
     console.log('📊 Insight saved, reloading history...')
     loadInsightsHistory()
   }
@@ -371,7 +371,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
         <AIInsightsModal 
           ideas={ideas}
           currentProject={currentProject}
-          selectedInsightId={selectedInsightId}
+          selectedInsightId={selectedInsightId || undefined}
           onClose={() => {
             setShowAIInsights(false)
             setSelectedInsightId(null)

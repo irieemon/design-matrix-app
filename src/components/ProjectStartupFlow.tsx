@@ -155,12 +155,13 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
           description: projectData.description,
           project_type: projectData.project_type,
           status: projectData.status,
-          priority: projectData.priority,
+          visibility: projectData.visibility,
+          priority_level: projectData.priority_level,
           owner_id: projectData.owner_id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           budget: projectData.budget || 0,
-          target_completion: projectData.target_completion || null,
+          target_date: projectData.target_date || undefined,
         }
         console.log('✅ Created local fallback project:', project.name)
       }

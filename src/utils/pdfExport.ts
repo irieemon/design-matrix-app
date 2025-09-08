@@ -369,7 +369,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
   doc.text('Implementation Roadmap', marginLeft, yPosition)
   yPosition += 15
 
-  roadmapData.roadmapAnalysis.phases.forEach((phase, index) => {
+  roadmapData.roadmapAnalysis.phases.forEach((phase, _index) => {
     checkPageBreak(60)
     
     // Phase Header

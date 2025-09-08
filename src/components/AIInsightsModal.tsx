@@ -105,7 +105,6 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
     
     setIsSaving(true)
     try {
-      const insightName = `AI Insights - ${new Date().toLocaleDateString()}`
       const savedId = await DatabaseService.saveProjectInsights(
         currentProject.id,
         insights,

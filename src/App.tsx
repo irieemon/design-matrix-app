@@ -17,7 +17,7 @@ import ProjectCollaboration from './components/pages/ProjectCollaboration'
 import ProjectManagement from './components/ProjectManagement'
 import ProjectRoadmap from './components/ProjectRoadmap'
 import { DatabaseService } from './lib/database'
-import { supabase, getUserProfile } from './lib/supabase'
+import { supabase } from './lib/supabase'
 
 function App() {
   const [ideas, setIdeas] = useState<IdeaCard[]>([])

@@ -87,12 +87,13 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
               description: 'This is a test project to verify the UI works',
               project_type: 'software' as const,
               status: 'active' as const,
-              priority: 'high' as const,
+              visibility: 'private' as const,
+              priority_level: 'high' as const,
               owner_id: currentUser.id,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
               budget: 10000,
-              target_completion: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              target_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             }
           ]
           console.log('📋 No database projects, using test project')
@@ -109,12 +110,13 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
             description: 'This is a test project because database connection failed',
             project_type: 'software' as const,
             status: 'active' as const,
-            priority: 'high' as const,
+            visibility: 'private' as const,
+            priority_level: 'high' as const,
             owner_id: currentUser.id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             budget: 10000,
-            target_completion: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            target_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           }
         ]
         setProjects(testProjects)
