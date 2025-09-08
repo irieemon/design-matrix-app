@@ -62,7 +62,34 @@ export const getUserProfile = async (userId: string) => {
       // If it's a timeout or table doesn't exist, try to create the profile
       if (error.message === 'Profile lookup timeout' || error.code === '42P01') {
         console.log('🏗️ Attempting to create user profile for userId:', userId)
-        return await createUserProfile(userId)
+        
+        // Add timeout to entire profile creation process
+        try {
+          const createProfilePromise = createUserProfile(userId)
+          const overallTimeoutPromise = new Promise((resolve) => 
+            setTimeout(() => {
+              console.log('⏰ Profile creation taking too long, using emergency fallback')
+              resolve({
+                id: userId,
+                email: 'unknown@example.com',
+                full_name: 'User',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+            }, 5000)
+          )
+          
+          return await Promise.race([createProfilePromise, overallTimeoutPromise]) as any
+        } catch (createError) {
+          console.error('❌ Profile creation failed:', createError)
+          return {
+            id: userId,
+            email: 'unknown@example.com',
+            full_name: 'User',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        }
       }
       
       return null
@@ -80,8 +107,20 @@ export const createUserProfile = async (userId: string, email?: string) => {
   try {
     // Try to get the current user's email from auth if not provided
     if (!email) {
-      const { data: { user } } = await supabase.auth.getUser()
-      email = user?.email || 'unknown@example.com'
+      try {
+        console.log('📧 Getting user email from auth...')
+        const userPromise = supabase.auth.getUser()
+        const emailTimeoutPromise = new Promise((resolve) => 
+          setTimeout(() => resolve({ data: { user: null } }), 1000)
+        )
+        
+        const { data: { user } } = await Promise.race([userPromise, emailTimeoutPromise]) as any
+        email = user?.email || 'unknown@example.com'
+        console.log('📧 Got email:', email)
+      } catch (emailError) {
+        console.log('⚠️ Failed to get user email, using default:', emailError)
+        email = 'unknown@example.com'
+      }
     }
     
     const newProfile = {
