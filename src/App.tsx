@@ -142,6 +142,29 @@ function App() {
     }
   }, [])
 
+  // Check if user has projects and redirect to appropriate page
+  const checkUserProjectsAndRedirect = async (userId: string) => {
+    try {
+      console.log('📋 Checking if user has existing projects...')
+      const projects = await DatabaseService.getAllProjects()
+      const userProjects = projects.filter(project => project.owner_id === userId)
+      
+      console.log('📋 Found', userProjects.length, 'projects for user')
+      
+      if (userProjects.length > 0) {
+        console.log('🎯 User has existing projects, redirecting to projects page')
+        setCurrentPage('projects')
+      } else {
+        console.log('📝 No existing projects found, staying on matrix/create page')
+        setCurrentPage('matrix')
+      }
+    } catch (error) {
+      console.error('❌ Error checking user projects:', error)
+      // If project check fails, default to matrix page
+      setCurrentPage('matrix')
+    }
+  }
+
   // Handle authenticated user
   const handleAuthUser = async (authUser: any) => {
     try {
@@ -177,9 +200,16 @@ function App() {
           console.log('⚠️ No database profile found, using fallback user with UUID:', fallbackUser.id)
           setCurrentUser(fallbackUser)
         }
+        
+        // Check if user has existing projects and redirect accordingly
+        await checkUserProjectsAndRedirect(authUser.id)
+        
       } catch (profileError) {
         console.error('❌ Profile lookup failed, using fallback:', profileError)
         setCurrentUser(fallbackUser)
+        
+        // Still check for projects even if profile lookup failed
+        await checkUserProjectsAndRedirect(authUser.id)
       }
       
     } catch (error) {
@@ -192,6 +222,13 @@ function App() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
+      
+      // Try to check for projects even in error case
+      if (authUser?.id) {
+        await checkUserProjectsAndRedirect(authUser.id)
+      } else {
+        setCurrentPage('matrix')
+      }
     } finally {
       console.log('🔓 Setting loading to false')
       setIsLoading(false)
