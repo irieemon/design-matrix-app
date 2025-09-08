@@ -92,27 +92,39 @@ export const createUserProfile = async (userId: string, email?: string) => {
       updated_at: new Date().toISOString()
     }
     
-    const { data, error } = await supabase
+    console.log('📝 Attempting to insert profile:', newProfile)
+    
+    // Add timeout to profile creation
+    const insertPromise = supabase
       .from('user_profiles')
       .insert([newProfile])
       .select()
       .single()
+      
+    const timeoutPromise = new Promise((resolve) => 
+      setTimeout(() => resolve({ data: null, error: { message: 'Profile creation timeout' } }), 3000)
+    )
+    
+    const { data, error } = await Promise.race([insertPromise, timeoutPromise]) as any
     
     if (error) {
       console.error('❌ Error creating user profile:', error)
       
-      // If table doesn't exist, return a fallback profile
-      if (error.code === '42P01') {
-        console.log('📄 Database table missing, using fallback profile')
-        return {
+      // If table doesn't exist or timeout, return a fallback profile
+      if (error.code === '42P01' || error.message === 'Profile creation timeout') {
+        console.log('📄 Database issue, using fallback profile:', error.message)
+        const fallbackProfile = {
           id: userId,
           email: email,
           full_name: email?.split('@')[0] || 'User',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }
+        console.log('✅ Returning fallback profile:', fallbackProfile)
+        return fallbackProfile
       }
       
+      console.log('❌ Profile creation failed, returning null')
       return null
     }
     
