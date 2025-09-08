@@ -16,15 +16,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.log('You need to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file')
 }
 
-// Create Supabase client
+// Create Supabase client with simplified config to avoid conflicts
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-key',
   {
     auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+      storageKey: 'prioritas-auth'
     }
   }
 )
@@ -67,27 +68,51 @@ export const getUserProfile = async (userId: string) => {
         try {
           const createProfilePromise = createUserProfile(userId)
           const overallTimeoutPromise = new Promise((resolve) => 
-            setTimeout(() => {
+            setTimeout(async () => {
               console.log('⏰ Profile creation taking too long, using emergency fallback')
-              resolve({
-                id: userId,
-                email: 'unknown@example.com',
-                full_name: 'User',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
+              // Try to get current user from auth for correct email
+              try {
+                const { data: { user } } = await supabase.auth.getUser()
+                resolve({
+                  id: userId,
+                  email: user?.email || 'unknown@example.com',
+                  full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                })
+              } catch (err) {
+                resolve({
+                  id: userId,
+                  email: 'unknown@example.com',
+                  full_name: 'User',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                })
+              }
             }, 5000)
           )
           
           return await Promise.race([createProfilePromise, overallTimeoutPromise]) as any
         } catch (createError) {
           console.error('❌ Profile creation failed:', createError)
-          return {
-            id: userId,
-            email: 'unknown@example.com',
-            full_name: 'User',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+          // Try to get current user from auth for correct email
+          try {
+            const { data: { user } } = await supabase.auth.getUser()
+            return {
+              id: userId,
+              email: user?.email || 'unknown@example.com',
+              full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          } catch {
+            return {
+              id: userId,
+              email: 'unknown@example.com',
+              full_name: 'User',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
           }
         }
       }
@@ -109,14 +134,15 @@ export const createUserProfile = async (userId: string, email?: string) => {
     if (!email) {
       try {
         console.log('📧 Getting user email from auth...')
-        const userPromise = supabase.auth.getUser()
-        const emailTimeoutPromise = new Promise((resolve) => 
-          setTimeout(() => resolve({ data: { user: null } }), 1000)
-        )
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
         
-        const { data: { user } } = await Promise.race([userPromise, emailTimeoutPromise]) as any
-        email = user?.email || 'unknown@example.com'
-        console.log('📧 Got email:', email)
+        if (userError) {
+          console.error('❌ Error getting user from auth:', userError)
+          email = 'unknown@example.com'
+        } else {
+          email = user?.email || 'unknown@example.com'
+          console.log('📧 Got email from auth:', email)
+        }
       } catch (emailError) {
         console.log('⚠️ Failed to get user email, using default:', emailError)
         email = 'unknown@example.com'

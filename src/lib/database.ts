@@ -298,6 +298,34 @@ export class DatabaseService {
     }
   }
 
+  // Get projects owned by a specific user
+  static async getUserOwnedProjects(userId: string): Promise<Project[]> {
+    try {
+      console.log('📋 Getting projects owned by user:', userId)
+      
+      // Query without timeout to see what's happening
+      console.log('📋 Starting query...')
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('owner_id', userId)
+        .order('updated_at', { ascending: false })
+      
+      console.log('📋 Query completed. Error:', error, 'Data:', data)
+
+      if (error) {
+        console.error('❌ Error fetching user projects:', error)
+        return []
+      }
+
+      console.log('✅ Found', data?.length || 0, 'projects for user:', data)
+      return data || []
+    } catch (error) {
+      console.error('Error fetching user projects:', error)
+      return []
+    }
+  }
+
   static async getCurrentProject(): Promise<Project | null> {
     try {
       const { data, error } = await supabase

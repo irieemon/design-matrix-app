@@ -8,7 +8,9 @@ import { exportInsightsToPDF } from '../utils/pdfExport'
 interface AIInsightsModalProps {
   ideas: IdeaCard[]
   currentProject: Project | null
+  selectedInsightId?: string
   onClose: () => void
+  onInsightSaved?: (insightId: string) => void
 }
 
 interface InsightsReport {

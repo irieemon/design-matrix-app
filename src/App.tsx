@@ -146,8 +146,17 @@ function App() {
   const checkUserProjectsAndRedirect = async (userId: string) => {
     try {
       console.log('📋 Checking if user has existing projects...')
-      const projects = await DatabaseService.getAllProjects()
-      const userProjects = projects.filter(project => project.owner_id === userId)
+      
+      // Add timeout to prevent hanging
+      const projectCheckPromise = DatabaseService.getUserOwnedProjects(userId)
+      const timeoutPromise = new Promise<Project[]>((resolve) => 
+        setTimeout(() => {
+          console.log('⏰ Project check timeout, defaulting to matrix page')
+          resolve([])
+        }, 3000)
+      )
+      
+      const userProjects = await Promise.race([projectCheckPromise, timeoutPromise])
       
       console.log('📋 Found', userProjects.length, 'projects for user')
       
@@ -187,30 +196,12 @@ function App() {
         idType: typeof fallbackUser.id 
       })
       
-      // Try to get user profile from database, but don't wait too long
-      console.log('👤 Looking up user profile for ID:', authUser.id)
-      try {
-        const profile = await getUserProfile(authUser.id)
-        console.log('👤 Profile lookup result:', profile)
-        
-        if (profile) {
-          console.log('✅ Using database profile:', profile.full_name || profile.email)
-          setCurrentUser(profile)
-        } else {
-          console.log('⚠️ No database profile found, using fallback user with UUID:', fallbackUser.id)
-          setCurrentUser(fallbackUser)
-        }
-        
-        // Check if user has existing projects and redirect accordingly
-        await checkUserProjectsAndRedirect(authUser.id)
-        
-      } catch (profileError) {
-        console.error('❌ Profile lookup failed, using fallback:', profileError)
-        setCurrentUser(fallbackUser)
-        
-        // Still check for projects even if profile lookup failed
-        await checkUserProjectsAndRedirect(authUser.id)
-      }
+      // Skip database profile lookup for now and use auth user directly
+      console.log('👤 Using authenticated user data directly')
+      setCurrentUser(fallbackUser)
+      
+      // Check if user has existing projects and redirect accordingly
+      await checkUserProjectsAndRedirect(authUser.id)
       
     } catch (error) {
       console.error('💥 Error in handleAuthUser:', error)
