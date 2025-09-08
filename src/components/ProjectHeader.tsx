@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Edit2, Check, X, Plus, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
 import { Project, IdeaCard, User } from '../types'
 import { DatabaseService } from '../lib/database'
@@ -18,6 +18,18 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
   const [isCreating, setIsCreating] = useState(false)
   const [showAIStarter, setShowAIStarter] = useState(false)
   const [isDescriptionCollapsed, setIsDescriptionCollapsed] = useState(false)
+
+  // Auto-collapse long descriptions
+  useEffect(() => {
+    if (currentProject?.description) {
+      // Estimate lines: approximately 80 characters per line
+      const estimatedLines = Math.ceil(currentProject.description.length / 80)
+      // Auto-collapse if more than 3 lines
+      setIsDescriptionCollapsed(estimatedLines > 3)
+    } else {
+      setIsDescriptionCollapsed(false)
+    }
+  }, [currentProject?.description])
 
   // No longer loading project independently - using the currentProject prop instead
 
@@ -232,7 +244,7 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-2xl font-bold text-slate-900">{currentProject?.name || 'No Project Selected'}</h1>
-            {currentProject?.description && currentProject.description.length > 100 && (
+            {currentProject?.description && Math.ceil(currentProject.description.length / 80) > 3 && (
               <button
                 onClick={() => setIsDescriptionCollapsed(!isDescriptionCollapsed)}
                 className="flex items-center text-slate-400 hover:text-slate-600 transition-colors"
@@ -247,9 +259,9 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
             )}
           </div>
           {currentProject?.description && (
-            <div className={`text-slate-600 transition-all duration-200 ${isDescriptionCollapsed && currentProject.description.length > 100 ? 'line-clamp-2' : ''}`}>
-              {isDescriptionCollapsed && currentProject.description.length > 100 
-                ? currentProject.description.substring(0, 100) + '...'
+            <div className={`text-slate-600 transition-all duration-200 ${isDescriptionCollapsed && Math.ceil(currentProject.description.length / 80) > 3 ? 'line-clamp-3' : ''}`}>
+              {isDescriptionCollapsed && Math.ceil(currentProject.description.length / 80) > 3 
+                ? currentProject.description.substring(0, 240) + '...'
                 : currentProject.description}
             </div>
           )}
