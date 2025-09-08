@@ -115,8 +115,7 @@ function App() {
       
       if (event === 'SIGNED_IN' && session?.user) {
         await handleAuthUser(session.user)
-        // Ensure loading is stopped after successful authentication
-        setIsLoading(false)
+        // Loading is now handled inside handleAuthUser after completion
       } else if (event === 'SIGNED_OUT') {
         setAuthUser(null)
         setCurrentUser(null)
