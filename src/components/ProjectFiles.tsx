@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Upload, FolderOpen } from 'lucide-react'
 import { ProjectFile, User, Project } from '../types'
 import FileUpload from './FileUpload'
@@ -24,6 +24,19 @@ const ProjectFiles: React.FC<ProjectFilesProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'upload' | 'manage'>('upload')
   const [viewingFile, setViewingFile] = useState<ProjectFile | null>(null)
+
+  // Auto-switch to manage tab if files exist
+  useEffect(() => {
+    console.log('🔧 ProjectFiles: Files changed', { 
+      filesCount: files.length, 
+      currentTab: activeTab,
+      projectId: currentProject.id 
+    })
+    if (files.length > 0 && activeTab === 'upload') {
+      console.log('🔧 ProjectFiles: Switching to manage tab')
+      setActiveTab('manage')
+    }
+  }, [files.length, activeTab, currentProject.id])
 
   const handleFilesUploaded = (newFiles: ProjectFile[]) => {
     onFilesUploaded(newFiles)

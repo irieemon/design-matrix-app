@@ -47,8 +47,11 @@ function App() {
   useEffect(() => {
     try {
       const savedFiles = localStorage.getItem('project-files')
+      console.log('🔧 App: Loading files from localStorage', savedFiles)
       if (savedFiles) {
-        setProjectFiles(JSON.parse(savedFiles))
+        const parsed = JSON.parse(savedFiles)
+        console.log('🔧 App: Parsed files from localStorage', parsed)
+        setProjectFiles(parsed)
       }
     } catch (error) {
       console.error('Error loading project files from localStorage:', error)
@@ -58,6 +61,7 @@ function App() {
   // Save files to localStorage whenever projectFiles changes
   useEffect(() => {
     try {
+      console.log('🔧 App: Saving files to localStorage', projectFiles)
       localStorage.setItem('project-files', JSON.stringify(projectFiles))
     } catch (error) {
       console.error('Error saving project files to localStorage:', error)
@@ -68,10 +72,20 @@ function App() {
   const handleFilesUploaded = (newFiles: ProjectFile[]) => {
     if (!currentProject?.id) return
     
-    setProjectFiles(prev => ({
-      ...prev,
-      [currentProject.id]: [...(prev[currentProject.id] || []), ...newFiles]
-    }))
+    console.log('🔧 App: handleFilesUploaded called', { 
+      projectId: currentProject.id, 
+      newFilesCount: newFiles.length,
+      newFiles: newFiles.map(f => f.original_name)
+    })
+    
+    setProjectFiles(prev => {
+      const updated = {
+        ...prev,
+        [currentProject.id]: [...(prev[currentProject.id] || []), ...newFiles]
+      }
+      console.log('🔧 App: Updated projectFiles', updated)
+      return updated
+    })
   }
 
   const handleDeleteFile = (fileId: string) => {
@@ -85,8 +99,17 @@ function App() {
 
   // Get files for current project
   const getCurrentProjectFiles = (): ProjectFile[] => {
-    if (!currentProject?.id) return []
-    return projectFiles[currentProject.id] || []
+    if (!currentProject?.id) {
+      console.log('🔧 App: getCurrentProjectFiles - no current project')
+      return []
+    }
+    const files = projectFiles[currentProject.id] || []
+    console.log('🔧 App: getCurrentProjectFiles', { 
+      projectId: currentProject.id,
+      filesCount: files.length,
+      allProjects: Object.keys(projectFiles)
+    })
+    return files
   }
 
   // Initialize Supabase auth and handle session changes
