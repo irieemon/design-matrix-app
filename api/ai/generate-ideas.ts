@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
-import { authenticate, checkUserRateLimit } from '../auth/middleware'
+import { authenticate, checkUserRateLimit } from '../auth/middleware.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow POST requests
