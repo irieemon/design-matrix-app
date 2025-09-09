@@ -23,10 +23,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   
   try {
+    console.log('📥 Request body:', req.body)
     const { title, description, projectType } = req.body
+    
+    console.log('🔍 Extracted fields:', { title, description, projectType })
     
     // Validate required fields
     if (!title || !description) {
+      console.error('❌ Missing required fields:', { title: !!title, description: !!description })
       return res.status(400).json({ error: 'Title and description are required' })
     }
     
@@ -34,7 +38,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const openaiKey = process.env.OPENAI_API_KEY
     const anthropicKey = process.env.ANTHROPIC_API_KEY
     
+    console.log('🔑 API Key status:', { 
+      hasOpenAI: !!openaiKey, 
+      hasAnthropic: !!anthropicKey,
+      openAIPrefix: openaiKey ? openaiKey.substring(0, 7) + '...' : 'none'
+    })
+    
     if (!openaiKey && !anthropicKey) {
+      console.error('❌ No AI service configured - missing API keys')
       return res.status(500).json({ error: 'No AI service configured' })
     }
     
@@ -42,10 +53,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     if (openaiKey) {
       // Use OpenAI
+      console.log('🤖 Calling OpenAI API...')
       ideas = await generateIdeasWithOpenAI(openaiKey, title, description, projectType)
+      console.log('✅ OpenAI API call completed, ideas count:', ideas?.length || 0)
     } else if (anthropicKey) {
       // Use Anthropic
+      console.log('🤖 Calling Anthropic API...')
       ideas = await generateIdeasWithAnthropic(anthropicKey, title, description, projectType)
+      console.log('✅ Anthropic API call completed, ideas count:', ideas?.length || 0)
     }
     
     return res.status(200).json({ ideas })
