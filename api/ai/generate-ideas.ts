@@ -8,7 +8,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   
   // Authenticate user (optional - can work without auth for basic functionality)
-  const { user, error: authError } = await authenticate(req)
+  const { user } = await authenticate(req)
   
   // Use authenticated user for rate limiting if available, otherwise fall back to IP
   const rateLimitKey = user?.id || (req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown')
