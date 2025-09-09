@@ -14,6 +14,8 @@ export interface IdeaCard {
   project_id?: string  // associated project ID
 }
 
+export type UserRole = 'user' | 'admin' | 'super_admin'
+
 export interface User {
   id: string
   email: string
@@ -22,6 +24,9 @@ export interface User {
   company?: string
   job_title?: string
   timezone?: string
+  role?: UserRole
+  is_active?: boolean
+  last_login?: string
   notification_preferences?: {
     email_notifications: boolean
     push_notifications: boolean
@@ -251,4 +256,32 @@ export interface ProjectFile {
   created_at: string
   updated_at: string
   uploader?: User
+}
+
+// Admin-specific types
+export interface PlatformStats {
+  total_users: number
+  active_users_30d: number
+  total_projects: number
+  active_projects: number
+  total_ideas: number
+  total_files: number
+  total_file_size: number
+  new_users_7d: number
+  new_projects_7d: number
+}
+
+export interface AdminUser extends User {
+  project_count: number
+  idea_count: number
+  file_count: number
+  total_file_size: number
+}
+
+export interface AdminProject extends Project {
+  idea_count: number
+  file_count: number
+  total_file_size: number
+  collaborator_count: number
+  last_activity?: string
 }

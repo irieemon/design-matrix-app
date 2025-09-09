@@ -1,17 +1,20 @@
-import { Target, Home, User, Database, BarChart3, FolderOpen, LogOut, ChevronLeft, ChevronRight, Map, Users } from 'lucide-react'
+import { Target, Home, User, Database, BarChart3, FolderOpen, LogOut, ChevronLeft, ChevronRight, Map, Users, Shield } from 'lucide-react'
 import { useState } from 'react'
-import { Project } from '../types'
+import { Project, User as UserType } from '../types'
+import { AdminService } from '../lib/adminService'
 
 interface SidebarProps {
   currentPage: string
   currentUser: string
+  currentUserObj: UserType | null
   currentProject: Project | null
   onPageChange: (page: string) => void
   onLogout: () => void
+  onAdminAccess?: () => void
   onToggleCollapse: (collapsed: boolean) => void
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentProject, onPageChange, onLogout, onToggleCollapse }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUserObj, currentProject, onPageChange, onLogout, onAdminAccess, onToggleCollapse }) => {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const handleToggleCollapse = () => {
@@ -241,6 +244,20 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentProj
             </div>
           )}
         </button>
+
+        {/* Admin Access Button (only for admin users) */}
+        {currentUserObj && AdminService.isAdmin(currentUserObj) && (
+          <button
+            onClick={onAdminAccess}
+            className={`group w-full flex items-center ${
+              isCollapsed ? 'justify-center p-3' : 'px-4 py-3 space-x-3'
+            } rounded-xl text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] text-slate-400 hover:text-orange-400 hover:bg-gradient-to-r hover:from-orange-900/20 hover:to-red-800/10 hover:shadow-md`}
+            title={isCollapsed ? 'Admin Portal' : undefined}
+          >
+            <Shield className="w-4 h-4" />
+            {!isCollapsed && <span>Admin Portal</span>}
+          </button>
+        )}
 
         {/* Logout Button */}
         <button

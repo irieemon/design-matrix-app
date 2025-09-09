@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { Target, Plus, Lightbulb, Sparkles, FolderOpen } from 'lucide-react'
 import { IdeaCard, Project, User, AuthUser, ProjectFile } from './types'
+import AdminPortal from './components/admin/AdminPortal'
 import DesignMatrix from './components/DesignMatrix'
 import IdeaCardComponent from './components/IdeaCardComponent'
 import AddIdeaModal from './components/AddIdeaModal'
@@ -33,6 +34,7 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
   const [projectFiles, setProjectFiles] = useState<Record<string, ProjectFile[]>>({})
+  const [showAdminPortal, setShowAdminPortal] = useState(false)
 
   // Configure drag sensors with distance threshold
   const sensors = useSensors(
@@ -128,10 +130,18 @@ function App() {
           const savedUser = localStorage.getItem('prioritasUser')
           if (savedUser && mounted) {
             console.log('🔄 Found legacy user, migrating:', savedUser)
+            let legacyRole: 'user' | 'admin' | 'super_admin' = 'user'
+            if (savedUser === 'admin@prioritas.com') {
+              legacyRole = 'super_admin'
+            } else if (savedUser === 'manager@company.com') {
+              legacyRole = 'admin'
+            }
+            
             setCurrentUser({
               id: 'legacy-user',
               email: savedUser,
               full_name: savedUser,
+              role: legacyRole,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
@@ -191,9 +201,16 @@ function App() {
   }, [])
 
   // Check if user has projects and redirect to appropriate page
-  const checkUserProjectsAndRedirect = async (userId: string) => {
+  const checkUserProjectsAndRedirect = async (userId: string, isDemoUser = false) => {
     try {
       console.log('📋 Checking if user has existing projects...')
+      
+      // For demo users, skip database calls and default to matrix page
+      if (isDemoUser || userId?.startsWith('00000000-0000-0000-0000-00000000000')) {
+        console.log('🎭 Demo user detected, skipping database check and defaulting to matrix page')
+        setCurrentPage('matrix')
+        return
+      }
       
       // Add timeout to prevent hanging
       const projectCheckPromise = DatabaseService.getUserOwnedProjects(userId)
@@ -228,12 +245,21 @@ function App() {
       console.log('🔐 handleAuthUser called with:', authUser.email, authUser.id)
       setAuthUser(authUser)
       
+      // Determine user role based on email (for demo purposes)
+      let userRole: 'user' | 'admin' | 'super_admin' = 'user'
+      if (authUser.email === 'admin@prioritas.com') {
+        userRole = 'super_admin'
+      } else if (authUser.email === 'manager@company.com') {
+        userRole = 'admin'
+      }
+
       // Create fallback user immediately to prevent hanging
       const fallbackUser = {
         id: authUser.id,
         email: authUser.email,
         full_name: authUser.user_metadata?.full_name || authUser.email,
         avatar_url: authUser.user_metadata?.avatar_url || null,
+        role: userRole,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
@@ -249,22 +275,32 @@ function App() {
       setCurrentUser(fallbackUser)
       
       // Check if user has existing projects and redirect accordingly
-      await checkUserProjectsAndRedirect(authUser.id)
+      const isDemoUser = authUser.isDemoUser || authUser.id?.startsWith('00000000-0000-0000-0000-00000000000')
+      await checkUserProjectsAndRedirect(authUser.id, isDemoUser)
       
     } catch (error) {
       console.error('💥 Error in handleAuthUser:', error)
       // Even if everything fails, set a basic user to prevent infinite loading
+      let errorUserRole: 'user' | 'admin' | 'super_admin' = 'user'
+      if (authUser?.email === 'admin@prioritas.com') {
+        errorUserRole = 'super_admin'
+      } else if (authUser?.email === 'manager@company.com') {
+        errorUserRole = 'admin'
+      }
+      
       setCurrentUser({
         id: authUser?.id || 'unknown',
         email: authUser?.email || 'unknown@example.com',
         full_name: authUser?.email || 'Unknown User',
+        role: errorUserRole,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       
       // Try to check for projects even in error case
       if (authUser?.id) {
-        await checkUserProjectsAndRedirect(authUser.id)
+        const isDemoUser = authUser.isDemoUser || authUser.id?.startsWith('00000000-0000-0000-0000-00000000000')
+        await checkUserProjectsAndRedirect(authUser.id, isDemoUser)
       } else {
         setCurrentPage('matrix')
       }
@@ -306,6 +342,13 @@ function App() {
   useEffect(() => {
     if (!currentUser) return
 
+    // Skip subscriptions for demo users
+    const isDemoUser = currentUser.id?.startsWith('00000000-0000-0000-0000-00000000000')
+    if (isDemoUser) {
+      console.log('🎭 Demo user detected, skipping real-time subscription')
+      return
+    }
+
     console.log('🔄 Setting up project-specific subscription for:', currentProject?.id || 'all projects')
     const unsubscribe = DatabaseService.subscribeToIdeas(setIdeas, currentProject?.id)
     
@@ -330,9 +373,18 @@ function App() {
   }
 
   const handleAuthSuccess = async (authUser: any) => {
-    console.log('🎉 Authentication successful:', authUser.email)
-    // The handleAuthUser function will be called by the auth state listener
-    // so we don't need to do anything else here
+    console.log('🎉 Authentication successful:', authUser.email, 'ID:', authUser.id)
+    // For demo users, directly call handleAuthUser since they won't go through Supabase
+    if (authUser.isDemoUser || authUser.id?.startsWith('00000000-0000-0000-0000-00000000000')) {
+      console.log('🎭 Processing demo user:', authUser)
+      try {
+        await handleAuthUser(authUser)
+        console.log('✅ Demo user processed successfully')
+      } catch (error) {
+        console.error('❌ Error processing demo user:', error)
+      }
+    }
+    // For real Supabase users, the auth state listener will handle it
   }
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -730,14 +782,27 @@ function App() {
     return <AuthScreen onAuthSuccess={handleAuthSuccess} />
   }
 
+  // Show admin portal if requested
+  if (showAdminPortal) {
+    return (
+      <AdminPortal
+        currentUser={currentUser}
+        onBackToApp={() => setShowAdminPortal(false)}
+        onLogout={handleLogout}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Sidebar 
         currentPage={currentPage}
         currentUser={currentUser?.email || currentUser?.full_name || 'User'}
+        currentUserObj={currentUser}
         currentProject={currentProject}
         onPageChange={setCurrentPage}
         onLogout={handleLogout}
+        onAdminAccess={() => setShowAdminPortal(true)}
         onToggleCollapse={setSidebarCollapsed}
       />
       <div className={`${sidebarCollapsed ? 'pl-20' : 'pl-72'} transition-all duration-300`}>
