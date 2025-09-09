@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type { IdeaCard, Project } from '../types'
 import { EmailService } from './emailService'
+import { RealtimeDiagnostic } from '../utils/realtimeDiagnostic'
 
 export class DatabaseService {
   // Fetch ideas for a specific project (supports user-based access control via RLS)
@@ -247,10 +248,8 @@ export class DatabaseService {
           // Set a timeout to test if real-time actually works
           setTimeout(() => {
             if (!realTimeWorking) {
-              console.warn('⚠️ Real-time subscription established but no events received. This might indicate:', 
-                '\n1. Row Level Security (RLS) is blocking real-time events',
-                '\n2. Real-time is not enabled for the "ideas" table in Supabase', 
-                '\n3. The table doesn\'t have the required replica identity')
+              console.warn('⚠️ Real-time subscription established but no events received. Running diagnostic...')
+              RealtimeDiagnostic.checkRealtimeConfiguration()
             }
           }, 5000)
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
