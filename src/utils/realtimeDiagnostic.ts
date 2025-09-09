@@ -3,10 +3,20 @@
 import { supabase } from '../lib/supabase'
 
 export class RealtimeDiagnostic {
+  private static diagnosticRunning = false
+  
   static async checkRealtimeConfiguration() {
+    // Prevent multiple diagnostics from running
+    if (this.diagnosticRunning) {
+      console.log('🔍 Diagnostic already running, skipping...')
+      return
+    }
+    
+    this.diagnosticRunning = true
     console.log('🔍 Running real-time diagnostic...')
     
     // Test 1: Check if we can connect to real-time
+    let testChannelRemoved = false
     const testChannel = supabase
       .channel('diagnostic-test')
       .subscribe((status) => {
@@ -16,7 +26,18 @@ export class RealtimeDiagnostic {
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           console.log('❌ Real-time connection failed:', status)
         }
-        supabase.removeChannel(testChannel)
+        
+        // Only remove channel once
+        if (!testChannelRemoved) {
+          testChannelRemoved = true
+          setTimeout(() => {
+            try {
+              supabase.removeChannel(testChannel)
+            } catch (e) {
+              console.warn('Channel removal error (safe to ignore):', e)
+            }
+          }, 100)
+        }
       })
 
     // Test 2: Check table permissions
@@ -53,6 +74,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.ideas;
    - RLS policies should allow the authenticated user to read records
     `)
 
+    // Reset the running flag after a delay
+    setTimeout(() => {
+      this.diagnosticRunning = false
+    }, 5000)
+    
     return {
       basicConnection: 'testing',
       tableAccess: 'testing',
@@ -119,10 +145,5 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.ideas;
   }
 }
 
-// Auto-run diagnostic in development
-if (process.env.NODE_ENV === 'development') {
-  // Run diagnostic after a short delay to avoid blocking app startup
-  setTimeout(() => {
-    RealtimeDiagnostic.checkRealtimeConfiguration()
-  }, 5000)
-}
+// Auto-run diagnostic disabled to prevent infinite loops
+// Use RealtimeDiagnostic.checkRealtimeConfiguration() manually if needed
