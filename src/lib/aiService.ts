@@ -19,11 +19,21 @@ class SecureAIService {
 
   constructor(config: SecureAIServiceConfig = {}) {
     // Use current domain in production, localhost in development
-    this.baseUrl = config.baseUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
+    if (config.baseUrl) {
+      this.baseUrl = config.baseUrl
+    } else if (typeof window !== 'undefined') {
+      // In browser, always use current domain
+      this.baseUrl = window.location.origin
+    } else {
+      // Server-side rendering fallback
+      this.baseUrl = 'http://localhost:3000'
+    }
+    
     console.log('🔒 Secure AI Service initialized:', {
       baseUrl: this.baseUrl,
       mode: 'server-side-proxy',
-      security: 'API keys protected on server'
+      security: 'API keys protected on server',
+      origin: typeof window !== 'undefined' ? window.location.origin : 'server-side'
     })
   }
 
