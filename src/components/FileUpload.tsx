@@ -97,6 +97,15 @@ const FileUpload: React.FC<FileUploadProps> = ({
     return undefined
   }
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = error => reject(error)
+    })
+  }
+
   const handleFiles = async (files: FileList) => {
     setError(null)
     setUploading(true)
@@ -120,6 +129,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
       for (const file of validFiles) {
         // Read content preview for text files
         const contentPreview = await readFileContent(file)
+        
+        // Convert file to base64 for storage
+        const base64Data = await fileToBase64(file)
 
         // Create a mock uploaded file (in a real app, you'd upload to Supabase Storage)
         const uploadedFile: ProjectFile = {
@@ -132,6 +144,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           mime_type: file.type,
           storage_path: `projects/${currentProject.id}/files/${crypto.randomUUID()}_${file.name}`,
           content_preview: contentPreview,
+          file_data: base64Data, // Store the actual file data
           uploaded_by: currentUser.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

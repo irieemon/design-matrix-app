@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { FileText, Image, File, Download, Trash2, Eye, Calendar, User, FileIcon } from 'lucide-react'
 import { ProjectFile, FileType } from '../types'
+import DeleteConfirmModal from './DeleteConfirmModal'
 
 interface FileManagerProps {
   files: ProjectFile[]
@@ -10,6 +11,50 @@ interface FileManagerProps {
 
 const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFile }) => {
   const [selectedFiles, setSelectedFiles] = useState<string[]>([])
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean
+    fileId?: string
+    fileName?: string
+    isMultiple?: boolean
+  }>({ isOpen: false })
+
+  const downloadFile = (file: ProjectFile) => {
+    if (!file.file_data) {
+      console.warn('No file data available for download:', file.original_name)
+      alert(`Cannot download "${file.original_name}". File data is not available. Please re-upload the file to enable downloads.`)
+      return
+    }
+
+    try {
+      // Convert base64 to blob
+      const byteCharacters = atob(file.file_data.split(',')[1])
+      const byteNumbers = new Array(byteCharacters.length)
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers)
+      const blob = new Blob([byteArray], { type: file.mime_type })
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = file.original_name
+      
+      // Trigger download
+      document.body.appendChild(link)
+      link.click()
+      
+      // Cleanup
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error downloading file:', error)
+      alert('Failed to download file. Please try again.')
+    }
+  }
 
   const getFileIcon = (fileType: FileType, size = 'w-5 h-5') => {
     switch (fileType) {
@@ -63,10 +108,31 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
   }
 
   const handleBulkDelete = () => {
-    if (window.confirm(`Delete ${selectedFiles.length} selected files?`)) {
+    setDeleteModal({
+      isOpen: true,
+      isMultiple: true
+    })
+  }
+
+  const openDeleteModal = (file: ProjectFile) => {
+    setDeleteModal({
+      isOpen: true,
+      fileId: file.id,
+      fileName: file.original_name,
+      isMultiple: false
+    })
+  }
+
+  const handleConfirmDelete = () => {
+    if (deleteModal.isMultiple && selectedFiles.length > 0) {
+      // Bulk delete
       selectedFiles.forEach(fileId => onDeleteFile(fileId))
       setSelectedFiles([])
+    } else if (deleteModal.fileId) {
+      // Single file delete
+      onDeleteFile(deleteModal.fileId)
     }
+    setDeleteModal({ isOpen: false })
   }
 
   if (files.length === 0) {
@@ -182,21 +248,14 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
                 </button>
               )}
               <button
-                onClick={() => {
-                  // In a real app, this would download from Supabase Storage
-                  console.log('Download file:', file.storage_path)
-                }}
+                onClick={() => downloadFile(file)}
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Download file"
               >
                 <Download className="w-4 h-4" />
               </button>
               <button
-                onClick={() => {
-                  if (window.confirm(`Delete "${file.original_name}"?`)) {
-                    onDeleteFile(file.id)
-                  }
-                }}
+                onClick={() => openDeleteModal(file)}
                 className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 title="Delete file"
               >
@@ -211,6 +270,21 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
       <div className="text-sm text-gray-500 pt-2 border-t">
         Total: {files.length} files, {formatFileSize(files.reduce((sum, f) => sum + f.file_size, 0))}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false })}
+        onConfirm={handleConfirmDelete}
+        title={deleteModal.isMultiple ? "Delete Files" : "Delete File"}
+        message={
+          deleteModal.isMultiple
+            ? `Are you sure you want to delete ${selectedFiles.length} selected files? This action cannot be undone.`
+            : `Are you sure you want to delete "${deleteModal.fileName}"? This action cannot be undone.`
+        }
+        confirmText="Delete"
+        isDangerous={true}
+      />
     </div>
   )
 }

@@ -25,12 +25,15 @@ const ProjectFiles: React.FC<ProjectFilesProps> = ({
   const [activeTab, setActiveTab] = useState<'upload' | 'manage'>('upload')
   const [viewingFile, setViewingFile] = useState<ProjectFile | null>(null)
 
-  // Auto-switch to manage tab if files exist
+  // Auto-switch to manage tab if files exist (only on initial load, not user clicks)
+  const [hasAutoSwitched, setHasAutoSwitched] = useState(false)
+  
   useEffect(() => {
-    if (files.length > 0 && activeTab === 'upload') {
+    if (files.length > 0 && activeTab === 'upload' && !hasAutoSwitched) {
       setActiveTab('manage')
+      setHasAutoSwitched(true)
     }
-  }, [files.length, activeTab])
+  }, [files.length, activeTab, hasAutoSwitched])
 
   const handleFilesUploaded = (newFiles: ProjectFile[]) => {
     onFilesUploaded(newFiles)

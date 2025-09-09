@@ -2,6 +2,7 @@ import { Target, Home, User, Database, BarChart3, FolderOpen, LogOut, ChevronLef
 import { useState } from 'react'
 import { Project, User as UserType } from '../types'
 import { AdminService } from '../lib/adminService'
+import PrioritasLogo from './PrioritasLogo'
 
 interface SidebarProps {
   currentPage: string
@@ -74,7 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
           /* Collapsed Header */
           <div className="flex flex-col items-center space-y-4">
             <div className="bg-gradient-to-br from-white to-slate-100 rounded-xl p-3 shadow-lg">
-              <Target className="w-6 h-6 text-slate-900" />
+              <PrioritasLogo className="text-blue-600" size={24} />
             </div>
             <button
               onClick={handleToggleCollapse}
@@ -88,7 +89,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="bg-gradient-to-br from-white to-slate-100 rounded-xl p-3 shadow-lg">
-                <Target className="w-6 h-6 text-slate-900" />
+                <PrioritasLogo className="text-blue-600" size={24} />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">Prioritas</h2>
@@ -138,7 +139,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
                   className="w-12 h-12 bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl flex items-center justify-center border border-slate-600/50 relative"
                   title={currentProject.name}
                 >
-                  <Target className="w-5 h-5 text-blue-400" />
+                  <PrioritasLogo className="text-blue-400" size={20} />
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full"></div>
                 </div>
               </div>
@@ -200,7 +201,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
           <div className="py-12 text-center">
             <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
               <div className="w-12 h-12 bg-slate-700 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Target className="w-6 h-6 text-slate-400" />
+                <PrioritasLogo className="text-slate-400" size={24} />
               </div>
               <div className="text-slate-400 text-sm font-medium mb-1">
                 No Project Selected

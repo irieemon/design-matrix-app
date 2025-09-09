@@ -1,10 +1,12 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_OPENAI_API_KEY?: string
-  readonly VITE_ANTHROPIC_API_KEY?: string
+  // Supabase keys are client-side safe (protected by RLS policies)
   readonly VITE_SUPABASE_URL: string
   readonly VITE_SUPABASE_ANON_KEY: string
+  
+  // AI API keys are now SERVER-SIDE ONLY for security
+  // They are accessed via /api/ai/* endpoints, not directly from client
 }
 
 interface ImportMeta {

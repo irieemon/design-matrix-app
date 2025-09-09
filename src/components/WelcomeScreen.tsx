@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Target, User, ArrowRight } from 'lucide-react'
+import PrioritasLogo from './PrioritasLogo'
 
 interface WelcomeScreenProps {
   onUserCreated: (userName: string) => void
@@ -26,8 +27,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onUserCreated }) => {
       <div className="max-w-md w-full">
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-900 rounded-2xl mb-6 shadow-lg">
-            <Target className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-white to-slate-100 rounded-2xl mb-6 shadow-lg">
+            <PrioritasLogo className="text-blue-600" size={32} />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Prioritas</h1>
           <p className="text-slate-600">Smart prioritization suite for teams</p>

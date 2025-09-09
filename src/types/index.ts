@@ -252,6 +252,7 @@ export interface ProjectFile {
   mime_type: string
   storage_path: string
   content_preview?: string // For text content that can be extracted
+  file_data?: string // Base64 encoded file data for download
   uploaded_by: string
   created_at: string
   updated_at: string

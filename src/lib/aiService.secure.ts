@@ -1,8 +1,4 @@
-// SECURE AI SERVICE - Uses server-side proxy endpoints for all AI API calls
-// This ensures API keys are never exposed to the client-side
-
 import { IdeaCard } from '../types'
-import { supabase } from './supabase'
 
 interface AIIdeaResponse {
   content: string
@@ -22,29 +18,8 @@ class SecureAIService {
     this.baseUrl = config.baseUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
     console.log('🔒 Secure AI Service initialized:', {
       baseUrl: this.baseUrl,
-      mode: 'server-side-proxy',
-      security: 'API keys protected on server'
+      mode: 'server-side-proxy'
     })
-  }
-
-  private async getAuthHeaders(): Promise<HeadersInit> {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (session?.access_token) {
-        return {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      }
-    } catch (error) {
-      console.warn('Could not get auth token:', error)
-    }
-    
-    // Return basic headers if no auth available
-    return {
-      'Content-Type': 'application/json'
-    }
   }
 
   async generateIdea(title: string, projectContext?: { name?: string, description?: string, type?: string }): Promise<AIIdeaResponse> {
@@ -52,10 +27,11 @@ class SecureAIService {
     
     try {
       // Call our secure serverless endpoint
-      const headers = await this.getAuthHeaders()
       const response = await fetch(`${this.baseUrl}/api/ai/generate-ideas`, {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           title,
           description: projectContext?.description || '',
@@ -95,10 +71,11 @@ class SecureAIService {
     console.log(`🧠 Generating ${count} ideas for project: "${title}"`)
     
     try {
-      const headers = await this.getAuthHeaders()
       const response = await fetch(`${this.baseUrl}/api/ai/generate-ideas`, {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           title,
           description,
@@ -139,10 +116,11 @@ class SecureAIService {
     console.log('🔍 Generating insights for', ideas.length, 'ideas')
     
     try {
-      const headers = await this.getAuthHeaders()
       const response = await fetch(`${this.baseUrl}/api/ai/generate-insights`, {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           ideas: ideas.map(idea => ({
             title: idea.title,
@@ -174,10 +152,11 @@ class SecureAIService {
     console.log('🗺️ Generating roadmap for project:', projectName)
     
     try {
-      const headers = await this.getAuthHeaders()
       const response = await fetch(`${this.baseUrl}/api/ai/generate-roadmap`, {
         method: 'POST',
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           projectName,
           projectType: projectType || 'General',
@@ -205,11 +184,6 @@ class SecureAIService {
     }
   }
 
-  // Legacy method for backward compatibility - now uses secure endpoints
-  async generateProjectIdeas(projectName: string, description: string, projectType?: string): Promise<IdeaCard[]> {
-    return this.generateMultipleIdeas(projectName, description, projectType || 'General', 8)
-  }
-
   // Helper methods
   private mapPriorityLevel(impact: string, effort: string): 'low' | 'moderate' | 'high' | 'strategic' | 'innovation' {
     if (impact === 'high' && effort === 'low') return 'strategic'
@@ -231,7 +205,7 @@ class SecureAIService {
     return 'major-projects'
   }
 
-  // Mock implementations for fallback when server-side AI is unavailable
+  // Mock implementations for fallback
   private generateMockIdea(title: string, projectContext?: { name?: string, description?: string, type?: string }): AIIdeaResponse {
     const mockResponses = [
       {

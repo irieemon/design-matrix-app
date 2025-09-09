@@ -10,6 +10,44 @@ interface FileViewerProps {
 const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
   if (!isOpen || !file) return null
 
+  const downloadFile = (file: ProjectFile) => {
+    if (!file.file_data) {
+      console.warn('No file data available for download:', file.original_name)
+      alert(`Cannot download "${file.original_name}". File data is not available. Please re-upload the file to enable downloads.`)
+      return
+    }
+
+    try {
+      // Convert base64 to blob
+      const byteCharacters = atob(file.file_data.split(',')[1])
+      const byteNumbers = new Array(byteCharacters.length)
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers)
+      const blob = new Blob([byteArray], { type: file.mime_type })
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = file.original_name
+      
+      // Trigger download
+      document.body.appendChild(link)
+      link.click()
+      
+      // Cleanup
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error downloading file:', error)
+      alert('Failed to download file. Please try again.')
+    }
+  }
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -73,7 +111,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
           For now, you can download it to view the content.
         </p>
         <button 
-          onClick={() => console.log('Download:', file.storage_path)}
+          onClick={() => downloadFile(file)}
           className="flex items-center space-x-2 mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Download className="w-4 h-4" />
@@ -103,7 +141,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
           
           <div className="flex items-center space-x-2 ml-4">
             <button
-              onClick={() => console.log('Download:', file.storage_path)}
+              onClick={() => downloadFile(file)}
               className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
               title="Download file"
             >

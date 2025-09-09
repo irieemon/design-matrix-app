@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { Target, Plus, Lightbulb, Sparkles, FolderOpen } from 'lucide-react'
+import PrioritasLogo from './components/PrioritasLogo'
 import { IdeaCard, Project, User, AuthUser, ProjectFile } from './types'
 import AdminPortal from './components/admin/AdminPortal'
 import DesignMatrix from './components/DesignMatrix'
@@ -33,7 +34,25 @@ function App() {
   const [currentPage, setCurrentPage] = useState<string>('matrix')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
-  const [projectFiles, setProjectFiles] = useState<Record<string, ProjectFile[]>>({})
+  // Initialize projectFiles from localStorage or empty object
+  const [projectFiles, setProjectFiles] = useState<Record<string, ProjectFile[]>>(() => {
+    try {
+      const savedFiles = localStorage.getItem('project-files')
+      console.log('📁 Raw localStorage data:', savedFiles)
+      if (savedFiles && savedFiles !== 'null' && savedFiles !== '{}') {
+        const parsedFiles = JSON.parse(savedFiles)
+        console.log('📁 Initializing project files from localStorage:', parsedFiles)
+        console.log('📁 Number of projects with files:', Object.keys(parsedFiles).length)
+        return parsedFiles
+      } else {
+        console.log('📁 Initializing with empty project files (no valid data found)')
+        return {}
+      }
+    } catch (error) {
+      console.error('Error loading project files from localStorage:', error)
+      return {}
+    }
+  })
   const [showAdminPortal, setShowAdminPortal] = useState(false)
 
   // Configure drag sensors with distance threshold
@@ -45,35 +64,50 @@ function App() {
     })
   )
 
-  // Load files from localStorage when component mounts
+  // Save files to localStorage whenever projectFiles changes (but not on initial load)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+  
   useEffect(() => {
+    if (isInitialLoad) {
+      setIsInitialLoad(false)
+      return // Skip saving on initial component mount
+    }
+    
     try {
-      const savedFiles = localStorage.getItem('project-files')
-      if (savedFiles) {
-        setProjectFiles(JSON.parse(savedFiles))
+      const dataToSave = JSON.stringify(projectFiles)
+      const sizeInMB = new Blob([dataToSave]).size / (1024 * 1024)
+      console.log('💾 Saving project files to localStorage:', projectFiles)
+      console.log('💾 Data size:', sizeInMB.toFixed(2), 'MB')
+      
+      if (sizeInMB > 5) { // localStorage limit is usually 5-10MB
+        console.warn('⚠️ File data is getting large, may hit localStorage limits')
       }
+      
+      localStorage.setItem('project-files', dataToSave)
+      console.log('✅ Successfully saved to localStorage')
     } catch (error) {
-      console.error('Error loading project files from localStorage:', error)
+      console.error('❌ Error saving project files to localStorage:', error)
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        alert('Storage quota exceeded! Files are too large to store locally. Consider using smaller files or clearing old files.')
+      }
     }
-  }, [])
-
-  // Save files to localStorage whenever projectFiles changes
-  useEffect(() => {
-    try {
-      localStorage.setItem('project-files', JSON.stringify(projectFiles))
-    } catch (error) {
-      console.error('Error saving project files to localStorage:', error)
-    }
-  }, [projectFiles])
+  }, [projectFiles, isInitialLoad])
 
   // File management functions
   const handleFilesUploaded = (newFiles: ProjectFile[]) => {
     if (!currentProject?.id) return
     
-    setProjectFiles(prev => ({
-      ...prev,
-      [currentProject.id]: [...(prev[currentProject.id] || []), ...newFiles]
-    }))
+    console.log('📁 handleFilesUploaded called with:', newFiles.length, 'files for project:', currentProject.id)
+    console.log('📁 New files:', newFiles)
+    
+    setProjectFiles(prev => {
+      const updated = {
+        ...prev,
+        [currentProject.id]: [...(prev[currentProject.id] || []), ...newFiles]
+      }
+      console.log('📁 Updated project files state:', updated)
+      return updated
+    })
   }
 
   const handleDeleteFile = (fileId: string) => {
@@ -767,8 +801,8 @@ function App() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-4">
-            <Target className="w-8 h-8 text-white animate-pulse" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-white to-slate-100 rounded-2xl mb-4 shadow-lg">
+            <PrioritasLogo className="text-blue-600 animate-pulse" size={32} />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">Prioritas</h1>
           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
