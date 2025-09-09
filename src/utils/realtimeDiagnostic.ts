@@ -21,7 +21,7 @@ export class RealtimeDiagnostic {
 
     // Test 2: Check table permissions
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('ideas')
         .select('id')
         .limit(1)

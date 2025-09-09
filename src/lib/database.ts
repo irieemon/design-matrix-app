@@ -211,7 +211,6 @@ export class DatabaseService {
     
     let lastUpdateTime = new Date().toISOString()
     let realTimeWorking = false
-    let subscriptionAttempted = false
     
     // Real-time subscription
     const channel = supabase
@@ -238,7 +237,6 @@ export class DatabaseService {
       )
       .subscribe((status, err) => {
         console.log('Subscription status:', status)
-        subscriptionAttempted = true
         
         if (err) {
           console.error('Subscription error:', err)
