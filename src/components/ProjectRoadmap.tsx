@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown, Download } from 'lucide-react'
 import { Project, IdeaCard, ProjectRoadmap as ProjectRoadmapType } from '../types'
-import { AIService } from '../lib/aiService'
+import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 import { exportRoadmapToPDF } from '../utils/pdfExport'
 
@@ -112,12 +112,10 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       console.log('🗺️ Generating roadmap for project:', currentProject.name)
       console.log('📋 Processing', ideas.length, 'ideas')
       
-      const data = await AIService.generateRoadmap(
-        currentProject.name,
-        currentProject.description || '',
+      const data = await aiService.generateRoadmap(
         ideas,
-        currentProject.project_type,
-        currentProject.ai_analysis
+        currentProject.name,
+        currentProject.project_type
       )
       
       setRoadmapData(data)

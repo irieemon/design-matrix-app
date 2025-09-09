@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Target, User, ArrowRight } from 'lucide-react'
+import { User, ArrowRight } from 'lucide-react'
 import PrioritasLogo from './PrioritasLogo'
 
 interface WelcomeScreenProps {

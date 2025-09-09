@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X, Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Calendar, Users, Lightbulb, Download, Save } from 'lucide-react'
 import { IdeaCard, Project } from '../types'
-import { AIService } from '../lib/aiService'
+import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 import { exportInsightsToPDF } from '../utils/pdfExport'
 
@@ -90,7 +90,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
     
     try {
       console.log('🔍 Generating AI insights for', ideas.length, 'ideas...')
-      const report = await AIService.generateInsights(ideas)
+      const report = await aiService.generateInsights(ideas)
       setInsights(report)
     } catch (err) {
       console.error('Error generating insights:', err)

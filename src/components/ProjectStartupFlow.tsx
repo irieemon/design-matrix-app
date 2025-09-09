@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { X, ArrowRight, ArrowLeft, Calendar, Users, DollarSign, Tag, Sparkles, Lightbulb, CheckCircle } from 'lucide-react'
 import { Project, ProjectType, IdeaCard, User } from '../types'
 import { DatabaseService } from '../lib/database'
-import { AIService } from '../lib/aiService'
+import { aiService } from '../lib/aiService'
 
 interface ProjectStartupFlowProps {
   currentUser: User
@@ -229,9 +229,10 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
       setIsLoading(true)
       try {
         console.log('🧠 Running AI analysis...')
-        const analysis = await AIService.analyzeProjectAndGenerateIdeas(
+        const analysis = await aiService.generateProjectIdeas(
           formData.name,
-          formData.description
+          formData.description,
+          formData.project_type
         )
         setAiAnalysis(analysis)
         console.log('✅ AI analysis complete:', analysis)

@@ -145,9 +145,9 @@ class SecureAIService {
         headers,
         body: JSON.stringify({
           ideas: ideas.map(idea => ({
-            title: idea.title,
-            description: idea.description,
-            quadrant: idea.quadrant
+            title: idea.content,
+            description: idea.details,
+            quadrant: this.getQuadrantFromPosition(idea.x, idea.y)
           })),
           projectName: projectName || 'Project',
           projectType: projectType || 'General'
@@ -182,9 +182,9 @@ class SecureAIService {
           projectName,
           projectType: projectType || 'General',
           ideas: ideas.map(idea => ({
-            title: idea.title,
-            description: idea.description,
-            quadrant: idea.quadrant
+            title: idea.content,
+            description: idea.details,
+            quadrant: this.getQuadrantFromPosition(idea.x, idea.y)
           }))
         })
       })
@@ -211,6 +211,51 @@ class SecureAIService {
   }
 
   // Helper methods
+  private getQuadrantFromPosition(x: number, y: number): string {
+    // Convert x,y coordinates to quadrant names
+    // Assuming 520x520 grid with center at 260,260
+    const centerX = 260
+    const centerY = 260
+    
+    if (x < centerX && y < centerY) return 'quick-wins'
+    if (x >= centerX && y < centerY) return 'major-projects'  
+    if (x < centerX && y >= centerY) return 'fill-ins'
+    if (x >= centerX && y >= centerY) return 'thankless-tasks'
+    return 'major-projects' // fallback
+  }
+
+  private getPositionFromQuadrant(quadrant: string): { x: number, y: number } {
+    // Generate random positions within each quadrant
+    const centerX = 260
+    const centerY = 260
+    const margin = 50
+    
+    switch (quadrant) {
+      case 'quick-wins':
+        return {
+          x: Math.random() * (centerX - margin) + margin,
+          y: Math.random() * (centerY - margin) + margin
+        }
+      case 'major-projects':
+        return {
+          x: Math.random() * (centerX - margin) + centerX + margin,
+          y: Math.random() * (centerY - margin) + margin
+        }
+      case 'fill-ins':
+        return {
+          x: Math.random() * (centerX - margin) + margin,
+          y: Math.random() * (centerY - margin) + centerY + margin
+        }
+      case 'thankless-tasks':
+        return {
+          x: Math.random() * (centerX - margin) + centerX + margin,
+          y: Math.random() * (centerY - margin) + centerY + margin
+        }
+      default:
+        return { x: centerX, y: centerY }
+    }
+  }
+
   private mapPriorityLevel(impact: string, effort: string): 'low' | 'moderate' | 'high' | 'strategic' | 'innovation' {
     if (impact === 'high' && effort === 'low') return 'strategic'
     if (impact === 'high' && effort === 'medium') return 'high'
@@ -258,7 +303,7 @@ class SecureAIService {
     }
   }
 
-  private generateMockIdeas(title: string, description: string, projectType: string, count: number): IdeaCard[] {
+  private generateMockIdeas(_title: string, _description: string, _projectType: string, count: number): IdeaCard[] {
     const ideas = [
       { title: 'Quick Setup Process', description: 'Streamline the initial setup with guided onboarding', quadrant: 'quick-wins', category: 'User Experience' },
       { title: 'Advanced Analytics Dashboard', description: 'Comprehensive reporting and insights platform', quadrant: 'major-projects', category: 'Analytics' },
@@ -272,22 +317,24 @@ class SecureAIService {
 
     return ideas.slice(0, count).map((idea, index) => ({
       id: `mock-${Date.now()}-${index}`,
-      title: idea.title,
-      description: idea.description,
-      quadrant: idea.quadrant,
-      tags: [idea.category],
-      contributor: 'AI Assistant',
-      createdAt: new Date().toISOString()
+      content: idea.title,
+      details: idea.description,
+      x: this.getPositionFromQuadrant(idea.quadrant).x,
+      y: this.getPositionFromQuadrant(idea.quadrant).y,
+      priority: 'moderate' as const,
+      created_by: 'ai-assistant',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }))
   }
 
   private generateMockInsights(ideas: IdeaCard[]): any {
     return {
       matrixAnalysis: {
-        quickWins: ideas.filter(i => i.quadrant === 'quick-wins').map(i => i.title),
-        majorProjects: ideas.filter(i => i.quadrant === 'major-projects').map(i => i.title),
-        fillIns: ideas.filter(i => i.quadrant === 'fill-ins').map(i => i.title),
-        thanklessItems: ideas.filter(i => i.quadrant === 'thankless-tasks').map(i => i.title)
+        quickWins: ideas.filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'quick-wins').map(i => i.content),
+        majorProjects: ideas.filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'major-projects').map(i => i.content),
+        fillIns: ideas.filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'fill-ins').map(i => i.content),
+        thanklessItems: ideas.filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'thankless-tasks').map(i => i.content)
       },
       priorityRecommendations: [
         'Focus on quick wins first to build momentum',
@@ -311,7 +358,7 @@ class SecureAIService {
     }
   }
 
-  private generateMockRoadmap(projectName: string, projectType?: string): any {
+  private generateMockRoadmap(projectName: string, _projectType?: string): any {
     return {
       id: `roadmap-${Date.now()}`,
       name: `${projectName} Strategic Roadmap`,

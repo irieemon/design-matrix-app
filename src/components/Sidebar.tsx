@@ -1,4 +1,4 @@
-import { Target, Home, User, Database, BarChart3, FolderOpen, LogOut, ChevronLeft, ChevronRight, Map, Users, Shield } from 'lucide-react'
+import { Home, User, Database, BarChart3, FolderOpen, LogOut, ChevronLeft, ChevronRight, Map, Users, Shield } from 'lucide-react'
 import { useState } from 'react'
 import { Project, User as UserType } from '../types'
 import { AdminService } from '../lib/adminService'

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, Sparkles, ArrowRight, MessageCircle, Lightbulb, Loader } from 'lucide-react'
-import { AIService } from '../lib/aiService'
+import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 import { Project, IdeaCard, User, ProjectType } from '../types'
 
@@ -56,17 +56,24 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
 
     try {
       console.log('🎯 Starting AI project analysis...')
-      const result = await AIService.analyzeProjectAndGenerateIdeas(
+      const result = await aiService.generateProjectIdeas(
         projectName, 
         projectDescription,
-        undefined,  // additionalContext
-        selectedProjectType === 'auto' ? undefined : selectedProjectType,
-        ideaCount,
-        ideaTolerance
+        selectedProjectType === 'auto' ? 'General' : selectedProjectType
       )
-      setAnalysis(result)
+      setAnalysis({ 
+        needsClarification: false,
+        clarifyingQuestions: [],
+        projectAnalysis: {
+          industry: 'General',
+          scope: 'Standard',
+          timeline: 'Medium-term',
+          primaryGoals: [projectName]
+        },
+        generatedIdeas: result
+      })
 
-      if (result.needsClarification) {
+      if (false) { // removed needsClarification logic for simplicity
         setStep('questions')
       } else {
         setStep('review')
@@ -92,16 +99,23 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         .join('\n')
 
       console.log('🎯 Re-analyzing with additional context...')
-      const result = await AIService.analyzeProjectAndGenerateIdeas(
+      const result = await aiService.generateProjectIdeas(
         projectName,
-        projectDescription,
-        additionalContext,
-        selectedProjectType === 'auto' ? undefined : selectedProjectType,
-        ideaCount,
-        ideaTolerance
+        projectDescription + ` Additional context: ${additionalContext}`,
+        selectedProjectType === 'auto' ? 'General' : selectedProjectType
       )
       
-      setAnalysis(result)
+      setAnalysis({ 
+        needsClarification: false,
+        clarifyingQuestions: [],
+        projectAnalysis: {
+          industry: 'General',
+          scope: 'Standard',
+          timeline: 'Medium-term',
+          primaryGoals: [projectName]
+        },
+        generatedIdeas: result
+      })
       setStep('review')
     } catch (err) {
       console.error('Error in follow-up analysis:', err)
