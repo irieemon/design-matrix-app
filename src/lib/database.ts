@@ -210,6 +210,7 @@ export class DatabaseService {
     
     let lastUpdateTime = new Date().toISOString()
     let realTimeWorking = false
+    let subscriptionAttempted = false
     
     // Real-time subscription
     const channel = supabase
@@ -223,6 +224,7 @@ export class DatabaseService {
         },
         (payload) => {
           console.log('🔴 Real-time change detected:', payload.eventType, payload.new, payload.old)
+          console.log('✅ Real-time is working! Disabling polling fallback.')
           realTimeWorking = true
           
           // Refresh ideas based on project context
@@ -235,9 +237,25 @@ export class DatabaseService {
       )
       .subscribe((status, err) => {
         console.log('Subscription status:', status)
-        if (err) console.error('Subscription error:', err)
-        if (status === 'SUBSCRIBED') {
+        subscriptionAttempted = true
+        
+        if (err) {
+          console.error('Subscription error:', err)
+          realTimeWorking = false
+        } else if (status === 'SUBSCRIBED') {
           console.log('Successfully subscribed to real-time updates!')
+          // Set a timeout to test if real-time actually works
+          setTimeout(() => {
+            if (!realTimeWorking) {
+              console.warn('⚠️ Real-time subscription established but no events received. This might indicate:', 
+                '\n1. Row Level Security (RLS) is blocking real-time events',
+                '\n2. Real-time is not enabled for the "ideas" table in Supabase', 
+                '\n3. The table doesn\'t have the required replica identity')
+            }
+          }, 5000)
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn('Real-time subscription failed or closed:', status)
+          realTimeWorking = false
         }
       })
 
