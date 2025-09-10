@@ -269,7 +269,7 @@ export class DatabaseService {
           table: 'ideas'
         },
         (payload) => {
-          logger.debug('🔴 Real-time change detected:', payload.eventType, payload.new, payload.old)
+          logger.debug('🔴 Real-time change detected:', payload.eventType)
           DatabaseService.realTimeWorking = true
           
           // Skip refresh for editing_at-only changes to prevent feedback loop
@@ -277,10 +277,16 @@ export class DatabaseService {
             const oldData = payload.old
             const newData = payload.new
             
+            // Log what changed for debugging
+            const changedFields = Object.keys(newData).filter(key => {
+              return oldData[key] !== newData[key]
+            })
+            logger.debug('🔍 Changed fields:', changedFields)
+            
             // More robust check: compare all keys except timestamps
             const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)])
             const significantChanges = Array.from(allKeys).some(key => {
-              // Skip timestamp fields
+              // Skip timestamp fields and lock heartbeat
               if (key === 'editing_at' || key === 'updated_at') return false
               
               // Handle null vs undefined consistently
@@ -298,19 +304,24 @@ export class DatabaseService {
             })
             
             if (!significantChanges) {
-              logger.debug('⏸️ Skipping refresh - only editing timestamps changed')
-              return
+              logger.debug('⏸️ BLOCKED refresh - only timestamp changes:', changedFields)
+              return // CRITICAL: Block the callback completely
+            } else {
+              logger.debug('✅ ALLOWING refresh - significant changes detected:', changedFields)
             }
           }
           
-          logger.debug('✅ Real-time is working! Refreshing ideas.')
+          logger.debug('✅ Real-time callback executing - refreshing ideas')
           
           // Refresh ideas based on project context
           const refreshPromise = projectId 
             ? this.getProjectIdeas(projectId!)
             : this.getAllIdeas()
           
-          refreshPromise.then(callback)
+          refreshPromise.then((freshIdeas) => {
+            logger.debug('📊 Fresh ideas fetched, calling callback with', freshIdeas.length, 'ideas')
+            callback(freshIdeas)
+          })
         }
       )
       .subscribe((status, err) => {

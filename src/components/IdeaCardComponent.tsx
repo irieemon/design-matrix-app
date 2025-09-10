@@ -1,7 +1,7 @@
 import { useDraggable } from '@dnd-kit/core'
 import { Edit3, Trash2, User, ChevronDown, ChevronUp } from 'lucide-react'
 import { IdeaCard, User as UserType } from '../types'
-import { useMemo } from 'react'
+import { useMemo, memo } from 'react'
 
 // Utility function to get user display name
 const getUserDisplayName = (userId: string | null | undefined, currentUser: UserType | null | undefined): string => {
@@ -31,7 +31,7 @@ const priorityColors = {
   innovation: 'bg-purple-50 border-purple-200 text-purple-800'
 }
 
-const IdeaCardComponent: React.FC<IdeaCardProps> = ({ idea, isDragging, currentUser, onEdit, onDelete, onToggleCollapse }) => {
+const IdeaCardComponent: React.FC<IdeaCardProps> = memo(({ idea, isDragging, currentUser, onEdit, onDelete, onToggleCollapse }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging: isBeingDragged } = useDraggable({
     id: idea.id
   })
@@ -222,6 +222,27 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = ({ idea, isDragging, currentU
       )}
     </div>
   )
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison to prevent re-renders when only timestamps change
+  const prevIdea = prevProps.idea
+  const nextIdea = nextProps.idea
+  
+  // Check if any significant fields changed (exclude timestamps)
+  const significantFieldsChanged = (
+    prevIdea.id !== nextIdea.id ||
+    prevIdea.content !== nextIdea.content ||
+    prevIdea.details !== nextIdea.details ||
+    prevIdea.priority !== nextIdea.priority ||
+    prevIdea.x !== nextIdea.x ||
+    prevIdea.y !== nextIdea.y ||
+    prevIdea.is_collapsed !== nextIdea.is_collapsed ||
+    prevIdea.editing_by !== nextIdea.editing_by || // This is important for lock status
+    prevProps.isDragging !== nextProps.isDragging ||
+    prevProps.currentUser?.id !== nextProps.currentUser?.id
+  )
+  
+  // Return true if props are equal (skip re-render), false if different (re-render)
+  return !significantFieldsChanged
+})
 
 export default IdeaCardComponent
