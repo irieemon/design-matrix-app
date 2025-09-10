@@ -242,7 +242,7 @@ export class DatabaseService {
   
   // Debounce rapid lock changes to prevent flashing
   private static lastLockChangeTime = new Map<string, number>()
-  private static LOCK_DEBOUNCE_MS = 300 // 300ms debounce - enough to prevent flashing but allow quick modal close
+  private static LOCK_DEBOUNCE_MS = 150 // 150ms debounce - minimal time to prevent automated flashing
   
   // Subscribe to real-time changes with polling fallback
   static subscribeToIdeas(callback: (ideas: IdeaCard[]) => void, projectId?: string) {
@@ -309,14 +309,20 @@ export class DatabaseService {
                 const lastChangeTime = this.lastLockChangeTime.get(ideaId) || 0
                 const timeSinceLastChange = now - lastChangeTime
                 
-                if (timeSinceLastChange < this.LOCK_DEBOUNCE_MS) {
+                // Prioritize unlock events - always allow unlock after a reasonable delay
+                const isUnlockEvent = oldEditingBy !== null && newEditingBy === null
+                const shouldAllowUnlock = isUnlockEvent && timeSinceLastChange > 50 // Very short delay for unlocks
+                
+                if (timeSinceLastChange < this.LOCK_DEBOUNCE_MS && !shouldAllowUnlock) {
                   logger.debug('🚫 BLOCKED refresh - rapid lock change detected:', { 
                     timeSinceLastChange,
                     debounceMs: this.LOCK_DEBOUNCE_MS,
+                    isUnlockEvent,
+                    shouldAllowUnlock,
                     oldEditingBy, 
                     newEditingBy 
                   })
-                  return // Block rapid changes
+                  return // Block rapid changes (except prioritized unlocks)
                 }
                 
                 // Update last change time
@@ -325,7 +331,9 @@ export class DatabaseService {
                 logger.debug('🔓 ALLOWING refresh - initial lock change detected:', { 
                   oldEditingBy, 
                   newEditingBy,
-                  timeSinceLastChange 
+                  timeSinceLastChange,
+                  isUnlockEvent,
+                  shouldAllowUnlock
                 })
                 // Skip secondary filtering for initial lock changes - proceed to refresh
               } else {
