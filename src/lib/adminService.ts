@@ -1,4 +1,5 @@
 import { PlatformStats, AdminUser, AdminProject, User, ProjectFile } from '../types'
+import { logger } from '../utils/logger'
 
 export class AdminService {
   // Check if user has admin privileges
@@ -196,7 +197,7 @@ export class AdminService {
 
   // Update user status
   static async updateUserStatus(userId: string, isActive: boolean): Promise<boolean> {
-    console.log(`Admin: ${isActive ? 'Activating' : 'Deactivating'} user ${userId}`)
+    logger.debug(`Admin: ${isActive ? 'Activating' : 'Deactivating'} user ${userId}`)
     return new Promise(resolve => {
       setTimeout(() => resolve(true), 500)
     })
@@ -204,7 +205,7 @@ export class AdminService {
 
   // Update user role
   static async updateUserRole(userId: string, role: 'user' | 'admin'): Promise<boolean> {
-    console.log(`Admin: Setting user ${userId} role to ${role}`)
+    logger.debug(`Admin: Setting user ${userId} role to ${role}`)
     return new Promise(resolve => {
       setTimeout(() => resolve(true), 500)
     })
@@ -212,7 +213,7 @@ export class AdminService {
 
   // Delete project (admin override)
   static async deleteProject(projectId: string): Promise<boolean> {
-    console.log(`Admin: Deleting project ${projectId}`)
+    logger.debug(`Admin: Deleting project ${projectId}`)
     return new Promise(resolve => {
       setTimeout(() => resolve(true), 800)
     })

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Target, Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles, AlertCircle, CheckCircle } from 'lucide-react'
 import PrioritasLogo from '../PrioritasLogo'
 import { supabase } from '../../lib/supabase'
+import { logger } from '../../utils/logger'
 
 interface AuthScreenProps {
   onAuthSuccess: (user: any) => void
@@ -80,7 +81,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
         setMode('login')
       }
     } catch (err: any) {
-      console.error('Auth error:', err)
+      logger.error('Auth error:', err)
       setError(err.message || 'An unexpected error occurred')
     } finally {
       setLoading(false)

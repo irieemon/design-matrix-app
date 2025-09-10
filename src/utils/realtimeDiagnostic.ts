@@ -1,6 +1,7 @@
 // Real-time diagnostic utility to help identify and fix Supabase real-time issues
 
 import { supabase } from '../lib/supabase'
+import { logger } from './logger'
 
 export class RealtimeDiagnostic {
   private static diagnosticRunning = false
@@ -8,23 +9,23 @@ export class RealtimeDiagnostic {
   static async checkRealtimeConfiguration() {
     // Prevent multiple diagnostics from running
     if (this.diagnosticRunning) {
-      console.log('🔍 Diagnostic already running, skipping...')
+      logger.debug('Diagnostic already running, skipping...')
       return
     }
     
     this.diagnosticRunning = true
-    console.log('🔍 Running real-time diagnostic...')
+    logger.info('Running real-time diagnostic...')
     
     // Test 1: Check if we can connect to real-time
     let testChannelRemoved = false
     const testChannel = supabase
       .channel('diagnostic-test')
       .subscribe((status) => {
-        console.log('📡 Real-time connection test:', status)
+        logger.debug('Real-time connection test:', status)
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Basic real-time connection works')
+          logger.info('Basic real-time connection works')
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.log('❌ Real-time connection failed:', status)
+          logger.error('Real-time connection failed:', status)
         }
         
         // Only remove channel once
@@ -34,7 +35,7 @@ export class RealtimeDiagnostic {
             try {
               supabase.removeChannel(testChannel)
             } catch (e) {
-              console.warn('Channel removal error (safe to ignore):', e)
+              logger.debug('Channel removal error (safe to ignore):', e)
             }
           }, 100)
         }
@@ -48,16 +49,16 @@ export class RealtimeDiagnostic {
         .limit(1)
       
       if (error) {
-        console.log('❌ Cannot read from ideas table:', error.message)
+        logger.error('Cannot read from ideas table:', error.message)
       } else {
-        console.log('✅ Can read from ideas table')
+        logger.info('Can read from ideas table')
       }
     } catch (err) {
-      console.log('❌ Ideas table access error:', err)
+      logger.error('Ideas table access error:', err)
     }
 
-    // Test 3: Provide instructions for manual configuration
-    console.log(`
+    // Test 3: Only show configuration instructions in development
+    logger.debug(`
 🔧 To enable real-time for the 'ideas' table in Supabase:
 
 1. Go to your Supabase Dashboard
@@ -87,7 +88,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.ideas;
   }
 
   static async testRealtimeWithInsert() {
-    console.log('🧪 Testing real-time with a test insert...')
+    logger.debug('Testing real-time with a test insert...')
     
     let eventReceived = false
     
@@ -98,7 +99,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.ideas;
         'postgres_changes',
         { event: '*', schema: 'public', table: 'ideas' },
         (payload) => {
-          console.log('🎉 Real-time event received!', payload.eventType)
+          logger.debug('Real-time event received!', payload.eventType)
           eventReceived = true
         }
       )
@@ -123,22 +124,22 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.ideas;
         })
 
       if (error) {
-        console.log('❌ Could not insert test record:', error.message)
+        logger.error('Could not insert test record:', error.message)
       } else {
-        console.log('✅ Test record inserted, checking for real-time event...')
+        logger.debug('Test record inserted, checking for real-time event...')
         
         // Wait for real-time event
         setTimeout(() => {
           if (eventReceived) {
-            console.log('🎉 Real-time is working perfectly!')
+            logger.info('Real-time is working perfectly!')
           } else {
-            console.log('⚠️ Real-time event not received - check configuration')
+            logger.warn('Real-time event not received - check configuration')
           }
           supabase.removeChannel(testChannel)
         }, 3000)
       }
     } catch (err) {
-      console.log('❌ Test insert failed:', err)
+      logger.error('Test insert failed:', err)
     }
 
     return eventReceived

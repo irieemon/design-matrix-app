@@ -4,6 +4,7 @@ import { Project, IdeaCard, ProjectType, User } from '../types'
 import { DatabaseService } from '../lib/database'
 import ProjectStartupFlow from './ProjectStartupFlow'
 import AIStarterModal from './AIStarterModal'
+import { logger } from '../utils/logger'
 
 interface ProjectManagementProps {
   currentUser: User
@@ -68,13 +69,13 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
   const loadProjects = async () => {
     setIsLoading(true)
     try {
-      console.log('📋 Loading projects for user:', currentUser.id)
+      logger.debug('📋 Loading projects for user:', currentUser.id)
       
       // Test both approaches: database first, then fallback to test data
       try {
-        console.log('🔄 Attempting database query...')
+        logger.debug('🔄 Attempting database query...')
         const userProjects = await DatabaseService.getUserOwnedProjects(currentUser.id)
-        console.log('✅ Database query succeeded! Projects:', userProjects.length)
+        logger.debug('✅ Database query succeeded! Projects:', userProjects.length)
         
         if (userProjects.length > 0) {
           setProjects(userProjects)
@@ -96,11 +97,11 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
               target_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             }
           ]
-          console.log('📋 No database projects, using test project')
+          logger.debug('📋 No database projects, using test project')
           setProjects(testProjects)
         }
       } catch (dbError) {
-        console.error('❌ Database query failed, falling back to test data:', dbError)
+        logger.error('❌ Database query failed, falling back to test data:', dbError)
         
         // Fallback to test data if database fails
         const testProjects = [
@@ -123,10 +124,10 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
       }
       
     } catch (error) {
-      console.error('Error in loadProjects:', error)
+      logger.error('Error in loadProjects:', error)
       setProjects([]) // Set empty array on error
     } finally {
-      console.log('📋 Setting loading to false, projects count:', projects.length)
+      logger.debug('📋 Setting loading to false, projects count:', projects.length)
       setIsLoading(false)
     }
   }
@@ -144,15 +145,15 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
   }
 
   const handleProjectSelect = (project: Project) => {
-    console.log('📂 ProjectManagement: Selecting project:', project.name, project.id)
-    console.log('📂 ProjectManagement: Full project object:', project)
+    logger.debug('📂 ProjectManagement: Selecting project:', project.name, project.id)
+    logger.debug('📂 ProjectManagement: Full project object:', project)
     
     onProjectSelect(project)
     setSelectedProject(project)
     setShowProjectMenu(null)
     
     // Navigate to the matrix screen to show the selected project
-    console.log('📂 ProjectManagement: About to navigate to matrix')
+    logger.debug('📂 ProjectManagement: About to navigate to matrix')
     if (onNavigateToMatrix) {
       onNavigateToMatrix()
     }
@@ -165,7 +166,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
         setProjects(prev => prev.map(p => p.id === projectId ? updatedProject : p))
       }
     } catch (error) {
-      console.error('Error updating project status:', error)
+      logger.error('Error updating project status:', error)
     }
     setShowProjectMenu(null)
   }
@@ -182,7 +183,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
           }
         }
       } catch (error) {
-        console.error('Error deleting project:', error)
+        logger.error('Error deleting project:', error)
       }
     }
     setShowProjectMenu(null)
@@ -209,10 +210,10 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
     }).format(amount)
   }
 
-  console.log('🖥️ ProjectManagement render - isLoading:', isLoading, 'projects:', projects.length)
+  logger.debug('🖥️ ProjectManagement render - isLoading:', isLoading, 'projects:', projects.length)
 
   if (isLoading) {
-    console.log('🔄 ProjectManagement showing loading state')
+    logger.debug('🔄 ProjectManagement showing loading state')
     return (
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="animate-pulse space-y-4">
@@ -338,12 +339,12 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
                   : 'border-slate-200/60 hover:border-slate-300'
               }`}
               onClick={(e) => {
-                console.log('🖱️ Project card clicked!', project.name, project.id)
-                console.log('🖱️ Click event:', e.target)
+                logger.debug('🖱️ Project card clicked!', project.name, project.id)
+                logger.debug('🖱️ Click event:', e.target)
                 handleProjectSelect(project)
               }}
               onDoubleClick={() => {
-                console.log('🖱️🖱️ Project card double-clicked!', project.name, project.id)
+                logger.debug('🖱️🖱️ Project card double-clicked!', project.name, project.id)
                 handleProjectSelect(project)
               }}
             >

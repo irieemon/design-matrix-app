@@ -21,6 +21,7 @@ import ProjectRoadmap from './components/ProjectRoadmap'
 import ProjectFiles from './components/ProjectFiles'
 import { DatabaseService } from './lib/database'
 import { supabase } from './lib/supabase'
+import { logger } from './utils/logger'
 
 function App() {
   const [ideas, setIdeas] = useState<IdeaCard[]>([])
@@ -38,18 +39,18 @@ function App() {
   const [projectFiles, setProjectFiles] = useState<Record<string, ProjectFile[]>>(() => {
     try {
       const savedFiles = localStorage.getItem('project-files')
-      console.log('📁 Raw localStorage data:', savedFiles)
+      logger.debug('Raw localStorage data:', savedFiles)
       if (savedFiles && savedFiles !== 'null' && savedFiles !== '{}') {
         const parsedFiles = JSON.parse(savedFiles)
-        console.log('📁 Initializing project files from localStorage:', parsedFiles)
-        console.log('📁 Number of projects with files:', Object.keys(parsedFiles).length)
+        logger.debug('Initializing project files from localStorage:', parsedFiles)
+        logger.debug('Number of projects with files:', Object.keys(parsedFiles).length)
         return parsedFiles
       } else {
-        console.log('📁 Initializing with empty project files (no valid data found)')
+        logger.debug('Initializing with empty project files (no valid data found)')
         return {}
       }
     } catch (error) {
-      console.error('Error loading project files from localStorage:', error)
+      logger.error('Error loading project files from localStorage:', error)
       return {}
     }
   })
@@ -76,17 +77,17 @@ function App() {
     try {
       const dataToSave = JSON.stringify(projectFiles)
       const sizeInMB = new Blob([dataToSave]).size / (1024 * 1024)
-      console.log('💾 Saving project files to localStorage:', projectFiles)
-      console.log('💾 Data size:', sizeInMB.toFixed(2), 'MB')
+      logger.debug('💾 Saving project files to localStorage:', projectFiles)
+      logger.debug('💾 Data size:', sizeInMB.toFixed(2), 'MB')
       
       if (sizeInMB > 5) { // localStorage limit is usually 5-10MB
-        console.warn('⚠️ File data is getting large, may hit localStorage limits')
+        logger.warn('⚠️ File data is getting large, may hit localStorage limits')
       }
       
       localStorage.setItem('project-files', dataToSave)
-      console.log('✅ Successfully saved to localStorage')
+      logger.debug('✅ Successfully saved to localStorage')
     } catch (error) {
-      console.error('❌ Error saving project files to localStorage:', error)
+      logger.error('❌ Error saving project files to localStorage:', error)
       if (error instanceof DOMException && error.name === 'QuotaExceededError') {
         alert('Storage quota exceeded! Files are too large to store locally. Consider using smaller files or clearing old files.')
       }
@@ -97,15 +98,15 @@ function App() {
   const handleFilesUploaded = (newFiles: ProjectFile[]) => {
     if (!currentProject?.id) return
     
-    console.log('📁 handleFilesUploaded called with:', newFiles.length, 'files for project:', currentProject.id)
-    console.log('📁 New files:', newFiles)
+    logger.debug('📁 handleFilesUploaded called with:', newFiles.length, 'files for project:', currentProject.id)
+    logger.debug('📁 New files:', newFiles)
     
     setProjectFiles(prev => {
       const updated = {
         ...prev,
         [currentProject.id]: [...(prev[currentProject.id] || []), ...newFiles]
       }
-      console.log('📁 Updated project files state:', updated)
+      logger.debug('📁 Updated project files state:', updated)
       return updated
     })
   }
@@ -131,7 +132,7 @@ function App() {
 
     const initializeAuth = async () => {
       try {
-        console.log('🚀 Initializing authentication...')
+        logger.debug('🚀 Initializing authentication...')
         
         // Add a small delay to let the auth state listener run first
         await new Promise(resolve => setTimeout(resolve, 100))
@@ -146,24 +147,24 @@ function App() {
         )
         
         const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]) as any
-        console.log('🔐 Session check result:', { session: session?.user?.email, error })
+        logger.debug('🔐 Session check result:', { session: session?.user?.email, error })
         
         if (error) {
-          console.error('❌ Error getting session:', error)
+          logger.error('❌ Error getting session:', error)
         }
 
         // Double-check if user was authenticated while we were waiting
         // (Let auth state listener handle this)
 
         if (session?.user && mounted) {
-          console.log('✅ User already signed in:', session.user.email)
+          logger.debug('✅ User already signed in:', session.user.email)
           await handleAuthUser(session.user)
         } else {
-          console.log('❌ No active session found')
+          logger.debug('❌ No active session found')
           // Try legacy localStorage user for backwards compatibility
           const savedUser = localStorage.getItem('prioritasUser')
           if (savedUser && mounted) {
-            console.log('🔄 Found legacy user, migrating:', savedUser)
+            logger.debug('🔄 Found legacy user, migrating:', savedUser)
             let legacyRole: 'user' | 'admin' | 'super_admin' = 'user'
             if (savedUser === 'admin@prioritas.com') {
               legacyRole = 'super_admin'
@@ -181,18 +182,18 @@ function App() {
             })
             setIsLoading(false)
           } else {
-            console.log('❌ No legacy user found - waiting for auth state')
+            logger.debug('❌ No legacy user found - waiting for auth state')
             // Give auth state listener a chance to work before showing login
             setTimeout(() => {
               if (mounted) {
-                console.log('🔓 Final check: showing login screen')
+                logger.debug('🔓 Final check: showing login screen')
                 setIsLoading(false)
               }
             }, 1000)
           }
         }
       } catch (error) {
-        console.error('💥 Error initializing auth:', error)
+        logger.error('💥 Error initializing auth:', error)
         if (mounted) setIsLoading(false)
       }
     }
@@ -203,7 +204,7 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
 
-      console.log('🔐 Auth state changed:', event, session?.user?.email)
+      logger.debug('🔐 Auth state changed:', event, session?.user?.email)
       
       if (event === 'SIGNED_IN' && session?.user) {
         await handleAuthUser(session.user)
@@ -217,7 +218,7 @@ function App() {
         setIsLoading(false)
       } else if (event === 'INITIAL_SESSION' && !session) {
         // No initial session found, stop loading and show login
-        console.log('🔓 No initial session, showing login screen')
+        logger.debug('🔓 No initial session, showing login screen')
         setIsLoading(false)
       }
     })
@@ -237,11 +238,11 @@ function App() {
   // Check if user has projects and redirect to appropriate page
   const checkUserProjectsAndRedirect = async (userId: string, isDemoUser = false) => {
     try {
-      console.log('📋 Checking if user has existing projects...')
+      logger.debug('📋 Checking if user has existing projects...')
       
       // For demo users, skip database calls and default to matrix page
       if (isDemoUser || userId?.startsWith('00000000-0000-0000-0000-00000000000')) {
-        console.log('🎭 Demo user detected, skipping database check and defaulting to matrix page')
+        logger.debug('🎭 Demo user detected, skipping database check and defaulting to matrix page')
         setCurrentPage('matrix')
         return
       }
@@ -250,24 +251,24 @@ function App() {
       const projectCheckPromise = DatabaseService.getUserOwnedProjects(userId)
       const timeoutPromise = new Promise<Project[]>((resolve) => 
         setTimeout(() => {
-          console.log('⏰ Project check timeout, defaulting to matrix page')
+          logger.debug('⏰ Project check timeout, defaulting to matrix page')
           resolve([])
         }, 3000)
       )
       
       const userProjects = await Promise.race([projectCheckPromise, timeoutPromise])
       
-      console.log('📋 Found', userProjects.length, 'projects for user')
+      logger.debug('📋 Found', userProjects.length, 'projects for user')
       
       if (userProjects.length > 0) {
-        console.log('🎯 User has existing projects, redirecting to projects page')
+        logger.debug('🎯 User has existing projects, redirecting to projects page')
         setCurrentPage('projects')
       } else {
-        console.log('📝 No existing projects found, staying on matrix/create page')
+        logger.debug('📝 No existing projects found, staying on matrix/create page')
         setCurrentPage('matrix')
       }
     } catch (error) {
-      console.error('❌ Error checking user projects:', error)
+      logger.error('❌ Error checking user projects:', error)
       // If project check fails, default to matrix page
       setCurrentPage('matrix')
     }
@@ -276,7 +277,7 @@ function App() {
   // Handle authenticated user
   const handleAuthUser = async (authUser: any) => {
     try {
-      console.log('🔐 handleAuthUser called with:', authUser.email, authUser.id)
+      logger.debug('🔐 handleAuthUser called with:', authUser.email, authUser.id)
       setAuthUser(authUser)
       
       // Determine user role based on email (for demo purposes)
@@ -298,14 +299,14 @@ function App() {
         updated_at: new Date().toISOString()
       }
       
-      console.log('🔧 Created fallback user:', { 
+      logger.debug('🔧 Created fallback user:', { 
         id: fallbackUser.id, 
         email: fallbackUser.email,
         idType: typeof fallbackUser.id 
       })
       
       // Skip database profile lookup for now and use auth user directly
-      console.log('👤 Using authenticated user data directly')
+      logger.debug('👤 Using authenticated user data directly')
       setCurrentUser(fallbackUser)
       
       // Check if user has existing projects and redirect accordingly
@@ -313,7 +314,7 @@ function App() {
       await checkUserProjectsAndRedirect(authUser.id, isDemoUser)
       
     } catch (error) {
-      console.error('💥 Error in handleAuthUser:', error)
+      logger.error('💥 Error in handleAuthUser:', error)
       // Even if everything fails, set a basic user to prevent infinite loading
       let errorUserRole: 'user' | 'admin' | 'super_admin' = 'user'
       if (authUser?.email === 'admin@prioritas.com') {
@@ -339,35 +340,35 @@ function App() {
         setCurrentPage('matrix')
       }
     } finally {
-      console.log('🔓 Setting loading to false')
+      logger.debug('🔓 Setting loading to false')
       setIsLoading(false)
     }
   }
 
   const loadIdeas = async (projectId?: string) => {
     if (projectId) {
-      console.log('📂 Loading ideas for project:', projectId)
+      logger.debug('📂 Loading ideas for project:', projectId)
       const ideas = await DatabaseService.getProjectIdeas(projectId)
-      console.log('📋 Raw ideas returned from database:', ideas)
+      logger.debug('📋 Raw ideas returned from database:', ideas)
       setIdeas(ideas)
-      console.log('✅ Loaded', ideas.length, 'ideas for project', projectId)
-      console.log('📋 Ideas details:', ideas.map(i => ({ id: i.id, content: i.content, project_id: i.project_id })))
+      logger.debug('✅ Loaded', ideas.length, 'ideas for project', projectId)
+      logger.debug('📋 Ideas details:', ideas.map(i => ({ id: i.id, content: i.content, project_id: i.project_id })))
     } else {
       // If no project is selected, show no ideas
-      console.log('📂 No project selected, clearing ideas')
+      logger.debug('📂 No project selected, clearing ideas')
       setIdeas([])
     }
   }
 
   // Load ideas when current project changes
   useEffect(() => {
-    console.log('🔄 Project changed effect triggered. Current project:', currentProject?.name, currentProject?.id)
+    logger.debug('🔄 Project changed effect triggered. Current project:', currentProject?.name, currentProject?.id)
     if (currentProject) {
-      console.log('📂 Project selected, loading ideas for:', currentProject.name, currentProject.id)
+      logger.debug('📂 Project selected, loading ideas for:', currentProject.name, currentProject.id)
       loadIdeas(currentProject.id)
     } else {
       // Clear ideas when no project is selected
-      console.log('📂 No project selected, clearing ideas')
+      logger.debug('📂 No project selected, clearing ideas')
       loadIdeas()
     }
   }, [currentProject])
@@ -379,43 +380,43 @@ function App() {
     // Skip subscriptions for demo users
     const isDemoUser = currentUser.id?.startsWith('00000000-0000-0000-0000-00000000000')
     if (isDemoUser) {
-      console.log('🎭 Demo user detected, skipping real-time subscription')
+      logger.debug('🎭 Demo user detected, skipping real-time subscription')
       return
     }
 
-    console.log('🔄 Setting up project-specific subscription for:', currentProject?.id || 'all projects')
+    logger.debug('🔄 Setting up project-specific subscription for:', currentProject?.id || 'all projects')
     const unsubscribe = DatabaseService.subscribeToIdeas(setIdeas, currentProject?.id)
     
     return () => {
-      console.log('🔄 Cleaning up subscription')
+      logger.debug('🔄 Cleaning up subscription')
       unsubscribe()
     }
   }, [currentUser, currentProject?.id])
 
   const handleProjectSelect = (project: Project | null) => {
     if (project) {
-      console.log('🎯 App: handleProjectSelect called with:', project.name, project.id)
-      console.log('🎯 App: Previous currentProject:', currentProject?.name, currentProject?.id)
+      logger.debug('🎯 App: handleProjectSelect called with:', project.name, project.id)
+      logger.debug('🎯 App: Previous currentProject:', currentProject?.name, currentProject?.id)
       setCurrentProject(project)
-      console.log('🎯 App: setCurrentProject called with:', project.name, project.id)
+      logger.debug('🎯 App: setCurrentProject called with:', project.name, project.id)
       loadIdeas(project.id)
     } else {
-      console.log('🎯 App: handleProjectSelect called with null, clearing project')
+      logger.debug('🎯 App: handleProjectSelect called with null, clearing project')
       setCurrentProject(null)
       loadIdeas()
     }
   }
 
   const handleAuthSuccess = async (authUser: any) => {
-    console.log('🎉 Authentication successful:', authUser.email, 'ID:', authUser.id)
+    logger.debug('🎉 Authentication successful:', authUser.email, 'ID:', authUser.id)
     // For demo users, directly call handleAuthUser since they won't go through Supabase
     if (authUser.isDemoUser || authUser.id?.startsWith('00000000-0000-0000-0000-00000000000')) {
-      console.log('🎭 Processing demo user:', authUser)
+      logger.debug('🎭 Processing demo user:', authUser)
       try {
         await handleAuthUser(authUser)
-        console.log('✅ Demo user processed successfully')
+        logger.debug('✅ Demo user processed successfully')
       } catch (error) {
-        console.error('❌ Error processing demo user:', error)
+        logger.error('❌ Error processing demo user:', error)
       }
     }
     // For real Supabase users, the auth state listener will handle it
@@ -457,7 +458,7 @@ function App() {
   }
 
   const addIdea = async (newIdea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>) => {
-    console.log('📥 App: Received new idea:', newIdea)
+    logger.debug('📥 App: Received new idea:', newIdea)
     
     const ideaWithUser = {
       ...newIdea,
@@ -465,19 +466,19 @@ function App() {
       project_id: currentProject?.id
     }
     
-    console.log('💾 App: Creating idea in database...', ideaWithUser)
+    logger.debug('💾 App: Creating idea in database...', ideaWithUser)
     
     const createdIdea = await DatabaseService.createIdea(ideaWithUser)
     
     if (createdIdea) {
-      console.log('✅ App: Idea created successfully, adding to state:', createdIdea)
+      logger.debug('✅ App: Idea created successfully, adding to state:', createdIdea)
       // Immediately add to local state for instant feedback
       setIdeas(prev => [...prev, createdIdea])
     } else {
-      console.error('❌ App: Failed to create idea in database')
+      logger.error('❌ App: Failed to create idea in database')
     }
     
-    console.log('🔄 App: Closing modals...')
+    logger.debug('🔄 App: Closing modals...')
     setShowAddModal(false)
     setShowAIModal(false)
   }
@@ -494,11 +495,11 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      console.log('🚪 Logging out...')
+      logger.debug('🚪 Logging out...')
       await supabase.auth.signOut()
       // The auth state change listener will handle the rest
     } catch (error) {
-      console.error('Error logging out:', error)
+      logger.error('Error logging out:', error)
       // Fallback: clear state manually
       setCurrentUser(null)
       setAuthUser(null)
@@ -724,7 +725,7 @@ function App() {
                 currentProject={currentProject}
                 onProjectSelect={handleProjectSelect}
                 onProjectCreated={(project, ideas) => {
-                  console.log('🎯 App: Project created:', project.name, project.id)
+                  logger.debug('🎯 App: Project created:', project.name, project.id)
                   setCurrentProject(project)
                   if (ideas) {
                     setIdeas(prev => [...prev, ...ideas])

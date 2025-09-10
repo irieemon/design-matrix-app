@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FileText, Image, File, Download, Trash2, Eye, Calendar, User, FileIcon } from 'lucide-react'
 import { ProjectFile, FileType } from '../types'
 import DeleteConfirmModal from './DeleteConfirmModal'
+import { logger } from '../utils/logger'
 
 interface FileManagerProps {
   files: ProjectFile[]
@@ -20,7 +21,7 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
 
   const downloadFile = (file: ProjectFile) => {
     if (!file.file_data) {
-      console.warn('No file data available for download:', file.original_name)
+      logger.warn('No file data available for download:', file.original_name)
       alert(`Cannot download "${file.original_name}". File data is not available. Please re-upload the file to enable downloads.`)
       return
     }
@@ -51,7 +52,7 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
     } catch (error) {
-      console.error('Error downloading file:', error)
+      logger.error('Error downloading file:', error)
       alert('Failed to download file. Please try again.')
     }
   }

@@ -4,6 +4,7 @@ import { IdeaCard, Project } from '../types'
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 import { exportInsightsToPDF } from '../utils/pdfExport'
+import { logger } from '../utils/logger'
 
 interface AIInsightsModalProps {
   ideas: IdeaCard[]
@@ -65,18 +66,18 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
     setIsHistorical(true)
     
     try {
-      console.log('📊 Loading historical insight:', insightId)
+      logger.debug('📊 Loading historical insight:', insightId)
       const historicalInsight = await DatabaseService.getProjectInsight(insightId)
       
       if (historicalInsight) {
         setInsights(historicalInsight.insights_data)
         setSavedInsightId(insightId)
-        console.log('✅ Loaded historical insight successfully')
+        logger.debug('✅ Loaded historical insight successfully')
       } else {
         throw new Error('Insight not found')
       }
     } catch (err) {
-      console.error('Error loading historical insight:', err)
+      logger.error('Error loading historical insight:', err)
       setError('Failed to load historical insight. Please try again.')
     } finally {
       setIsLoading(false)
@@ -89,11 +90,11 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
     setIsHistorical(false)
     
     try {
-      console.log('🔍 Generating AI insights for', ideas.length, 'ideas...')
+      logger.debug('🔍 Generating AI insights for', ideas.length, 'ideas...')
       const report = await aiService.generateInsights(ideas)
       setInsights(report)
     } catch (err) {
-      console.error('Error generating insights:', err)
+      logger.error('Error generating insights:', err)
       setError('Failed to generate insights. Please try again.')
     } finally {
       setIsLoading(false)
@@ -115,10 +116,10 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
       if (savedId) {
         setSavedInsightId(savedId)
         onInsightSaved?.(savedId)
-        console.log('✅ Insights saved successfully:', savedId)
+        logger.debug('✅ Insights saved successfully:', savedId)
       }
     } catch (error) {
-      console.error('Error saving insights:', error)
+      logger.error('Error saving insights:', error)
     } finally {
       setIsSaving(false)
     }

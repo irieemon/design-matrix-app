@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Search, Filter, UserCheck, UserX, Shield, Mail, Calendar, Activity, Eye } from 'lucide-react'
 import { AdminUser, User } from '../../types'
 import { AdminService } from '../../lib/adminService'
+import { logger } from '../../utils/logger'
 
 interface UserManagementProps {
   currentUser: User
@@ -25,7 +26,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
       const { users: fetchedUsers } = await AdminService.getAllUsers(1, 50)
       setUsers(fetchedUsers)
     } catch (error) {
-      console.error('Error loading users:', error)
+      logger.error('Error loading users:', error)
     } finally {
       setIsLoading(false)
     }
@@ -38,7 +39,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
         user.id === userId ? { ...user, is_active: !currentStatus } : user
       ))
     } catch (error) {
-      console.error('Error updating user status:', error)
+      logger.error('Error updating user status:', error)
     }
   }
 
@@ -49,7 +50,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
         user.id === userId ? { ...user, role: newRole } : user
       ))
     } catch (error) {
-      console.error('Error updating user role:', error)
+      logger.error('Error updating user role:', error)
     }
   }
 

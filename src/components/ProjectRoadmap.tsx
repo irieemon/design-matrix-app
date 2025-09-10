@@ -4,6 +4,7 @@ import { Project, IdeaCard, ProjectRoadmap as ProjectRoadmapType } from '../type
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 import { exportRoadmapToPDF } from '../utils/pdfExport'
+import { logger } from '../utils/logger'
 
 interface ProjectRoadmapProps {
   currentUser: string
@@ -78,7 +79,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         setRoadmapData(history[0].roadmap_data)
       }
     } catch (error) {
-      console.error('Error loading roadmap history:', error)
+      logger.error('Error loading roadmap history:', error)
     }
   }
 
@@ -90,7 +91,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   //       setSelectedRoadmapId(roadmapId)
   //     }
   //   } catch (error) {
-  //     console.error('Error loading roadmap version:', error)
+  //     logger.error('Error loading roadmap version:', error)
   //   }
   // }
 
@@ -109,8 +110,8 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     setError(null)
 
     try {
-      console.log('🗺️ Generating roadmap for project:', currentProject.name)
-      console.log('📋 Processing', ideas.length, 'ideas')
+      logger.debug('🗺️ Generating roadmap for project:', currentProject.name)
+      logger.debug('📋 Processing', ideas.length, 'ideas')
       
       const data = await aiService.generateRoadmap(
         ideas,
@@ -119,7 +120,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       )
       
       setRoadmapData(data)
-      console.log('✅ Roadmap generated successfully')
+      logger.debug('✅ Roadmap generated successfully')
       
       // Save the roadmap to database
       const savedRoadmapId = await DatabaseService.saveProjectRoadmap(
@@ -130,15 +131,15 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       )
       
       if (savedRoadmapId) {
-        console.log('✅ Roadmap saved to database')
+        logger.debug('✅ Roadmap saved to database')
         setSelectedRoadmapId(savedRoadmapId)
         // Reload history to show the new roadmap
         await loadRoadmapHistory()
       } else {
-        console.error('❌ Failed to save roadmap to database')
+        logger.error('❌ Failed to save roadmap to database')
       }
     } catch (err) {
-      console.error('Error generating roadmap:', err)
+      logger.error('Error generating roadmap:', err)
       setError('Failed to generate roadmap. Please try again.')
     } finally {
       setIsLoading(false)
@@ -152,18 +153,18 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   }
 
   const togglePhaseExpansion = (phaseIndex: number) => {
-    console.log('🔄 Toggling phase expansion for index:', phaseIndex)
-    console.log('📋 Current expanded phases:', Array.from(expandedPhases))
+    logger.debug('🔄 Toggling phase expansion for index:', phaseIndex)
+    logger.debug('📋 Current expanded phases:', Array.from(expandedPhases))
     const newExpanded = new Set(expandedPhases)
     if (newExpanded.has(phaseIndex)) {
       newExpanded.delete(phaseIndex)
-      console.log('➖ Collapsing phase', phaseIndex)
+      logger.debug('➖ Collapsing phase', phaseIndex)
     } else {
       newExpanded.add(phaseIndex)
-      console.log('➕ Expanding phase', phaseIndex)
+      logger.debug('➕ Expanding phase', phaseIndex)
     }
     setExpandedPhases(newExpanded)
-    console.log('📋 New expanded phases:', Array.from(newExpanded))
+    logger.debug('📋 New expanded phases:', Array.from(newExpanded))
   }
 
   const getPriorityColor = (priority: string) => {

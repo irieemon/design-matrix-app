@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Users, FolderOpen, Lightbulb, Activity, TrendingUp, Database, AlertCircle, CheckCircle } from 'lucide-react'
 import { PlatformStats, User } from '../../types'
 import { AdminService } from '../../lib/adminService'
+import { logger } from '../../utils/logger'
 
 interface AdminDashboardProps {
   currentUser: User
@@ -21,7 +22,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) => {
       const platformStats = await AdminService.getPlatformStats()
       setStats(platformStats)
     } catch (error) {
-      console.error('Error loading platform stats:', error)
+      logger.error('Error loading platform stats:', error)
     } finally {
       setIsLoading(false)
     }

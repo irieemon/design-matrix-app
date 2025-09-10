@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
+import { logger } from '../utils/logger'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-console.log('🔧 Supabase config check:', {
+logger.debug('🔧 Supabase config check:', {
   hasUrl: !!supabaseUrl,
   hasKey: !!supabaseAnonKey,
   urlPreview: supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'missing',
@@ -11,9 +12,9 @@ console.log('🔧 Supabase config check:', {
 })
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Missing Supabase environment variables')
-  console.log('Available env vars:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')))
-  console.log('You need to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file')
+  logger.error('❌ Missing Supabase environment variables')
+  logger.debug('Available env vars:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')))
+  logger.error('You need to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file')
 }
 
 // Create Supabase client with simplified config to avoid conflicts
@@ -34,14 +35,14 @@ export const supabase = createClient(
 export const getCurrentUser = async () => {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error) {
-    console.error('Error getting current user:', error)
+    logger.error('Error getting current user:', error)
     return null
   }
   return user
 }
 
 export const getUserProfile = async (userId: string) => {
-  console.log('🔍 getUserProfile called for userId:', userId)
+  logger.debug('🔍 getUserProfile called for userId:', userId)
   
   try {
     const profilePromise = supabase
@@ -55,21 +56,21 @@ export const getUserProfile = async (userId: string) => {
     )
     
     const { data, error } = await Promise.race([profilePromise, timeoutPromise]) as any
-    console.log('🔍 getUserProfile query result:', { data, error })
+    logger.debug('🔍 getUserProfile query result:', { data, error })
     
     if (error) {
-      console.error('❌ Error getting user profile:', error)
+      logger.error('❌ Error getting user profile:', error)
       
       // If it's a timeout or table doesn't exist, try to create the profile
       if (error.message === 'Profile lookup timeout' || error.code === '42P01') {
-        console.log('🏗️ Attempting to create user profile for userId:', userId)
+        logger.debug('🏗️ Attempting to create user profile for userId:', userId)
         
         // Add timeout to entire profile creation process
         try {
           const createProfilePromise = createUserProfile(userId)
           const overallTimeoutPromise = new Promise((resolve) => 
             setTimeout(async () => {
-              console.log('⏰ Profile creation taking too long, using emergency fallback')
+              logger.warn('⏰ Profile creation taking too long, using emergency fallback')
               // Try to get current user from auth for correct email
               try {
                 const { data: { user } } = await supabase.auth.getUser()
@@ -94,7 +95,7 @@ export const getUserProfile = async (userId: string) => {
           
           return await Promise.race([createProfilePromise, overallTimeoutPromise]) as any
         } catch (createError) {
-          console.error('❌ Profile creation failed:', createError)
+          logger.error('❌ Profile creation failed:', createError)
           // Try to get current user from auth for correct email
           try {
             const { data: { user } } = await supabase.auth.getUser()
@@ -121,30 +122,30 @@ export const getUserProfile = async (userId: string) => {
     }
     return data
   } catch (err) {
-    console.error('💥 Exception in getUserProfile:', err)
+    logger.error('💥 Exception in getUserProfile:', err)
     return null
   }
 }
 
 export const createUserProfile = async (userId: string, email?: string) => {
-  console.log('🏗️ Creating user profile for userId:', userId)
+  logger.debug('🏗️ Creating user profile for userId:', userId)
   
   try {
     // Try to get the current user's email from auth if not provided
     if (!email) {
       try {
-        console.log('📧 Getting user email from auth...')
+        logger.debug('📧 Getting user email from auth...')
         const { data: { user }, error: userError } = await supabase.auth.getUser()
         
         if (userError) {
-          console.error('❌ Error getting user from auth:', userError)
+          logger.error('❌ Error getting user from auth:', userError)
           email = 'unknown@example.com'
         } else {
           email = user?.email || 'unknown@example.com'
-          console.log('📧 Got email from auth:', email)
+          logger.debug('📧 Got email from auth:', email)
         }
       } catch (emailError) {
-        console.log('⚠️ Failed to get user email, using default:', emailError)
+        logger.warn('⚠️ Failed to get user email, using default:', emailError)
         email = 'unknown@example.com'
       }
     }
@@ -157,7 +158,7 @@ export const createUserProfile = async (userId: string, email?: string) => {
       updated_at: new Date().toISOString()
     }
     
-    console.log('📝 Attempting to insert profile:', newProfile)
+    logger.debug('📝 Attempting to insert profile:', newProfile)
     
     // Add timeout to profile creation
     const insertPromise = supabase
@@ -173,11 +174,11 @@ export const createUserProfile = async (userId: string, email?: string) => {
     const { data, error } = await Promise.race([insertPromise, timeoutPromise]) as any
     
     if (error) {
-      console.error('❌ Error creating user profile:', error)
+      logger.error('❌ Error creating user profile:', error)
       
       // If table doesn't exist or timeout, return a fallback profile
       if (error.code === '42P01' || error.message === 'Profile creation timeout') {
-        console.log('📄 Database issue, using fallback profile:', error.message)
+        logger.warn('📄 Database issue, using fallback profile:', error.message)
         const fallbackProfile = {
           id: userId,
           email: email,
@@ -185,18 +186,18 @@ export const createUserProfile = async (userId: string, email?: string) => {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }
-        console.log('✅ Returning fallback profile:', fallbackProfile)
+        logger.debug('✅ Returning fallback profile:', fallbackProfile)
         return fallbackProfile
       }
       
-      console.log('❌ Profile creation failed, returning null')
+      logger.error('❌ Profile creation failed, returning null')
       return null
     }
     
-    console.log('✅ User profile created successfully:', data)
+    logger.debug('✅ User profile created successfully:', data)
     return data
   } catch (err) {
-    console.error('💥 Exception creating user profile:', err)
+    logger.error('💥 Exception creating user profile:', err)
     
     // Return fallback profile even if database operations fail
     return {
@@ -218,7 +219,7 @@ export const updateUserProfile = async (userId: string, updates: any) => {
     .single()
   
   if (error) {
-    console.error('Error updating user profile:', error)
+    logger.error('Error updating user profile:', error)
     throw error
   }
   return data
@@ -227,7 +228,7 @@ export const updateUserProfile = async (userId: string, updates: any) => {
 export const signOut = async () => {
   const { error } = await supabase.auth.signOut()
   if (error) {
-    console.error('Error signing out:', error)
+    logger.error('Error signing out:', error)
     throw error
   }
 }
@@ -252,7 +253,7 @@ export const getUserProjects = async (userId: string) => {
     .order('updated_at', { ascending: false })
   
   if (error) {
-    console.error('Error getting user projects:', error)
+    logger.error('Error getting user projects:', error)
     throw error
   }
   
@@ -278,7 +279,7 @@ export const getUserProjectRole = async (projectId: string, userId: string) => {
     })
   
   if (error) {
-    console.error('Error getting user project role:', error)
+    logger.error('Error getting user project role:', error)
     return 'none'
   }
   
@@ -293,7 +294,7 @@ export const canUserAccessProject = async (projectId: string, userId: string) =>
     })
   
   if (error) {
-    console.error('Error checking project access:', error)
+    logger.error('Error checking project access:', error)
     return false
   }
   
@@ -315,7 +316,7 @@ export const getUserTeams = async (userId: string) => {
     .not('joined_at', 'is', null)
   
   if (error) {
-    console.error('Error getting user teams:', error)
+    logger.error('Error getting user teams:', error)
     throw error
   }
   
@@ -341,7 +342,7 @@ export const getUserInvitations = async (userEmail: string) => {
     .order('created_at', { ascending: false })
   
   if (error) {
-    console.error('Error getting user invitations:', error)
+    logger.error('Error getting user invitations:', error)
     throw error
   }
   
@@ -357,7 +358,7 @@ export const acceptInvitation = async (invitationId: string, userId: string) => 
     .single()
   
   if (fetchError) {
-    console.error('Error fetching invitation:', fetchError)
+    logger.error('Error fetching invitation:', fetchError)
     throw fetchError
   }
   
@@ -375,7 +376,7 @@ export const acceptInvitation = async (invitationId: string, userId: string) => 
     .eq('id', invitationId)
   
   if (updateError) {
-    console.error('Error updating invitation:', updateError)
+    logger.error('Error updating invitation:', updateError)
     throw updateError
   }
   
@@ -393,7 +394,7 @@ export const acceptInvitation = async (invitationId: string, userId: string) => 
       })
     
     if (memberError) {
-      console.error('Error adding team member:', memberError)
+      logger.error('Error adding team member:', memberError)
       throw memberError
     }
   } else if (invitation.type === 'project') {
@@ -409,7 +410,7 @@ export const acceptInvitation = async (invitationId: string, userId: string) => 
       })
     
     if (collaboratorError) {
-      console.error('Error adding project collaborator:', collaboratorError)
+      logger.error('Error adding project collaborator:', collaboratorError)
       throw collaboratorError
     }
   }

@@ -1,5 +1,6 @@
 import { X, FileText, Image, Download } from 'lucide-react'
 import { ProjectFile } from '../types'
+import { logger } from '../utils/logger'
 
 interface FileViewerProps {
   file: ProjectFile | null
@@ -12,7 +13,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
 
   const downloadFile = (file: ProjectFile) => {
     if (!file.file_data) {
-      console.warn('No file data available for download:', file.original_name)
+      logger.warn('No file data available for download:', file.original_name)
       alert(`Cannot download "${file.original_name}". File data is not available. Please re-upload the file to enable downloads.`)
       return
     }
@@ -43,7 +44,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
     } catch (error) {
-      console.error('Error downloading file:', error)
+      logger.error('Error downloading file:', error)
       alert('Failed to download file. Please try again.')
     }
   }

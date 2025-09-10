@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Users, UserPlus, Crown, Shield, Edit3, Trash2, MoreHorizontal, Mail } from 'lucide-react'
 import { DatabaseService } from '../lib/database'
 import InviteCollaboratorModal from './InviteCollaboratorModal'
+import { logger } from '../utils/logger'
 
 interface Collaborator {
   id: string
@@ -65,28 +66,28 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
   const loadCollaborators = async () => {
     setLoading(true)
     try {
-      console.log('🔄 ProjectCollaborators: Loading collaborators for project:', projectId)
+      logger.debug('🔄 ProjectCollaborators: Loading collaborators for project:', projectId)
       const data = await DatabaseService.getProjectCollaborators(projectId)
-      console.log('📋 ProjectCollaborators: Received collaborator data:', data)
+      logger.debug('📋 ProjectCollaborators: Received collaborator data:', data)
       setCollaborators(data)
-      console.log('✅ ProjectCollaborators: Updated collaborators state with', data.length, 'items')
+      logger.debug('✅ ProjectCollaborators: Updated collaborators state with', data.length, 'items')
     } catch (error) {
-      console.error('❌ ProjectCollaborators: Error loading collaborators:', error)
+      logger.error('❌ ProjectCollaborators: Error loading collaborators:', error)
     } finally {
       setLoading(false)
     }
   }
 
   const handleInvite = async (email: string, role: string) => {
-    console.log('📧 ProjectCollaborators: handleInvite called with:', { email, role, projectId, currentUserId: currentUser?.id })
+    logger.debug('📧 ProjectCollaborators: handleInvite called with:', { email, role, projectId, currentUserId: currentUser?.id })
     
     if (!currentUser?.id) {
-      console.error('❌ ProjectCollaborators: No current user ID available')
+      logger.error('❌ ProjectCollaborators: No current user ID available')
       return false
     }
 
     try {
-      console.log('🔄 ProjectCollaborators: Calling DatabaseService.addProjectCollaborator...')
+      logger.debug('🔄 ProjectCollaborators: Calling DatabaseService.addProjectCollaborator...')
       const success = await DatabaseService.addProjectCollaborator(
         projectId, 
         email, 
@@ -96,17 +97,17 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
         currentUser.email?.split('@')[0] || 'Project Owner',
         currentUser.email
       )
-      console.log('📊 ProjectCollaborators: addProjectCollaborator returned:', success)
+      logger.debug('📊 ProjectCollaborators: addProjectCollaborator returned:', success)
       
       if (success) {
-        console.log('✅ ProjectCollaborators: Invitation successful, reloading collaborators...')
+        logger.debug('✅ ProjectCollaborators: Invitation successful, reloading collaborators...')
         await loadCollaborators()
         return true
       }
-      console.log('❌ ProjectCollaborators: Invitation failed')
+      logger.error('❌ ProjectCollaborators: Invitation failed')
       return false
     } catch (error) {
-      console.error('💥 ProjectCollaborators: Error inviting collaborator:', error)
+      logger.error('💥 ProjectCollaborators: Error inviting collaborator:', error)
       return false
     }
   }
@@ -119,7 +120,7 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
         await loadCollaborators()
       }
     } catch (error) {
-      console.error('Error updating role:', error)
+      logger.error('Error updating role:', error)
     } finally {
       setUpdating(null)
       setActionMenuOpen(null)
@@ -136,7 +137,7 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
         await loadCollaborators()
       }
     } catch (error) {
-      console.error('Error removing collaborator:', error)
+      logger.error('Error removing collaborator:', error)
     } finally {
       setUpdating(null)
       setActionMenuOpen(null)

@@ -3,6 +3,7 @@ import { Users, UserPlus, Crown, Settings, Bell, Activity, ArrowLeft } from 'luc
 import { User, Project } from '../../types'
 import { DatabaseService } from '../../lib/database'
 import ProjectCollaborators from '../ProjectCollaborators'
+import { logger } from '../../utils/logger'
 
 interface ProjectCollaborationProps {
   currentUser: User
@@ -29,7 +30,7 @@ const ProjectCollaboration: React.FC<ProjectCollaborationProps> = ({
       const role = await DatabaseService.getUserProjectRole(currentProject.id, currentUser.id)
       setUserRole(role || 'viewer')
     } catch (error) {
-      console.error('Error loading user role:', error)
+      logger.error('Error loading user role:', error)
     } finally {
       setLoading(false)
     }
@@ -40,7 +41,7 @@ const ProjectCollaboration: React.FC<ProjectCollaborationProps> = ({
       const collaborators = await DatabaseService.getProjectCollaborators(currentProject.id)
       setCollaboratorCount(collaborators.length + 1) // +1 for owner
     } catch (error) {
-      console.error('Error loading collaborator count:', error)
+      logger.error('Error loading collaborator count:', error)
     }
   }
 

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { Upload, X, FileText, AlertCircle } from 'lucide-react'
 import { ProjectFile, User, Project, FileType } from '../types'
+import { logger } from '../utils/logger'
 
 interface FileUploadProps {
   currentProject: Project
@@ -90,7 +91,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       try {
         return await file.text()
       } catch (error) {
-        console.warn('Could not read file content:', error)
+        logger.warn('Could not read file content:', error)
         return undefined
       }
     }
@@ -157,7 +158,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       onFilesUploaded(uploadedFiles)
       setError(null)
     } catch (err) {
-      console.error('Error uploading files:', err)
+      logger.error('Error uploading files:', err)
       setError('Failed to upload files. Please try again.')
     } finally {
       setUploading(false)

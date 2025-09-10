@@ -3,6 +3,7 @@ import { X, ArrowRight, ArrowLeft, Calendar, Users, DollarSign, Tag, Sparkles, L
 import { Project, ProjectType, IdeaCard, User } from '../types'
 import { DatabaseService } from '../lib/database'
 import { aiService } from '../lib/aiService'
+import { logger } from '../utils/logger'
 
 interface ProjectStartupFlowProps {
   currentUser: User
@@ -134,19 +135,19 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
       }
 
       // Create the project (test database first, fallback to local)
-      console.log('🏗️ Creating project...')
+      logger.debug('🏗️ Creating project...')
       
       let project
       try {
-        console.log('🔄 Attempting database project creation...')
+        logger.debug('🔄 Attempting database project creation...')
         project = await DatabaseService.createProject(projectData)
-        console.log('✅ Database project creation succeeded!', project?.name)
+        logger.debug('✅ Database project creation succeeded!', project?.name)
         
         if (!project) {
           throw new Error('Database returned null project')
         }
       } catch (dbError) {
-        console.error('❌ Database project creation failed, using local fallback:', dbError)
+        logger.error('❌ Database project creation failed, using local fallback:', dbError)
         
         // Fallback to local project object
         project = {
@@ -163,14 +164,14 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
           budget: projectData.budget || 0,
           target_date: projectData.target_date || undefined,
         }
-        console.log('✅ Created local fallback project:', project.name)
+        logger.debug('✅ Created local fallback project:', project.name)
       }
 
       let createdIdeas: IdeaCard[] = []
 
       // Generate AI ideas if enabled (temporarily bypass database)
       if (formData.enableAI && aiAnalysis?.generatedIdeas) {
-        console.log('🤖 Creating AI-generated ideas...')
+        logger.debug('🤖 Creating AI-generated ideas...')
         for (const ideaData of aiAnalysis.generatedIdeas) {
           // Temporary fix: Create local idea objects instead of database calls
           const newIdea = {
@@ -210,12 +211,12 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
         }
       }
 
-      console.log('✅ Project created successfully!', { project, ideasCount: createdIdeas.length })
+      logger.debug('✅ Project created successfully!', { project, ideasCount: createdIdeas.length })
       onProjectCreated(project, createdIdeas)
       onClose()
 
     } catch (err) {
-      console.error('Error creating project:', err)
+      logger.error('Error creating project:', err)
       setError('Failed to create project. Please try again.')
     } finally {
       setIsLoading(false)
@@ -228,16 +229,16 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
     if (enabled && formData.name && formData.description) {
       setIsLoading(true)
       try {
-        console.log('🧠 Running AI analysis...')
+        logger.debug('🧠 Running AI analysis...')
         const analysis = await aiService.generateProjectIdeas(
           formData.name,
           formData.description,
           formData.project_type
         )
         setAiAnalysis(analysis)
-        console.log('✅ AI analysis complete:', analysis)
+        logger.debug('✅ AI analysis complete:', analysis)
       } catch (err) {
-        console.error('AI analysis failed:', err)
+        logger.error('AI analysis failed:', err)
         setError('AI analysis failed. Project will be created without AI insights.')
       } finally {
         setIsLoading(false)

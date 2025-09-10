@@ -3,6 +3,7 @@
 
 import { IdeaCard } from '../types'
 import { supabase } from './supabase'
+import { logger } from '../utils/logger'
 
 interface AIIdeaResponse {
   content: string
@@ -29,7 +30,7 @@ class SecureAIService {
       this.baseUrl = 'http://localhost:3000'
     }
     
-    console.log('🔒 Secure AI Service initialized:', {
+    logger.debug('🔒 Secure AI Service initialized', {
       baseUrl: this.baseUrl,
       mode: 'server-side-proxy',
       security: 'API keys protected on server',
@@ -48,7 +49,7 @@ class SecureAIService {
         }
       }
     } catch (error) {
-      console.warn('Could not get auth token:', error)
+      logger.warn('Could not get auth token:', error)
     }
     
     // Return basic headers if no auth available
@@ -58,7 +59,7 @@ class SecureAIService {
   }
 
   async generateIdea(title: string, projectContext?: { name?: string, description?: string, type?: string }): Promise<AIIdeaResponse> {
-    console.log(`🧠 Generating idea for: "${title}" using secure server-side proxy`)
+    logger.debug(`🧠 Generating idea for: "${title}" using secure server-side proxy`)
     
     try {
       // Call our secure serverless endpoint
@@ -96,13 +97,13 @@ class SecureAIService {
       }
 
     } catch (error) {
-      console.warn('🚫 AI generation failed, using mock:', error)
+      logger.warn('🚫 AI generation failed, using mock:', error)
       return this.generateMockIdea(title, projectContext)
     }
   }
 
   async generateMultipleIdeas(title: string, description: string, projectType: string = 'General', count: number = 8): Promise<IdeaCard[]> {
-    console.log(`🧠 Generating ${count} ideas for project: "${title}"`)
+    logger.debug(`🧠 Generating ${count} ideas for project: "${title}"`)
     
     try {
       const headers = await this.getAuthHeaders()
@@ -140,13 +141,13 @@ class SecureAIService {
       }
 
     } catch (error) {
-      console.warn('🚫 AI generation failed, using mock:', error)
+      logger.warn('🚫 AI generation failed, using mock:', error)
       return this.generateMockIdeas(title, description, projectType, count)
     }
   }
 
   async generateInsights(ideas: IdeaCard[], projectName?: string, projectType?: string): Promise<any> {
-    console.log('🔍 Generating insights for', ideas.length, 'ideas')
+    logger.debug('🔍 Generating insights for', ideas.length, 'ideas')
     
     try {
       const headers = await this.getAuthHeaders()
@@ -175,13 +176,13 @@ class SecureAIService {
       return data.insights || this.generateMockInsights(ideas)
 
     } catch (error) {
-      console.warn('🚫 AI insights failed, using mock:', error)
+      logger.warn('🚫 AI insights failed, using mock:', error)
       return this.generateMockInsights(ideas)
     }
   }
 
   async generateRoadmap(ideas: IdeaCard[], projectName: string, projectType?: string): Promise<any> {
-    console.log('🗺️ Generating roadmap for project:', projectName)
+    logger.debug('🗺️ Generating roadmap for project:', projectName)
     
     try {
       const headers = await this.getAuthHeaders()
@@ -210,7 +211,7 @@ class SecureAIService {
       return data.roadmap || this.generateMockRoadmap(projectName, projectType)
 
     } catch (error) {
-      console.warn('🚫 AI roadmap failed, using mock:', error)
+      logger.warn('🚫 AI roadmap failed, using mock:', error)
       return this.generateMockRoadmap(projectName, projectType)
     }
   }

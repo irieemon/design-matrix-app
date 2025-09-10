@@ -6,6 +6,7 @@ import AdminSidebar from './AdminSidebar'
 import AdminDashboard from './AdminDashboard'
 import UserManagement from './UserManagement'
 import ProjectManagement from './ProjectManagement'
+import { logger } from '../../utils/logger'
 
 interface AdminPortalProps {
   currentUser: User
@@ -25,7 +26,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onBackToApp, onL
       setHasAccess(isAdmin)
       
       if (!isAdmin) {
-        console.warn('Non-admin user attempted to access admin portal:', currentUser.email)
+        logger.warn('Non-admin user attempted to access admin portal:', currentUser.email)
       }
     }
 

@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import type { IdeaCard, Project } from '../types'
 import { EmailService } from './emailService'
 import { RealtimeDiagnostic } from '../utils/realtimeDiagnostic'
+import { logger } from '../utils/logger'
 
 export class DatabaseService {
   // Debounce map to prevent rapid-fire updates
@@ -15,11 +16,7 @@ export class DatabaseService {
     const lastLog = this.lastLogTime.get(key) || 0
     
     if (now - lastLog > throttleMs) {
-      if (data !== undefined) {
-        console.log(message, data)
-      } else {
-        console.log(message)
-      }
+      logger.debug(message, data)
       this.lastLogTime.set(key, now)
     }
   }
@@ -38,13 +35,13 @@ export class DatabaseService {
       const { data, error } = await query
 
       if (error) {
-        console.error('Error fetching ideas:', error)
+        logger.error('Error fetching ideas:', error)
         return []
       }
 
       return data || []
     } catch (error) {
-      console.error('Database error:', error)
+      logger.error('Database error:', error)
       return []
     }
   }
@@ -57,7 +54,7 @@ export class DatabaseService {
   // Create a new idea
   static async createIdea(idea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>): Promise<IdeaCard | null> {
     try {
-      console.log('🗃️ DatabaseService: Creating idea:', idea)
+      logger.debug('🗃️ DatabaseService: Creating idea:', idea)
       
       // Generate ID for the idea (using shortened UUID for text field)
       const ideaWithId = {
@@ -74,14 +71,14 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('❌ DatabaseService: Error creating idea:', error)
+        logger.error('❌ DatabaseService: Error creating idea:', error)
         return null
       }
 
-      console.log('✅ DatabaseService: Idea created successfully:', data)
+      logger.debug('✅ DatabaseService: Idea created successfully:', data)
       return data
     } catch (error) {
-      console.error('❌ DatabaseService: Database error:', error)
+      logger.error('❌ DatabaseService: Database error:', error)
       return null
     }
   }
@@ -89,7 +86,7 @@ export class DatabaseService {
   // Update an existing idea
   static async updateIdea(id: string, updates: Partial<Omit<IdeaCard, 'id' | 'created_at'>>): Promise<IdeaCard | null> {
     try {
-      console.log('Updating idea:', id, 'with updates:', updates)
+      logger.debug('Updating idea:', id, 'with updates:', updates)
       
       const { data, error } = await supabase
         .from('ideas')
@@ -102,14 +99,14 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('Error updating idea:', error)
+        logger.error('Error updating idea:', error)
         return null
       }
 
-      console.log('Update successful:', data)
+      logger.debug('Update successful:', data)
       return data
     } catch (error) {
-      console.error('Database error:', error)
+      logger.error('Database error:', error)
       return null
     }
   }
@@ -123,13 +120,13 @@ export class DatabaseService {
         .eq('id', id)
 
       if (error) {
-        console.error('Error deleting idea:', error)
+        logger.error('Error deleting idea:', error)
         return false
       }
 
       return true
     } catch (error) {
-      console.error('Database error:', error)
+      logger.error('Database error:', error)
       return false
     }
   }
@@ -152,7 +149,7 @@ export class DatabaseService {
         .single()
 
       if (fetchError) {
-        console.error('Error checking idea lock:', fetchError)
+        logger.error('Error checking idea lock:', fetchError)
         return false
       }
 
@@ -200,13 +197,13 @@ export class DatabaseService {
         .eq('id', ideaId)
 
       if (error) {
-        console.error('Error locking idea:', error)
+        logger.error('Error locking idea:', error)
         return false
       }
 
       return true
     } catch (error) {
-      console.error('Database error:', error)
+      logger.error('Database error:', error)
       return false
     }
   }
@@ -224,13 +221,13 @@ export class DatabaseService {
         .eq('editing_by', userId)
 
       if (error) {
-        console.error('Error unlocking idea:', error)
+        logger.error('Error unlocking idea:', error)
         return false
       }
 
       return true
     } catch (error) {
-      console.error('Database error:', error)
+      logger.error('Database error:', error)
       return false
     }
   }
@@ -248,7 +245,7 @@ export class DatabaseService {
         })
         .lt('editing_at', fiveMinutesAgo)
     } catch (error) {
-      console.error('Error cleaning up stale locks:', error)
+      logger.error('Error cleaning up stale locks:', error)
     }
   }
 
@@ -257,7 +254,7 @@ export class DatabaseService {
   
   // Subscribe to real-time changes with polling fallback
   static subscribeToIdeas(callback: (ideas: IdeaCard[]) => void, projectId?: string) {
-    console.log('Setting up real-time subscription with polling fallback...', { projectId })
+    logger.debug('Setting up real-time subscription with polling fallback...', { projectId })
     
     let lastUpdateTime = new Date().toISOString()
     
@@ -272,7 +269,7 @@ export class DatabaseService {
           table: 'ideas'
         },
         (payload) => {
-          console.log('🔴 Real-time change detected:', payload.eventType, payload.new, payload.old)
+          logger.debug('🔴 Real-time change detected:', payload.eventType, payload.new, payload.old)
           DatabaseService.realTimeWorking = true
           
           // Skip refresh for editing_at-only changes to prevent feedback loop
@@ -301,12 +298,12 @@ export class DatabaseService {
             })
             
             if (!significantChanges) {
-              console.log('⏸️ Skipping refresh - only editing timestamps changed')
+              logger.debug('⏸️ Skipping refresh - only editing timestamps changed')
               return
             }
           }
           
-          console.log('✅ Real-time is working! Refreshing ideas.')
+          logger.debug('✅ Real-time is working! Refreshing ideas.')
           
           // Refresh ideas based on project context
           const refreshPromise = projectId 
@@ -317,26 +314,26 @@ export class DatabaseService {
         }
       )
       .subscribe((status, err) => {
-        console.log('Subscription status:', status)
+        logger.debug('Subscription status:', status)
         
         if (err) {
-          console.error('Subscription error:', err)
+          logger.error('Subscription error:', err)
           DatabaseService.realTimeWorking = false
         } else if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to real-time updates!')
+          logger.debug('Successfully subscribed to real-time updates!')
           // Don't run diagnostic if real-time is already known to work
           if (!DatabaseService.realTimeWorking) {
             setTimeout(() => {
               if (!DatabaseService.realTimeWorking) {
-                console.warn('⚠️ Real-time subscription established but no events received. Running diagnostic...')
+                logger.warn('⚠️ Real-time subscription established but no events received. Running diagnostic...')
                 RealtimeDiagnostic.checkRealtimeConfiguration()
               }
             }, 5000)
           } else {
-            console.log('✅ Real-time already confirmed working, skipping diagnostic')
+            logger.debug('✅ Real-time already confirmed working, skipping diagnostic')
           }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          console.warn('Real-time subscription failed or closed:', status)
+          logger.warn('Real-time subscription failed or closed:', status)
           DatabaseService.realTimeWorking = false
         }
       })
@@ -355,7 +352,7 @@ export class DatabaseService {
             .single()
           
           if (!error && data && data!.updated_at && data!.updated_at > lastUpdateTime) {
-            console.log('Polling detected changes, refreshing ideas...')
+            logger.debug('Polling detected changes, refreshing ideas...')
             lastUpdateTime = data!.updated_at!
             
             // Refresh ideas based on project context
@@ -366,13 +363,13 @@ export class DatabaseService {
             refreshPromise.then(callback)
           }
         } catch (pollError) {
-          console.warn('Polling error:', pollError)
+          logger.warn('Polling error:', pollError)
         }
       }
     }, 2000)
 
     return () => {
-      console.log('Unsubscribing from real-time updates and stopping polling')
+      logger.debug('Unsubscribing from real-time updates and stopping polling')
       supabase.removeChannel(channel)
       clearInterval(pollInterval)
     }
@@ -387,13 +384,13 @@ export class DatabaseService {
         .order('updated_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching projects:', error)
+        logger.error('Error fetching projects:', error)
         return []
       }
 
       return data || []
     } catch (error) {
-      console.error('Error fetching projects:', error)
+      logger.error('Error fetching projects:', error)
       return []
     }
   }
@@ -401,27 +398,27 @@ export class DatabaseService {
   // Get projects owned by a specific user
   static async getUserOwnedProjects(userId: string): Promise<Project[]> {
     try {
-      console.log('📋 Getting projects owned by user:', userId)
+      logger.debug('📋 Getting projects owned by user:', userId)
       
       // Query without timeout to see what's happening
-      console.log('📋 Starting query...')
+      logger.debug('📋 Starting query...')
       const { data, error } = await supabase
         .from('projects')
         .select('*')
         .eq('owner_id', userId)
         .order('updated_at', { ascending: false })
       
-      console.log('📋 Query completed. Error:', error, 'Data:', data)
+      logger.debug('📋 Query completed. Error:', error, 'Data:', data)
 
       if (error) {
-        console.error('❌ Error fetching user projects:', error)
+        logger.error('❌ Error fetching user projects:', error)
         return []
       }
 
-      console.log('✅ Found', data?.length || 0, 'projects for user:', data)
+      logger.debug('✅ Found', data?.length || 0, 'projects for user:', data)
       return data || []
     } catch (error) {
-      console.error('Error fetching user projects:', error)
+      logger.error('Error fetching user projects:', error)
       return []
     }
   }
@@ -436,14 +433,14 @@ export class DatabaseService {
         .limit(1)
 
       if (error) {
-        console.log('Error fetching current project:', error)
+        logger.debug('Error fetching current project:', error)
         return null
       }
 
       // Return the first active project if it exists, null otherwise
       return data && data.length > 0 ? data[0] : null
     } catch (error) {
-      console.error('Error fetching current project:', error)
+      logger.error('Error fetching current project:', error)
       return null
     }
   }
@@ -457,13 +454,13 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('Error fetching project:', error)
+        logger.error('Error fetching project:', error)
         return null
       }
 
       return data
     } catch (error) {
-      console.error('Error fetching project:', error)
+      logger.error('Error fetching project:', error)
       return null
     }
   }
@@ -484,14 +481,14 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('Error creating project:', error)
+        logger.error('Error creating project:', error)
         return null
       }
 
-      console.log('✅ Project created:', data)
+      logger.debug('✅ Project created:', data)
       return data
     } catch (error) {
-      console.error('Error creating project:', error)
+      logger.error('Error creating project:', error)
       return null
     }
   }
@@ -509,14 +506,14 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('Error updating project:', error)
+        logger.error('Error updating project:', error)
         return null
       }
 
-      console.log('✅ Project updated:', data)
+      logger.debug('✅ Project updated:', data)
       return data
     } catch (error) {
-      console.error('Error updating project:', error)
+      logger.error('Error updating project:', error)
       return null
     }
   }
@@ -529,14 +526,14 @@ export class DatabaseService {
         .eq('id', projectId)
 
       if (error) {
-        console.error('Error deleting project:', error)
+        logger.error('Error deleting project:', error)
         return false
       }
 
-      console.log('✅ Project deleted:', projectId)
+      logger.debug('✅ Project deleted:', projectId)
       return true
     } catch (error) {
-      console.error('Error deleting project:', error)
+      logger.error('Error deleting project:', error)
       return false
     }
   }
@@ -551,7 +548,7 @@ export class DatabaseService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('❌ Error fetching project ideas:', error)
+        logger.error('❌ Error fetching project ideas:', error)
         return []
       }
 
@@ -563,14 +560,14 @@ export class DatabaseService {
       )
       return data || []
     } catch (error) {
-      console.error('Error fetching project ideas:', error)
+      logger.error('Error fetching project ideas:', error)
       return []
     }
   }
 
   // Subscribe to project changes
   static subscribeToProjects(callback: (projects: Project[]) => void) {
-    console.log('📡 Setting up real-time subscription for projects...')
+    logger.debug('📡 Setting up real-time subscription for projects...')
     
     const channel = supabase
       .channel('projects')
@@ -582,19 +579,19 @@ export class DatabaseService {
           table: 'projects'
         },
         async (payload) => {
-          console.log('📡 Real-time project update:', payload)
+          logger.debug('📡 Real-time project update:', payload)
           // Fetch all projects and update
           const projects = await this.getAllProjects()
           callback(projects)
         }
       )
       .subscribe((status) => {
-        console.log('📡 Projects subscription status:', status)
+        logger.debug('📡 Projects subscription status:', status)
       })
 
     // Return unsubscribe function
     return () => {
-      console.log('📡 Unsubscribing from project updates')
+      logger.debug('📡 Unsubscribing from project updates')
       supabase.removeChannel(channel)
     }
   }
@@ -602,7 +599,7 @@ export class DatabaseService {
   // Project Collaboration Methods
   static async addProjectCollaborator(projectId: string, userEmail: string, role: string = 'viewer', invitedBy: string, projectName?: string, inviterName?: string, inviterEmail?: string): Promise<boolean> {
     try {
-      console.log('🔍 Looking up user by email:', userEmail)
+      logger.debug('🔍 Looking up user by email:', userEmail)
       
       // For now, we'll create a simplified invitation system
       // In a real app, you would need a proper invitation system with email notifications
@@ -615,13 +612,13 @@ export class DatabaseService {
         .limit(1000) // Get a reasonable sample
       
       if (userLookupError) {
-        console.error('Error looking up users:', userLookupError)
+        logger.error('Error looking up users:', userLookupError)
       }
 
       // For demo purposes, we'll generate a mock user ID based on the email
       // In a real implementation, this would be handled by a server-side function
       const mockUserId = btoa(userEmail).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20)
-      console.log('🆔 Generated mock user ID:', mockUserId, 'for email:', userEmail)
+      logger.debug('🆔 Generated mock user ID:', mockUserId, 'for email:', userEmail)
 
       // Store the email mapping in localStorage for demo purposes
       const emailMappings = JSON.parse(localStorage.getItem('collaboratorEmailMappings') || '{}')
@@ -631,7 +628,7 @@ export class DatabaseService {
       // Check if collaboration already exists by checking if we've invited this email before
       // First check if this email already has a mapping (meaning we've invited them before)
       const existingMockIds = Object.keys(emailMappings).filter(id => emailMappings[id] === userEmail)
-      console.log('🔍 Existing mock IDs for this email:', existingMockIds)
+      logger.debug('🔍 Existing mock IDs for this email:', existingMockIds)
 
       if (existingMockIds.length > 0) {
         // Check if any of these mock IDs are already collaborators on this project
@@ -642,12 +639,12 @@ export class DatabaseService {
           .in('user_id', existingMockIds)
 
         if (existingCollaborations && existingCollaborations.length > 0) {
-          console.log('❌ This email is already a collaborator on this project')
+          logger.debug('❌ This email is already a collaborator on this project')
           return false
         }
       }
 
-      console.log('✅ No existing collaboration found, proceeding with invitation')
+      logger.debug('✅ No existing collaboration found, proceeding with invitation')
 
       // Add collaborator with pending status
       const { error } = await supabase
@@ -661,16 +658,16 @@ export class DatabaseService {
         }])
 
       if (error) {
-        console.error('❌ Error adding collaborator:', error)
-        console.error('❌ Error details:', error.message, error.details, error.code)
+        logger.error('❌ Error adding collaborator:', error)
+        logger.error('❌ Error details:', error.message, error.details, error.code)
         return false
       }
 
-      console.log('✅ Collaborator invitation created successfully')
-      console.log('📋 Added collaborator with details:', { projectId, mockUserId, role, invitedBy })
+      logger.debug('✅ Collaborator invitation created successfully')
+      logger.debug('📋 Added collaborator with details:', { projectId, mockUserId, role, invitedBy })
       
       // Send real email invitation
-      console.log('📧 Sending real email invitation to:', userEmail)
+      logger.debug('📧 Sending real email invitation to:', userEmail)
       
       try {
         const invitationUrl = EmailService.generateInvitationUrl(projectId)
@@ -684,26 +681,26 @@ export class DatabaseService {
         })
         
         if (emailSuccess) {
-          console.log('✅ Real email invitation sent successfully!')
+          logger.debug('✅ Real email invitation sent successfully!')
         } else {
-          console.log('⚠️ Email sending failed, but invitation record was created')
+          logger.debug('⚠️ Email sending failed, but invitation record was created')
         }
       } catch (emailError) {
-        console.error('❌ Error sending email invitation:', emailError)
-        console.log('⚠️ Database record created but email failed')
+        logger.error('❌ Error sending email invitation:', emailError)
+        logger.debug('⚠️ Database record created but email failed')
       }
       
       return true
     } catch (error) {
-      console.error('💥 Error adding project collaborator:', error)
-      console.error('💥 Stack trace:', error)
+      logger.error('💥 Error adding project collaborator:', error)
+      logger.error('💥 Stack trace:', error)
       return false
     }
   }
 
   static async getProjectCollaborators(projectId: string) {
     try {
-      console.log('🔍 DatabaseService: Fetching collaborators for project:', projectId)
+      logger.debug('🔍 DatabaseService: Fetching collaborators for project:', projectId)
       
       const { data, error } = await supabase
         .from('project_collaborators')
@@ -711,22 +708,22 @@ export class DatabaseService {
         .eq('project_id', projectId)
         .in('status', ['active', 'pending'])
 
-      console.log('📊 DatabaseService: Raw collaborator query result:', { data, error })
+      logger.debug('📊 DatabaseService: Raw collaborator query result:', { data, error })
 
       if (error) {
-        console.error('❌ DatabaseService: Error fetching collaborators:', error)
+        logger.error('❌ DatabaseService: Error fetching collaborators:', error)
         return []
       }
 
       if (!data || data.length === 0) {
-        console.log('📋 DatabaseService: No collaborators found for project:', projectId)
+        logger.debug('📋 DatabaseService: No collaborators found for project:', projectId)
         return []
       }
 
       // Since we can't join with auth.users, we'll create mock user data
       // In a real app, this would be handled by a server-side function or proper user table
       const emailMappings = JSON.parse(localStorage.getItem('collaboratorEmailMappings') || '{}')
-      console.log('🗂️ DatabaseService: Email mappings from localStorage:', emailMappings)
+      logger.debug('🗂️ DatabaseService: Email mappings from localStorage:', emailMappings)
       
       const collaboratorsWithUserData = (data || []).map(collaborator => {
         // Get the actual email from our localStorage mapping
@@ -744,14 +741,14 @@ export class DatabaseService {
           }
         }
         
-        console.log('👤 DatabaseService: Processed collaborator:', result)
+        logger.debug('👤 DatabaseService: Processed collaborator:', result)
         return result
       })
 
-      console.log('✅ DatabaseService: Returning collaborators with user data:', collaboratorsWithUserData)
+      logger.debug('✅ DatabaseService: Returning collaborators with user data:', collaboratorsWithUserData)
       return collaboratorsWithUserData
     } catch (error) {
-      console.error('💥 DatabaseService: Error fetching project collaborators:', error)
+      logger.error('💥 DatabaseService: Error fetching project collaborators:', error)
       return []
     }
   }
@@ -765,14 +762,14 @@ export class DatabaseService {
         .eq('user_id', userId)
 
       if (error) {
-        console.error('Error removing collaborator:', error)
+        logger.error('Error removing collaborator:', error)
         return false
       }
 
-      console.log('✅ Collaborator removed successfully')
+      logger.debug('✅ Collaborator removed successfully')
       return true
     } catch (error) {
-      console.error('Error removing project collaborator:', error)
+      logger.error('Error removing project collaborator:', error)
       return false
     }
   }
@@ -789,14 +786,14 @@ export class DatabaseService {
         .eq('user_id', userId)
 
       if (error) {
-        console.error('Error updating collaborator role:', error)
+        logger.error('Error updating collaborator role:', error)
         return false
       }
 
-      console.log('✅ Collaborator role updated successfully')
+      logger.debug('✅ Collaborator role updated successfully')
       return true
     } catch (error) {
-      console.error('Error updating collaborator role:', error)
+      logger.error('Error updating collaborator role:', error)
       return false
     }
   }
@@ -829,7 +826,7 @@ export class DatabaseService {
 
       return collaborator.role
     } catch (error) {
-      console.error('Error getting user project role:', error)
+      logger.error('Error getting user project role:', error)
       return null
     }
   }
@@ -862,7 +859,7 @@ export class DatabaseService {
       const collaboratedProjects = collaborations?.map(c => c.project).filter(Boolean) || []
 
       if (ownedError || collabError) {
-        console.error('Error fetching user projects:', { ownedError, collabError })
+        logger.error('Error fetching user projects:', { ownedError, collabError })
         return []
       }
 
@@ -874,14 +871,14 @@ export class DatabaseService {
 
       return uniqueProjects
     } catch (error) {
-      console.error('Error fetching user projects:', error)
+      logger.error('Error fetching user projects:', error)
       return []
     }
   }
 
   // Subscribe to collaborator changes
   static subscribeToProjectCollaborators(projectId: string, callback: (collaborators: any[]) => void) {
-    console.log('📡 Setting up real-time subscription for project collaborators...')
+    logger.debug('📡 Setting up real-time subscription for project collaborators...')
     
     const channel = supabase
       .channel(`project_collaborators_${projectId}`)
@@ -894,19 +891,19 @@ export class DatabaseService {
           filter: `project_id=eq.${projectId}`
         },
         async (payload) => {
-          console.log('📡 Real-time collaborator update:', payload)
+          logger.debug('📡 Real-time collaborator update:', payload)
           // Fetch updated collaborators and update
           const collaborators = await this.getProjectCollaborators(projectId)
           callback(collaborators)
         }
       )
       .subscribe((status) => {
-        console.log('📡 Project collaborators subscription status:', status)
+        logger.debug('📡 Project collaborators subscription status:', status)
       })
 
     // Return unsubscribe function
     return () => {
-      console.log('📡 Unsubscribing from project collaborators updates')
+      logger.debug('📡 Unsubscribing from project collaborators updates')
       supabase.removeChannel(channel)
     }
   }
@@ -914,7 +911,7 @@ export class DatabaseService {
   // Roadmap Management
   static async saveProjectRoadmap(projectId: string, roadmapData: any, createdBy: string, ideasAnalyzed: number): Promise<string | null> {
     try {
-      console.log('🗺️ DatabaseService: Saving roadmap for project:', projectId)
+      logger.debug('🗺️ DatabaseService: Saving roadmap for project:', projectId)
 
       // Get the next version number
       const { data: existingRoadmaps } = await supabase
@@ -942,14 +939,14 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('❌ DatabaseService: Error saving roadmap:', error)
+        logger.error('❌ DatabaseService: Error saving roadmap:', error)
         return null
       }
 
-      console.log('✅ DatabaseService: Roadmap saved successfully:', data.id)
+      logger.debug('✅ DatabaseService: Roadmap saved successfully:', data.id)
       return data.id
     } catch (error) {
-      console.error('💥 DatabaseService: Error in saveProjectRoadmap:', error)
+      logger.error('💥 DatabaseService: Error in saveProjectRoadmap:', error)
       return null
     }
   }
@@ -963,13 +960,13 @@ export class DatabaseService {
         .order('version', { ascending: false })
 
       if (error) {
-        console.error('❌ DatabaseService: Error fetching roadmaps:', error)
+        logger.error('❌ DatabaseService: Error fetching roadmaps:', error)
         return []
       }
 
       return data || []
     } catch (error) {
-      console.error('💥 DatabaseService: Error in getProjectRoadmaps:', error)
+      logger.error('💥 DatabaseService: Error in getProjectRoadmaps:', error)
       return []
     }
   }
@@ -983,13 +980,13 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('❌ DatabaseService: Error fetching roadmap:', error)
+        logger.error('❌ DatabaseService: Error fetching roadmap:', error)
         return null
       }
 
       return data
     } catch (error) {
-      console.error('💥 DatabaseService: Error in getProjectRoadmap:', error)
+      logger.error('💥 DatabaseService: Error in getProjectRoadmap:', error)
       return null
     }
   }
@@ -997,7 +994,7 @@ export class DatabaseService {
   // Insights Management
   static async saveProjectInsights(projectId: string, insightsData: any, createdBy: string, ideasAnalyzed: number): Promise<string | null> {
     try {
-      console.log('📊 DatabaseService: Saving insights for project:', projectId)
+      logger.debug('📊 DatabaseService: Saving insights for project:', projectId)
 
       // Get the next version number
       const { data: existingInsights } = await supabase
@@ -1025,14 +1022,14 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('❌ DatabaseService: Error saving insights:', error)
+        logger.error('❌ DatabaseService: Error saving insights:', error)
         return null
       }
 
-      console.log('✅ DatabaseService: Insights saved successfully:', data.id)
+      logger.debug('✅ DatabaseService: Insights saved successfully:', data.id)
       return data.id
     } catch (error) {
-      console.error('💥 DatabaseService: Error in saveProjectInsights:', error)
+      logger.error('💥 DatabaseService: Error in saveProjectInsights:', error)
       return null
     }
   }
@@ -1046,13 +1043,13 @@ export class DatabaseService {
         .order('version', { ascending: false })
 
       if (error) {
-        console.error('❌ DatabaseService: Error fetching insights:', error)
+        logger.error('❌ DatabaseService: Error fetching insights:', error)
         return []
       }
 
       return data || []
     } catch (error) {
-      console.error('💥 DatabaseService: Error in getProjectInsights:', error)
+      logger.error('💥 DatabaseService: Error in getProjectInsights:', error)
       return []
     }
   }
@@ -1066,13 +1063,13 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        console.error('❌ DatabaseService: Error fetching insight:', error)
+        logger.error('❌ DatabaseService: Error fetching insight:', error)
         return null
       }
 
       return data
     } catch (error) {
-      console.error('💥 DatabaseService: Error in getProjectInsight:', error)
+      logger.error('💥 DatabaseService: Error in getProjectInsight:', error)
       return null
     }
   }

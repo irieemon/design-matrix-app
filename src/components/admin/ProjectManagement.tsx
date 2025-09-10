@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Search, Filter, FolderOpen, Users, Calendar, Activity, Trash2, Eye, AlertTriangle, CheckCircle } from 'lucide-react'
 import { AdminProject, User } from '../../types'
 import { AdminService } from '../../lib/adminService'
+import { logger } from '../../utils/logger'
 
 interface ProjectManagementProps {
   currentUser: User
@@ -26,7 +27,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = () => {
       const { projects: fetchedProjects } = await AdminService.getAllProjects(1, 50)
       setProjects(fetchedProjects)
     } catch (error) {
-      console.error('Error loading projects:', error)
+      logger.error('Error loading projects:', error)
     } finally {
       setIsLoading(false)
     }
@@ -38,7 +39,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = () => {
       setProjects(prev => prev.filter(p => p.id !== projectId))
       setShowDeleteConfirm(null)
     } catch (error) {
-      console.error('Error deleting project:', error)
+      logger.error('Error deleting project:', error)
     }
   }
 

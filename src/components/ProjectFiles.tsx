@@ -4,6 +4,7 @@ import { ProjectFile, User, Project } from '../types'
 import FileUpload from './FileUpload'
 import FileManager from './FileManager'
 import FileViewer from './FileViewer'
+import { logger } from '../utils/logger'
 
 interface ProjectFilesProps {
   currentProject: Project
@@ -39,12 +40,12 @@ const ProjectFiles: React.FC<ProjectFilesProps> = ({
     onFilesUploaded(newFiles)
     // Switch to manage tab to show the uploaded files
     setActiveTab('manage')
-    console.log('Files uploaded:', newFiles)
+    logger.debug('Files uploaded:', newFiles)
   }
 
   const handleDeleteFile = (fileId: string) => {
     onDeleteFile(fileId)
-    console.log('File deleted:', fileId)
+    logger.debug('File deleted:', fileId)
   }
 
   const handleViewFile = (file: ProjectFile) => {

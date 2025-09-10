@@ -4,6 +4,7 @@ import { IdeaCard, Project, ProjectInsights as ProjectInsightsType } from '../..
 import { exportToCSV } from '../../utils/csvUtils'
 import { DatabaseService } from '../../lib/database'
 import AIInsightsModal from '../AIInsightsModal'
+import { logger } from '../../utils/logger'
 
 interface ReportsAnalyticsProps {
   ideas: IdeaCard[]
@@ -32,9 +33,9 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
     try {
       const history = await DatabaseService.getProjectInsights(currentProject.id)
       setInsightsHistory(history)
-      console.log('📊 Loaded insights history:', history.length, 'versions')
+      logger.debug('📊 Loaded insights history:', history.length, 'versions')
     } catch (error) {
-      console.error('Error loading insights history:', error)
+      logger.error('Error loading insights history:', error)
     } finally {
       // setIsLoadingHistory(false)
     }
@@ -45,7 +46,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
   }
 
   const handleInsightSaved = (_insightId: string) => {
-    console.log('📊 Insight saved, reloading history...')
+    logger.debug('📊 Insight saved, reloading history...')
     loadInsightsHistory()
   }
 

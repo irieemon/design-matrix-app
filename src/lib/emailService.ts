@@ -1,4 +1,5 @@
 import emailjs from '@emailjs/browser'
+import { logger } from '../utils/logger'
 
 // EmailJS configuration - loads from environment variables
 const EMAIL_CONFIG = {
@@ -19,11 +20,11 @@ interface InvitationEmailData {
 export class EmailService {
   static async sendCollaborationInvitation(data: InvitationEmailData): Promise<boolean> {
     try {
-      console.log('📧 EmailService: Preparing to send invitation email...')
-      console.log('📧 EmailService: Email data:', data)
+      logger.debug('📧 EmailService: Preparing to send invitation email...')
+      logger.debug('📧 EmailService: Email data:', data)
 
       // Check if EmailJS is properly configured
-      console.log('🔧 EmailJS Config Check:', {
+      logger.debug('🔧 EmailJS Config Check:', {
         hasServiceId: !!EMAIL_CONFIG.serviceId,
         hasTemplateId: !!EMAIL_CONFIG.templateId,
         hasPublicKey: !!EMAIL_CONFIG.publicKey,
@@ -32,8 +33,8 @@ export class EmailService {
       })
 
       if (!EMAIL_CONFIG.serviceId || !EMAIL_CONFIG.templateId || !EMAIL_CONFIG.publicKey) {
-        console.warn('⚠️ EmailJS not fully configured - using fallback email method')
-        console.warn('ℹ️ To enable automatic emails, add your EmailJS credentials to .env.local')
+        logger.warn('⚠️ EmailJS not fully configured - using fallback email method')
+        logger.warn('ℹ️ To enable automatic emails, add your EmailJS credentials to .env.local')
         return this.sendEmailFallback(data)
       }
 
@@ -48,7 +49,7 @@ export class EmailService {
         to_email: data.inviteeEmail
       }
 
-      console.log('📧 EmailService: Sending via EmailJS...')
+      logger.debug('📧 EmailService: Sending via EmailJS...')
       
       const response = await emailjs.send(
         EMAIL_CONFIG.serviceId,
@@ -57,21 +58,21 @@ export class EmailService {
         EMAIL_CONFIG.publicKey
       )
 
-      console.log('✅ EmailService: Email sent successfully via EmailJS:', response)
+      logger.debug('✅ EmailService: Email sent successfully via EmailJS:', response)
       return true
 
     } catch (error) {
-      console.error('❌ EmailService: Failed to send via EmailJS:', error)
+      logger.error('❌ EmailService: Failed to send via EmailJS:', error)
       
       // Fallback to alternative method
-      console.log('🔄 EmailService: Trying fallback email method...')
+      logger.debug('🔄 EmailService: Trying fallback email method...')
       return this.sendEmailFallback(data)
     }
   }
 
   private static async sendEmailFallback(data: InvitationEmailData): Promise<boolean> {
     try {
-      console.log('📧 EmailService: Using fallback email method (mailto)')
+      logger.debug('📧 EmailService: Using fallback email method (mailto)')
       
       // Create a professional email template
       const emailSubject = `You're invited to collaborate on "${data.projectName}" - Prioritas`
@@ -110,11 +111,11 @@ If you didn't expect this invitation, you can safely ignore this email.`
         window.open(mailtoLink, '_blank')
       }
 
-      console.log('✅ EmailService: Fallback email prepared and opened')
+      logger.debug('✅ EmailService: Fallback email prepared and opened')
       return true
 
     } catch (error) {
-      console.error('❌ EmailService: Fallback method failed:', error)
+      logger.error('❌ EmailService: Fallback method failed:', error)
       return false
     }
   }
@@ -177,6 +178,6 @@ If you didn't expect this invitation, you can safely ignore this email.`
     EMAIL_CONFIG.serviceId = serviceId
     EMAIL_CONFIG.templateId = templateId  
     EMAIL_CONFIG.publicKey = publicKey
-    console.log('✅ EmailJS configured successfully')
+    logger.debug('✅ EmailJS configured successfully')
   }
 }

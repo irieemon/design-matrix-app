@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X, Sparkles, Wand2, Lightbulb, Target, RefreshCw } from 'lucide-react'
 import { IdeaCard, Project, User } from '../types'
 import { aiService } from '../lib/aiService'
+import { logger } from '../utils/logger'
 
 interface AIIdeaModalProps {
   onClose: () => void
@@ -26,7 +27,7 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
     
     try {
       // Use the AI service to generate ideas with project context
-      console.log('🎯 AIIdeaModal: Calling AI service with project context...')
+      logger.debug('🎯 AIIdeaModal: Calling AI service with project context...')
       const projectContext = currentProject ? {
         name: currentProject.name,
         description: currentProject.description || '',
@@ -34,10 +35,10 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
       } : undefined
       
       const aiResponse = await aiService.generateIdea(title.trim(), projectContext)
-      console.log('✅ AIIdeaModal: AI response received:', aiResponse)
+      logger.debug('✅ AIIdeaModal: AI response received:', aiResponse)
       setGeneratedIdea(aiResponse)
     } catch (error) {
-      console.error('❌ AIIdeaModal: Error generating AI idea:', error)
+      logger.error('❌ AIIdeaModal: Error generating AI idea:', error)
       // Fallback to mock if AI service fails
       const fallbackIdea = generateFallbackIdea(title.trim())
       setGeneratedIdea(fallbackIdea)
@@ -60,7 +61,7 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
 
   const handleSubmit = () => {
     if (!generatedIdea) {
-      console.warn('⚠️ AIIdeaModal: No generated idea to submit')
+      logger.warn('⚠️ AIIdeaModal: No generated idea to submit')
       return
     }
     
@@ -76,11 +77,11 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
       editing_at: null // Not being edited initially
     }
     
-    console.log('📤 AIIdeaModal: Submitting idea to parent:', newIdea)
+    logger.debug('📤 AIIdeaModal: Submitting idea to parent:', newIdea)
     
     onAdd(newIdea)
     
-    console.log('🔄 AIIdeaModal: Closing modal...')
+    logger.debug('🔄 AIIdeaModal: Closing modal...')
     // Close the modal after adding
     onClose()
   }

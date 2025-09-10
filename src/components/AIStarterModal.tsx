@@ -3,6 +3,7 @@ import { X, Sparkles, ArrowRight, MessageCircle, Lightbulb, Loader } from 'lucid
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 import { Project, IdeaCard, User, ProjectType } from '../types'
+import { logger } from '../utils/logger'
 
 interface AIStarterModalProps {
   currentUser: User
@@ -55,7 +56,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
     setError(null)
 
     try {
-      console.log('🎯 Starting AI project analysis...')
+      logger.debug('🎯 Starting AI project analysis...')
       const result = await aiService.generateProjectIdeas(
         projectName, 
         projectDescription,
@@ -79,7 +80,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         setStep('review')
       }
     } catch (err) {
-      console.error('Error in AI analysis:', err)
+      logger.error('Error in AI analysis:', err)
       setError('Failed to analyze project. Please try again.')
     } finally {
       setIsLoading(false)
@@ -98,7 +99,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         .map((q, index) => `${q.question} ${questionAnswers[index] || 'Not specified'}`)
         .join('\n')
 
-      console.log('🎯 Re-analyzing with additional context...')
+      logger.debug('🎯 Re-analyzing with additional context...')
       const result = await aiService.generateProjectIdeas(
         projectName,
         projectDescription + ` Additional context: ${additionalContext}`,
@@ -118,7 +119,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
       })
       setStep('review')
     } catch (err) {
-      console.error('Error in follow-up analysis:', err)
+      logger.error('Error in follow-up analysis:', err)
       setError('Failed to generate ideas. Please try again.')
     } finally {
       setIsLoading(false)
@@ -138,7 +139,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         : selectedProjectType as ProjectType
 
       // Create the project
-      console.log('🏗️ Creating project with type:', finalProjectType)
+      logger.debug('🏗️ Creating project with type:', finalProjectType)
       const project = await DatabaseService.createProject({
         name: projectName,
         description: projectDescription,
@@ -155,7 +156,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
       }
 
       // Create the ideas
-      console.log('💡 Creating', analysis.generatedIdeas.length, 'ideas...')
+      logger.debug('💡 Creating', analysis.generatedIdeas.length, 'ideas...')
       const createdIdeas: IdeaCard[] = []
 
       for (const ideaData of analysis.generatedIdeas) {
@@ -177,12 +178,12 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         }
       }
 
-      console.log('✅ AI Starter complete! Created project and', createdIdeas.length, 'ideas')
+      logger.debug('✅ AI Starter complete! Created project and', createdIdeas.length, 'ideas')
       onProjectCreated(project, createdIdeas)
       onClose()
 
     } catch (err) {
-      console.error('Error creating project:', err)
+      logger.error('Error creating project:', err)
       setError('Failed to create project and ideas. Please try again.')
     } finally {
       setIsLoading(false)

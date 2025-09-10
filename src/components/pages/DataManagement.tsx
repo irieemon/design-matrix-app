@@ -3,6 +3,7 @@ import { Download, Upload, FileText, AlertCircle, CheckCircle, Database, Trash2 
 import { IdeaCard } from '../../types'
 import { exportToCSV, parseCSV, validateCSVFile } from '../../utils/csvUtils'
 import { DatabaseService } from '../../lib/database'
+import { logger } from '../../utils/logger'
 
 interface DataManagementProps {
   ideas: IdeaCard[]
@@ -53,7 +54,7 @@ const DataManagement: React.FC<DataManagementProps> = ({ ideas, currentUser, onD
           setImportMessage(`Successfully imported ${importedIdeas.length} ideas!`)
           onDataUpdated()
         } catch (error) {
-          console.error('Import error:', error)
+          logger.error('Import error:', error)
           setImportStatus('error')
           setImportMessage('Error importing CSV file. Please check the format.')
         }
@@ -76,7 +77,7 @@ const DataManagement: React.FC<DataManagementProps> = ({ ideas, currentUser, onD
       setShowDeleteConfirm(false)
       onDataUpdated()
     } catch (error) {
-      console.error('Error deleting all ideas:', error)
+      logger.error('Error deleting all ideas:', error)
     }
   }
 
