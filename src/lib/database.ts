@@ -240,9 +240,9 @@ export class DatabaseService {
   // Global real-time status that persists across subscriptions
   private static realTimeWorking = false
   
-  // Debounce rapid lock changes to prevent flashing
-  private static lastLockChangeTime = new Map<string, number>()
-  private static LOCK_DEBOUNCE_MS = 150 // 150ms debounce - minimal time to prevent automated flashing
+  // "Last event wins" approach - delay processing to ensure final state
+  private static pendingLockUpdates = new Map<string, NodeJS.Timeout>()
+  private static LOCK_STABILIZE_MS = 100 // Wait 100ms for events to stabilize, then process final state
   
   // Subscribe to real-time changes with polling fallback
   static subscribeToIdeas(callback: (ideas: IdeaCard[]) => void, projectId?: string) {
@@ -304,38 +304,42 @@ export class DatabaseService {
               )
               
               if (isInitialLockChange) {
-                // Check for rapid lock changes (debouncing)
-                const now = Date.now()
-                const lastChangeTime = this.lastLockChangeTime.get(ideaId) || 0
-                const timeSinceLastChange = now - lastChangeTime
-                
-                // Prioritize unlock events - always allow unlock after a reasonable delay
-                const isUnlockEvent = oldEditingBy !== null && newEditingBy === null
-                const shouldAllowUnlock = isUnlockEvent && timeSinceLastChange > 50 // Very short delay for unlocks
-                
-                if (timeSinceLastChange < this.LOCK_DEBOUNCE_MS && !shouldAllowUnlock) {
-                  logger.debug('🚫 BLOCKED refresh - rapid lock change detected:', { 
-                    timeSinceLastChange,
-                    debounceMs: this.LOCK_DEBOUNCE_MS,
-                    isUnlockEvent,
-                    shouldAllowUnlock,
-                    oldEditingBy, 
-                    newEditingBy 
-                  })
-                  return // Block rapid changes (except prioritized unlocks)
+                // "Last event wins" approach - delay processing to let rapid events stabilize
+                const existingTimeout = this.pendingLockUpdates.get(ideaId)
+                if (existingTimeout) {
+                  clearTimeout(existingTimeout)
+                  logger.debug('⏸️ Clearing previous lock update timeout for:', ideaId)
                 }
                 
-                // Update last change time
-                this.lastLockChangeTime.set(ideaId, now)
+                // Set new timeout to process this event after stabilization period
+                const timeoutId = setTimeout(() => {
+                  logger.debug('⏰ Processing stabilized lock change:', { 
+                    oldEditingBy, 
+                    newEditingBy,
+                    ideaId
+                  })
+                  
+                  // Clear the timeout from our map
+                  this.pendingLockUpdates.delete(ideaId)
+                  
+                  // Refresh ideas to get the final state
+                  const refreshPromise = projectId 
+                    ? this.getProjectIdeas(projectId!)
+                    : this.getAllIdeas()
+                  
+                  refreshPromise.then(callback)
+                }, this.LOCK_STABILIZE_MS)
                 
-                logger.debug('🔓 ALLOWING refresh - initial lock change detected:', { 
+                this.pendingLockUpdates.set(ideaId, timeoutId)
+                
+                logger.debug('⏳ Scheduled lock update processing:', { 
                   oldEditingBy, 
                   newEditingBy,
-                  timeSinceLastChange,
-                  isUnlockEvent,
-                  shouldAllowUnlock
+                  ideaId,
+                  stabilizeMs: this.LOCK_STABILIZE_MS
                 })
-                // Skip secondary filtering for initial lock changes - proceed to refresh
+                
+                return // Don't process immediately, wait for stabilization
               } else {
                 logger.debug('🔒 BLOCKED refresh - heartbeat lock update detected:', { 
                   changedFields, 
@@ -435,14 +439,9 @@ export class DatabaseService {
             .single()
           
           if (!error && data && data!.updated_at && data!.updated_at > lastUpdateTime) {
-            // Check if we're in the middle of debouncing any lock changes
-            const now = Date.now()
-            const hasRecentLockChanges = Array.from(this.lastLockChangeTime.values()).some(
-              lastChangeTime => (now - lastChangeTime) < this.LOCK_DEBOUNCE_MS
-            )
-            
-            if (hasRecentLockChanges) {
-              logger.debug('🚫 BLOCKED polling refresh - recent lock changes detected, respecting debounce')
+            // Check if we have any pending lock updates that should take precedence
+            if (this.pendingLockUpdates.size > 0) {
+              logger.debug('🚫 BLOCKED polling refresh - waiting for lock updates to stabilize')
               return
             }
             
