@@ -1,15 +1,12 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 class Logger {
-  private isProduction = import.meta.env.PROD
   private enabledLevels: Set<LogLevel>
 
   constructor() {
-    // In production, only show warnings and errors
-    // In development, show all logs
-    this.enabledLevels = this.isProduction 
-      ? new Set(['warn', 'error'])
-      : new Set(['debug', 'info', 'warn', 'error'])
+    // Temporarily enable debug logs in production to diagnose flashing
+    // TODO: Revert to production-only warn/error after fixing
+    this.enabledLevels = new Set(['debug', 'info', 'warn', 'error'])
   }
 
   private shouldLog(level: LogLevel): boolean {

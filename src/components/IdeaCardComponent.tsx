@@ -2,6 +2,7 @@ import { useDraggable } from '@dnd-kit/core'
 import { Edit3, Trash2, User, ChevronDown, ChevronUp } from 'lucide-react'
 import { IdeaCard, User as UserType } from '../types'
 import { useMemo, memo } from 'react'
+import { logger } from '../utils/logger'
 
 // Utility function to get user display name
 const getUserDisplayName = (userId: string | null | undefined, currentUser: UserType | null | undefined): string => {
@@ -227,6 +228,21 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = memo(({ idea, isDragging, cur
   const prevIdea = prevProps.idea
   const nextIdea = nextProps.idea
   
+  // Log what changed for debugging
+  const changedFields = []
+  if (prevIdea.id !== nextIdea.id) changedFields.push('id')
+  if (prevIdea.content !== nextIdea.content) changedFields.push('content')
+  if (prevIdea.details !== nextIdea.details) changedFields.push('details')
+  if (prevIdea.priority !== nextIdea.priority) changedFields.push('priority')
+  if (prevIdea.x !== nextIdea.x) changedFields.push('x')
+  if (prevIdea.y !== nextIdea.y) changedFields.push('y')
+  if (prevIdea.is_collapsed !== nextIdea.is_collapsed) changedFields.push('is_collapsed')
+  if (prevIdea.editing_by !== nextIdea.editing_by) changedFields.push('editing_by')
+  if (prevIdea.editing_at !== nextIdea.editing_at) changedFields.push('editing_at')
+  if (prevIdea.updated_at !== nextIdea.updated_at) changedFields.push('updated_at')
+  if (prevProps.isDragging !== nextProps.isDragging) changedFields.push('isDragging')
+  if (prevProps.currentUser?.id !== nextProps.currentUser?.id) changedFields.push('currentUser')
+  
   // Check if any significant fields changed (exclude timestamps)
   const significantFieldsChanged = (
     prevIdea.id !== nextIdea.id ||
@@ -241,8 +257,17 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = memo(({ idea, isDragging, cur
     prevProps.currentUser?.id !== nextProps.currentUser?.id
   )
   
+  const shouldSkipRender = !significantFieldsChanged
+  
+  logger.debug(`🎭 IdeaCard memo check for ${nextIdea.id}:`, {
+    changedFields,
+    shouldSkipRender,
+    editing_by: nextIdea.editing_by,
+    editing_at: nextIdea.editing_at
+  })
+  
   // Return true if props are equal (skip re-render), false if different (re-render)
-  return !significantFieldsChanged
+  return shouldSkipRender
 })
 
 export default IdeaCardComponent
