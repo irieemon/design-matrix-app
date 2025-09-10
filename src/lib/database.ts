@@ -240,6 +240,10 @@ export class DatabaseService {
   // Global real-time status that persists across subscriptions
   private static realTimeWorking = false
   
+  // Debounce rapid lock changes to prevent flashing
+  private static lastLockChangeTime = new Map<string, number>()
+  private static LOCK_DEBOUNCE_MS = 1000 // 1 second debounce
+  
   // Subscribe to real-time changes with polling fallback
   static subscribeToIdeas(callback: (ideas: IdeaCard[]) => void, projectId?: string) {
     logger.debug('Setting up real-time subscription with polling fallback...', { projectId })
@@ -281,12 +285,14 @@ export class DatabaseService {
               const editingByChanged = changedFields.includes('editing_by')
               const oldEditingBy = oldData.editing_by
               const newEditingBy = newData.editing_by
+              const ideaId = newData.id || oldData.id
               
               logger.debug('🔍 Lock change analysis:', { 
                 editingByChanged, 
                 oldEditingBy, 
                 newEditingBy, 
-                changedFields 
+                changedFields,
+                ideaId
               })
               
               // Initial lock: null -> user ID (allow)
@@ -298,7 +304,29 @@ export class DatabaseService {
               )
               
               if (isInitialLockChange) {
-                logger.debug('🔓 ALLOWING refresh - initial lock change detected:', { oldEditingBy, newEditingBy })
+                // Check for rapid lock changes (debouncing)
+                const now = Date.now()
+                const lastChangeTime = this.lastLockChangeTime.get(ideaId) || 0
+                const timeSinceLastChange = now - lastChangeTime
+                
+                if (timeSinceLastChange < this.LOCK_DEBOUNCE_MS) {
+                  logger.debug('🚫 BLOCKED refresh - rapid lock change detected:', { 
+                    timeSinceLastChange,
+                    debounceMs: this.LOCK_DEBOUNCE_MS,
+                    oldEditingBy, 
+                    newEditingBy 
+                  })
+                  return // Block rapid changes
+                }
+                
+                // Update last change time
+                this.lastLockChangeTime.set(ideaId, now)
+                
+                logger.debug('🔓 ALLOWING refresh - initial lock change detected:', { 
+                  oldEditingBy, 
+                  newEditingBy,
+                  timeSinceLastChange 
+                })
                 // Skip secondary filtering for initial lock changes - proceed to refresh
               } else {
                 logger.debug('🔒 BLOCKED refresh - heartbeat lock update detected:', { 
