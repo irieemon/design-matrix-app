@@ -205,12 +205,14 @@ export class DatabaseService {
     }
   }
 
+  // Global real-time status that persists across subscriptions
+  private static realTimeWorking = false
+  
   // Subscribe to real-time changes with polling fallback
   static subscribeToIdeas(callback: (ideas: IdeaCard[]) => void, projectId?: string) {
     console.log('Setting up real-time subscription with polling fallback...', { projectId })
     
     let lastUpdateTime = new Date().toISOString()
-    let realTimeWorking = false
     
     // Real-time subscription
     const channel = supabase
@@ -225,7 +227,7 @@ export class DatabaseService {
         (payload) => {
           console.log('🔴 Real-time change detected:', payload.eventType, payload.new, payload.old)
           console.log('✅ Real-time is working! Disabling polling fallback.')
-          realTimeWorking = true
+          DatabaseService.realTimeWorking = true
           
           // Refresh ideas based on project context
           const refreshPromise = projectId 
@@ -240,25 +242,29 @@ export class DatabaseService {
         
         if (err) {
           console.error('Subscription error:', err)
-          realTimeWorking = false
+          DatabaseService.realTimeWorking = false
         } else if (status === 'SUBSCRIBED') {
           console.log('Successfully subscribed to real-time updates!')
-          // Set a timeout to test if real-time actually works
-          setTimeout(() => {
-            if (!realTimeWorking) {
-              console.warn('⚠️ Real-time subscription established but no events received. Running diagnostic...')
-              RealtimeDiagnostic.checkRealtimeConfiguration()
-            }
-          }, 5000)
+          // Don't run diagnostic if real-time is already known to work
+          if (!DatabaseService.realTimeWorking) {
+            setTimeout(() => {
+              if (!DatabaseService.realTimeWorking) {
+                console.warn('⚠️ Real-time subscription established but no events received. Running diagnostic...')
+                RealtimeDiagnostic.checkRealtimeConfiguration()
+              }
+            }, 5000)
+          } else {
+            console.log('✅ Real-time already confirmed working, skipping diagnostic')
+          }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           console.warn('Real-time subscription failed or closed:', status)
-          realTimeWorking = false
+          DatabaseService.realTimeWorking = false
         }
       })
 
     // Polling fallback for when real-time doesn't work
     const pollInterval = setInterval(async () => {
-      if (!realTimeWorking) {
+      if (!DatabaseService.realTimeWorking) {
         console.log('📊 Real-time not working, using polling fallback...')
         
         try {
