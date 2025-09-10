@@ -4,6 +4,25 @@ import { EmailService } from './emailService'
 import { RealtimeDiagnostic } from '../utils/realtimeDiagnostic'
 
 export class DatabaseService {
+  // Debounce map to prevent rapid-fire updates
+  private static lockDebounceMap = new Map<string, NodeJS.Timeout>()
+  // Console logging throttle to reduce spam
+  private static lastLogTime = new Map<string, number>()
+  
+  // Throttled console logging helper
+  private static throttledLog(key: string, message: string, data?: any, throttleMs: number = 1000) {
+    const now = Date.now()
+    const lastLog = this.lastLogTime.get(key) || 0
+    
+    if (now - lastLog > throttleMs) {
+      if (data !== undefined) {
+        console.log(message, data)
+      } else {
+        console.log(message)
+      }
+      this.lastLogTime.set(key, now)
+    }
+  }
   // Fetch ideas for a specific project (supports user-based access control via RLS)
   static async getIdeasByProject(projectId?: string): Promise<IdeaCard[]> {
     try {
@@ -115,9 +134,16 @@ export class DatabaseService {
     }
   }
 
-  // Lock/unlock idea for editing
+  // Lock/unlock idea for editing with debouncing
   static async lockIdeaForEditing(ideaId: string, userId: string): Promise<boolean> {
     try {
+      const debounceKey = `${ideaId}_${userId}_lock`
+      
+      // Clear existing debounce if any
+      if (this.lockDebounceMap.has(debounceKey)) {
+        clearTimeout(this.lockDebounceMap.get(debounceKey)!)
+      }
+
       // First check if it's already locked by someone else
       const { data: existingIdea, error: fetchError } = await supabase
         .from('ideas')
@@ -143,7 +169,28 @@ export class DatabaseService {
         }
       }
 
-      // Lock the idea for editing
+      // Debounce lock updates - only update if same user hasn't locked recently
+      if (existingIdea.editing_by === userId) {
+        this.throttledLog(`lock_debounce_${ideaId}`, '🔒 User already has lock, debouncing timestamp update', undefined, 3000)
+        
+        // Set a debounced update for the timestamp
+        const timeout = setTimeout(async () => {
+          await supabase
+            .from('ideas')
+            .update({
+              editing_at: new Date().toISOString()
+            })
+            .eq('id', ideaId)
+            .eq('editing_by', userId)
+          
+          this.lockDebounceMap.delete(debounceKey)
+        }, 1000) // 1 second debounce
+        
+        this.lockDebounceMap.set(debounceKey, timeout)
+        return true
+      }
+
+      // Lock the idea for editing (first time)
       const { error } = await supabase
         .from('ideas')
         .update({
@@ -226,8 +273,26 @@ export class DatabaseService {
         },
         (payload) => {
           console.log('🔴 Real-time change detected:', payload.eventType, payload.new, payload.old)
-          console.log('✅ Real-time is working! Disabling polling fallback.')
           DatabaseService.realTimeWorking = true
+          
+          // Skip refresh for editing_at-only changes to prevent feedback loop
+          if (payload.eventType === 'UPDATE' && payload.old && payload.new) {
+            const oldData = payload.old
+            const newData = payload.new
+            
+            // Check if only editing_at changed (common during edit mode)
+            const significantChanges = Object.keys(newData).some(key => {
+              if (key === 'editing_at' || key === 'updated_at') return false
+              return oldData[key] !== newData[key]
+            })
+            
+            if (!significantChanges) {
+              console.log('⏸️ Skipping refresh - only editing timestamps changed')
+              return
+            }
+          }
+          
+          console.log('✅ Real-time is working! Refreshing ideas.')
           
           // Refresh ideas based on project context
           const refreshPromise = projectId 
@@ -265,7 +330,7 @@ export class DatabaseService {
     // Polling fallback for when real-time doesn't work
     const pollInterval = setInterval(async () => {
       if (!DatabaseService.realTimeWorking) {
-        console.log('📊 Real-time not working, using polling fallback...')
+        this.throttledLog('polling_fallback', '📊 Real-time not working, using polling fallback...', undefined, 5000)
         
         try {
           const { data, error } = await supabase
@@ -464,7 +529,7 @@ export class DatabaseService {
 
   static async getProjectIdeas(projectId: string): Promise<IdeaCard[]> {
     try {
-      console.log('🔍 DatabaseService: Fetching ideas for project:', projectId)
+      this.throttledLog(`fetch_ideas_${projectId}`, `🔍 DatabaseService: Fetching ideas for project: ${projectId}`)
       const { data, error } = await supabase
         .from('ideas')
         .select('*')
@@ -476,8 +541,12 @@ export class DatabaseService {
         return []
       }
 
-      console.log('✅ DatabaseService: Found', data?.length || 0, 'ideas for project', projectId)
-      console.log('📋 DatabaseService: Ideas summary:', data?.map(i => ({ id: i.id, content: i.content, project_id: i.project_id })))
+      this.throttledLog(
+        `ideas_summary_${projectId}`, 
+        `✅ DatabaseService: Found ${data?.length || 0} ideas for project ${projectId}`,
+        data?.map(i => ({ id: i.id, content: i.content, project_id: i.project_id })),
+        2000 // 2 second throttle for summary logs
+      )
       return data || []
     } catch (error) {
       console.error('Error fetching project ideas:', error)
