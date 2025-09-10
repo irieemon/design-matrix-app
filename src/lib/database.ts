@@ -168,22 +168,10 @@ export class DatabaseService {
 
       // Debounce lock updates - only update if same user hasn't locked recently
       if (existingIdea.editing_by === userId) {
-        this.throttledLog(`lock_debounce_${ideaId}`, '🔒 User already has lock, debouncing timestamp update', undefined, 3000)
+        this.throttledLog(`lock_debounce_${ideaId}`, '🔒 User already has lock, skipping timestamp update to prevent flashing', undefined, 10000)
         
-        // Set a debounced update for the timestamp (increased to 30 seconds to reduce flashing)
-        const timeout = setTimeout(async () => {
-          await supabase
-            .from('ideas')
-            .update({
-              editing_at: new Date().toISOString()
-            })
-            .eq('id', ideaId)
-            .eq('editing_by', userId)
-          
-          this.lockDebounceMap.delete(debounceKey)
-        }, 30000) // 30 second debounce to reduce real-time noise
-        
-        this.lockDebounceMap.set(debounceKey, timeout)
+        // DISABLE timestamp updates to prevent flashing - the initial lock is enough
+        // The 5-minute timeout will be handled by UI logic instead of database heartbeat
         return true
       }
 
@@ -286,7 +274,7 @@ export class DatabaseService {
             // More robust check: compare all keys except timestamps
             const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)])
             const significantChanges = Array.from(allKeys).some(key => {
-              // Skip timestamp fields and lock heartbeat
+              // Skip timestamp fields completely
               if (key === 'editing_at' || key === 'updated_at') return false
               
               // Handle null vs undefined consistently
@@ -299,8 +287,15 @@ export class DatabaseService {
               // One null, other not - significant change
               if ((oldValue == null) !== (newValue == null)) return true
               
-              // Both have values - compare them
-              return oldValue !== newValue
+              // Both have values - compare them (this catches real editing_by changes)
+              const hasChanged = oldValue !== newValue
+              
+              // Log significant field changes for debugging
+              if (hasChanged) {
+                logger.debug(`⚡ SIGNIFICANT CHANGE detected in field '${key}': '${oldValue}' → '${newValue}'`)
+              }
+              
+              return hasChanged
             })
             
             if (!significantChanges) {
