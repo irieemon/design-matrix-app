@@ -242,7 +242,7 @@ export class DatabaseService {
   
   // Debounce rapid lock changes to prevent flashing
   private static lastLockChangeTime = new Map<string, number>()
-  private static LOCK_DEBOUNCE_MS = 1000 // 1 second debounce
+  private static LOCK_DEBOUNCE_MS = 300 // 300ms debounce - enough to prevent flashing but allow quick modal close
   
   // Subscribe to real-time changes with polling fallback
   static subscribeToIdeas(callback: (ideas: IdeaCard[]) => void, projectId?: string) {
