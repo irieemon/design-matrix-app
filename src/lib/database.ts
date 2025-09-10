@@ -299,6 +299,7 @@ export class DatabaseService {
               
               if (isInitialLockChange) {
                 logger.debug('🔓 ALLOWING refresh - initial lock change detected:', { oldEditingBy, newEditingBy })
+                // Skip secondary filtering for initial lock changes - proceed to refresh
               } else {
                 logger.debug('🔒 BLOCKED refresh - heartbeat lock update detected:', { 
                   changedFields, 
@@ -308,40 +309,41 @@ export class DatabaseService {
                 })
                 return // Block heartbeat updates
               }
-            }
-            
-            // More robust check: compare all keys except timestamps AND locks
-            const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)])
-            const significantChanges = Array.from(allKeys).some(key => {
-              // Skip ALL lock and timestamp fields completely
-              if (key === 'editing_at' || key === 'updated_at' || key === 'editing_by') return false
-              
-              // Handle null vs undefined consistently
-              const oldValue = oldData[key]
-              const newValue = newData[key]
-              
-              // Both null/undefined - no change
-              if ((oldValue == null) && (newValue == null)) return false
-              
-              // One null, other not - significant change
-              if ((oldValue == null) !== (newValue == null)) return true
-              
-              // Both have values - compare them
-              const hasChanged = oldValue !== newValue
-              
-              // Log significant field changes for debugging
-              if (hasChanged) {
-                logger.debug(`⚡ SIGNIFICANT CHANGE detected in field '${key}': '${oldValue}' → '${newValue}'`)
-              }
-              
-              return hasChanged
-            })
-            
-            if (!significantChanges) {
-              logger.debug('⏸️ BLOCKED refresh - no content changes detected:', changedFields)
-              return // CRITICAL: Block the callback completely
             } else {
-              logger.debug('✅ ALLOWING refresh - content changes detected:', changedFields)
+              // Only run secondary filtering if not a lock-only change
+              // More robust check: compare all keys except timestamps AND locks
+              const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)])
+              const significantChanges = Array.from(allKeys).some(key => {
+                // Skip ALL lock and timestamp fields completely
+                if (key === 'editing_at' || key === 'updated_at' || key === 'editing_by') return false
+                
+                // Handle null vs undefined consistently
+                const oldValue = oldData[key]
+                const newValue = newData[key]
+                
+                // Both null/undefined - no change
+                if ((oldValue == null) && (newValue == null)) return false
+                
+                // One null, other not - significant change
+                if ((oldValue == null) !== (newValue == null)) return true
+                
+                // Both have values - compare them
+                const hasChanged = oldValue !== newValue
+                
+                // Log significant field changes for debugging
+                if (hasChanged) {
+                  logger.debug(`⚡ SIGNIFICANT CHANGE detected in field '${key}': '${oldValue}' → '${newValue}'`)
+                }
+                
+                return hasChanged
+              })
+              
+              if (!significantChanges) {
+                logger.debug('⏸️ BLOCKED refresh - no content changes detected:', changedFields)
+                return // CRITICAL: Block the callback completely
+              } else {
+                logger.debug('✅ ALLOWING refresh - content changes detected:', changedFields)
+              }
             }
           }
           
