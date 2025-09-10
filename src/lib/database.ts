@@ -271,11 +271,22 @@ export class DatabaseService {
             })
             logger.debug('🔍 Changed fields:', changedFields)
             
-            // More robust check: compare all keys except timestamps
+            // SPECIAL CASE: If only lock-related fields changed, block ALL refreshes
+            // This prevents the flashing entirely by treating lock operations as non-significant
+            const lockOnlyChange = changedFields.length > 0 && changedFields.every(field => 
+              field === 'editing_at' || field === 'editing_by' || field === 'updated_at'
+            )
+            
+            if (lockOnlyChange) {
+              logger.debug('🔒 BLOCKED refresh - lock-only changes detected:', changedFields)
+              return // Block ALL lock-related updates
+            }
+            
+            // More robust check: compare all keys except timestamps AND locks
             const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)])
             const significantChanges = Array.from(allKeys).some(key => {
-              // Skip timestamp fields completely
-              if (key === 'editing_at' || key === 'updated_at') return false
+              // Skip ALL lock and timestamp fields completely
+              if (key === 'editing_at' || key === 'updated_at' || key === 'editing_by') return false
               
               // Handle null vs undefined consistently
               const oldValue = oldData[key]
@@ -287,7 +298,7 @@ export class DatabaseService {
               // One null, other not - significant change
               if ((oldValue == null) !== (newValue == null)) return true
               
-              // Both have values - compare them (this catches real editing_by changes)
+              // Both have values - compare them
               const hasChanged = oldValue !== newValue
               
               // Log significant field changes for debugging
@@ -299,10 +310,10 @@ export class DatabaseService {
             })
             
             if (!significantChanges) {
-              logger.debug('⏸️ BLOCKED refresh - only timestamp changes:', changedFields)
+              logger.debug('⏸️ BLOCKED refresh - no content changes detected:', changedFields)
               return // CRITICAL: Block the callback completely
             } else {
-              logger.debug('✅ ALLOWING refresh - significant changes detected:', changedFields)
+              logger.debug('✅ ALLOWING refresh - content changes detected:', changedFields)
             }
           }
           
