@@ -427,6 +427,17 @@ export class DatabaseService {
             .single()
           
           if (!error && data && data!.updated_at && data!.updated_at > lastUpdateTime) {
+            // Check if we're in the middle of debouncing any lock changes
+            const now = Date.now()
+            const hasRecentLockChanges = Array.from(this.lastLockChangeTime.values()).some(
+              lastChangeTime => (now - lastChangeTime) < this.LOCK_DEBOUNCE_MS
+            )
+            
+            if (hasRecentLockChanges) {
+              logger.debug('🚫 BLOCKED polling refresh - recent lock changes detected, respecting debounce')
+              return
+            }
+            
             logger.debug('Polling detected changes, refreshing ideas...')
             lastUpdateTime = data!.updated_at!
             
