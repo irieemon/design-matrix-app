@@ -271,15 +271,43 @@ export class DatabaseService {
             })
             logger.debug('🔍 Changed fields:', changedFields)
             
-            // SPECIAL CASE: If only lock-related fields changed, block ALL refreshes
-            // This prevents the flashing entirely by treating lock operations as non-significant
+            // SPECIAL CASE: Distinguish between initial lock and heartbeat updates
             const lockOnlyChange = changedFields.length > 0 && changedFields.every(field => 
               field === 'editing_at' || field === 'editing_by' || field === 'updated_at'
             )
             
             if (lockOnlyChange) {
-              logger.debug('🔒 BLOCKED refresh - lock-only changes detected:', changedFields)
-              return // Block ALL lock-related updates
+              // Allow initial lock changes (when editing_by changes between null and actual value)
+              const editingByChanged = changedFields.includes('editing_by')
+              const oldEditingBy = oldData.editing_by
+              const newEditingBy = newData.editing_by
+              
+              logger.debug('🔍 Lock change analysis:', { 
+                editingByChanged, 
+                oldEditingBy, 
+                newEditingBy, 
+                changedFields 
+              })
+              
+              // Initial lock: null -> user ID (allow)
+              // Release lock: user ID -> null (allow)
+              // Heartbeat update: user ID -> same user ID with only timestamp change (block)
+              const isInitialLockChange = editingByChanged && (
+                (oldEditingBy === null && newEditingBy !== null) || // Taking lock
+                (oldEditingBy !== null && newEditingBy === null)    // Releasing lock
+              )
+              
+              if (isInitialLockChange) {
+                logger.debug('🔓 ALLOWING refresh - initial lock change detected:', { oldEditingBy, newEditingBy })
+              } else {
+                logger.debug('🔒 BLOCKED refresh - heartbeat lock update detected:', { 
+                  changedFields, 
+                  editingByChanged, 
+                  oldEditingBy, 
+                  newEditingBy 
+                })
+                return // Block heartbeat updates
+              }
             }
             
             // More robust check: compare all keys except timestamps AND locks
