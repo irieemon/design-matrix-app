@@ -170,7 +170,7 @@ export class DatabaseService {
       if (existingIdea.editing_by === userId) {
         this.throttledLog(`lock_debounce_${ideaId}`, '🔒 User already has lock, debouncing timestamp update', undefined, 3000)
         
-        // Set a debounced update for the timestamp
+        // Set a debounced update for the timestamp (increased to 30 seconds to reduce flashing)
         const timeout = setTimeout(async () => {
           await supabase
             .from('ideas')
@@ -181,7 +181,7 @@ export class DatabaseService {
             .eq('editing_by', userId)
           
           this.lockDebounceMap.delete(debounceKey)
-        }, 1000) // 1 second debounce
+        }, 30000) // 30 second debounce to reduce real-time noise
         
         this.lockDebounceMap.set(debounceKey, timeout)
         return true

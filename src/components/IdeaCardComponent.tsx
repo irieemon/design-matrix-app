@@ -1,6 +1,7 @@
 import { useDraggable } from '@dnd-kit/core'
 import { Edit3, Trash2, User, ChevronDown, ChevronUp } from 'lucide-react'
 import { IdeaCard, User as UserType } from '../types'
+import { useMemo } from 'react'
 
 // Utility function to get user display name
 const getUserDisplayName = (userId: string | null | undefined, currentUser: UserType | null | undefined): string => {
@@ -39,8 +40,28 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = ({ idea, isDragging, currentU
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
   } : undefined
 
-  const isLockedByOther = idea.editing_by && idea.editing_by !== currentUser?.id
-  const isLockedBySelf = idea.editing_by === currentUser?.id
+  // Stable lock status computation to prevent flashing
+  const lockStatus = useMemo(() => {
+    const hasLock = idea.editing_by && idea.editing_by.trim() !== ''
+    const isLockedByOther = hasLock && idea.editing_by !== currentUser?.id
+    const isLockedBySelf = hasLock && idea.editing_by === currentUser?.id
+    
+    // Only consider lock valid if within last 5 minutes
+    if (hasLock && idea.editing_at) {
+      const editingAt = new Date(idea.editing_at)
+      const now = new Date()
+      const timeDiff = now.getTime() - editingAt.getTime()
+      const fiveMinutes = 5 * 60 * 1000
+      
+      if (timeDiff > fiveMinutes) {
+        return { isLockedByOther: false, isLockedBySelf: false }
+      }
+    }
+    
+    return { isLockedByOther, isLockedBySelf }
+  }, [idea.editing_by, currentUser?.id]) // Deliberately exclude editing_at to prevent flashing
+  
+  const { isLockedByOther, isLockedBySelf } = lockStatus
   
   // Removed debug logging to prevent console spam
 
