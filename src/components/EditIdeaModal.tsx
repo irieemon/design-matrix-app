@@ -22,9 +22,13 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
 
   // Lock the idea when modal opens
   useEffect(() => {
+    let shouldUnlock = false
+    
     const lockIdea = async () => {
       const locked = await DatabaseService.lockIdeaForEditing(idea.id, currentUser?.id || '')
       setIsLocked(locked)
+      shouldUnlock = locked // Set flag for cleanup
+      
       if (!locked) {
         // Show a message that someone else is editing
         alert(`This idea is currently being edited by ${idea.editing_by || 'another user'}. Please try again later.`)
@@ -36,19 +40,17 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
 
     // Cleanup: unlock when modal closes
     return () => {
-      if (isLocked) {
+      if (shouldUnlock) {
         DatabaseService.unlockIdea(idea.id, currentUser?.id || '')
       }
     }
-  }, [idea.id, currentUser, onClose, isLocked])
+  }, [idea.id, currentUser, onClose])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!content.trim()) return
 
-    // Unlock before updating
-    await DatabaseService.unlockIdea(idea.id, currentUser?.id || '')
-    
+    // Update the idea with unlock data included
     onUpdate({
       ...idea,
       content: content.trim(),
@@ -59,6 +61,17 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
       editing_by: null,
       editing_at: null
     })
+    
+    // Note: Cleanup function will handle unlocking when modal closes
+  }
+
+  const handleCancel = async () => {
+    // Explicitly unlock before closing
+    if (isLocked) {
+      await DatabaseService.unlockIdea(idea.id, currentUser?.id || '')
+      setIsLocked(false)
+    }
+    onClose()
   }
 
   const handleDelete = () => {
@@ -75,7 +88,7 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
             <h2 className="text-lg font-semibold text-gray-900">Edit Idea</h2>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleCancel}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -183,7 +196,7 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
             <div className="flex space-x-3">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleCancel}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
               >
                 Cancel

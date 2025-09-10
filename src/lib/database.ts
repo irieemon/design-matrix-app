@@ -280,10 +280,24 @@ export class DatabaseService {
             const oldData = payload.old
             const newData = payload.new
             
-            // Check if only editing_at changed (common during edit mode)
-            const significantChanges = Object.keys(newData).some(key => {
+            // More robust check: compare all keys except timestamps
+            const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)])
+            const significantChanges = Array.from(allKeys).some(key => {
+              // Skip timestamp fields
               if (key === 'editing_at' || key === 'updated_at') return false
-              return oldData[key] !== newData[key]
+              
+              // Handle null vs undefined consistently
+              const oldValue = oldData[key]
+              const newValue = newData[key]
+              
+              // Both null/undefined - no change
+              if ((oldValue == null) && (newValue == null)) return false
+              
+              // One null, other not - significant change
+              if ((oldValue == null) !== (newValue == null)) return true
+              
+              // Both have values - compare them
+              return oldValue !== newValue
             })
             
             if (!significantChanges) {
