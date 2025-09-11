@@ -98,6 +98,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function generateIdeasWithOpenAI(apiKey: string, title: string, description: string, projectType: string) {
+  console.log('🚀 Making OpenAI request with:', {
+    model: 'gpt-4o-mini',
+    temperature: 0.8,
+    max_tokens: 1500
+  })
+  
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -132,16 +138,26 @@ Return a JSON array with this exact format:
     }),
   })
   
+  console.log('📡 OpenAI response status:', response.status)
+  
   if (!response.ok) {
+    console.error('❌ OpenAI API error:', response.status, response.statusText)
     throw new Error(`OpenAI API error: ${response.status}`)
   }
   
   const data = await response.json()
+  console.log('📄 OpenAI response data:', JSON.stringify(data, null, 2))
+  
   const content = data.choices[0]?.message?.content || '[]'
+  console.log('📝 Extracted content:', content)
   
   try {
-    return JSON.parse(content)
-  } catch {
+    const parsedIdeas = JSON.parse(content)
+    console.log('✅ Successfully parsed ideas:', parsedIdeas)
+    return parsedIdeas
+  } catch (parseError) {
+    console.error('❌ JSON parsing failed:', parseError)
+    console.log('📝 Raw content that failed to parse:', content)
     // Fallback if JSON parsing fails
     return []
   }
