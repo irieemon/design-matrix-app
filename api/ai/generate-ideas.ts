@@ -24,6 +24,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   
   try {
     console.log('📥 Request body:', req.body)
+    console.log('🔧 Request headers:', {
+      authorization: req.headers.authorization ? 'Bearer ***' : 'Missing',
+      contentType: req.headers['content-type'],
+      userAgent: req.headers['user-agent']
+    })
+    
     const { title, description, projectType } = req.body
     
     console.log('🔍 Extracted fields:', { title, description, projectType })
@@ -54,20 +60,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (openaiKey) {
       // Use OpenAI
       console.log('🤖 Calling OpenAI API...')
-      ideas = await generateIdeasWithOpenAI(openaiKey, title, description, projectType)
-      console.log('✅ OpenAI API call completed, ideas count:', ideas?.length || 0)
+      try {
+        ideas = await generateIdeasWithOpenAI(openaiKey, title, description, projectType)
+        console.log('✅ OpenAI API call completed, ideas count:', ideas?.length || 0)
+        console.log('🔍 Sample idea:', ideas?.[0])
+      } catch (openaiError) {
+        console.error('❌ OpenAI API error:', openaiError)
+        throw openaiError
+      }
     } else if (anthropicKey) {
       // Use Anthropic
       console.log('🤖 Calling Anthropic API...')
-      ideas = await generateIdeasWithAnthropic(anthropicKey, title, description, projectType)
-      console.log('✅ Anthropic API call completed, ideas count:', ideas?.length || 0)
+      try {
+        ideas = await generateIdeasWithAnthropic(anthropicKey, title, description, projectType)
+        console.log('✅ Anthropic API call completed, ideas count:', ideas?.length || 0)
+        console.log('🔍 Sample idea:', ideas?.[0])
+      } catch (anthropicError) {
+        console.error('❌ Anthropic API error:', anthropicError)
+        throw anthropicError
+      }
     }
     
     return res.status(200).json({ ideas })
     
   } catch (error) {
-    console.error('Error generating ideas:', error)
-    return res.status(500).json({ error: 'Failed to generate ideas' })
+    console.error('❌ Error generating ideas:', error)
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
+    return res.status(500).json({ 
+      error: 'Failed to generate ideas',
+      debug: process.env.NODE_ENV === 'development' ? error.message : undefined
+    })
   }
 }
 
