@@ -59,7 +59,9 @@ const RealtimeTest: React.FC = () => {
               table: 'ideas'
             },
             (payload) => {
-              addLog(`🔥 Real-time event: ${payload.eventType} - ${JSON.stringify(payload.new?.content || payload.old?.content)}`)
+              const newContent = (payload.new as any)?.content
+              const oldContent = (payload.old as any)?.content
+              addLog(`🔥 Real-time event: ${payload.eventType} - ${JSON.stringify(newContent || oldContent)}`)
               setStatus('✅ Real-time is working!')
             }
           )
