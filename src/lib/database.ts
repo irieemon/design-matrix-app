@@ -336,17 +336,9 @@ export class DatabaseService {
     }
   }
 
-  // Global real-time status that persists across subscriptions
-  private static realTimeWorking = false
-  
-  // Simple approach: Block only heartbeat updates, allow all editing_by changes
-  // No complex state tracking needed
-  
-  // Subscribe to real-time changes with polling fallback
+  // Subscribe to real-time changes
   static subscribeToIdeas(callback: (ideas: IdeaCard[]) => void, projectId?: string) {
-    logger.debug('Setting up real-time subscription with polling fallback...', { projectId })
-    
-    let lastUpdateTime = new Date().toISOString()
+    logger.debug('Setting up real-time subscription...', { projectId })
     
     // Real-time subscription
     const channel = supabase
@@ -360,7 +352,6 @@ export class DatabaseService {
         },
         (payload) => {
           logger.debug('🔴 Real-time change detected:', payload.eventType)
-          DatabaseService.realTimeWorking = true
           
           // Skip refresh for editing_at-only changes to prevent feedback loop
           if (payload.eventType === 'UPDATE' && payload.old && payload.new) {
@@ -475,12 +466,10 @@ export class DatabaseService {
         
         if (err) {
           logger.error('Subscription error:', err)
-          DatabaseService.realTimeWorking = false
         } else if (status === 'SUBSCRIBED') {
           logger.debug('Successfully subscribed to real-time updates!')
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           logger.warn('Real-time subscription failed or closed:', status)
-          DatabaseService.realTimeWorking = false
         }
       })
 

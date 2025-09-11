@@ -2,7 +2,6 @@ import { useDraggable } from '@dnd-kit/core'
 import { Edit3, Trash2, User, ChevronDown, ChevronUp } from 'lucide-react'
 import type { IdeaCard, User as UserType } from '../types'
 import { useMemo, memo, useCallback } from 'react'
-import { logger } from '../utils/logger'
 
 // Utility function to get user display name with better type safety
 const getUserDisplayName = (
