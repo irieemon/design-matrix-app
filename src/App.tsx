@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import PrioritasLogo from './components/PrioritasLogo'
-import { Project, User } from './types'
+import { Project, User, IdeaCard } from './types'
 import AdminPortal from './components/admin/AdminPortal'
 import AuthScreen from './components/auth/AuthScreen'
 import AppLayout from './components/layout/AppLayout'
@@ -12,6 +12,12 @@ function App() {
   const [currentPage, setCurrentPage] = useState<string>('matrix')
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
   const [showAdminPortal, setShowAdminPortal] = useState(false)
+  
+  // Modal and drag state
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [editingIdea, setEditingIdea] = useState<IdeaCard | null>(null)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showAIModal, setShowAIModal] = useState(false)
 
 
 
@@ -82,6 +88,14 @@ function App() {
       onPageChange={setCurrentPage}
       onLogout={handleLogout}
       onAdminAccess={() => setShowAdminPortal(true)}
+      activeId={activeId}
+      editingIdea={editingIdea}
+      showAddModal={showAddModal}
+      showAIModal={showAIModal}
+      onSetActiveId={setActiveId}
+      onSetEditingIdea={setEditingIdea}
+      onSetShowAddModal={setShowAddModal}
+      onSetShowAIModal={setShowAIModal}
     >
       <PageRouter
         currentPage={currentPage}
@@ -92,8 +106,8 @@ function App() {
         onLogout={handleLogout}
         onUserUpdate={handleUserUpdate}
         onDataUpdated={handleDataUpdated}
-        onShowAddModal={() => {}}
-        onShowAIModal={() => {}}
+        onShowAddModal={() => setShowAddModal(true)}
+        onShowAIModal={() => setShowAIModal(true)}
       />
     </AppLayout>
   )

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { User, Project, IdeaCard } from '../../types'
 import Sidebar from '../Sidebar'
@@ -16,6 +16,15 @@ interface AppLayoutProps {
   onLogout: () => Promise<void>
   onAdminAccess: () => void
   children: React.ReactNode
+  // Modal state and functions to pass down
+  activeId?: string | null
+  editingIdea?: IdeaCard | null
+  showAddModal?: boolean
+  showAIModal?: boolean
+  onSetActiveId?: (id: string | null) => void
+  onSetEditingIdea?: (idea: IdeaCard | null) => void
+  onSetShowAddModal?: (show: boolean) => void
+  onSetShowAIModal?: (show: boolean) => void
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({
@@ -25,13 +34,33 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   onPageChange,
   onLogout,
   onAdminAccess,
-  children
+  children,
+  activeId: externalActiveId,
+  editingIdea: externalEditingIdea,
+  showAddModal: externalShowAddModal,
+  showAIModal: externalShowAIModal,
+  onSetActiveId,
+  onSetEditingIdea,
+  onSetShowAddModal,
+  onSetShowAIModal
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [showAIModal, setShowAIModal] = useState(false)
-  const [editingIdea, setEditingIdea] = useState<IdeaCard | null>(null)
+  
+  // Use external state if provided, otherwise internal state
+  const [internalActiveId, setInternalActiveId] = useState<string | null>(null)
+  const [internalShowAddModal, setInternalShowAddModal] = useState(false)
+  const [internalShowAIModal, setInternalShowAIModal] = useState(false)
+  const [internalEditingIdea, setInternalEditingIdea] = useState<IdeaCard | null>(null)
+  
+  const activeId = externalActiveId !== undefined ? externalActiveId : internalActiveId
+  const showAddModal = externalShowAddModal !== undefined ? externalShowAddModal : internalShowAddModal
+  const showAIModal = externalShowAIModal !== undefined ? externalShowAIModal : internalShowAIModal
+  const editingIdea = externalEditingIdea !== undefined ? externalEditingIdea : internalEditingIdea
+  
+  const setActiveId = onSetActiveId || setInternalActiveId
+  const setShowAddModal = onSetShowAddModal || setInternalShowAddModal
+  const setShowAIModal = onSetShowAIModal || setInternalShowAIModal
+  const setEditingIdea = onSetEditingIdea || setInternalEditingIdea
 
   // Configure drag sensors with distance threshold
   const sensors = useSensors(
@@ -76,7 +105,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({
       
       <div className={`${sidebarCollapsed ? 'pl-20' : 'pl-72'} transition-all duration-300`}>
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEndWrapper}>
-          {children}
+          {React.cloneElement(children as React.ReactElement, {
+            activeId,
+            editingIdea,
+            onSetEditingIdea: setEditingIdea,
+            onSetShowAddModal: setShowAddModal,
+            onSetShowAIModal: setShowAIModal
+          })}
           
           <DragOverlay
             dropAnimation={{

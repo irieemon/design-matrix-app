@@ -15,6 +15,12 @@ interface MatrixPageProps {
   onIdeasCreated: (ideas: IdeaCard[]) => void
   onShowAddModal: () => void
   onShowAIModal: () => void
+  // Props passed from AppLayout
+  activeId?: string | null
+  editingIdea?: IdeaCard | null
+  onSetEditingIdea?: (idea: IdeaCard | null) => void
+  onSetShowAddModal?: (show: boolean) => void
+  onSetShowAIModal?: (show: boolean) => void
 }
 
 const MatrixPage: React.FC<MatrixPageProps> = ({
@@ -24,7 +30,12 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
   onNavigateToProjects,
   onIdeasCreated,
   onShowAddModal,
-  onShowAIModal
+  onShowAIModal,
+  activeId,
+  editingIdea: _editingIdea,
+  onSetEditingIdea,
+  onSetShowAddModal: _onSetShowAddModal,
+  onSetShowAIModal: _onSetShowAIModal
 }) => {
   const { ideas, deleteIdea, toggleCollapse } = useIdeas({
     currentUser,
@@ -68,14 +79,20 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
             {/* Add Idea Buttons */}
             <div className="flex justify-end gap-3 mb-6">
               <button
-                onClick={onShowAIModal}
+                onClick={() => {
+                  onShowAIModal()
+                  _onSetShowAIModal?.(true)
+                }}
                 className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-5 py-2.5 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-sm"
               >
                 <Sparkles className="w-4 h-4" />
                 <span className="font-medium">AI Idea</span>
               </button>
               <button
-                onClick={onShowAddModal}
+                onClick={() => {
+                  onShowAddModal()
+                  _onSetShowAddModal?.(true)
+                }}
                 className="flex items-center space-x-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 transition-all duration-200 shadow-sm"
               >
                 <Plus className="w-4 h-4" />
@@ -85,9 +102,9 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
 
             <DesignMatrix 
               ideas={ideas}
-              activeId={null} // Will be managed by parent layout
+              activeId={activeId || null}
               currentUser={currentUser}
-              onEditIdea={() => {}} // Will be handled by parent layout
+              onEditIdea={onSetEditingIdea || (() => {})}
               onDeleteIdea={deleteIdea}
               onToggleCollapse={toggleCollapse}
             />
