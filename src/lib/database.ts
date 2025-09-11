@@ -240,10 +240,8 @@ export class DatabaseService {
   // Global real-time status that persists across subscriptions
   private static realTimeWorking = false
   
-  // Track lock states to prevent redundant UI updates
-  private static lockStateCache = new Map<string, string | null>()
-  private static pendingStateCheck = new Map<string, NodeJS.Timeout>()
-  private static STATE_CHECK_DELAY = 50 // Very short delay to batch rapid events
+  // Simple approach: Block only heartbeat updates, allow all editing_by changes
+  // No complex state tracking needed
   
   // Subscribe to real-time changes with polling fallback
   static subscribeToIdeas(callback: (ideas: IdeaCard[]) => void, projectId?: string) {
@@ -305,59 +303,13 @@ export class DatabaseService {
               )
               
               if (isInitialLockChange) {
-                // Update our lock state cache immediately
-                const currentCachedState = this.lockStateCache.get(ideaId)
-                this.lockStateCache.set(ideaId, newEditingBy)
-                
-                logger.debug('🔄 Lock state updated in cache:', { 
-                  ideaId,
-                  oldCachedState: currentCachedState,
-                  newState: newEditingBy,
+                logger.debug('🔓 ALLOWING refresh - initial lock change detected:', { 
                   oldEditingBy, 
-                  newEditingBy
+                  newEditingBy,
+                  changedFields,
+                  ideaId
                 })
-                
-                // Clear any existing timeout for this idea
-                const existingTimeout = this.pendingStateCheck.get(ideaId)
-                if (existingTimeout) {
-                  clearTimeout(existingTimeout)
-                }
-                
-                // Schedule a state check with short delay to batch rapid events
-                const timeoutId = setTimeout(() => {
-                  this.pendingStateCheck.delete(ideaId)
-                  
-                  // Get current state from database and compare with what UI shows
-                  const checkStatePromise = projectId 
-                    ? this.getProjectIdeas(projectId!)
-                    : this.getAllIdeas()
-                  
-                  checkStatePromise.then((ideas) => {
-                    const currentIdea = ideas.find(idea => idea.id === ideaId)
-                    const actualState = currentIdea?.editing_by || null
-                    const cachedState = this.lockStateCache.get(ideaId)
-                    
-                    logger.debug('🔍 State comparison for UI update decision:', {
-                      ideaId,
-                      actualState,
-                      cachedState,
-                      shouldUpdate: actualState !== cachedState
-                    })
-                    
-                    // Only update UI if the actual state differs from our cache
-                    // This prevents flashing from rapid intermediate states
-                    if (actualState !== cachedState) {
-                      this.lockStateCache.set(ideaId, actualState)
-                      callback(ideas)
-                      logger.debug('✅ UI updated due to genuine state change')
-                    } else {
-                      logger.debug('🚫 UI update skipped - state already matches cache')
-                    }
-                  })
-                }, this.STATE_CHECK_DELAY)
-                
-                this.pendingStateCheck.set(ideaId, timeoutId)
-                return // Don't process immediately
+                // Allow all editing_by changes through immediately - no delays or caching
               } else {
                 logger.debug('🔒 BLOCKED refresh - heartbeat lock update detected:', { 
                   changedFields, 
@@ -457,11 +409,7 @@ export class DatabaseService {
             .single()
           
           if (!error && data && data!.updated_at && data!.updated_at > lastUpdateTime) {
-            // Check if we have any pending state checks that should take precedence
-            if (this.pendingStateCheck.size > 0) {
-              logger.debug('🚫 BLOCKED polling refresh - waiting for state checks to complete')
-              return
-            }
+            // No pending operations to check - simplified approach
             
             logger.debug('Polling detected changes, refreshing ideas...')
             lastUpdateTime = data!.updated_at!
