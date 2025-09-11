@@ -20,7 +20,7 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
 
-  // Lock the idea when modal opens
+  // Lock the idea when modal opens (only once)
   useEffect(() => {
     let shouldUnlock = false
     
@@ -44,7 +44,7 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
         DatabaseService.unlockIdea(idea.id, currentUser?.id || '')
       }
     }
-  }, [idea.id, currentUser, onClose])
+  }, []) // Empty dependency array - only run on mount/unmount
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
