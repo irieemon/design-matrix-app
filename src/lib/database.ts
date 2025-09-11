@@ -240,9 +240,10 @@ export class DatabaseService {
   // Global real-time status that persists across subscriptions
   private static realTimeWorking = false
   
-  // "Last event wins" approach - delay processing to ensure final state
-  private static pendingLockUpdates = new Map<string, NodeJS.Timeout>()
-  private static LOCK_STABILIZE_MS = 100 // Wait 100ms for events to stabilize, then process final state
+  // Track lock states to prevent redundant UI updates
+  private static lockStateCache = new Map<string, string | null>()
+  private static pendingStateCheck = new Map<string, NodeJS.Timeout>()
+  private static STATE_CHECK_DELAY = 50 // Very short delay to batch rapid events
   
   // Subscribe to real-time changes with polling fallback
   static subscribeToIdeas(callback: (ideas: IdeaCard[]) => void, projectId?: string) {
@@ -304,42 +305,59 @@ export class DatabaseService {
               )
               
               if (isInitialLockChange) {
-                // "Last event wins" approach - delay processing to let rapid events stabilize
-                const existingTimeout = this.pendingLockUpdates.get(ideaId)
+                // Update our lock state cache immediately
+                const currentCachedState = this.lockStateCache.get(ideaId)
+                this.lockStateCache.set(ideaId, newEditingBy)
+                
+                logger.debug('🔄 Lock state updated in cache:', { 
+                  ideaId,
+                  oldCachedState: currentCachedState,
+                  newState: newEditingBy,
+                  oldEditingBy, 
+                  newEditingBy
+                })
+                
+                // Clear any existing timeout for this idea
+                const existingTimeout = this.pendingStateCheck.get(ideaId)
                 if (existingTimeout) {
                   clearTimeout(existingTimeout)
-                  logger.debug('⏸️ Clearing previous lock update timeout for:', ideaId)
                 }
                 
-                // Set new timeout to process this event after stabilization period
+                // Schedule a state check with short delay to batch rapid events
                 const timeoutId = setTimeout(() => {
-                  logger.debug('⏰ Processing stabilized lock change:', { 
-                    oldEditingBy, 
-                    newEditingBy,
-                    ideaId
-                  })
+                  this.pendingStateCheck.delete(ideaId)
                   
-                  // Clear the timeout from our map
-                  this.pendingLockUpdates.delete(ideaId)
-                  
-                  // Refresh ideas to get the final state
-                  const refreshPromise = projectId 
+                  // Get current state from database and compare with what UI shows
+                  const checkStatePromise = projectId 
                     ? this.getProjectIdeas(projectId!)
                     : this.getAllIdeas()
                   
-                  refreshPromise.then(callback)
-                }, this.LOCK_STABILIZE_MS)
+                  checkStatePromise.then((ideas) => {
+                    const currentIdea = ideas.find(idea => idea.id === ideaId)
+                    const actualState = currentIdea?.editing_by || null
+                    const cachedState = this.lockStateCache.get(ideaId)
+                    
+                    logger.debug('🔍 State comparison for UI update decision:', {
+                      ideaId,
+                      actualState,
+                      cachedState,
+                      shouldUpdate: actualState !== cachedState
+                    })
+                    
+                    // Only update UI if the actual state differs from our cache
+                    // This prevents flashing from rapid intermediate states
+                    if (actualState !== cachedState) {
+                      this.lockStateCache.set(ideaId, actualState)
+                      callback(ideas)
+                      logger.debug('✅ UI updated due to genuine state change')
+                    } else {
+                      logger.debug('🚫 UI update skipped - state already matches cache')
+                    }
+                  })
+                }, this.STATE_CHECK_DELAY)
                 
-                this.pendingLockUpdates.set(ideaId, timeoutId)
-                
-                logger.debug('⏳ Scheduled lock update processing:', { 
-                  oldEditingBy, 
-                  newEditingBy,
-                  ideaId,
-                  stabilizeMs: this.LOCK_STABILIZE_MS
-                })
-                
-                return // Don't process immediately, wait for stabilization
+                this.pendingStateCheck.set(ideaId, timeoutId)
+                return // Don't process immediately
               } else {
                 logger.debug('🔒 BLOCKED refresh - heartbeat lock update detected:', { 
                   changedFields, 
@@ -439,9 +457,9 @@ export class DatabaseService {
             .single()
           
           if (!error && data && data!.updated_at && data!.updated_at > lastUpdateTime) {
-            // Check if we have any pending lock updates that should take precedence
-            if (this.pendingLockUpdates.size > 0) {
-              logger.debug('🚫 BLOCKED polling refresh - waiting for lock updates to stabilize')
+            // Check if we have any pending state checks that should take precedence
+            if (this.pendingStateCheck.size > 0) {
+              logger.debug('🚫 BLOCKED polling refresh - waiting for state checks to complete')
               return
             }
             
