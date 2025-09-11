@@ -110,6 +110,7 @@ function App() {
       addIdea={addIdea}
       updateIdea={updateIdea}
       deleteIdea={deleteIdea}
+      toggleCollapse={_toggleCollapse}
       handleDragEnd={handleDragEnd}
     >
       <PageRouter
