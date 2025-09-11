@@ -38,16 +38,20 @@ interface Milestone {
 }
 
 interface RoadmapData {
-  roadmapAnalysis: {
+  // New format
+  roadmapAnalysis?: {
     totalDuration: string
     phases: Phase[]
   }
-  executionStrategy: {
+  executionStrategy?: {
     methodology: string
     sprintLength: string
     teamRecommendations: string
     keyMilestones: Milestone[]
   }
+  // Legacy format fallbacks
+  timeline?: string
+  phases?: Phase[]
 }
 
 const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentProject, ideas }) => {
@@ -347,8 +351,8 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                 <Users className="w-5 h-5 text-green-600" />
                 <h3 className="font-medium text-slate-900">Methodology</h3>
               </div>
-              <p className="text-2xl font-bold text-green-600">{roadmapData.executionStrategy.methodology}</p>
-              <p className="text-sm text-slate-600 mt-1">{roadmapData.executionStrategy.sprintLength} sprints</p>
+              <p className="text-2xl font-bold text-green-600">{roadmapData.executionStrategy?.methodology || 'Agile'}</p>
+              <p className="text-sm text-slate-600 mt-1">{roadmapData.executionStrategy?.sprintLength || '2-week'} sprints</p>
             </div>
             
             <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm">
@@ -543,7 +547,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                     <span>Team Recommendations</span>
                   </h3>
                   <p className="text-slate-700 text-sm leading-relaxed">
-                    {roadmapData.executionStrategy.teamRecommendations}
+                    {roadmapData.executionStrategy?.teamRecommendations || 'Cross-functional team structure recommended for optimal collaboration.'}
                   </p>
                 </div>
                 
@@ -554,7 +558,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                     <span>Key Milestones</span>
                   </h3>
                   <div className="space-y-3">
-                    {roadmapData.executionStrategy.keyMilestones.map((milestone, index) => (
+                    {(roadmapData.executionStrategy?.keyMilestones || []).map((milestone, index) => (
                       <div key={index} className="flex items-start space-x-3">
                         <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                           <span className="text-purple-600 text-xs font-bold">{index + 1}</span>
