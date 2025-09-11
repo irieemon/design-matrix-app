@@ -338,7 +338,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                 <Clock className="w-5 h-5 text-blue-600" />
                 <h3 className="font-medium text-slate-900">Duration</h3>
               </div>
-              <p className="text-2xl font-bold text-blue-600">{roadmapData.roadmapAnalysis.totalDuration}</p>
+              <p className="text-2xl font-bold text-blue-600">{roadmapData.roadmapAnalysis?.totalDuration || roadmapData.timeline || '3-6 months'}</p>
               <p className="text-sm text-slate-600 mt-1">Total project timeline</p>
             </div>
             
@@ -356,7 +356,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                 <CheckCircle className="w-5 h-5 text-purple-600" />
                 <h3 className="font-medium text-slate-900">Phases</h3>
               </div>
-              <p className="text-2xl font-bold text-purple-600">{roadmapData.roadmapAnalysis.phases.length}</p>
+              <p className="text-2xl font-bold text-purple-600">{roadmapData.roadmapAnalysis?.phases?.length || roadmapData.phases?.length || 0}</p>
               <p className="text-sm text-slate-600 mt-1">Development phases</p>
             </div>
           </div>
@@ -373,10 +373,10 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
             <div className="p-6">
               {/* Phases */}
               <div className="space-y-6">
-                {roadmapData.roadmapAnalysis.phases.map((phase, phaseIndex) => (
+                {(roadmapData.roadmapAnalysis?.phases || roadmapData.phases || []).map((phase, phaseIndex) => (
                   <div key={phaseIndex} className="relative">
                     {/* Phase Timeline Line */}
-                    {phaseIndex < roadmapData.roadmapAnalysis.phases.length - 1 && (
+                    {phaseIndex < (roadmapData.roadmapAnalysis?.phases || roadmapData.phases || []).length - 1 && (
                       <div className="absolute left-6 top-16 bottom-0 w-0.5 bg-slate-200"></div>
                     )}
                     
