@@ -8,7 +8,6 @@ import type {
   CreateIdeaInput
 } from '../types'
 import { EmailService } from './emailService'
-import { RealtimeDiagnostic } from '../utils/realtimeDiagnostic'
 import { logger } from '../utils/logger'
 
 export class DatabaseService {
@@ -479,59 +478,17 @@ export class DatabaseService {
           DatabaseService.realTimeWorking = false
         } else if (status === 'SUBSCRIBED') {
           logger.debug('Successfully subscribed to real-time updates!')
-          // Don't run diagnostic if real-time is already known to work
-          if (!DatabaseService.realTimeWorking) {
-            setTimeout(() => {
-              if (!DatabaseService.realTimeWorking) {
-                logger.warn('⚠️ Real-time subscription established but no events received. Running diagnostic...')
-                RealtimeDiagnostic.checkRealtimeConfiguration()
-              }
-            }, 5000)
-          } else {
-            logger.debug('✅ Real-time already confirmed working, skipping diagnostic')
-          }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           logger.warn('Real-time subscription failed or closed:', status)
           DatabaseService.realTimeWorking = false
         }
       })
 
-    // Polling fallback for when real-time doesn't work
-    const pollInterval = setInterval(async () => {
-      if (!DatabaseService.realTimeWorking) {
-        this.throttledLog('polling_fallback', '📊 Real-time not working, using polling fallback...', undefined, 5000)
-        
-        try {
-          const { data, error } = await supabase
-            .from('ideas')
-            .select('updated_at')
-            .order('updated_at', { ascending: false })
-            .limit(1)
-            .single()
-          
-          if (!error && data && data!.updated_at && data!.updated_at > lastUpdateTime) {
-            // No pending operations to check - simplified approach
-            
-            logger.debug('Polling detected changes, refreshing ideas...')
-            lastUpdateTime = data!.updated_at!
-            
-            // Refresh ideas based on project context
-            const refreshPromise = projectId 
-              ? this.getProjectIdeas(projectId!)
-              : this.getAllIdeas()
-            
-            refreshPromise.then(callback)
-          }
-        } catch (pollError) {
-          logger.warn('Polling error:', pollError)
-        }
-      }
-    }, 2000)
+    // Polling fallback removed since real-time is working reliably
 
     return () => {
-      logger.debug('Unsubscribing from real-time updates and stopping polling')
+      logger.debug('Unsubscribing from real-time updates')
       supabase.removeChannel(channel)
-      clearInterval(pollInterval)
     }
   }
 

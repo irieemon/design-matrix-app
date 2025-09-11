@@ -289,17 +289,8 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = memo(({
     prevProps.currentUser?.id !== nextProps.currentUser?.id
   )
   
-  const shouldSkipRender = !significantFieldsChanged
-  
-  logger.debug(`🎭 IdeaCard memo check for ${nextIdea.id}:`, {
-    changedFields,
-    shouldSkipRender,
-    editing_by: nextIdea.editing_by,
-    editing_at: nextIdea.editing_at
-  })
-  
   // Return true if props are equal (skip re-render), false if different (re-render)
-  return shouldSkipRender
+  return !significantFieldsChanged
 })
 
 export default IdeaCardComponent
