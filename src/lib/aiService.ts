@@ -384,7 +384,7 @@ class SecureAIService {
     }
   }
 
-  private generateMockRoadmap(projectName: string, _projectType?: string): any {
+  private generateMockRoadmap(_projectName: string, _projectType?: string): any {
     return {
       roadmapAnalysis: {
         totalDuration: '3-4 months',
