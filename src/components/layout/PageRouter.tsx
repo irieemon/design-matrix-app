@@ -24,6 +24,15 @@ interface PageRouterProps {
   // Ideas data passed down from App
   ideas?: IdeaCard[]
   setIdeas?: React.Dispatch<React.SetStateAction<IdeaCard[]>>
+  // Additional props passed from AppLayout
+  activeId?: string | null
+  editingIdea?: IdeaCard | null
+  onSetEditingIdea?: (idea: IdeaCard | null) => void
+  onSetShowAddModal?: (show: boolean) => void
+  onSetShowAIModal?: (show: boolean) => void
+  deleteIdea?: (ideaId: string) => Promise<void>
+  updateIdea?: (updatedIdea: IdeaCard) => Promise<void>
+  toggleCollapse?: (ideaId: string) => Promise<void>
 }
 
 const PageRouter: React.FC<PageRouterProps> = ({
@@ -38,7 +47,15 @@ const PageRouter: React.FC<PageRouterProps> = ({
   onShowAddModal,
   onShowAIModal,
   ideas = [],
-  setIdeas
+  setIdeas,
+  activeId,
+  editingIdea,
+  onSetEditingIdea,
+  onSetShowAddModal,
+  onSetShowAIModal,
+  deleteIdea,
+  updateIdea: _updateIdea,
+  toggleCollapse
 }) => {
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
 
@@ -55,6 +72,14 @@ const PageRouter: React.FC<PageRouterProps> = ({
             onIdeasCreated={(newIdeas) => setIdeas && setIdeas(prev => [...prev, ...newIdeas])}
             onShowAddModal={onShowAddModal}
             onShowAIModal={onShowAIModal}
+            activeId={activeId}
+            editingIdea={editingIdea}
+            onSetEditingIdea={onSetEditingIdea}
+            onSetShowAddModal={onSetShowAddModal}
+            onSetShowAIModal={onSetShowAIModal}
+            ideas={ideas}
+            deleteIdea={deleteIdea}
+            toggleCollapse={toggleCollapse}
           />
         )
       
