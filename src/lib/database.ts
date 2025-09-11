@@ -281,9 +281,9 @@ export class DatabaseService {
             
             if (lockOnlyChange) {
               // Allow initial lock changes (when editing_by changes between null and actual value)
-              const editingByChanged = changedFields.includes('editing_by')
               const oldEditingBy = oldData.editing_by
               const newEditingBy = newData.editing_by
+              const editingByChanged = oldEditingBy !== newEditingBy
               const ideaId = newData.id || oldData.id
               
               logger.debug('🔍 Lock change analysis:', { 
