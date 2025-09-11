@@ -152,7 +152,17 @@ Return a JSON array with this exact format:
   console.log('📝 Extracted content:', content)
   
   try {
-    const parsedIdeas = JSON.parse(content)
+    // Strip markdown code blocks if present
+    let cleanContent = content.trim()
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+    } else if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '')
+    }
+    
+    console.log('🧹 Cleaned content:', cleanContent)
+    
+    const parsedIdeas = JSON.parse(cleanContent)
     console.log('✅ Successfully parsed ideas:', parsedIdeas)
     return parsedIdeas
   } catch (parseError) {
