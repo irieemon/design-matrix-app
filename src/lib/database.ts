@@ -374,10 +374,11 @@ export class DatabaseService {
             })
             logger.debug('🔍 Changed fields:', changedFields)
             
-            // SPECIAL CASE: Distinguish between initial lock and heartbeat updates
+            // SPECIAL CASE: Distinguish between lock-related changes and content changes
+            // Lock-only changes involve editing_at and/or editing_by (not updated_at alone)
             const lockOnlyChange = changedFields.length > 0 && changedFields.every(field => 
-              field === 'editing_at' || field === 'editing_by' || field === 'updated_at'
-            )
+              field === 'editing_at' || field === 'editing_by'
+            ) && changedFields.some(field => field === 'editing_at' || field === 'editing_by')
             
             if (lockOnlyChange) {
               // Allow initial lock changes (when editing_by changes between null and actual value)
