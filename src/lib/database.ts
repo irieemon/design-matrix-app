@@ -4,12 +4,8 @@ import type {
   Project, 
   ApiResponse, 
   DatabaseError, 
-  IdeaQueryOptions, 
-  ProjectQueryOptions,
-  CreateIdeaInput,
-  UpdateIdeaInput,
-  IdeaRealtimePayload,
-  RealtimeEventType
+  IdeaQueryOptions,
+  CreateIdeaInput
 } from '../types'
 import { EmailService } from './emailService'
 import { RealtimeDiagnostic } from '../utils/realtimeDiagnostic'
@@ -74,7 +70,7 @@ export class DatabaseService {
   // Fetch ideas for a specific project (supports user-based access control via RLS)
   static async getIdeasByProject(
     projectId?: string, 
-    options?: IdeaQueryOptions
+    _options?: IdeaQueryOptions
   ): Promise<ApiResponse<IdeaCard[]>> {
     try {
       let query = supabase
@@ -125,7 +121,14 @@ export class DatabaseService {
 
   // Legacy method for backward compatibility
   static async getAllIdeas(): Promise<IdeaCard[]> {
-    return this.getIdeasByProject()
+    const response = await this.getIdeasByProject()
+    return response.success ? (response.data || []) : []
+  }
+
+  // Legacy method for backward compatibility
+  static async getProjectIdeas(projectId?: string): Promise<IdeaCard[]> {
+    const response = await this.getIdeasByProject(projectId)
+    return response.success ? (response.data || []) : []
   }
 
   // Create a new idea
@@ -148,15 +151,35 @@ export class DatabaseService {
         .single()
 
       if (error) {
-        logger.error('❌ DatabaseService: Error creating idea:', error)
-        return null
+        const dbError = this.handleDatabaseError(error, 'createIdea')
+        return {
+          success: false,
+          error: {
+            type: 'database',
+            message: dbError.message,
+            code: dbError.code
+          },
+          timestamp: new Date().toISOString()
+        }
       }
 
       logger.debug('✅ DatabaseService: Idea created successfully:', data)
-      return data
+      return {
+        success: true,
+        data: data,
+        timestamp: new Date().toISOString()
+      }
     } catch (error) {
-      logger.error('❌ DatabaseService: Database error:', error)
-      return null
+      const dbError = this.handleDatabaseError(error, 'createIdea')
+      return {
+        success: false,
+        error: {
+          type: 'database',
+          message: dbError.message,
+          code: dbError.code
+        },
+        timestamp: new Date().toISOString()
+      }
     }
   }
 
@@ -674,32 +697,6 @@ export class DatabaseService {
     }
   }
 
-  static async getProjectIdeas(projectId: string): Promise<IdeaCard[]> {
-    try {
-      this.throttledLog(`fetch_ideas_${projectId}`, `🔍 DatabaseService: Fetching ideas for project: ${projectId}`)
-      const { data, error } = await supabase
-        .from('ideas')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        logger.error('❌ Error fetching project ideas:', error)
-        return []
-      }
-
-      this.throttledLog(
-        `ideas_summary_${projectId}`, 
-        `✅ DatabaseService: Found ${data?.length || 0} ideas for project ${projectId}`,
-        data?.map(i => ({ id: i.id, content: i.content, project_id: i.project_id })),
-        2000 // 2 second throttle for summary logs
-      )
-      return data || []
-    } catch (error) {
-      logger.error('Error fetching project ideas:', error)
-      return []
-    }
-  }
 
   // Subscribe to project changes
   static subscribeToProjects(callback: (projects: Project[]) => void) {

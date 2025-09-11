@@ -168,13 +168,11 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
           priority: ideaData.priority,
           created_by: currentUser.id,
           is_collapsed: true,
-          editing_by: null,
-          editing_at: null,
           project_id: project.id
         })
 
-        if (newIdea) {
-          createdIdeas.push(newIdea)
+        if (newIdea.success && newIdea.data) {
+          createdIdeas.push(newIdea.data)
         }
       }
 

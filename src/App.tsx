@@ -468,14 +468,14 @@ function App() {
     
     logger.debug('💾 App: Creating idea in database...', ideaWithUser)
     
-    const createdIdea = await DatabaseService.createIdea(ideaWithUser)
+    const createdIdeaResponse = await DatabaseService.createIdea(ideaWithUser)
     
-    if (createdIdea) {
-      logger.debug('✅ App: Idea created successfully, adding to state:', createdIdea)
+    if (createdIdeaResponse.success && createdIdeaResponse.data) {
+      logger.debug('✅ App: Idea created successfully, adding to state:', createdIdeaResponse.data)
       // Immediately add to local state for instant feedback
-      setIdeas(prev => [...prev, createdIdea])
+      setIdeas(prev => [...prev, createdIdeaResponse.data!])
     } else {
-      logger.error('❌ App: Failed to create idea in database')
+      logger.error('❌ App: Failed to create idea in database:', createdIdeaResponse.error)
     }
     
     logger.debug('🔄 App: Closing modals...')

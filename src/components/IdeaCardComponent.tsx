@@ -55,9 +55,9 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = memo(({
   onEdit, 
   onDelete, 
   onToggleCollapse,
-  className = '',
+  className: _className,
   disabled = false,
-  'data-testid': testId
+  'data-testid': _testId
 }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging: isBeingDragged } = useDraggable({
     id: idea.id
