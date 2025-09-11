@@ -133,7 +133,15 @@ Generate a comprehensive roadmap with logical phases and actionable epics.`
   const content = data.choices[0]?.message?.content || '{}'
   
   try {
-    return JSON.parse(content)
+    // Strip markdown code blocks if present
+    let cleanContent = content.trim()
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+    } else if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '')
+    }
+    
+    return JSON.parse(cleanContent)
   } catch {
     return {}
   }
@@ -203,7 +211,15 @@ Required JSON structure:
   const content = data.content[0]?.text || '{}'
   
   try {
-    return JSON.parse(content)
+    // Strip markdown code blocks if present
+    let cleanContent = content.trim()
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+    } else if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '')
+    }
+    
+    return JSON.parse(cleanContent)
   } catch {
     return {}
   }

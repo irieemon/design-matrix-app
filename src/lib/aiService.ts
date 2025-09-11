@@ -210,7 +210,20 @@ class SecureAIService {
       }
 
       const data = await response.json()
-      return data.roadmap || this.generateMockRoadmap(projectName, projectType)
+      const roadmap = data.roadmap || this.generateMockRoadmap(projectName, projectType)
+      
+      // Transform API response to match expected component format
+      return {
+        roadmapAnalysis: {
+          totalDuration: roadmap.timeline || '3-6 months',
+          phases: roadmap.phases || []
+        },
+        executionStrategy: {
+          methodology: 'Agile',
+          teamStructure: 'Cross-functional',
+          deliveryApproach: 'Iterative'
+        }
+      }
 
     } catch (error) {
       logger.warn('🚫 AI roadmap failed, using mock:', error)
@@ -373,33 +386,36 @@ class SecureAIService {
 
   private generateMockRoadmap(projectName: string, _projectType?: string): any {
     return {
-      id: `roadmap-${Date.now()}`,
-      name: `${projectName} Strategic Roadmap`,
-      description: `Comprehensive roadmap for ${projectName} project development`,
-      phases: [
-        {
-          id: 'phase-1',
-          name: 'Foundation & Planning',
-          description: 'Establish project foundations and detailed planning',
-          duration: '2-3 weeks',
-          objectives: ['Define requirements', 'Set up infrastructure', 'Establish team'],
-          epics: [
-            {
-              id: 'epic-1',
-              title: 'Project Setup',
-              description: 'Initial project setup and configuration',
-              priority: 'High',
-              stories: ['Setup development environment', 'Configure CI/CD pipeline'],
-              deliverables: ['Development environment', 'Project documentation'],
-              relatedIdeas: ['Quick Setup Process']
-            }
-          ],
-          risks: ['Resource availability', 'Technical complexity'],
-          successCriteria: ['Team onboarded', 'Infrastructure ready']
-        }
-      ],
-      timeline: '3-4 months',
-      keyMilestones: ['MVP Launch', 'Beta Release', 'Production Deployment']
+      roadmapAnalysis: {
+        totalDuration: '3-4 months',
+        phases: [
+          {
+            id: 'phase-1',
+            name: 'Foundation & Planning',
+            description: 'Establish project foundations and detailed planning',
+            duration: '2-3 weeks',
+            objectives: ['Define requirements', 'Set up infrastructure', 'Establish team'],
+            epics: [
+              {
+                id: 'epic-1',
+                title: 'Project Setup',
+                description: 'Initial project setup and configuration',
+                priority: 'High',
+                stories: ['Setup development environment', 'Configure CI/CD pipeline'],
+                deliverables: ['Development environment', 'Project documentation'],
+                relatedIdeas: ['Quick Setup Process']
+              }
+            ],
+            risks: ['Resource availability', 'Technical complexity'],
+            successCriteria: ['Team onboarded', 'Infrastructure ready']
+          }
+        ]
+      },
+      executionStrategy: {
+        methodology: 'Agile',
+        teamStructure: 'Cross-functional',
+        deliveryApproach: 'Iterative'
+      }
     }
   }
 }
