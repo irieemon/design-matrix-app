@@ -5,7 +5,6 @@ import DesignMatrix from '../DesignMatrix'
 import ProjectHeader from '../ProjectHeader'
 import ProjectFiles from '../ProjectFiles'
 import { useProjectFiles } from '../../hooks/useProjectFiles'
-import RealtimeTest from '../debug/RealtimeTest'
 
 interface MatrixPageProps {
   currentUser: User
@@ -49,9 +48,6 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      {/* Real-time Diagnostic - Remove after testing */}
-      <RealtimeTest />
-      
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Project Header */}
