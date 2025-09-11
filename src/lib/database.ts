@@ -1,5 +1,16 @@
 import { supabase } from './supabase'
-import type { IdeaCard, Project } from '../types'
+import type { 
+  IdeaCard, 
+  Project, 
+  ApiResponse, 
+  DatabaseError, 
+  IdeaQueryOptions, 
+  ProjectQueryOptions,
+  CreateIdeaInput,
+  UpdateIdeaInput,
+  IdeaRealtimePayload,
+  RealtimeEventType
+} from '../types'
 import { EmailService } from './emailService'
 import { RealtimeDiagnostic } from '../utils/realtimeDiagnostic'
 import { logger } from '../utils/logger'
@@ -20,8 +31,51 @@ export class DatabaseService {
       this.lastLogTime.set(key, now)
     }
   }
+
+  // Helper method for consistent error handling
+  private static handleDatabaseError(error: any, operation: string): DatabaseError {
+    logger.error(`Database error in ${operation}:`, error)
+    
+    // Map common Supabase/PostgreSQL errors to our error types
+    if (error?.code === 'PGRST116') {
+      return {
+        code: 'NOT_FOUND',
+        message: 'Resource not found',
+        details: { originalError: error.message },
+        timestamp: new Date().toISOString()
+      }
+    }
+    
+    if (error?.code === '23505') {
+      return {
+        code: 'DUPLICATE_KEY',
+        message: 'Resource already exists',
+        details: { originalError: error.message },
+        timestamp: new Date().toISOString()
+      }
+    }
+    
+    if (error?.message?.includes('permission')) {
+      return {
+        code: 'PERMISSION_DENIED',
+        message: 'Insufficient permissions for this operation',
+        details: { originalError: error.message },
+        timestamp: new Date().toISOString()
+      }
+    }
+    
+    return {
+      code: 'UNKNOWN_ERROR',
+      message: error?.message || 'An unexpected error occurred',
+      details: { originalError: error },
+      timestamp: new Date().toISOString()
+    }
+  }
   // Fetch ideas for a specific project (supports user-based access control via RLS)
-  static async getIdeasByProject(projectId?: string): Promise<IdeaCard[]> {
+  static async getIdeasByProject(
+    projectId?: string, 
+    options?: IdeaQueryOptions
+  ): Promise<ApiResponse<IdeaCard[]>> {
     try {
       let query = supabase
         .from('ideas')
@@ -35,14 +89,37 @@ export class DatabaseService {
       const { data, error } = await query
 
       if (error) {
-        logger.error('Error fetching ideas:', error)
-        return []
+        const dbError = this.handleDatabaseError(error, 'getIdeasByProject')
+        return {
+          success: false,
+          error: {
+            type: 'database',
+            message: dbError.message,
+            code: dbError.code
+          },
+          timestamp: new Date().toISOString()
+        }
       }
 
-      return data || []
+      return {
+        success: true,
+        data: data || [],
+        timestamp: new Date().toISOString(),
+        meta: {
+          total: data?.length || 0
+        }
+      }
     } catch (error) {
-      logger.error('Database error:', error)
-      return []
+      const dbError = this.handleDatabaseError(error, 'getIdeasByProject')
+      return {
+        success: false,
+        error: {
+          type: 'database', 
+          message: dbError.message,
+          code: dbError.code
+        },
+        timestamp: new Date().toISOString()
+      }
     }
   }
 
@@ -52,7 +129,7 @@ export class DatabaseService {
   }
 
   // Create a new idea
-  static async createIdea(idea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>): Promise<IdeaCard | null> {
+  static async createIdea(idea: CreateIdeaInput): Promise<ApiResponse<IdeaCard>> {
     try {
       logger.debug('🗃️ DatabaseService: Creating idea:', idea)
       

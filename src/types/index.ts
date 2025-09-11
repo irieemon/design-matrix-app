@@ -35,6 +35,14 @@ export interface User {
   updated_at: string
 }
 
+export interface UserMetadata {
+  full_name?: string
+  avatar_url?: string
+  provider?: string
+  sub?: string
+  [key: string]: unknown
+}
+
 export interface AuthUser {
   id: string
   email: string
@@ -42,7 +50,18 @@ export interface AuthUser {
   phone?: string
   last_sign_in_at?: string
   role?: string
-  user_metadata?: any
+  user_metadata?: UserMetadata
+}
+
+export interface TeamSettings {
+  visibility: 'private' | 'internal' | 'public'
+  allow_member_invites: boolean
+  default_project_role: ProjectRole
+  notification_preferences: {
+    new_members: boolean
+    project_updates: boolean
+    weekly_digest: boolean
+  }
 }
 
 export interface Team {
@@ -51,7 +70,7 @@ export interface Team {
   description?: string
   avatar_url?: string
   owner_id: string
-  settings?: any
+  settings?: TeamSettings
   created_at: string
   updated_at: string
 }
@@ -105,13 +124,24 @@ export interface Invitation {
 
 export type ActivityType = 'project_created' | 'project_updated' | 'idea_created' | 'idea_updated' | 'idea_deleted' | 'user_joined' | 'user_invited' | 'comment_added'
 
+export interface ActivityMetadata {
+  project_name?: string
+  idea_title?: string
+  old_value?: string
+  new_value?: string
+  file_name?: string
+  comment_content?: string
+  invitation_role?: string
+  [key: string]: unknown
+}
+
 export interface ActivityLog {
   id: string
   user_id?: string
   project_id?: string
   team_id?: string
   activity_type: ActivityType
-  metadata?: any
+  metadata?: ActivityMetadata
   created_at: string
   user?: User
 }
@@ -126,6 +156,23 @@ export type ProjectType =
   | 'other'
 
 export type ProjectStatus = 'active' | 'completed' | 'paused' | 'archived'
+
+export interface ProjectSettings {
+  auto_save_interval: number // minutes
+  enable_real_time_collaboration: boolean
+  default_idea_priority: 'low' | 'moderate' | 'high' | 'strategic' | 'innovation'
+  matrix_view: {
+    show_grid: boolean
+    snap_to_grid: boolean
+    grid_size: number
+  }
+  notifications: {
+    idea_updates: boolean
+    new_collaborators: boolean
+    roadmap_changes: boolean
+  }
+  archive_completed_after: number // days, 0 = never
+}
 
 export interface Project {
   id: string
@@ -142,7 +189,7 @@ export interface Project {
   tags?: string[]
   owner_id: string
   team_id?: string
-  settings?: any
+  settings?: ProjectSettings
   created_at: string
   updated_at: string
   is_ai_generated?: boolean
@@ -220,12 +267,33 @@ export interface ProjectRoadmap {
   ideas_analyzed: number
 }
 
+export interface InsightsData {
+  summary: {
+    total_ideas: number
+    avg_priority_score: number
+    completion_rate: number
+    time_spent: number // hours
+  }
+  distribution: {
+    by_priority: Record<string, number>
+    by_quadrant: Record<QuadrantType, number>
+    by_status: Record<string, number>
+  }
+  trends: {
+    ideas_over_time: Array<{ date: string; count: number }>
+    priority_changes: Array<{ date: string; priority: string; count: number }>
+  }
+  recommendations: string[]
+  risk_factors: string[]
+  generated_at: string
+}
+
 export interface ProjectInsights {
   id: string
   project_id: string
   version: number
   name: string
-  insights_data: any // Will store the analytics/insights JSON
+  insights_data: InsightsData
   created_by: string
   created_at: string
   ideas_analyzed: number
@@ -286,3 +354,155 @@ export interface AdminProject extends Project {
   collaborator_count: number
   last_activity?: string
 }
+
+// =============================================================================
+// API Response Types & Error Handling
+// =============================================================================
+
+export type DatabaseErrorCode = 
+  | 'NOT_FOUND'
+  | 'PERMISSION_DENIED' 
+  | 'VALIDATION_ERROR'
+  | 'NETWORK_ERROR'
+  | 'TIMEOUT'
+  | 'RATE_LIMITED'
+  | 'STORAGE_FULL'
+  | 'DUPLICATE_KEY'
+  | 'FOREIGN_KEY_VIOLATION'
+  | 'UNKNOWN_ERROR'
+
+export interface DatabaseError {
+  code: DatabaseErrorCode
+  message: string
+  details?: Record<string, unknown>
+  timestamp: string
+}
+
+export interface ValidationError {
+  field: string
+  message: string
+  value?: unknown
+}
+
+export interface ApiError {
+  type: 'validation' | 'authentication' | 'authorization' | 'database' | 'network' | 'server'
+  message: string
+  errors?: ValidationError[]
+  code?: string
+  statusCode?: number
+}
+
+// Generic API Response wrapper
+export interface ApiResponse<TData = unknown> {
+  data?: TData
+  error?: ApiError
+  success: boolean
+  timestamp: string
+  meta?: {
+    page?: number
+    limit?: number
+    total?: number
+    hasMore?: boolean
+  }
+}
+
+// Specific API response types
+export type IdeaResponse = ApiResponse<IdeaCard>
+export type IdeasResponse = ApiResponse<IdeaCard[]>
+export type ProjectResponse = ApiResponse<Project>
+export type ProjectsResponse = ApiResponse<Project[]>
+export type UserResponse = ApiResponse<User>
+export type FileUploadResponse = ApiResponse<ProjectFile>
+
+// =============================================================================
+// Utility Types
+// =============================================================================
+
+// Make all properties of T required and non-nullable
+export type Required<T> = {
+  [P in keyof T]-?: NonNullable<T[P]>
+}
+
+// Create a type with only specified keys from T
+export type Pick<T, K extends keyof T> = {
+  [P in K]: T[P]
+}
+
+// Create a type with all keys from T except specified keys
+export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
+
+// Make specified properties optional
+export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+
+// For creating new entities (without generated fields)
+export type CreateIdeaInput = Omit<IdeaCard, 'id' | 'created_at' | 'updated_at' | 'editing_by' | 'editing_at'>
+export type CreateProjectInput = Omit<Project, 'id' | 'created_at' | 'updated_at' | 'owner' | 'team' | 'collaborators' | 'user_role'>
+export type CreateUserInput = Omit<User, 'id' | 'created_at' | 'updated_at' | 'last_login'>
+
+// For updating entities (all fields optional except id)
+export type UpdateIdeaInput = PartialBy<IdeaCard, keyof Omit<IdeaCard, 'id'>>
+export type UpdateProjectInput = PartialBy<Project, keyof Omit<Project, 'id'>>
+export type UpdateUserInput = PartialBy<User, keyof Omit<User, 'id'>>
+
+// =============================================================================
+// Database Query Types
+// =============================================================================
+
+export interface QueryOptions {
+  limit?: number
+  offset?: number
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  filters?: Record<string, unknown>
+}
+
+export interface IdeaQueryOptions extends QueryOptions {
+  projectId?: string
+  priority?: IdeaCard['priority']
+  quadrant?: QuadrantType
+  editedBy?: string
+  createdAfter?: string
+  createdBefore?: string
+}
+
+export interface ProjectQueryOptions extends QueryOptions {
+  status?: ProjectStatus
+  type?: ProjectType
+  ownerId?: string
+  teamId?: string
+  visibility?: Project['visibility']
+}
+
+// =============================================================================
+// Event Types for Real-time Updates
+// =============================================================================
+
+export type RealtimeEventType = 'INSERT' | 'UPDATE' | 'DELETE'
+
+export interface RealtimePayload<T = Record<string, unknown>> {
+  eventType: RealtimeEventType
+  new?: T
+  old?: T
+  table: string
+  schema: string
+  commit_timestamp: string
+}
+
+export interface IdeaRealtimePayload extends RealtimePayload<IdeaCard> {}
+export interface ProjectRealtimePayload extends RealtimePayload<Project> {}
+
+// =============================================================================
+// Form Types
+// =============================================================================
+
+export interface FormState<T> {
+  values: T
+  errors: Record<keyof T, string>
+  isValid: boolean
+  isDirty: boolean
+  isSubmitting: boolean
+}
+
+export type IdeaFormState = FormState<CreateIdeaInput>
+export type ProjectFormState = FormState<CreateProjectInput>
+export type UserProfileFormState = FormState<UpdateUserInput>

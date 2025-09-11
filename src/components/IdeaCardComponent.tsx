@@ -1,13 +1,16 @@
 import { useDraggable } from '@dnd-kit/core'
 import { Edit3, Trash2, User, ChevronDown, ChevronUp } from 'lucide-react'
-import { IdeaCard, User as UserType } from '../types'
-import { useMemo, memo } from 'react'
+import type { IdeaCard, User as UserType } from '../types'
+import { useMemo, memo, useCallback } from 'react'
 import { logger } from '../utils/logger'
 
-// Utility function to get user display name
-const getUserDisplayName = (userId: string | null | undefined, currentUser: UserType | null | undefined): string => {
+// Utility function to get user display name with better type safety
+const getUserDisplayName = (
+  userId: string | null | undefined, 
+  currentUser: UserType | null | undefined
+): string => {
   if (!userId) return 'Anonymous'
-  if (currentUser && userId === currentUser.id) return 'You'
+  if (currentUser?.id === userId) return 'You'
   // If it's a UUID (longer than 10 characters and contains hyphens), it's likely AI-generated
   if (userId.length > 10 && (userId.includes('-') || userId.length === 32)) {
     return 'AI Assistant'
@@ -15,13 +18,26 @@ const getUserDisplayName = (userId: string | null | undefined, currentUser: User
   return userId // fallback to showing the userId if it's not a UUID
 }
 
+// More specific prop types with better event handlers
 interface IdeaCardProps {
+  /** The idea card data to display */
   idea: IdeaCard
+  /** Whether this card is currently being dragged */
   isDragging?: boolean
-  currentUser?: UserType | null
-  onEdit: () => void
-  onDelete: () => void
-  onToggleCollapse?: (ideaId: string) => void
+  /** Current authenticated user for permission checks */
+  currentUser: UserType | null
+  /** Callback fired when user clicks edit button */
+  onEdit: (ideaId: string) => void
+  /** Callback fired when user clicks delete button */ 
+  onDelete: (ideaId: string) => void
+  /** Callback fired when user toggles card collapse state */
+  onToggleCollapse?: (ideaId: string, collapsed: boolean) => void
+  /** Optional CSS class name for styling */
+  className?: string
+  /** Whether the card should be disabled (non-interactive) */
+  disabled?: boolean
+  /** Test ID for testing purposes */
+  'data-testid'?: string
 }
 
 const priorityColors = {
@@ -32,7 +48,17 @@ const priorityColors = {
   innovation: 'bg-purple-50 border-purple-200 text-purple-800'
 }
 
-const IdeaCardComponent: React.FC<IdeaCardProps> = memo(({ idea, isDragging, currentUser, onEdit, onDelete, onToggleCollapse }) => {
+const IdeaCardComponent: React.FC<IdeaCardProps> = memo(({ 
+  idea, 
+  isDragging, 
+  currentUser, 
+  onEdit, 
+  onDelete, 
+  onToggleCollapse,
+  className = '',
+  disabled = false,
+  'data-testid': testId
+}) => {
   const { attributes, listeners, setNodeRef, transform, isDragging: isBeingDragged } = useDraggable({
     id: idea.id
   })
@@ -66,21 +92,37 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = memo(({ idea, isDragging, cur
   
   // Removed debug logging to prevent console spam
 
-  const handleDoubleClick = (e: React.MouseEvent) => {
+  const handleDoubleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!isLockedByOther) {
-      onEdit()
+    if (!isLockedByOther && !disabled) {
+      onEdit(idea.id)
     }
-  }
+  }, [isLockedByOther, disabled, onEdit, idea.id])
 
-  const handleToggleCollapse = (e: React.MouseEvent) => {
+  const handleToggleCollapse = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    if (onToggleCollapse && !isLockedByOther) {
-      onToggleCollapse(idea.id)
+    if (onToggleCollapse && !isLockedByOther && !disabled) {
+      onToggleCollapse(idea.id, !idea.is_collapsed)
     }
-  }
+  }, [onToggleCollapse, isLockedByOther, disabled, idea.id, idea.is_collapsed])
+
+  const handleDelete = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!disabled) {
+      onDelete(idea.id)
+    }
+  }, [disabled, onDelete, idea.id])
+
+  const handleEdit = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!isLockedByOther && !disabled) {
+      onEdit(idea.id)
+    }
+  }, [isLockedByOther, disabled, onEdit, idea.id])
 
   const isCollapsed = idea.is_collapsed || false
 
@@ -102,11 +144,7 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = memo(({ idea, isDragging, cur
     >
       {/* Modern Delete Button */}
       <button
-        onClick={(e) => {
-          e.stopPropagation()
-          e.preventDefault()
-          onDelete()
-        }}
+        onClick={handleDelete}
         className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-xl opacity-0 hover:opacity-100 transition-all duration-200 flex items-center justify-center hover:bg-red-600 z-10 shadow-lg hover:scale-110"
         style={{ 
           opacity: isDragging || isBeingDragged ? 0 : undefined,
@@ -161,17 +199,11 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = memo(({ idea, isDragging, cur
                 <ChevronUp className="w-4 h-4 text-slate-600" />
               </button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  e.preventDefault()
-                  if (!isLockedByOther) {
-                    onEdit()
-                  }
-                }}
+                onClick={handleEdit}
                 className={`w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center transition-colors pointer-events-auto ${
                   isLockedByOther ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-200 cursor-pointer'
                 }`}
-                disabled={isLockedByOther || false}
+                disabled={isLockedByOther || disabled}
               >
                 <Edit3 className="w-4 h-4 text-slate-600" />
               </button>
