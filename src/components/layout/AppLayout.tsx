@@ -6,7 +6,6 @@ import IdeaCardComponent from '../IdeaCardComponent'
 import AddIdeaModal from '../AddIdeaModal'
 import AIIdeaModal from '../AIIdeaModal'
 import EditIdeaModal from '../EditIdeaModal'
-import { useIdeas } from '../../hooks/useIdeas'
 
 interface AppLayoutProps {
   currentUser: User
@@ -25,6 +24,13 @@ interface AppLayoutProps {
   onSetEditingIdea?: (idea: IdeaCard | null) => void
   onSetShowAddModal?: (show: boolean) => void
   onSetShowAIModal?: (show: boolean) => void
+  // Ideas data and functions from parent
+  ideas?: IdeaCard[]
+  addIdea?: (newIdea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
+  updateIdea?: (updatedIdea: IdeaCard) => Promise<void>
+  deleteIdea?: (ideaId: string) => Promise<void>
+  toggleCollapse?: (ideaId: string) => Promise<void>
+  handleDragEnd?: (event: any) => Promise<void>
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({
@@ -42,7 +48,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   onSetActiveId,
   onSetEditingIdea,
   onSetShowAddModal,
-  onSetShowAIModal
+  onSetShowAIModal,
+  ideas = [],
+  addIdea,
+  updateIdea,
+  deleteIdea,
+  toggleCollapse,
+  handleDragEnd
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   
@@ -71,13 +83,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({
     })
   )
 
-  const { ideas, handleDragEnd, addIdea, updateIdea, deleteIdea } = useIdeas({
-    currentUser,
-    currentProject,
-    setShowAddModal,
-    setShowAIModal,
-    setEditingIdea
-  })
 
   const handleDragStart = (event: any) => {
     setActiveId(event.active.id as string)
@@ -85,7 +90,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({
 
   const handleDragEndWrapper = async (event: any) => {
     setActiveId(null)
-    await handleDragEnd(event)
+    if (handleDragEnd) {
+      await handleDragEnd(event)
+    }
   }
 
   const activeIdea = activeId ? ideas.find(i => i.id === activeId) : null
@@ -110,7 +117,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({
             editingIdea,
             onSetEditingIdea: setEditingIdea,
             onSetShowAddModal: setShowAddModal,
-            onSetShowAIModal: setShowAIModal
+            onSetShowAIModal: setShowAIModal,
+            ideas,
+            deleteIdea,
+            updateIdea,
+            toggleCollapse
           })}
           
           <DragOverlay
@@ -135,7 +146,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
       </div>
 
       {/* Modals */}
-      {showAddModal && (
+      {showAddModal && addIdea && (
         <AddIdeaModal 
           onClose={() => setShowAddModal(false)}
           onAdd={addIdea}
@@ -143,7 +154,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
         />
       )}
 
-      {showAIModal && (
+      {showAIModal && addIdea && (
         <AIIdeaModal 
           onClose={() => setShowAIModal(false)}
           onAdd={addIdea}
@@ -152,7 +163,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
         />
       )}
 
-      {editingIdea && (
+      {editingIdea && updateIdea && deleteIdea && (
         <EditIdeaModal 
           idea={editingIdea}
           currentUser={currentUser}

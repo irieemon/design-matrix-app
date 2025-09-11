@@ -4,7 +4,6 @@ import { User, Project, IdeaCard } from '../../types'
 import DesignMatrix from '../DesignMatrix'
 import ProjectHeader from '../ProjectHeader'
 import ProjectFiles from '../ProjectFiles'
-import { useIdeas } from '../../hooks/useIdeas'
 import { useProjectFiles } from '../../hooks/useProjectFiles'
 
 interface MatrixPageProps {
@@ -21,6 +20,10 @@ interface MatrixPageProps {
   onSetEditingIdea?: (idea: IdeaCard | null) => void
   onSetShowAddModal?: (show: boolean) => void
   onSetShowAIModal?: (show: boolean) => void
+  // Ideas data passed down from AppLayout
+  ideas?: IdeaCard[]
+  deleteIdea?: (ideaId: string) => Promise<void>
+  toggleCollapse?: (ideaId: string) => Promise<void>
 }
 
 const MatrixPage: React.FC<MatrixPageProps> = ({
@@ -35,12 +38,11 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
   editingIdea: _editingIdea,
   onSetEditingIdea,
   onSetShowAddModal: _onSetShowAddModal,
-  onSetShowAIModal: _onSetShowAIModal
+  onSetShowAIModal: _onSetShowAIModal,
+  ideas = [],
+  deleteIdea,
+  toggleCollapse
 }) => {
-  const { ideas, deleteIdea, toggleCollapse } = useIdeas({
-    currentUser,
-    currentProject
-  })
 
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
 
@@ -105,8 +107,8 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
               activeId={activeId || null}
               currentUser={currentUser}
               onEditIdea={onSetEditingIdea || (() => {})}
-              onDeleteIdea={deleteIdea}
-              onToggleCollapse={toggleCollapse}
+              onDeleteIdea={deleteIdea || (async () => {})}
+              onToggleCollapse={toggleCollapse || (async () => {})}
             />
 
             {/* Modern Statistics */}

@@ -7,8 +7,8 @@ import ProjectCollaboration from '../pages/ProjectCollaboration'
 import ProjectManagement from '../ProjectManagement'
 import ProjectRoadmap from '../ProjectRoadmap'
 import ProjectFiles from '../ProjectFiles'
-import { useIdeas } from '../../hooks/useIdeas'
 import { useProjectFiles } from '../../hooks/useProjectFiles'
+import { IdeaCard } from '../../types'
 
 interface PageRouterProps {
   currentPage: string
@@ -21,6 +21,9 @@ interface PageRouterProps {
   onDataUpdated: () => void
   onShowAddModal: () => void
   onShowAIModal: () => void
+  // Ideas data passed down from App
+  ideas?: IdeaCard[]
+  setIdeas?: React.Dispatch<React.SetStateAction<IdeaCard[]>>
 }
 
 const PageRouter: React.FC<PageRouterProps> = ({
@@ -33,9 +36,10 @@ const PageRouter: React.FC<PageRouterProps> = ({
   onUserUpdate,
   onDataUpdated,
   onShowAddModal,
-  onShowAIModal
+  onShowAIModal,
+  ideas = [],
+  setIdeas
 }) => {
-  const { ideas, setIdeas } = useIdeas({ currentUser, currentProject })
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
 
   const renderPageContent = () => {
@@ -48,7 +52,7 @@ const PageRouter: React.FC<PageRouterProps> = ({
             currentProject={currentProject}
             onProjectChange={onProjectSelect}
             onNavigateToProjects={() => onPageChange('projects')}
-            onIdeasCreated={(newIdeas) => setIdeas(prev => [...prev, ...newIdeas])}
+            onIdeasCreated={(newIdeas) => setIdeas && setIdeas(prev => [...prev, ...newIdeas])}
             onShowAddModal={onShowAddModal}
             onShowAIModal={onShowAIModal}
           />
@@ -93,7 +97,7 @@ const PageRouter: React.FC<PageRouterProps> = ({
               onProjectSelect={onProjectSelect}
               onProjectCreated={(project, projectIdeas) => {
                 onProjectSelect(project)
-                if (projectIdeas) {
+                if (projectIdeas && setIdeas) {
                   setIdeas(prev => [...prev, ...projectIdeas])
                 }
                 onPageChange('matrix')

@@ -6,6 +6,7 @@ import AuthScreen from './components/auth/AuthScreen'
 import AppLayout from './components/layout/AppLayout'
 import PageRouter from './components/layout/PageRouter'
 import { useAuth } from './hooks/useAuth'
+import { useIdeas } from './hooks/useIdeas'
 import { logger } from './utils/logger'
 
 function App() {
@@ -25,6 +26,15 @@ function App() {
   const { currentUser, isLoading, handleAuthSuccess, handleLogout, setCurrentUser } = useAuth({
     setCurrentProject,
     setCurrentPage
+  })
+
+  // Centralized ideas management
+  const { ideas, setIdeas, addIdea, updateIdea, deleteIdea, toggleCollapse: _toggleCollapse, handleDragEnd } = useIdeas({
+    currentUser,
+    currentProject,
+    setShowAddModal,
+    setShowAIModal,
+    setEditingIdea
   })
 
 
@@ -96,6 +106,11 @@ function App() {
       onSetEditingIdea={setEditingIdea}
       onSetShowAddModal={setShowAddModal}
       onSetShowAIModal={setShowAIModal}
+      ideas={ideas}
+      addIdea={addIdea}
+      updateIdea={updateIdea}
+      deleteIdea={deleteIdea}
+      handleDragEnd={handleDragEnd}
     >
       <PageRouter
         currentPage={currentPage}
@@ -108,6 +123,8 @@ function App() {
         onDataUpdated={handleDataUpdated}
         onShowAddModal={() => setShowAddModal(true)}
         onShowAIModal={() => setShowAIModal(true)}
+        ideas={ideas}
+        setIdeas={setIdeas}
       />
     </AppLayout>
   )
