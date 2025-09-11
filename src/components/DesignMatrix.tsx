@@ -8,7 +8,7 @@ interface DesignMatrixProps {
   currentUser: User | null
   onEditIdea: (idea: IdeaCard) => void
   onDeleteIdea: (ideaId: string) => void
-  onToggleCollapse: (ideaId: string) => void
+  onToggleCollapse: (ideaId: string, collapsed?: boolean) => void
 }
 
 const DesignMatrix: React.FC<DesignMatrixProps> = ({ ideas, activeId, currentUser, onEditIdea, onDeleteIdea, onToggleCollapse }) => {
@@ -98,7 +98,7 @@ const DesignMatrix: React.FC<DesignMatrixProps> = ({ ideas, activeId, currentUse
                 currentUser={currentUser}
                 onEdit={() => onEditIdea(idea)}
                 onDelete={() => onDeleteIdea(idea.id)}
-                onToggleCollapse={onToggleCollapse}
+                onToggleCollapse={(ideaId, collapsed) => onToggleCollapse(ideaId, collapsed)}
               />
             </div>
           )
