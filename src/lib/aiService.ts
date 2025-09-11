@@ -129,12 +129,14 @@ class SecureAIService {
       if (data.ideas && data.ideas.length > 0) {
         return data.ideas.map((idea: any, index: number) => ({
           id: `ai-${Date.now()}-${index}`,
-          title: idea.title,
-          description: idea.description,
-          quadrant: this.mapToQuadrant(idea.effort, idea.impact),
-          tags: idea.category ? [idea.category] : [],
-          contributor: 'AI Assistant',
-          createdAt: new Date().toISOString()
+          content: idea.title,
+          details: idea.description,
+          x: this.getPositionFromQuadrant(this.mapToQuadrant(idea.effort, idea.impact)).x,
+          y: this.getPositionFromQuadrant(this.mapToQuadrant(idea.effort, idea.impact)).y,
+          priority: this.mapPriorityLevel(idea.impact, idea.effort),
+          created_by: 'ai-assistant',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }))
       } else {
         return this.generateMockIdeas(title, description, projectType, count)
