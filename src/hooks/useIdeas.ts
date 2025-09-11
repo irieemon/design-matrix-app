@@ -11,7 +11,7 @@ interface UseIdeasReturn {
   addIdea: (newIdea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
   updateIdea: (updatedIdea: IdeaCard) => Promise<void>
   deleteIdea: (ideaId: string) => Promise<void>
-  toggleCollapse: (ideaId: string) => Promise<void>
+  toggleCollapse: (ideaId: string, collapsed?: boolean) => Promise<void>
   handleDragEnd: (event: DragEndEvent) => Promise<void>
 }
 
@@ -94,11 +94,12 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     setEditingIdea?.(null)
   }, [setEditingIdea])
 
-  const toggleCollapse = useCallback(async (ideaId: string) => {
+  const toggleCollapse = useCallback(async (ideaId: string, collapsed?: boolean) => {
     const idea = ideas.find(i => i.id === ideaId)
     if (!idea) return
 
-    const newCollapsedState = !idea.is_collapsed
+    // Use provided collapsed state or toggle current state
+    const newCollapsedState = collapsed !== undefined ? collapsed : !idea.is_collapsed
 
     // Immediately update local state for instant feedback
     setIdeas(prev => prev.map(i => 

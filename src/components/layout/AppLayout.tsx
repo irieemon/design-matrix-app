@@ -29,7 +29,7 @@ interface AppLayoutProps {
   addIdea?: (newIdea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
   updateIdea?: (updatedIdea: IdeaCard) => Promise<void>
   deleteIdea?: (ideaId: string) => Promise<void>
-  toggleCollapse?: (ideaId: string) => Promise<void>
+  toggleCollapse?: (ideaId: string, collapsed?: boolean) => Promise<void>
   handleDragEnd?: (event: any) => Promise<void>
 }
 

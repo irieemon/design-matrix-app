@@ -23,7 +23,7 @@ interface MatrixPageProps {
   // Ideas data passed down from AppLayout
   ideas?: IdeaCard[]
   deleteIdea?: (ideaId: string) => Promise<void>
-  toggleCollapse?: (ideaId: string) => Promise<void>
+  toggleCollapse?: (ideaId: string, collapsed?: boolean) => Promise<void>
 }
 
 const MatrixPage: React.FC<MatrixPageProps> = ({

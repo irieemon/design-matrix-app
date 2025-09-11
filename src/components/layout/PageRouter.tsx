@@ -32,7 +32,7 @@ interface PageRouterProps {
   onSetShowAIModal?: (show: boolean) => void
   deleteIdea?: (ideaId: string) => Promise<void>
   updateIdea?: (updatedIdea: IdeaCard) => Promise<void>
-  toggleCollapse?: (ideaId: string) => Promise<void>
+  toggleCollapse?: (ideaId: string, collapsed?: boolean) => Promise<void>
 }
 
 const PageRouter: React.FC<PageRouterProps> = ({
