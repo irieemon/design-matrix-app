@@ -95,7 +95,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({
     }
   }
 
-  console.log('🔍 AppLayout render - ideas:', ideas, 'type:', typeof ideas, 'isArray:', Array.isArray(ideas), 'length:', ideas?.length)
   const activeIdea = activeId ? (ideas || []).find(i => i.id === activeId) : null
 
   return (

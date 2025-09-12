@@ -43,7 +43,6 @@ interface InsightsReport {
 }
 
 const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject, selectedInsightId, onClose, onInsightSaved }) => {
-  console.log('🔍 AIInsightsModal render - ideas:', ideas, 'type:', typeof ideas, 'isArray:', Array.isArray(ideas), 'length:', ideas?.length)
   
   const [isLoading, setIsLoading] = useState(true)
   const [insights, setInsights] = useState<InsightsReport | null>(null)
