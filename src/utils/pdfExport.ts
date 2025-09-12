@@ -312,6 +312,14 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number,
 }
 
 export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, project: Project | null = null) => {
+  console.log('🔍 exportRoadmapToPDF called with:', {
+    roadmapData: roadmapData,
+    roadmapDataType: typeof roadmapData,
+    ideaCount: ideaCount,
+    ideaCountType: typeof ideaCount,
+    project: project
+  })
+  
   const doc = new jsPDF()
   let yPosition = 20
   const pageHeight = doc.internal.pageSize.height
