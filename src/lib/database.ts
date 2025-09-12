@@ -456,8 +456,8 @@ export class DatabaseService {
             : this.getAllIdeas()
           
           refreshPromise.then((freshIdeas) => {
-            logger.debug('📊 Fresh ideas fetched, calling callback with', freshIdeas.length, 'ideas')
-            callback(freshIdeas)
+            logger.debug('📊 Fresh ideas fetched, calling callback with', (freshIdeas || []).length, 'ideas')
+            callback(freshIdeas || [])
           })
         }
       )

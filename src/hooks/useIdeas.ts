@@ -34,7 +34,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
       logger.debug('📋 Raw ideas returned from database:', ideas)
       setIdeas(ideas)
       logger.debug('✅ Loaded', ideas.length, 'ideas for project', projectId)
-      logger.debug('📋 Ideas details:', ideas.map(i => ({ id: i.id, content: i.content, project_id: i.project_id })))
+      logger.debug('📋 Ideas details:', (ideas || []).map(i => ({ id: i.id, content: i.content, project_id: i.project_id })))
     } else {
       // If no project is selected, show no ideas
       logger.debug('📂 No project selected, clearing ideas')
