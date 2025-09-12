@@ -105,7 +105,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       return
     }
 
-    if (ideas.length === 0) {
+    if ((ideas || []).length === 0) {
       setError('No ideas found for this project. Add some ideas to the priority matrix first.')
       return
     }
@@ -115,7 +115,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
 
     try {
       logger.debug('🗺️ Generating roadmap for project:', currentProject.name)
-      logger.debug('📋 Processing', ideas.length, 'ideas')
+      logger.debug('📋 Processing', (ideas || []).length, 'ideas')
       
       const data = await aiService.generateRoadmap(
         ideas,
@@ -131,7 +131,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         currentProject.id,
         data,
         currentUser, // Assuming currentUser is the user ID
-        ideas.length
+(ideas || []).length
       )
       
       if (savedRoadmapId) {
@@ -152,7 +152,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
 
   const handleExportToPDF = () => {
     if (roadmapData && currentProject && roadmapData.roadmapAnalysis && roadmapData.executionStrategy) {
-      exportRoadmapToPDF(roadmapData as ProjectRoadmapType['roadmap_data'], ideas.length, currentProject)
+      exportRoadmapToPDF(roadmapData as ProjectRoadmapType['roadmap_data'], (ideas || []).length, currentProject)
     }
   }
 
@@ -235,7 +235,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
               AI-generated roadmap for <strong>{currentProject.name}</strong>
             </p>
             <p className="text-sm text-slate-500">
-              Analyzing {ideas.length} ideas • Created by {currentUser}
+              Analyzing {(ideas || []).length} ideas • Created by {currentUser}
             </p>
           </div>
           <div className="flex items-center space-x-3">

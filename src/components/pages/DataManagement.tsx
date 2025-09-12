@@ -96,7 +96,7 @@ const DataManagement: React.FC<DataManagementProps> = ({ ideas, currentUser, onD
             <div className="p-3 bg-blue-50 rounded-xl">
               <Database className="w-6 h-6 text-blue-600" />
             </div>
-            <span className="text-2xl font-bold text-slate-900">{ideas.length}</span>
+            <span className="text-2xl font-bold text-slate-900">{(ideas || []).length}</span>
           </div>
           <h3 className="text-sm font-semibold text-slate-700 mb-1">Total Ideas</h3>
           <p className="text-xs text-slate-500">Ideas in your matrix</p>
@@ -108,7 +108,7 @@ const DataManagement: React.FC<DataManagementProps> = ({ ideas, currentUser, onD
               <CheckCircle className="w-6 h-6 text-emerald-600" />
             </div>
             <span className="text-2xl font-bold text-slate-900">
-              {ideas.filter(i => i.priority === 'high' || i.priority === 'strategic').length}
+              {(ideas || []).filter(i => i.priority === 'high' || i.priority === 'strategic').length}
             </span>
           </div>
           <h3 className="text-sm font-semibold text-slate-700 mb-1">High Priority</h3>
@@ -121,7 +121,7 @@ const DataManagement: React.FC<DataManagementProps> = ({ ideas, currentUser, onD
               <FileText className="w-6 h-6 text-purple-600" />
             </div>
             <span className="text-2xl font-bold text-slate-900">
-              {new Set(ideas.map(i => i.created_by)).size}
+              {new Set((ideas || []).map(i => i.created_by)).size}
             </span>
           </div>
           <h3 className="text-sm font-semibold text-slate-700 mb-1">Contributors</h3>
@@ -140,14 +140,14 @@ const DataManagement: React.FC<DataManagementProps> = ({ ideas, currentUser, onD
           
           <button
             onClick={handleExport}
-            disabled={ideas.length === 0}
+            disabled={(ideas || []).length === 0}
             className="w-full flex items-center justify-center space-x-3 bg-emerald-600 text-white px-6 py-4 rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="w-5 h-5" />
             <span className="font-medium">Export to CSV</span>
           </button>
           
-          {ideas.length === 0 && (
+          {(ideas || []).length === 0 && (
             <p className="text-xs text-slate-500 mt-2 text-center">No ideas to export</p>
           )}
         </div>
@@ -195,7 +195,7 @@ const DataManagement: React.FC<DataManagementProps> = ({ ideas, currentUser, onD
       </div>
 
       {/* Danger Zone */}
-      {ideas.length > 0 && (
+      {(ideas || []).length > 0 && (
         <div className="bg-red-50 border border-red-200/60 rounded-2xl p-6">
           <h3 className="text-lg font-semibold text-red-900 mb-2">Danger Zone</h3>
           <p className="text-sm text-red-700 mb-4">Permanently delete all ideas from your matrix. This action cannot be undone.</p>
@@ -210,7 +210,7 @@ const DataManagement: React.FC<DataManagementProps> = ({ ideas, currentUser, onD
             </button>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm font-medium text-red-800">Are you sure? This will delete all {ideas.length} ideas permanently.</p>
+              <p className="text-sm font-medium text-red-800">Are you sure? This will delete all {(ideas || []).length} ideas permanently.</p>
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}

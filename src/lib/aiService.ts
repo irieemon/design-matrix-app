@@ -149,7 +149,7 @@ class SecureAIService {
   }
 
   async generateInsights(ideas: IdeaCard[], projectName?: string, projectType?: string): Promise<any> {
-    logger.debug('🔍 Generating insights for', ideas.length, 'ideas')
+    logger.debug('🔍 Generating insights for', (ideas || []).length, 'ideas')
     
     try {
       const headers = await this.getAuthHeaders()
@@ -157,7 +157,7 @@ class SecureAIService {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          ideas: ideas.map(idea => ({
+          ideas: (ideas || []).map(idea => ({
             title: idea.content,
             description: idea.details,
             quadrant: this.getQuadrantFromPosition(idea.x, idea.y)
@@ -194,7 +194,7 @@ class SecureAIService {
         body: JSON.stringify({
           projectName,
           projectType: projectType || 'General',
-          ideas: ideas.map(idea => ({
+          ideas: (ideas || []).map(idea => ({
             title: idea.content,
             description: idea.details,
             quadrant: this.getQuadrantFromPosition(idea.x, idea.y)
@@ -357,10 +357,10 @@ class SecureAIService {
   private generateMockInsights(ideas: IdeaCard[]): any {
     return {
       matrixAnalysis: {
-        quickWins: ideas.filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'quick-wins').map(i => i.content),
-        majorProjects: ideas.filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'major-projects').map(i => i.content),
-        fillIns: ideas.filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'fill-ins').map(i => i.content),
-        thanklessItems: ideas.filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'thankless-tasks').map(i => i.content)
+        quickWins: (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'quick-wins').map(i => i.content),
+        majorProjects: (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'major-projects').map(i => i.content),
+        fillIns: (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'fill-ins').map(i => i.content),
+        thanklessItems: (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'thankless-tasks').map(i => i.content)
       },
       priorityRecommendations: [
         'Focus on quick wins first to build momentum',

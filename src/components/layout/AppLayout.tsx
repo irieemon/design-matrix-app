@@ -95,7 +95,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
     }
   }
 
-  const activeIdea = activeId ? ideas.find(i => i.id === activeId) : null
+  const activeIdea = activeId ? (ideas || []).find(i => i.id === activeId) : null
 
   return (
     <div className="min-h-screen bg-slate-50">

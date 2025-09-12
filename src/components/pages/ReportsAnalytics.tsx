@@ -55,19 +55,19 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
     setShowAIInsights(true)
   }
 
-  const priorityData = ideas.reduce((acc, idea) => {
+  const priorityData = (ideas || []).reduce((acc, idea) => {
     acc[idea.priority] = (acc[idea.priority] || 0) + 1
     return acc
   }, {} as Record<string, number>)
 
   const quadrantData = {
-    quickWins: ideas.filter(i => i.x <= 260 && i.y < 260).length,
-    strategic: ideas.filter(i => i.x > 260 && i.y < 260).length,
-    reconsider: ideas.filter(i => i.x <= 260 && i.y >= 260).length,
-    avoid: ideas.filter(i => i.x > 260 && i.y >= 260).length
+    quickWins: (ideas || []).filter(i => i.x <= 260 && i.y < 260).length,
+    strategic: (ideas || []).filter(i => i.x > 260 && i.y < 260).length,
+    reconsider: (ideas || []).filter(i => i.x <= 260 && i.y >= 260).length,
+    avoid: (ideas || []).filter(i => i.x > 260 && i.y >= 260).length
   }
 
-  const contributorData = ideas.reduce((acc, idea) => {
+  const contributorData = (ideas || []).reduce((acc, idea) => {
     const contributor = idea.created_by || 'Unknown'
     acc[contributor] = (acc[contributor] || 0) + 1
     return acc
@@ -77,7 +77,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
     .sort(([,a], [,b]) => b - a)
     .slice(0, 5)
 
-  const recentActivity = ideas
+  const recentActivity = (ideas || [])
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 10)
 
@@ -138,7 +138,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
               <TrendingUp className="w-6 h-6 text-amber-600" />
             </div>
             <span className="text-2xl font-bold text-slate-900">
-              {ideas.filter(i => i.priority === 'high' || i.priority === 'strategic').length}
+              {(ideas || []).filter(i => i.priority === 'high' || i.priority === 'strategic').length}
             </span>
           </div>
           <h3 className="text-sm font-semibold text-slate-700 mb-1">High Priority</h3>

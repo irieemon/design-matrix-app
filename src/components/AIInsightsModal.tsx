@@ -202,7 +202,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
                   Key Insights
                 </h3>
                 <div className="grid gap-4">
-                  {insights.keyInsights.map((item, index) => (
+                  {(insights.keyInsights || []).map((item, index) => (
                     <div key={index} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                       <h4 className="font-semibold text-gray-900 mb-2">{item.insight}</h4>
                       <p className="text-gray-600 text-sm">{item.impact}</p>
@@ -221,7 +221,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
                   <div className="bg-red-50 rounded-xl p-4 border border-red-200">
                     <h4 className="font-semibold text-red-800 mb-3">🚨 Immediate (30 days)</h4>
                     <ul className="space-y-2">
-                      {insights.priorityRecommendations.immediate.map((item, index) => (
+                      {(insights.priorityRecommendations.immediate || []).map((item, index) => (
                         <li key={index} className="text-sm text-red-700 flex items-start">
                           <CheckCircle className="w-3 h-3 mr-2 mt-0.5 text-red-600 flex-shrink-0" />
                           {item}
@@ -233,7 +233,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
                   <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
                     <h4 className="font-semibold text-amber-800 mb-3">⏳ Short Term (3 months)</h4>
                     <ul className="space-y-2">
-                      {insights.priorityRecommendations.shortTerm.map((item, index) => (
+                      {(insights.priorityRecommendations.shortTerm || []).map((item, index) => (
                         <li key={index} className="text-sm text-amber-700 flex items-start">
                           <CheckCircle className="w-3 h-3 mr-2 mt-0.5 text-amber-600 flex-shrink-0" />
                           {item}
@@ -245,7 +245,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
                   <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                     <h4 className="font-semibold text-blue-800 mb-3">🎯 Long Term (6-12 months)</h4>
                     <ul className="space-y-2">
-                      {insights.priorityRecommendations.longTerm.map((item, index) => (
+                      {(insights.priorityRecommendations.longTerm || []).map((item, index) => (
                         <li key={index} className="text-sm text-blue-700 flex items-start">
                           <CheckCircle className="w-3 h-3 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
                           {item}
@@ -264,7 +264,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
                     High Risk Areas
                   </h4>
                   <ul className="space-y-2">
-                    {insights.riskAssessment.highRisk.map((risk, index) => (
+                    {(insights.riskAssessment.highRisk || []).map((risk, index) => (
                       <li key={index} className="text-sm text-red-700 flex items-start">
                         <div className="w-2 h-2 bg-red-400 rounded-full mr-2 mt-1.5 flex-shrink-0"></div>
                         {risk}
@@ -279,7 +279,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
                     Key Opportunities
                   </h4>
                   <ul className="space-y-2">
-                    {insights.riskAssessment.opportunities.map((opportunity, index) => (
+                    {(insights.riskAssessment.opportunities || []).map((opportunity, index) => (
                       <li key={index} className="text-sm text-emerald-700 flex items-start">
                         <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2 mt-1.5 flex-shrink-0"></div>
                         {opportunity}
@@ -296,7 +296,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
                   Suggested Implementation Roadmap
                 </h3>
                 <div className="space-y-4">
-                  {insights.suggestedRoadmap.map((phase, index) => (
+                  {(insights.suggestedRoadmap || []).map((phase, index) => (
                     <div key={index} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                       <div className="flex items-start justify-between mb-3">
                         <div>
@@ -309,7 +309,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
                       </div>
                       <p className="text-gray-700 mb-3">{phase.focus}</p>
                       <div className="flex flex-wrap gap-2">
-                        {phase.ideas.map((idea, ideaIndex) => (
+                        {(phase.ideas || []).map((idea, ideaIndex) => (
                           <span key={ideaIndex} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
                             {idea}
                           </span>
@@ -345,7 +345,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
                   Immediate Next Steps
                 </h3>
                 <div className="grid gap-3">
-                  {insights.nextSteps.map((step, index) => (
+                  {(insights.nextSteps || []).map((step, index) => (
                     <div key={index} className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
                         <span className="text-green-700 font-semibold text-xs">{index + 1}</span>

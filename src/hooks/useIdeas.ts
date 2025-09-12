@@ -95,7 +95,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
   }, [setEditingIdea])
 
   const toggleCollapse = useCallback(async (ideaId: string, collapsed?: boolean) => {
-    const idea = ideas.find(i => i.id === ideaId)
+    const idea = (ideas || []).find(i => i.id === ideaId)
     if (!idea) return
 
     // Use provided collapsed state or toggle current state
@@ -118,7 +118,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     if (!delta || (delta.x === 0 && delta.y === 0)) return
 
     const ideaId = active.id as string
-    const idea = ideas.find(i => i.id === ideaId)
+    const idea = (ideas || []).find(i => i.id === ideaId)
     if (!idea) return
 
     // New position after drag
