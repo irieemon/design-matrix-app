@@ -288,7 +288,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           
           {showHistory && (
             <div className="space-y-3">
-              {roadmapHistory.map((roadmap) => (
+              {(roadmapHistory || []).map((roadmap) => (
                 <div 
                   key={roadmap.id} 
                   className={`bg-slate-50 rounded-xl p-4 border transition-colors cursor-pointer hover:bg-slate-100 ${
