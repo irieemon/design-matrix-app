@@ -390,10 +390,20 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
       throw error
     }
   }
-  doc.setFont('helvetica', 'bold')
+  console.log('🔍 About to call doc.setFont("helvetica", "bold")', { setFont: typeof doc.setFont })
+  try {
+    doc.setFont('helvetica', 'bold')
+    console.log('🔍 doc.setFont succeeded')
+  } catch (error) {
+    console.error('🔍 doc.setFont failed:', error)
+    throw error
+  }
+  console.log('🔍 About to call doc.setTextColor(0, 0, 0)', { setTextColor: typeof doc.setTextColor })
   doc.setTextColor(0, 0, 0)
   doc.text('Implementation Roadmap', marginLeft, yPosition)
+  console.log('🔍 About to add 15 to yPosition:', { yPosition: yPosition, yPositionType: typeof yPosition })
   yPosition += 15
+  console.log('🔍 Successfully added 15 to yPosition, new value:', yPosition)
 
   (roadmapData.roadmapAnalysis?.phases || []).forEach((phase: any, _index: number) => {
     checkPageBreak(60)
