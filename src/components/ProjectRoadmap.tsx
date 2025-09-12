@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown, Download } from 'lucide-react'
+import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown, Download, Grid3X3, BarChart3 } from 'lucide-react'
 import { Project, IdeaCard, ProjectRoadmap as ProjectRoadmapType } from '../types'
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 import { exportRoadmapToPDF } from '../utils/pdfExportSimple'
 import { logger } from '../utils/logger'
+import TimelineRoadmap from './TimelineRoadmap'
 
 interface ProjectRoadmapProps {
   currentUser: string
@@ -62,6 +63,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   const [roadmapHistory, setRoadmapHistory] = useState<ProjectRoadmapType[]>([])
   const [selectedRoadmapId, setSelectedRoadmapId] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
+  const [viewMode, setViewMode] = useState<'detailed' | 'timeline'>('timeline')
 
   // Load existing roadmaps when component mounts or project changes
   useEffect(() => {
@@ -203,6 +205,65 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     }
   }
 
+  // Convert roadmap data to timeline format
+  const convertToTimelineFeatures = () => {
+    if (!roadmapData?.roadmapAnalysis?.phases) return []
+
+    const features: any[] = []
+    let currentMonth = 0
+    
+    // Team mapping based on epic characteristics
+    const getTeamForEpic = (epic: Epic) => {
+      const title = epic.title?.toLowerCase() || ''
+      const description = epic.description?.toLowerCase() || ''
+      
+      // Smart team assignment based on keywords
+      if (title.includes('mobile') || title.includes('app') || description.includes('mobile')) {
+        return 'mobile'
+      } else if (title.includes('market') || title.includes('analytics') || title.includes('campaign') || description.includes('marketing')) {
+        return 'marketing'
+      } else if (title.includes('platform') || title.includes('infrastructure') || title.includes('security') || description.includes('backend')) {
+        return 'platform'
+      } else {
+        return 'web' // default to web team
+      }
+    }
+
+    roadmapData.roadmapAnalysis.phases.forEach((phase, phaseIndex) => {
+      // Parse duration (e.g., "2-3 weeks" -> 1 month, "1-2 months" -> 2 months)
+      const durationText = phase.duration || '1 month'
+      let phaseDuration = 1 // default to 1 month
+      
+      if (durationText.includes('week')) {
+        const weeks = parseInt(durationText) || 2
+        phaseDuration = Math.ceil(weeks / 4) // convert weeks to months
+      } else if (durationText.includes('month')) {
+        phaseDuration = parseInt(durationText) || 1
+      }
+
+      phase.epics?.forEach((epic, epicIndex) => {
+        const priority = epic.priority?.toLowerCase() as 'high' | 'medium' | 'low' || 'medium'
+        
+        features.push({
+          id: `${phaseIndex}-${epicIndex}`,
+          title: epic.title || `Epic ${epicIndex + 1}`,
+          description: epic.description,
+          startMonth: currentMonth,
+          duration: Math.max(1, Math.floor(phaseDuration / (phase.epics?.length || 1))),
+          team: getTeamForEpic(epic),
+          priority,
+          status: phaseIndex === 0 ? 'in-progress' : 'planned' as const
+        })
+      })
+
+      currentMonth += phaseDuration
+    })
+
+    return features
+  }
+
+  const timelineFeatures = convertToTimelineFeatures()
+
   if (!currentProject) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -240,13 +301,41 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           </div>
           <div className="flex items-center space-x-3">
             {roadmapData && (
-              <button
-                onClick={handleExportToPDF}
-                className="flex items-center space-x-2 bg-slate-600 text-white px-4 py-3 rounded-xl hover:bg-slate-700 transition-colors"
-              >
-                <Download className="w-5 h-5" />
-                <span>Export PDF</span>
-              </button>
+              <>
+                {/* View Mode Toggle */}
+                <div className="flex items-center bg-white rounded-lg border border-slate-200 p-1">
+                  <button
+                    onClick={() => setViewMode('timeline')}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      viewMode === 'timeline'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    <span>Timeline</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('detailed')}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      viewMode === 'detailed'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Grid3X3 className="w-4 h-4" />
+                    <span>Detailed</span>
+                  </button>
+                </div>
+                
+                <button
+                  onClick={handleExportToPDF}
+                  className="flex items-center space-x-2 bg-slate-600 text-white px-4 py-3 rounded-xl hover:bg-slate-700 transition-colors"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>Export PDF</span>
+                </button>
+              </>
             )}
             <button
               onClick={generateRoadmap}
@@ -341,38 +430,52 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       {/* Roadmap Content */}
       {roadmapData && (
         <div className="space-y-8">
-          {/* Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm">
-              <div className="flex items-center space-x-3 mb-3">
-                <Clock className="w-5 h-5 text-blue-600" />
-                <h3 className="font-medium text-slate-900">Duration</h3>
+          {/* Overview Cards - Show only in detailed view */}
+          {viewMode === 'detailed' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                  <h3 className="font-medium text-slate-900">Duration</h3>
+                </div>
+                <p className="text-2xl font-bold text-blue-600">{roadmapData.roadmapAnalysis?.totalDuration || roadmapData.timeline || '3-6 months'}</p>
+                <p className="text-sm text-slate-600 mt-1">Total project timeline</p>
               </div>
-              <p className="text-2xl font-bold text-blue-600">{roadmapData.roadmapAnalysis?.totalDuration || roadmapData.timeline || '3-6 months'}</p>
-              <p className="text-sm text-slate-600 mt-1">Total project timeline</p>
-            </div>
-            
-            <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm">
-              <div className="flex items-center space-x-3 mb-3">
-                <Users className="w-5 h-5 text-green-600" />
-                <h3 className="font-medium text-slate-900">Methodology</h3>
+              
+              <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Users className="w-5 h-5 text-green-600" />
+                  <h3 className="font-medium text-slate-900">Methodology</h3>
+                </div>
+                <p className="text-2xl font-bold text-green-600">{roadmapData.executionStrategy?.methodology || 'Agile'}</p>
+                <p className="text-sm text-slate-600 mt-1">{roadmapData.executionStrategy?.sprintLength || '2-week'} sprints</p>
               </div>
-              <p className="text-2xl font-bold text-green-600">{roadmapData.executionStrategy?.methodology || 'Agile'}</p>
-              <p className="text-sm text-slate-600 mt-1">{roadmapData.executionStrategy?.sprintLength || '2-week'} sprints</p>
-            </div>
-            
-            <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm">
-              <div className="flex items-center space-x-3 mb-3">
-                <CheckCircle className="w-5 h-5 text-purple-600" />
-                <h3 className="font-medium text-slate-900">Phases</h3>
+              
+              <div className="bg-white rounded-xl border border-slate-200/60 p-6 shadow-sm">
+                <div className="flex items-center space-x-3 mb-3">
+                  <CheckCircle className="w-5 h-5 text-purple-600" />
+                  <h3 className="font-medium text-slate-900">Phases</h3>
+                </div>
+                <p className="text-2xl font-bold text-purple-600">{roadmapData.roadmapAnalysis?.phases?.length || roadmapData.phases?.length || 0}</p>
+                <p className="text-sm text-slate-600 mt-1">Development phases</p>
               </div>
-              <p className="text-2xl font-bold text-purple-600">{roadmapData.roadmapAnalysis?.phases?.length || roadmapData.phases?.length || 0}</p>
-              <p className="text-sm text-slate-600 mt-1">Development phases</p>
             </div>
-          </div>
+          )}
 
-          {/* Timeline */}
-          <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+          {/* Timeline View */}
+          {viewMode === 'timeline' && timelineFeatures.length > 0 && (
+            <TimelineRoadmap 
+              features={timelineFeatures}
+              title={currentProject?.name || 'PROJECT ROADMAP'}
+              subtitle={`${timelineFeatures.length} Features • ${roadmapData.roadmapAnalysis?.totalDuration || '6 months'}`}
+            />
+          )}
+
+          {/* Detailed View */}
+          {viewMode === 'detailed' && (
+            <>
+              {/* Timeline */}
+              <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
             <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b border-slate-200">
               <h2 className="text-lg font-semibold text-slate-900 flex items-center space-x-2">
                 <Calendar className="w-5 h-5" />
@@ -585,6 +688,8 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
               </div>
             </div>
           </div>
+              </>
+            )}
         </div>
       )}
     </div>
