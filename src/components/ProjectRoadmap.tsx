@@ -172,6 +172,9 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   }
 
   const getPriorityColor = (priority: string) => {
+    if (!priority) {
+      return 'bg-slate-100 text-slate-800 border-slate-200'
+    }
     switch (priority.toLowerCase()) {
       case 'high':
         return 'bg-red-100 text-red-800 border-red-200'
@@ -185,6 +188,9 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   }
 
   const getComplexityColor = (complexity: string) => {
+    if (!complexity) {
+      return 'bg-slate-100 text-slate-800 border-slate-200'
+    }
     switch (complexity.toLowerCase()) {
       case 'high':
         return 'bg-purple-100 text-purple-800 border-purple-200'
@@ -430,11 +436,11 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                                     <div className="flex items-start justify-between mb-3">
                                       <h5 className="font-medium text-slate-900">{epic.title}</h5>
                                       <div className="flex space-x-1">
-                                        <span className={`px-2 py-1 rounded-full text-xs border ${getPriorityColor(epic.priority)}`}>
-                                          {epic.priority}
+                                        <span className={`px-2 py-1 rounded-full text-xs border ${getPriorityColor(epic.priority || 'medium')}`}>
+                                          {epic.priority || 'medium'}
                                         </span>
-                                        <span className={`px-2 py-1 rounded-full text-xs border ${getComplexityColor(epic.complexity)}`}>
-                                          {epic.complexity}
+                                        <span className={`px-2 py-1 rounded-full text-xs border ${getComplexityColor(epic.complexity || 'medium')}`}>
+                                          {epic.complexity || 'medium'}
                                         </span>
                                       </div>
                                     </div>
