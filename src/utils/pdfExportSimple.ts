@@ -30,6 +30,79 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
       return lines.length
     }
 
+    // Helper function for section dividers
+    const addSectionDivider = () => {
+      pageBreak(15)
+      doc.setDrawColor(200, 200, 200)
+      doc.setLineWidth(0.5)
+      doc.line(marginL, yPos, pageW - marginR, yPos)
+      yPos += 10
+    }
+
+    // Helper function for decorative headers with background
+    const addDecorativeHeader = (text: string, fontSize: number = 16, bgColor: number[] = [102, 16, 242]) => {
+      pageBreak(25)
+      // Background rectangle
+      doc.setFillColor(bgColor[0], bgColor[1], bgColor[2])
+      doc.rect(marginL - 5, yPos - 8, contentW + 10, fontSize + 6, 'F')
+      // White text on colored background
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(fontSize)
+      doc.setFont('helvetica', 'bold')
+      doc.text(text, marginL, yPos + fontSize/2)
+      doc.setTextColor(0, 0, 0)
+      yPos += fontSize + 10
+    }
+
+    // Helper function for creating simple tables
+    const addTable = (headers: string[], rows: string[][], cellWidth: number = 50) => {
+      pageBreak(20 + rows.length * 8)
+      
+      // Draw header row
+      doc.setFillColor(240, 240, 240)
+      doc.rect(marginL, yPos, headers.length * cellWidth, 8, 'F')
+      doc.setDrawColor(0, 0, 0)
+      doc.setLineWidth(0.3)
+      doc.rect(marginL, yPos, headers.length * cellWidth, 8, 'S')
+      
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'bold')
+      headers.forEach((header, i) => {
+        doc.text(header, marginL + 2 + (i * cellWidth), yPos + 6)
+      })
+      yPos += 8
+      
+      // Draw data rows
+      doc.setFont('helvetica', 'normal')
+      rows.forEach(row => {
+        doc.rect(marginL, yPos, headers.length * cellWidth, 8, 'S')
+        row.forEach((cell, i) => {
+          const cellText = doc.splitTextToSize(cell, cellWidth - 4)
+          doc.text(cellText[0] || '', marginL + 2 + (i * cellWidth), yPos + 6)
+        })
+        yPos += 8
+      })
+      yPos += 5
+    }
+
+    // Phase name mapping for better readability
+    const getPhaseDisplayName = (phase: any, index: number): string => {
+      if (phase.phase && phase.phase !== 'Unknown Phase') {
+        return phase.phase
+      }
+      
+      // Generate meaningful phase names based on index and content
+      const phaseNames = [
+        'Foundation & Core Setup',
+        'Feature Development',
+        'Enhancement & Optimization',
+        'Testing & Deployment',
+        'Launch & Maintenance'
+      ]
+      
+      return phaseNames[index] || `Implementation Phase ${index + 1}`
+    }
+
     // DOCUMENT HEADER
     doc.setFontSize(22)
     doc.setFont('helvetica', 'bold')
@@ -59,23 +132,18 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     yPos += 10
 
     // TABLE OF CONTENTS
-    pageBreak(40)
-    addText('TABLE OF CONTENTS', 16, 'bold', [102, 16, 242])
-    yPos += 5
+    addDecorativeHeader('TABLE OF CONTENTS', 16, [102, 16, 242])
     addText('1. Executive Summary', 11)
     addText('2. Technical Requirements & Architecture', 11)
     addText('3. Implementation Phases (Detailed)', 11)
     addText('4. Resource Requirements & Team Structure', 11)
-    addText('5. Risk Management & Mitigation', 11)
-    addText('6. Quality Assurance & Testing Strategy', 11)
-    addText('7. Deployment & Operations Plan', 11)
-    addText('8. Success Metrics & KPIs', 11)
-    yPos += 15
+    addText('5. Quality Assurance & Testing Strategy', 11)
+    addText('6. Deployment & Operations Plan', 11)
+    addText('7. Success Metrics & KPIs', 11)
+    addSectionDivider()
 
     // 1. EXECUTIVE SUMMARY
-    pageBreak(50)
-    addText('1. EXECUTIVE SUMMARY', 16, 'bold', [220, 53, 69])
-    yPos += 5
+    addDecorativeHeader('1. EXECUTIVE SUMMARY', 16, [220, 53, 69])
 
     const teamRec = roadmapData.executionStrategy?.teamRecommendations || 'Team structure to be determined based on project requirements'
     addText('Project Overview:', 12, 'bold')
@@ -94,15 +162,18 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
         })
       }
     })
-    addText(`• ${phases.length} Development Phases`, 10)
-    addText(`• ${totalEpics} Major Epics/Features`, 10)
-    addText(`• ${totalDeliverables} Specific Deliverables`, 10)
-    yPos += 10
+    // Create summary table for key deliverables
+    const summaryHeaders = ['Metric', 'Count', 'Description']
+    const summaryRows = [
+      ['Development Phases', phases.length.toString(), 'Major implementation stages'],
+      ['Epic Features', totalEpics.toString(), 'Key functional areas'],
+      ['Deliverables', totalDeliverables.toString(), 'Specific outputs and artifacts']
+    ]
+    addTable(summaryHeaders, summaryRows, 60)
+    addSectionDivider()
 
     // 2. TECHNICAL REQUIREMENTS
-    pageBreak(40)
-    addText('2. TECHNICAL REQUIREMENTS & ARCHITECTURE', 16, 'bold', [220, 53, 69])
-    yPos += 5
+    addDecorativeHeader('2. TECHNICAL REQUIREMENTS & ARCHITECTURE', 16, [220, 53, 69])
 
     addText('Development Stack & Technologies:', 12, 'bold')
     addText('• Frontend: React.js, TypeScript, Tailwind CSS', 10)
@@ -119,22 +190,30 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     addText('• Database normalization and indexing strategy', 10)
     addText('• Caching layer for performance optimization', 10)
     addText('• Security implementation (HTTPS, data encryption)', 10)
-    yPos += 15
+    addSectionDivider()
 
     // 3. DETAILED IMPLEMENTATION PHASES
-    pageBreak(50)
-    addText('3. IMPLEMENTATION PHASES (DETAILED)', 16, 'bold', [220, 53, 69])
-    yPos += 10
+    addDecorativeHeader('3. IMPLEMENTATION PHASES (DETAILED)', 16, [220, 53, 69])
 
     phases.forEach((phase, phaseIndex) => {
       if (!phase) return
       
+      const phaseName = getPhaseDisplayName(phase, phaseIndex)
+      
       pageBreak(60)
       
-      // Phase Header with detailed info
-      addText(`PHASE ${phaseIndex + 1}: ${phase.phase?.toUpperCase() || 'UNNAMED PHASE'}`, 14, 'bold', [102, 16, 242])
-      addText(`Duration: ${phase.duration || 'TBD'} | Priority: HIGH`, 11, 'bold')
-      yPos += 5
+      // Phase Header with colored background
+      addDecorativeHeader(`PHASE ${phaseIndex + 1}: ${phaseName.toUpperCase()}`, 14, [102, 16, 242])
+      
+      // Phase info table
+      const phaseHeaders = ['Attribute', 'Details']
+      const phaseRows = [
+        ['Duration', phase.duration || 'To be determined'],
+        ['Priority', 'HIGH'],
+        ['Status', 'Planning Phase'],
+        ['Dependencies', phaseIndex === 0 ? 'None - Foundation Phase' : `Phase ${phaseIndex} Completion`]
+      ]
+      addTable(phaseHeaders, phaseRows, 90)
       
       // Phase Description
       addText('Business Objective:', 11, 'bold')
@@ -234,19 +313,23 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     })
 
     // 4. RESOURCE REQUIREMENTS
-    pageBreak(50)
-    addText('4. RESOURCE REQUIREMENTS & TEAM STRUCTURE', 16, 'bold', [220, 53, 69])
-    yPos += 5
+    addSectionDivider()
+    addDecorativeHeader('4. RESOURCE REQUIREMENTS & TEAM STRUCTURE', 16, [220, 53, 69])
 
     addText('Recommended Team Composition:', 12, 'bold')
-    addText('• Product Owner: 1 (full-time)', 10)
-    addText('• Technical Lead/Architect: 1 (full-time)', 10)
-    addText('• Senior Frontend Developer: 1-2 (full-time)', 10)
-    addText('• Backend Developer: 1-2 (full-time)', 10)
-    addText('• UI/UX Designer: 1 (as needed)', 10)
-    addText('• QA Engineer: 1 (full-time)', 10)
-    addText('• DevOps Engineer: 1 (part-time/consultancy)', 10)
-    yPos += 8
+    
+    // Team composition table
+    const teamHeaders = ['Role', 'Allocation', 'Key Responsibilities']
+    const teamRows = [
+      ['Product Owner', '1 (full-time)', 'Requirements, stakeholder communication'],
+      ['Technical Lead', '1 (full-time)', 'Architecture, technical decisions'],
+      ['Frontend Developer', '1-2 (full-time)', 'UI/UX implementation, React development'],
+      ['Backend Developer', '1-2 (full-time)', 'API development, database design'],
+      ['UI/UX Designer', '1 (as needed)', 'Design systems, user experience'],
+      ['QA Engineer', '1 (full-time)', 'Testing strategy, quality assurance'],
+      ['DevOps Engineer', '1 (part-time)', 'CI/CD, deployment, infrastructure']
+    ]
+    addTable(teamHeaders, teamRows, 55)
 
     addText('Infrastructure & Tools Required:', 12, 'bold')
     addText('• Development environments (local + staging)', 10)
@@ -258,134 +341,139 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     yPos += 10
 
     // 5. KEY MILESTONES
-    pageBreak(40)
-    addText('5. KEY MILESTONES & DELIVERABLES', 16, 'bold', [220, 53, 69])
-    yPos += 5
+    addSectionDivider()
+    addDecorativeHeader('5. KEY MILESTONES & DELIVERABLES', 16, [220, 53, 69])
 
     const milestones = roadmapData.executionStrategy?.keyMilestones || []
     if (milestones.length > 0) {
-      milestones.forEach((milestone, msIndex) => {
-        if (!milestone) return
-        pageBreak(15)
-        addText(`Milestone ${msIndex + 1}: ${milestone.milestone || 'TBD'}`, 12, 'bold', [13, 110, 253])
-        addText(`Timeline: ${milestone.timeline || 'TBD'}`, 10, 'bold')
-        addText(milestone.description || 'Description to be defined', 10)
-        yPos += 5
-      })
+      // Create milestones table
+      const milestoneHeaders = ['Milestone', 'Timeline', 'Description']
+      const milestoneRows = milestones.map((milestone, msIndex) => [
+        `M${msIndex + 1}: ${milestone?.milestone || 'TBD'}`,
+        milestone?.timeline || 'TBD',
+        (milestone?.description || 'Description to be defined').substring(0, 50) + '...'
+      ])
+      addTable(milestoneHeaders, milestoneRows, 60)
     } else {
-      addText('Key Milestones (Template):', 12, 'bold')
-      phases.forEach((phase, pIndex) => {
-        addText(`Phase ${pIndex + 1} Completion: ${phase.phase} (${phase.duration})`, 10)
-      })
+      addText('Key Milestones (Generated from Phases):', 12, 'bold')
+      // Create phase-based milestones table
+      const phaseHeaders = ['Phase', 'Milestone', 'Duration']
+      const phaseRows = phases.map((phase, pIndex) => [
+        `Phase ${pIndex + 1}`,
+        `${getPhaseDisplayName(phase, pIndex)} Complete`,
+        phase.duration || 'TBD'
+      ])
+      addTable(phaseHeaders, phaseRows, 60)
     }
-    yPos += 10
 
     // 6. TESTING & QUALITY ASSURANCE
-    pageBreak(40)
-    addText('6. QUALITY ASSURANCE & TESTING STRATEGY', 16, 'bold', [220, 53, 69])
-    yPos += 5
+    addSectionDivider()
+    addDecorativeHeader('6. QUALITY ASSURANCE & TESTING STRATEGY', 16, [220, 53, 69])
 
-    addText('Testing Approach:', 12, 'bold')
-    addText('• Unit Testing: Jest/Vitest for component testing', 10)
-    addText('• Integration Testing: API and database integration', 10)
-    addText('• End-to-End Testing: Cypress/Playwright for user flows', 10)
-    addText('• Performance Testing: Load testing for scalability', 10)
-    addText('• Security Testing: Vulnerability scanning', 10)
-    addText('• User Acceptance Testing: Stakeholder validation', 10)
-    yPos += 8
+    addText('Testing Framework Overview:', 12, 'bold')
+    
+    // Testing strategy table
+    const testingHeaders = ['Testing Type', 'Tools/Framework', 'Coverage Target', 'Responsibility']
+    const testingRows = [
+      ['Unit Testing', 'Jest/Vitest', '80%+', 'Developers'],
+      ['Integration Testing', 'Custom/Supertest', '70%+', 'Developers/QA'],
+      ['E2E Testing', 'Cypress/Playwright', 'Critical paths', 'QA Team'],
+      ['Performance Testing', 'JMeter/K6', 'Load benchmarks', 'DevOps/QA'],
+      ['Security Testing', 'OWASP/Snyk', '100% scan', 'Security Team'],
+      ['UAT', 'Manual/TestRail', 'User scenarios', 'Product/Users']
+    ]
+    addTable(testingHeaders, testingRows, 45)
 
-    addText('Quality Gates:', 12, 'bold')
-    addText('• Code review approval required for all changes', 10)
-    addText('• Minimum 80% test coverage requirement', 10)
-    addText('• Performance benchmarks must be met', 10)
-    addText('• Security scan clearance required', 10)
-    yPos += 10
+    addText('Quality Gates Checklist:', 12, 'bold')
+    addText('✓ Code review approval required for all changes', 10)
+    addText('✓ Minimum 80% test coverage requirement', 10)
+    addText('✓ Performance benchmarks must be met', 10)
+    addText('✓ Security scan clearance required', 10)
 
     // 7. DEPLOYMENT PLAN
-    pageBreak(30)
-    addText('7. DEPLOYMENT & OPERATIONS PLAN', 16, 'bold', [220, 53, 69])
-    yPos += 5
+    addSectionDivider()
+    addDecorativeHeader('7. DEPLOYMENT & OPERATIONS PLAN', 16, [220, 53, 69])
 
-    addText('Deployment Strategy:', 12, 'bold')
-    addText('• Blue-Green deployment for zero-downtime updates', 10)
-    addText('• Automated deployment pipeline with rollback capability', 10)
-    addText('• Environment progression: Dev → Staging → Production', 10)
-    addText('• Database migration strategy with backup procedures', 10)
-    yPos += 8
+    addText('Deployment Strategy Overview:', 12, 'bold')
+    
+    // Deployment environments table
+    const deployHeaders = ['Environment', 'Purpose', 'Deployment Method', 'Approval Required']
+    const deployRows = [
+      ['Development', 'Feature development', 'Auto on push', 'Code review'],
+      ['Staging', 'Integration testing', 'Manual trigger', 'QA approval'],
+      ['Production', 'Live system', 'Blue-Green deploy', 'Product owner']
+    ]
+    addTable(deployHeaders, deployRows, 45)
 
-    addText('Monitoring & Maintenance:', 12, 'bold')
+    addText('Operations & Monitoring:', 12, 'bold')
     addText('• Application performance monitoring (APM)', 10)
     addText('• Error tracking and logging system', 10)
     addText('• Automated backup and disaster recovery', 10)
     addText('• Regular security updates and patches', 10)
-    yPos += 10
+    addSectionDivider()
 
     // 8. SUCCESS METRICS & KPIS
-    pageBreak(40)
-    addText('8. SUCCESS METRICS & KPIS', 16, 'bold', [220, 53, 69])
-    yPos += 5
+    addDecorativeHeader('8. SUCCESS METRICS & KPIS', 16, [220, 53, 69])
     
-    addText('Key Performance Indicators:', 12, 'bold')
-    addText('• Project Delivery Metrics:', 11, 'bold')
-    addText('  - On-time delivery percentage (Target: 95%)', 10)
-    addText('  - Budget adherence (Target: within 10% of budget)', 10)
-    addText('  - Scope change requests (Target: < 15% change)', 10)
-    yPos += 5
+    addText('Key Performance Indicators Dashboard:', 12, 'bold')
     
-    addText('• Quality Metrics:', 11, 'bold')
-    addText('  - Code coverage percentage (Target: 80%+)', 10)
-    addText('  - Bug resolution time (Target: < 2 days for critical)', 10)
-    addText('  - Performance benchmarks (Load time < 2 seconds)', 10)
-    yPos += 5
-    
-    addText('• User Adoption Metrics:', 11, 'bold')
-    addText('  - User satisfaction score (Target: 4.5/5)', 10)
-    addText('  - Feature adoption rate (Target: 70% within 30 days)', 10)
-    addText('  - System uptime (Target: 99.9%)', 10)
-    yPos += 10
+    // KPIs table
+    const kpiHeaders = ['Category', 'Metric', 'Target', 'Measurement']
+    const kpiRows = [
+      ['Delivery', 'On-time delivery', '95%+', 'Sprint completion rate'],
+      ['Budget', 'Budget adherence', '±10%', 'Actual vs planned costs'],
+      ['Quality', 'Code coverage', '80%+', 'Automated testing reports'],
+      ['Performance', 'Load time', '<2 seconds', 'APM monitoring'],
+      ['User Adoption', 'Satisfaction score', '4.5/5', 'User surveys'],
+      ['Reliability', 'System uptime', '99.9%+', 'Infrastructure monitoring']
+    ]
+    addTable(kpiHeaders, kpiRows, 45)
 
     // IMMEDIATE NEXT STEPS
-    pageBreak(50)
-    addText('IMMEDIATE NEXT STEPS FOR IMPLEMENTATION', 16, 'bold', [102, 16, 242])
-    yPos += 5
+    addSectionDivider()
+    addDecorativeHeader('IMMEDIATE NEXT STEPS FOR IMPLEMENTATION', 16, [102, 16, 242])
+
+    // Implementation timeline table
+    const timelineHeaders = ['Phase', 'Duration', 'Key Activities', 'Deliverables']
+    const timelineRows = [
+      ['Project Setup', 'Week 1', 'Team assembly, environment setup', 'Dev environment, team structure'],
+      ['Planning', 'Week 2', 'Requirements review, design', 'Wireframes, API specs'],
+      ['Development', 'Week 3+', 'Sprint execution, testing', 'Working software, documentation']
+    ]
+    addTable(timelineHeaders, timelineRows, 45)
 
     addText('Week 1: Project Foundation', 14, 'bold', [25, 135, 84])
-    addText('• Assemble development team and assign roles', 10)
-    addText('• Set up development environments and tools', 10)
-    addText('• Create project repositories and initial structure', 10)
-    addText('• Finalize technical architecture decisions', 10)
-    addText('• Establish communication channels and workflows', 10)
-    yPos += 8
+    addText('✓ Assemble development team and assign roles', 10)
+    addText('✓ Set up development environments and tools', 10)
+    addText('✓ Create project repositories and initial structure', 10)
+    addText('✓ Finalize technical architecture decisions', 10)
+    addText('✓ Establish communication channels and workflows', 10)
+    addSectionDivider()
 
     addText('Week 2: Requirements & Planning', 14, 'bold', [25, 135, 84])
-    addText('• Review and validate all user stories with stakeholders', 10)
-    addText('• Create detailed wireframes and user interface mockups', 10)
-    addText('• Define comprehensive API specifications', 10)
-    addText('• Establish coding standards, guidelines, and best practices', 10)
-    addText('• Set up CI/CD pipeline and deployment processes', 10)
-    yPos += 8
+    addText('✓ Review and validate all user stories with stakeholders', 10)
+    addText('✓ Create detailed wireframes and user interface mockups', 10)
+    addText('✓ Define comprehensive API specifications', 10)
+    addText('✓ Establish coding standards, guidelines, and best practices', 10)
+    addText('✓ Set up CI/CD pipeline and deployment processes', 10)
+    addSectionDivider()
 
-    addText('Week 3+: Sprint Execution', 14, 'bold', [25, 135, 84])
-    addText('• Break down epics into specific development tasks', 10)
-    addText('• Estimate effort using story points or time estimates', 10)
-    addText('• Begin first development sprint with highest priority items', 10)
-    addText('• Establish daily standup and weekly review cadence', 10)
-    addText('• Implement continuous testing and quality assurance', 10)
-
-    // FINAL FOOTER SECTION
-    pageBreak(30)
-    addText('PROJECT READINESS CHECKLIST', 14, 'bold', [220, 53, 69])
-    yPos += 5
+    // FINAL READINESS CHECKLIST
+    addDecorativeHeader('PROJECT READINESS CHECKLIST', 14, [220, 53, 69])
     
-    addText('□ Development team assembled and onboarded', 11)
-    addText('□ Project requirements documented and approved', 11)
-    addText('□ Technical architecture finalized', 11)
-    addText('□ Development environment configured', 11)
-    addText('□ Version control and CI/CD established', 11)
-    addText('□ Quality standards and processes defined', 11)
-    addText('□ Communication channels established', 11)
-    addText('□ First sprint planned and ready to begin', 11)
-    yPos += 10
+    // Readiness checklist table
+    const checklistHeaders = ['Category', 'Requirement', 'Status']
+    const checklistRows = [
+      ['Team', 'Development team assembled', '☐ Pending'],
+      ['Requirements', 'Project requirements documented', '☐ Pending'],
+      ['Architecture', 'Technical architecture finalized', '☐ Pending'],
+      ['Environment', 'Development environment configured', '☐ Pending'],
+      ['Process', 'Version control and CI/CD established', '☐ Pending'],
+      ['Standards', 'Quality standards defined', '☐ Pending'],
+      ['Communication', 'Team channels established', '☐ Pending'],
+      ['Planning', 'First sprint planned', '☐ Pending']
+    ]
+    addTable(checklistHeaders, checklistRows, 60)
     
     addText('For questions or clarification on this roadmap, contact the project team.', 10, 'italic', [128, 128, 128])
     addText('This document should be reviewed and updated regularly as the project progresses.', 10, 'italic', [128, 128, 128])
