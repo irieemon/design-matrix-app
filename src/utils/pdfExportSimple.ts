@@ -6,7 +6,10 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     const doc = new jsPDF()
     let yPos = 20
     const pageH = doc.internal.pageSize.height
+    const pageW = doc.internal.pageSize.width
     const marginL = 20
+    const marginR = 20
+    const contentW = pageW - marginL - marginR
 
     // Simple page break function
     const pageBreak = (space: number) => {
@@ -16,248 +19,391 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
       }
     }
 
-    // Header
-    doc.setFontSize(20)
-    doc.setFont('helvetica', 'bold')
-    const title = project ? `${project.name} - Project Roadmap` : 'AI Project Roadmap'
-    doc.text(title, marginL, yPos)
-    yPos = yPos + 8
-
-    if (project && project.description) {
-      doc.setFontSize(12)
-      doc.setFont('helvetica', 'italic')
-      doc.setTextColor(64, 64, 64)
-      doc.text(project.description, marginL, yPos)
-      yPos = yPos + 6
-      doc.setTextColor(0, 0, 0)
+    // Helper function for wrapped text with proper spacing
+    const addText = (text: string, fontSize: number = 10, fontStyle: string = 'normal', color: number[] = [0, 0, 0]) => {
+      doc.setFontSize(fontSize)
+      doc.setFont('helvetica', fontStyle)
+      doc.setTextColor(color[0], color[1], color[2])
+      const lines = doc.splitTextToSize(text, contentW)
+      doc.text(lines, marginL, yPos)
+      yPos += lines.length * (fontSize * 0.4) + 4
+      return lines.length
     }
 
-    doc.setFontSize(12)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`Analysis of ${ideaCount} ideas • Generated on ${new Date().toLocaleDateString()}`, marginL, yPos)
-    yPos = yPos + 8
-
-    doc.setFontSize(10)
-    doc.setTextColor(64, 64, 64)
-    doc.text(`Total Duration: ${roadmapData.roadmapAnalysis?.totalDuration || 'N/A'}`, marginL, yPos)
-    yPos = yPos + 20
-
-    // Project Phases
-    pageBreak(40)
-    doc.setFontSize(16)
+    // DOCUMENT HEADER
+    doc.setFontSize(22)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text('Implementation Roadmap', marginL, yPos)
-    yPos = yPos + 15
+    const title = project ? `${project.name} - Complete Project Roadmap` : 'Complete Project Roadmap'
+    doc.text(title, marginL, yPos)
+    yPos += 10
 
-    // Process phases
+    // Subtitle
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'italic')
+    doc.setTextColor(64, 64, 64)
+    doc.text('Technical & Business Implementation Guide', marginL, yPos)
+    doc.setTextColor(0, 0, 0)
+    yPos += 15
+
+    if (project && project.description) {
+      addText(`Project Description: ${project.description}`, 11)
+      yPos += 5
+    }
+
+    // Project Overview
+    addText(`Comprehensive Analysis: ${ideaCount} ideas analyzed`, 12, 'bold')
+    addText(`Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 10)
+    addText(`Total Duration: ${roadmapData.roadmapAnalysis?.totalDuration || 'To be determined'}`, 11, 'bold')
+    addText(`Methodology: ${roadmapData.executionStrategy?.methodology || 'Agile Development'}`, 11, 'bold')
+    addText(`Sprint Length: ${roadmapData.executionStrategy?.sprintLength || '2 weeks'}`, 11, 'bold')
+    yPos += 10
+
+    // TABLE OF CONTENTS
+    pageBreak(40)
+    addText('TABLE OF CONTENTS', 16, 'bold', [102, 16, 242])
+    yPos += 5
+    addText('1. Executive Summary', 11)
+    addText('2. Technical Requirements & Architecture', 11)
+    addText('3. Implementation Phases (Detailed)', 11)
+    addText('4. Resource Requirements & Team Structure', 11)
+    addText('5. Risk Management & Mitigation', 11)
+    addText('6. Quality Assurance & Testing Strategy', 11)
+    addText('7. Deployment & Operations Plan', 11)
+    addText('8. Success Metrics & KPIs', 11)
+    yPos += 15
+
+    // 1. EXECUTIVE SUMMARY
+    pageBreak(50)
+    addText('1. EXECUTIVE SUMMARY', 16, 'bold', [220, 53, 69])
+    yPos += 5
+
+    const teamRec = roadmapData.executionStrategy?.teamRecommendations || 'Team structure to be determined based on project requirements'
+    addText('Project Overview:', 12, 'bold')
+    addText(teamRec, 10)
+    yPos += 8
+
+    addText('Key Deliverables:', 12, 'bold')
     const phases = roadmapData.roadmapAnalysis?.phases || []
-    for (let i = 0; i < phases.length; i++) {
-      const phase = phases[i]
-      if (!phase) continue
+    let totalEpics = 0
+    let totalDeliverables = 0
+    phases.forEach(phase => {
+      if (phase.epics) {
+        totalEpics += phase.epics.length
+        phase.epics.forEach(epic => {
+          if (epic.deliverables) totalDeliverables += epic.deliverables.length
+        })
+      }
+    })
+    addText(`• ${phases.length} Development Phases`, 10)
+    addText(`• ${totalEpics} Major Epics/Features`, 10)
+    addText(`• ${totalDeliverables} Specific Deliverables`, 10)
+    yPos += 10
+
+    // 2. TECHNICAL REQUIREMENTS
+    pageBreak(40)
+    addText('2. TECHNICAL REQUIREMENTS & ARCHITECTURE', 16, 'bold', [220, 53, 69])
+    yPos += 5
+
+    addText('Development Stack & Technologies:', 12, 'bold')
+    addText('• Frontend: React.js, TypeScript, Tailwind CSS', 10)
+    addText('• Backend: Node.js/Express or similar', 10)
+    addText('• Database: PostgreSQL/MongoDB', 10)
+    addText('• Authentication: JWT/OAuth', 10)
+    addText('• Deployment: Docker containers, Cloud hosting', 10)
+    addText('• Version Control: Git with feature branch workflow', 10)
+    yPos += 8
+
+    addText('Architecture Considerations:', 12, 'bold')
+    addText('• Microservices vs Monolithic architecture decision needed', 10)
+    addText('• API design following RESTful principles', 10)
+    addText('• Database normalization and indexing strategy', 10)
+    addText('• Caching layer for performance optimization', 10)
+    addText('• Security implementation (HTTPS, data encryption)', 10)
+    yPos += 15
+
+    // 3. DETAILED IMPLEMENTATION PHASES
+    pageBreak(50)
+    addText('3. IMPLEMENTATION PHASES (DETAILED)', 16, 'bold', [220, 53, 69])
+    yPos += 10
+
+    phases.forEach((phase, phaseIndex) => {
+      if (!phase) return
       
       pageBreak(60)
       
-      // Phase Header
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(102, 16, 242)
-      doc.text(`${phase.phase || 'Unknown Phase'} (${phase.duration || 'Unknown Duration'})`, marginL, yPos)
-      doc.setTextColor(0, 0, 0)
-      yPos = yPos + 10
-
+      // Phase Header with detailed info
+      addText(`PHASE ${phaseIndex + 1}: ${phase.phase?.toUpperCase() || 'UNNAMED PHASE'}`, 14, 'bold', [102, 16, 242])
+      addText(`Duration: ${phase.duration || 'TBD'} | Priority: HIGH`, 11, 'bold')
+      yPos += 5
+      
       // Phase Description
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'normal')
-      const description = phase.description || 'No description available'
-      const descLines = doc.splitTextToSize(description, 170)
-      doc.text(descLines, marginL + 5, yPos)
-      yPos = yPos + (descLines.length * 4) + 8
+      addText('Business Objective:', 11, 'bold')
+      addText(phase.description || 'Objective to be defined in project kickoff', 10)
+      yPos += 8
 
-      // Phase Epics
+      // Technical Requirements for Phase
+      addText('Technical Requirements:', 11, 'bold')
       if (phase.epics && phase.epics.length > 0) {
-        doc.setFontSize(12)
-        doc.setFont('helvetica', 'bold')
-        doc.text('Key Epics:', marginL + 5, yPos)
-        yPos = yPos + 8
-
-        for (let j = 0; j < phase.epics.length; j++) {
-          const epic = phase.epics[j]
-          if (!epic) continue
+        phase.epics.forEach((epic, epicIndex) => {
+          if (!epic) return
           
-          pageBreak(25)
+          pageBreak(35)
           
-          // Epic Title
-          doc.setFontSize(11)
-          doc.setFont('helvetica', 'bold')
-          doc.setTextColor(13, 110, 253)
-          const epicTitle = `${j + 1}. ${epic.title || 'Untitled Epic'} (${epic.priority || 'unknown'} priority)`
-          doc.text(epicTitle, marginL + 10, yPos)
-          doc.setTextColor(0, 0, 0)
-          yPos = yPos + 6
-
+          // Epic Header
+          addText(`Epic ${epicIndex + 1}: ${epic.title || 'Untitled Epic'}`, 12, 'bold', [13, 110, 253])
+          addText(`Priority: ${epic.priority || 'Medium'} | Complexity: ${epic.complexity || 'Medium'}`, 10, 'italic')
+          yPos += 3
+          
           // Epic Description
           if (epic.description) {
-            doc.setFontSize(10)
-            doc.setFont('helvetica', 'normal')
-            const epicDescLines = doc.splitTextToSize(epic.description, 160)
-            doc.text(epicDescLines, marginL + 15, yPos)
-            yPos = yPos + (epicDescLines.length * 3) + 4
+            addText('Description:', 10, 'bold')
+            addText(epic.description, 10)
           }
-
-          // User Stories
+          
+          // User Stories (Business Requirements)
           if (epic.userStories && epic.userStories.length > 0) {
-            doc.setFontSize(9)
-            doc.setFont('helvetica', 'bold')
-            doc.text('User Stories:', marginL + 15, yPos)
-            yPos = yPos + 4
-            
-            doc.setFont('helvetica', 'normal')
-            for (let k = 0; k < epic.userStories.length && k < 3; k++) {
-              pageBreak(8)
-              doc.text(`• ${epic.userStories[k]}`, marginL + 20, yPos)
-              yPos = yPos + 4
-            }
-            yPos = yPos + 3
+            pageBreak(15)
+            addText('User Stories (Business Requirements):', 10, 'bold', [25, 135, 84])
+            epic.userStories.forEach((story, storyIndex) => {
+              addText(`${storyIndex + 1}. ${story}`, 9)
+            })
+            yPos += 3
           }
-
-          // Deliverables
+          
+          // Technical Deliverables
           if (epic.deliverables && epic.deliverables.length > 0) {
-            doc.setFontSize(9)
-            doc.setFont('helvetica', 'bold')
-            doc.text('Deliverables:', marginL + 15, yPos)
-            yPos = yPos + 4
-            
-            doc.setFont('helvetica', 'normal')
-            for (let k = 0; k < epic.deliverables.length && k < 3; k++) {
-              pageBreak(8)
-              doc.text(`• ${epic.deliverables[k]}`, marginL + 20, yPos)
-              yPos = yPos + 4
-            }
-            yPos = yPos + 5
+            pageBreak(15)
+            addText('Technical Deliverables:', 10, 'bold', [255, 193, 7])
+            epic.deliverables.forEach((deliverable, delIndex) => {
+              addText(`${delIndex + 1}. ${deliverable}`, 9)
+            })
+            yPos += 3
           }
-        }
+          
+          // Related Ideas/Requirements
+          if (epic.relatedIdeas && epic.relatedIdeas.length > 0) {
+            pageBreak(10)
+            addText('Related Requirements:', 10, 'bold')
+            epic.relatedIdeas.forEach((idea) => {
+              addText(`• ${idea}`, 9)
+            })
+            yPos += 3
+          }
+          
+          yPos += 8
+        })
+      } else {
+        addText('• Technical specifications to be defined during planning phase', 10)
+        addText('• Architecture decisions pending stakeholder review', 10)
+        addText('• Integration requirements need assessment', 10)
+        yPos += 8
       }
 
-      // Risks
+      // Risk Assessment for Phase
       if (phase.risks && phase.risks.length > 0) {
         pageBreak(20)
-        doc.setFontSize(11)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(220, 53, 69)
-        doc.text('Risks:', marginL + 5, yPos)
-        doc.setTextColor(0, 0, 0)
-        yPos = yPos + 8
-
-        doc.setFontSize(10)
-        doc.setFont('helvetica', 'normal')
-        for (let j = 0; j < phase.risks.length && j < 3; j++) {
-          pageBreak(8)
-          doc.text(`• ${phase.risks[j]}`, marginL + 10, yPos)
-          yPos = yPos + 5
-        }
-        yPos = yPos + 5
+        addText('Risk Assessment & Mitigation:', 11, 'bold', [220, 53, 69])
+        phase.risks.forEach((risk, riskIndex) => {
+          addText(`Risk ${riskIndex + 1}: ${risk}`, 10)
+        })
+        yPos += 5
       }
 
-      // Success Criteria
+      // Success Criteria & Acceptance
       if (phase.successCriteria && phase.successCriteria.length > 0) {
         pageBreak(20)
-        doc.setFontSize(11)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(25, 135, 84)
-        doc.text('Success Criteria:', marginL + 5, yPos)
-        doc.setTextColor(0, 0, 0)
-        yPos = yPos + 8
-
-        doc.setFontSize(10)
-        doc.setFont('helvetica', 'normal')
-        for (let j = 0; j < phase.successCriteria.length && j < 3; j++) {
-          pageBreak(8)
-          doc.text(`• ${phase.successCriteria[j]}`, marginL + 10, yPos)
-          yPos = yPos + 5
-        }
+        addText('Success Criteria & Acceptance:', 11, 'bold', [25, 135, 84])
+        phase.successCriteria.forEach((criteria) => {
+          addText(`✓ ${criteria}`, 10)
+        })
       }
 
-      // Add spacing between phases
-      yPos = yPos + 15
-    }
+      // Phase Dependencies
+      addText('Dependencies & Prerequisites:', 11, 'bold')
+      if (phaseIndex === 0) {
+        addText('• Project setup and environment configuration', 10)
+        addText('• Team onboarding and access provisioning', 10)
+        addText('• Requirements finalization and sign-off', 10)
+      } else {
+        addText(`• Successful completion of Phase ${phaseIndex}`, 10)
+        addText('• Code review and quality gate approval', 10)
+        addText('• Stakeholder acceptance of previous deliverables', 10)
+      }
+      
+      yPos += 15
+    })
 
-    // Execution Strategy
+    // 4. RESOURCE REQUIREMENTS
     pageBreak(50)
-    doc.setFontSize(16)
-    doc.setFont('helvetica', 'bold')
-    doc.text('Execution Strategy', marginL, yPos)
-    yPos = yPos + 15
+    addText('4. RESOURCE REQUIREMENTS & TEAM STRUCTURE', 16, 'bold', [220, 53, 69])
+    yPos += 5
 
-    // Methodology
-    doc.setFontSize(12)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(102, 16, 242)
-    doc.text(`Methodology: ${roadmapData.executionStrategy?.methodology || 'N/A'}`, marginL, yPos)
-    doc.setTextColor(0, 0, 0)
-    yPos = yPos + 10
+    addText('Recommended Team Composition:', 12, 'bold')
+    addText('• Product Owner: 1 (full-time)', 10)
+    addText('• Technical Lead/Architect: 1 (full-time)', 10)
+    addText('• Senior Frontend Developer: 1-2 (full-time)', 10)
+    addText('• Backend Developer: 1-2 (full-time)', 10)
+    addText('• UI/UX Designer: 1 (as needed)', 10)
+    addText('• QA Engineer: 1 (full-time)', 10)
+    addText('• DevOps Engineer: 1 (part-time/consultancy)', 10)
+    yPos += 8
 
-    // Sprint Length
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`Sprint Length: ${roadmapData.executionStrategy?.sprintLength || 'N/A'}`, marginL, yPos)
-    yPos = yPos + 15
+    addText('Infrastructure & Tools Required:', 12, 'bold')
+    addText('• Development environments (local + staging)', 10)
+    addText('• Version control system (GitHub/GitLab)', 10)
+    addText('• CI/CD pipeline setup', 10)
+    addText('• Project management tools (Jira/Linear)', 10)
+    addText('• Communication tools (Slack/Teams)', 10)
+    addText('• Code review and quality gates', 10)
+    yPos += 10
 
-    // Team Recommendations
-    pageBreak(20)
-    doc.setFontSize(12)
-    doc.setFont('helvetica', 'bold')
-    doc.text('Team Recommendations', marginL, yPos)
-    yPos = yPos + 8
-
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'normal')
-    const teamRec = roadmapData.executionStrategy?.teamRecommendations || 'No team recommendations available'
-    const teamRecLines = doc.splitTextToSize(teamRec, 170)
-    doc.text(teamRecLines, marginL + 5, yPos)
-    yPos = yPos + (teamRecLines.length * 4) + 15
-
-    // Key Milestones
-    pageBreak(30)
-    doc.setFontSize(12)
-    doc.setFont('helvetica', 'bold')
-    doc.text('Key Milestones', marginL, yPos)
-    yPos = yPos + 10
+    // 5. KEY MILESTONES
+    pageBreak(40)
+    addText('5. KEY MILESTONES & DELIVERABLES', 16, 'bold', [220, 53, 69])
+    yPos += 5
 
     const milestones = roadmapData.executionStrategy?.keyMilestones || []
-    for (let i = 0; i < milestones.length; i++) {
-      const milestone = milestones[i]
-      if (!milestone) continue
-      
-      pageBreak(15)
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(13, 110, 253)
-      doc.text(`${i + 1}. ${milestone.milestone || 'Untitled Milestone'} (${milestone.timeline || 'Unknown Timeline'})`, marginL + 5, yPos)
-      doc.setTextColor(0, 0, 0)
-      yPos = yPos + 6
-
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      const milestoneDesc = milestone.description || 'No description available'
-      const milestoneLines = doc.splitTextToSize(milestoneDesc, 160)
-      doc.text(milestoneLines, marginL + 10, yPos)
-      yPos = yPos + (milestoneLines.length * 3) + 8
+    if (milestones.length > 0) {
+      milestones.forEach((milestone, msIndex) => {
+        if (!milestone) return
+        pageBreak(15)
+        addText(`Milestone ${msIndex + 1}: ${milestone.milestone || 'TBD'}`, 12, 'bold', [13, 110, 253])
+        addText(`Timeline: ${milestone.timeline || 'TBD'}`, 10, 'bold')
+        addText(milestone.description || 'Description to be defined', 10)
+        yPos += 5
+      })
+    } else {
+      addText('Key Milestones (Template):', 12, 'bold')
+      phases.forEach((phase, pIndex) => {
+        addText(`Phase ${pIndex + 1} Completion: ${phase.phase} (${phase.duration})`, 10)
+      })
     }
+    yPos += 10
 
-    // Footer
+    // 6. TESTING & QUALITY ASSURANCE
+    pageBreak(40)
+    addText('6. QUALITY ASSURANCE & TESTING STRATEGY', 16, 'bold', [220, 53, 69])
+    yPos += 5
+
+    addText('Testing Approach:', 12, 'bold')
+    addText('• Unit Testing: Jest/Vitest for component testing', 10)
+    addText('• Integration Testing: API and database integration', 10)
+    addText('• End-to-End Testing: Cypress/Playwright for user flows', 10)
+    addText('• Performance Testing: Load testing for scalability', 10)
+    addText('• Security Testing: Vulnerability scanning', 10)
+    addText('• User Acceptance Testing: Stakeholder validation', 10)
+    yPos += 8
+
+    addText('Quality Gates:', 12, 'bold')
+    addText('• Code review approval required for all changes', 10)
+    addText('• Minimum 80% test coverage requirement', 10)
+    addText('• Performance benchmarks must be met', 10)
+    addText('• Security scan clearance required', 10)
+    yPos += 10
+
+    // 7. DEPLOYMENT PLAN
+    pageBreak(30)
+    addText('7. DEPLOYMENT & OPERATIONS PLAN', 16, 'bold', [220, 53, 69])
+    yPos += 5
+
+    addText('Deployment Strategy:', 12, 'bold')
+    addText('• Blue-Green deployment for zero-downtime updates', 10)
+    addText('• Automated deployment pipeline with rollback capability', 10)
+    addText('• Environment progression: Dev → Staging → Production', 10)
+    addText('• Database migration strategy with backup procedures', 10)
+    yPos += 8
+
+    addText('Monitoring & Maintenance:', 12, 'bold')
+    addText('• Application performance monitoring (APM)', 10)
+    addText('• Error tracking and logging system', 10)
+    addText('• Automated backup and disaster recovery', 10)
+    addText('• Regular security updates and patches', 10)
+    yPos += 10
+
+    // 8. SUCCESS METRICS & KPIS
+    pageBreak(40)
+    addText('8. SUCCESS METRICS & KPIS', 16, 'bold', [220, 53, 69])
+    yPos += 5
+    
+    addText('Key Performance Indicators:', 12, 'bold')
+    addText('• Project Delivery Metrics:', 11, 'bold')
+    addText('  - On-time delivery percentage (Target: 95%)', 10)
+    addText('  - Budget adherence (Target: within 10% of budget)', 10)
+    addText('  - Scope change requests (Target: < 15% change)', 10)
+    yPos += 5
+    
+    addText('• Quality Metrics:', 11, 'bold')
+    addText('  - Code coverage percentage (Target: 80%+)', 10)
+    addText('  - Bug resolution time (Target: < 2 days for critical)', 10)
+    addText('  - Performance benchmarks (Load time < 2 seconds)', 10)
+    yPos += 5
+    
+    addText('• User Adoption Metrics:', 11, 'bold')
+    addText('  - User satisfaction score (Target: 4.5/5)', 10)
+    addText('  - Feature adoption rate (Target: 70% within 30 days)', 10)
+    addText('  - System uptime (Target: 99.9%)', 10)
+    yPos += 10
+
+    // IMMEDIATE NEXT STEPS
+    pageBreak(50)
+    addText('IMMEDIATE NEXT STEPS FOR IMPLEMENTATION', 16, 'bold', [102, 16, 242])
+    yPos += 5
+
+    addText('Week 1: Project Foundation', 14, 'bold', [25, 135, 84])
+    addText('• Assemble development team and assign roles', 10)
+    addText('• Set up development environments and tools', 10)
+    addText('• Create project repositories and initial structure', 10)
+    addText('• Finalize technical architecture decisions', 10)
+    addText('• Establish communication channels and workflows', 10)
+    yPos += 8
+
+    addText('Week 2: Requirements & Planning', 14, 'bold', [25, 135, 84])
+    addText('• Review and validate all user stories with stakeholders', 10)
+    addText('• Create detailed wireframes and user interface mockups', 10)
+    addText('• Define comprehensive API specifications', 10)
+    addText('• Establish coding standards, guidelines, and best practices', 10)
+    addText('• Set up CI/CD pipeline and deployment processes', 10)
+    yPos += 8
+
+    addText('Week 3+: Sprint Execution', 14, 'bold', [25, 135, 84])
+    addText('• Break down epics into specific development tasks', 10)
+    addText('• Estimate effort using story points or time estimates', 10)
+    addText('• Begin first development sprint with highest priority items', 10)
+    addText('• Establish daily standup and weekly review cadence', 10)
+    addText('• Implement continuous testing and quality assurance', 10)
+
+    // FINAL FOOTER SECTION
+    pageBreak(30)
+    addText('PROJECT READINESS CHECKLIST', 14, 'bold', [220, 53, 69])
+    yPos += 5
+    
+    addText('□ Development team assembled and onboarded', 11)
+    addText('□ Project requirements documented and approved', 11)
+    addText('□ Technical architecture finalized', 11)
+    addText('□ Development environment configured', 11)
+    addText('□ Version control and CI/CD established', 11)
+    addText('□ Quality standards and processes defined', 11)
+    addText('□ Communication channels established', 11)
+    addText('□ First sprint planned and ready to begin', 11)
+    yPos += 10
+    
+    addText('For questions or clarification on this roadmap, contact the project team.', 10, 'italic', [128, 128, 128])
+    addText('This document should be reviewed and updated regularly as the project progresses.', 10, 'italic', [128, 128, 128])
+
+    // Footer on all pages
     const totalPages = doc.getNumberOfPages()
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i)
       doc.setFontSize(8)
       doc.setTextColor(128, 128, 128)
-      doc.text(`Generated by Prioritas AI • Page ${i} of ${totalPages}`, marginL, pageH - 10)
-      doc.text(new Date().toLocaleDateString(), 180, pageH - 10)
+      doc.text(`Generated by Prioritas AI • Comprehensive Project Roadmap`, marginL, pageH - 15)
+      doc.text(`Page ${i} of ${totalPages} • ${new Date().toLocaleDateString()}`, marginL, pageH - 10)
+      doc.text('CONFIDENTIAL - For Internal Use Only', pageW - marginR - 80, pageH - 10)
     }
 
     // Save the PDF
     const projectPrefix = project ? `${project.name.replace(/[^a-zA-Z0-9]/g, '_')}_` : ''
-    const fileName = `${projectPrefix}Project_Roadmap_${new Date().toISOString().split('T')[0]}.pdf`
+    const fileName = `${projectPrefix}Complete_Project_Roadmap_${new Date().toISOString().split('T')[0]}.pdf`
     doc.save(fileName)
     
   } catch (error) {
