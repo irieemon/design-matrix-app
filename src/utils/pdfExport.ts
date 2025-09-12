@@ -359,7 +359,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
 
   doc.setFontSize(10)
   doc.setTextColor(64, 64, 64)
-  doc.text(`Total Duration: ${roadmapData.roadmapAnalysis.totalDuration}`, marginLeft, yPosition)
+  doc.text(`Total Duration: ${roadmapData.roadmapAnalysis?.totalDuration || 'N/A'}`, marginLeft, yPosition)
   yPosition += 20
 
   // Project Phases
@@ -377,18 +377,18 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     doc.setFontSize(14)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(102, 16, 242) // Purple
-    doc.text(`${phase.phase} (${phase.duration})`, marginLeft, yPosition)
+    doc.text(`${phase?.phase || 'Unknown Phase'} (${phase?.duration || 'Unknown Duration'})`, marginLeft, yPosition)
     doc.setTextColor(0, 0, 0)
     yPosition += 10
 
     // Phase Description
     doc.setFontSize(11)
     doc.setFont('helvetica', 'normal')
-    const descHeight = addWrappedText(phase.description, marginLeft + 5, yPosition, contentWidth - 5, 11)
+    const descHeight = addWrappedText(phase?.description || 'No description available', marginLeft + 5, yPosition, contentWidth - 5, 11)
     yPosition += descHeight + 10
 
     // Phase Epics
-    if (phase.epics && (phase.epics || []).length > 0) {
+    if (phase?.epics && (phase.epics || []).length > 0) {
       doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
       doc.text('Key Epics:', marginLeft + 5, yPosition)
@@ -401,21 +401,21 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
         doc.setFontSize(11)
         doc.setFont('helvetica', 'bold')
         doc.setTextColor(13, 110, 253) // Blue
-        const epicTitle = `${epicIndex + 1}. ${epic.title} (${epic.priority} priority)`
+        const epicTitle = `${epicIndex + 1}. ${epic?.title || 'Untitled Epic'} (${epic?.priority || 'unknown'} priority)`
         const epicTitleHeight = addWrappedText(epicTitle, marginLeft + 10, yPosition, contentWidth - 15, 11)
         yPosition += epicTitleHeight + 4
         doc.setTextColor(0, 0, 0)
 
         // Epic Description
-        if (epic.description) {
+        if (epic?.description) {
           doc.setFontSize(10)
           doc.setFont('helvetica', 'normal')
-          const epicDescHeight = addWrappedText(epic.description, marginLeft + 15, yPosition, contentWidth - 20)
+          const epicDescHeight = addWrappedText(epic?.description || '', marginLeft + 15, yPosition, contentWidth - 20)
           yPosition += epicDescHeight + 6
         }
 
         // User Stories
-        if (epic.userStories && (epic.userStories || []).length > 0) {
+        if (epic?.userStories && (epic.userStories || []).length > 0) {
           doc.setFontSize(9)
           doc.setFont('helvetica', 'bold')
           doc.text('User Stories:', marginLeft + 15, yPosition)
@@ -431,7 +431,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
         }
 
         // Deliverables
-        if (epic.deliverables && (epic.deliverables || []).length > 0) {
+        if (epic?.deliverables && (epic.deliverables || []).length > 0) {
           doc.setFontSize(9)
           doc.setFont('helvetica', 'bold')
           doc.text('Deliverables:', marginLeft + 15, yPosition)
@@ -449,7 +449,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     }
 
     // Risks
-    if (phase.risks && (phase.risks || []).length > 0) {
+    if (phase?.risks && (phase.risks || []).length > 0) {
       checkPageBreak(20)
       doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
@@ -469,7 +469,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     }
 
     // Success Criteria
-    if (phase.successCriteria && (phase.successCriteria || []).length > 0) {
+    if (phase?.successCriteria && (phase.successCriteria || []).length > 0) {
       checkPageBreak(20)
       doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
@@ -502,14 +502,14 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(102, 16, 242) // Purple
-  doc.text(`Methodology: ${roadmapData.executionStrategy.methodology}`, marginLeft, yPosition)
+  doc.text(`Methodology: ${roadmapData.executionStrategy?.methodology || 'N/A'}`, marginLeft, yPosition)
   doc.setTextColor(0, 0, 0)
   yPosition += 10
 
   // Sprint Length
   doc.setFontSize(11)
   doc.setFont('helvetica', 'normal')
-  doc.text(`Sprint Length: ${roadmapData.executionStrategy.sprintLength}`, marginLeft, yPosition)
+  doc.text(`Sprint Length: ${roadmapData.executionStrategy?.sprintLength || 'N/A'}`, marginLeft, yPosition)
   yPosition += 15
 
   // Team Recommendations
@@ -521,7 +521,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  const teamRecHeight = addWrappedText(roadmapData.executionStrategy.teamRecommendations, marginLeft + 5, yPosition, contentWidth - 5)
+  const teamRecHeight = addWrappedText(roadmapData.executionStrategy?.teamRecommendations || 'No team recommendations available', marginLeft + 5, yPosition, contentWidth - 5)
   yPosition += teamRecHeight + 15
 
   // Key Milestones
@@ -536,13 +536,13 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(13, 110, 253) // Blue
-    doc.text(`${index + 1}. ${milestone.milestone} (${milestone.timeline})`, marginLeft + 5, yPosition)
+    doc.text(`${index + 1}. ${milestone?.milestone || 'Untitled Milestone'} (${milestone?.timeline || 'Unknown Timeline'})`, marginLeft + 5, yPosition)
     doc.setTextColor(0, 0, 0)
     yPosition += 6
 
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
-    const milestoneHeight = addWrappedText(milestone.description, marginLeft + 10, yPosition, contentWidth - 15)
+    const milestoneHeight = addWrappedText(milestone?.description || 'No description available', marginLeft + 10, yPosition, contentWidth - 15)
     yPosition += milestoneHeight + 8
   })
 
