@@ -16,7 +16,7 @@ export const exportToCSV = (ideas: IdeaCard[]): void => {
 
   const csvContent = [
     headers.join(','),
-    ...ideas.map(idea => [
+    ...(ideas || []).map(idea => [
       idea.id,
       `"${idea.content.replace(/"/g, '""')}"`, // Escape quotes
       `"${idea.details.replace(/"/g, '""')}"`,

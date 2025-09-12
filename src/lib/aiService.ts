@@ -127,7 +127,7 @@ class SecureAIService {
       const data = await response.json()
       
       if (data.ideas && data.ideas.length > 0) {
-        return data.ideas.map((idea: any, index: number) => ({
+        return (data.ideas || []).map((idea: any, index: number) => ({
           id: `ai-${Date.now()}-${index}`,
           content: idea.title,
           details: idea.description,
@@ -341,7 +341,7 @@ class SecureAIService {
       { title: 'User Feedback System', description: 'In-app feedback collection and management', quadrant: 'fill-ins', category: 'User Experience' }
     ]
 
-    return ideas.slice(0, count).map((idea, index) => ({
+    return (ideas || []).slice(0, count).map((idea, index) => ({
       id: `mock-${Date.now()}-${index}`,
       content: idea.title,
       details: idea.description,

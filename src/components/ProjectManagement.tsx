@@ -179,7 +179,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
           setProjects(prev => prev.filter(p => p.id !== projectId))
           if (currentProject?.id === projectId) {
             // If deleting current project, need to handle this in parent
-            onProjectSelect(projects.find(p => p.id !== projectId) || null as any)
+            onProjectSelect((projects || []).find(p => p.id !== projectId) || null as any)
           }
         }
       } catch (error) {
