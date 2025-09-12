@@ -95,7 +95,7 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number,
   doc.text('Key Insights', marginLeft, yPosition)
   yPosition += 10
 
-  insights.keyInsights.forEach((item, index) => {
+  (insights.keyInsights || []).forEach((item, index) => {
     checkPageBreak(25)
     doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
@@ -127,7 +127,7 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number,
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  insights.priorityRecommendations.immediate.forEach((item) => {
+  (insights.priorityRecommendations.immediate || []).forEach((item) => {
     checkPageBreak(15)
     const itemHeight = addWrappedText(`• ${item}`, marginLeft + 5, yPosition, contentWidth - 5)
     yPosition += itemHeight + 3
@@ -145,7 +145,7 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number,
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  insights.priorityRecommendations.shortTerm.forEach((item) => {
+  (insights.priorityRecommendations.shortTerm || []).forEach((item) => {
     checkPageBreak(15)
     const itemHeight = addWrappedText(`• ${item}`, marginLeft + 5, yPosition, contentWidth - 5)
     yPosition += itemHeight + 3
@@ -163,7 +163,7 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number,
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  insights.priorityRecommendations.longTerm.forEach((item) => {
+  (insights.priorityRecommendations.longTerm || []).forEach((item) => {
     checkPageBreak(15)
     const itemHeight = addWrappedText(`• ${item}`, marginLeft + 5, yPosition, contentWidth - 5)
     yPosition += itemHeight + 3
@@ -187,7 +187,7 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number,
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  insights.riskAssessment.highRisk.forEach((risk) => {
+  (insights.riskAssessment.highRisk || []).forEach((risk) => {
     checkPageBreak(15)
     const riskHeight = addWrappedText(`• ${risk}`, marginLeft + 5, yPosition, contentWidth - 5)
     yPosition += riskHeight + 3
@@ -205,7 +205,7 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number,
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  insights.riskAssessment.opportunities.forEach((opportunity) => {
+  (insights.riskAssessment.opportunities || []).forEach((opportunity) => {
     checkPageBreak(15)
     const oppHeight = addWrappedText(`• ${opportunity}`, marginLeft + 5, yPosition, contentWidth - 5)
     yPosition += oppHeight + 3
@@ -219,7 +219,7 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number,
   doc.text('Implementation Roadmap', marginLeft, yPosition)
   yPosition += 15
 
-  insights.suggestedRoadmap.forEach((phase) => {
+  (insights.suggestedRoadmap || []).forEach((phase) => {
     checkPageBreak(30)
     doc.setFontSize(12)
     doc.setFont('helvetica', 'bold')
@@ -289,7 +289,7 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number,
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  insights.nextSteps.forEach((step, index) => {
+  (insights.nextSteps || []).forEach((step, index) => {
     checkPageBreak(15)
     const stepHeight = addWrappedText(`${index + 1}. ${step}`, marginLeft + 5, yPosition, contentWidth - 5)
     yPosition += stepHeight + 5
