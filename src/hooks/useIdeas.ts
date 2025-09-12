@@ -27,24 +27,18 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
   const [ideas, setIdeas] = useState<IdeaCard[]>([])
   const { currentUser, currentProject, setShowAddModal, setShowAIModal, setEditingIdea } = options
   
-  // Debug logging for ideas state changes
-  useEffect(() => {
-    console.log('🔍 useIdeas - ideas state changed:', ideas, 'type:', typeof ideas, 'isArray:', Array.isArray(ideas), 'length:', ideas?.length)
-  }, [ideas])
 
   const loadIdeas = useCallback(async (projectId?: string) => {
     if (projectId) {
       logger.debug('📂 Loading ideas for project:', projectId)
       const ideas = await DatabaseService.getProjectIdeas(projectId)
       logger.debug('📋 Raw ideas returned from database:', ideas)
-      console.log('🔍 loadIdeas - ideas from database:', ideas, 'type:', typeof ideas, 'isArray:', Array.isArray(ideas))
       setIdeas(ideas)
       logger.debug('✅ Loaded', ideas.length, 'ideas for project', projectId)
       logger.debug('📋 Ideas details:', (ideas || []).map(i => ({ id: i.id, content: i.content, project_id: i.project_id })))
     } else {
       // If no project is selected, show no ideas
       logger.debug('📂 No project selected, clearing ideas')
-      console.log('🔍 loadIdeas - setting ideas to empty array')
       setIdeas([])
     }
   }, [])

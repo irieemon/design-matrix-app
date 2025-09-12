@@ -312,14 +312,6 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number,
 }
 
 export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, project: Project | null = null) => {
-  console.log('🔍 exportRoadmapToPDF called with:', {
-    roadmapData: roadmapData,
-    roadmapDataType: typeof roadmapData,
-    ideaCount: ideaCount,
-    ideaCountType: typeof ideaCount,
-    project: project
-  })
-  
   const doc = new jsPDF()
   let yPosition = 20
   const pageHeight = doc.internal.pageSize.height
@@ -330,7 +322,6 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
 
   // Helper function to check if we need a new page
   const checkPageBreak = (requiredSpace = 15) => {
-    console.log('🔍 checkPageBreak called with:', requiredSpace, 'type:', typeof requiredSpace)
     if (yPosition + requiredSpace > pageHeight - 20) {
       doc.addPage()
       yPosition = 20
@@ -372,38 +363,12 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
   yPosition += 20
 
   // Project Phases
-  console.log('🔍 About to call checkPageBreak(40)')
   checkPageBreak(40)
-  console.log('🔍 checkPageBreak(40) completed successfully')
-  console.log('🔍 About to call doc.setFontSize(16)', { doc: typeof doc, setFontSize: typeof doc.setFontSize })
-  try {
-    doc.setFontSize(16)
-    console.log('🔍 doc.setFontSize(16) succeeded')
-  } catch (error) {
-    console.error('🔍 doc.setFontSize(16) failed:', error)
-    console.log('🔍 Trying alternative: doc.setFontSize("16")')
-    try {
-      doc.setFontSize("16")
-      console.log('🔍 doc.setFontSize("16") with string succeeded')
-    } catch (error2) {
-      console.error('🔍 Even string version failed:', error2)
-      throw error
-    }
-  }
-  console.log('🔍 About to call doc.setFont("helvetica", "bold")', { setFont: typeof doc.setFont })
-  try {
-    doc.setFont('helvetica', 'bold')
-    console.log('🔍 doc.setFont succeeded')
-  } catch (error) {
-    console.error('🔍 doc.setFont failed:', error)
-    throw error
-  }
-  console.log('🔍 About to call doc.setTextColor(0, 0, 0)', { setTextColor: typeof doc.setTextColor })
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
   doc.text('Implementation Roadmap', marginLeft, yPosition)
-  console.log('🔍 About to add 15 to yPosition:', { yPosition: yPosition, yPositionType: typeof yPosition })
   yPosition += 15
-  console.log('🔍 Successfully added 15 to yPosition, new value:', yPosition)
 
   (roadmapData.roadmapAnalysis?.phases || []).forEach((phase: any, _index: number) => {
     checkPageBreak(60)

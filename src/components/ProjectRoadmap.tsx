@@ -151,17 +151,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   }
 
   const handleExportToPDF = () => {
-    console.log('🔍 ProjectRoadmap handleExportToPDF called:', {
-      roadmapData: roadmapData,
-      roadmapDataType: typeof roadmapData,
-      ideas: ideas,
-      ideasType: typeof ideas,
-      ideasLength: (ideas || []).length,
-      currentProject: currentProject
-    })
-    
     if (roadmapData && currentProject && roadmapData.roadmapAnalysis && roadmapData.executionStrategy) {
-      console.log('🔍 About to call exportRoadmapToPDF with:', roadmapData as ProjectRoadmapType['roadmap_data'], (ideas || []).length, currentProject)
       exportRoadmapToPDF(roadmapData as ProjectRoadmapType['roadmap_data'], (ideas || []).length, currentProject)
     }
   }
