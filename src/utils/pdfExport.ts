@@ -330,6 +330,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
 
   // Helper function to check if we need a new page
   const checkPageBreak = (requiredSpace = 15) => {
+    console.log('🔍 checkPageBreak called with:', requiredSpace, 'type:', typeof requiredSpace)
     if (yPosition + requiredSpace > pageHeight - 20) {
       doc.addPage()
       yPosition = 20
@@ -371,6 +372,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
   yPosition += 20
 
   // Project Phases
+  console.log('🔍 About to call checkPageBreak(40)')
   checkPageBreak(40)
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
