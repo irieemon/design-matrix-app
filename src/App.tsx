@@ -37,7 +37,6 @@ function App() {
     setEditingIdea
   })
   
-  console.log('🔍 App render - ideas from useIdeas:', ideas, 'type:', typeof ideas, 'isArray:', Array.isArray(ideas), 'length:', ideas?.length)
 
 
 
