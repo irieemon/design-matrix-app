@@ -321,7 +321,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
   const contentWidth = pageWidth - marginLeft - marginRight
 
   // Helper function to check if we need a new page
-  const checkPageBreak = (requiredSpace = 15) => {
+  const checkPageBreak = (requiredSpace: number = 15) => {
     if (yPosition + requiredSpace > pageHeight - 20) {
       doc.addPage()
       yPosition = 20
