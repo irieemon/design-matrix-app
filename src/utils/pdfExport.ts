@@ -374,6 +374,8 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
   // Project Phases
   console.log('🔍 About to call checkPageBreak(40)')
   checkPageBreak(40)
+  console.log('🔍 checkPageBreak(40) completed successfully')
+  console.log('🔍 About to call doc.setFontSize(16)', { doc: typeof doc, setFontSize: typeof doc.setFontSize })
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
