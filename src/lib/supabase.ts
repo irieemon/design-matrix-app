@@ -268,7 +268,7 @@ const getCollaboratorProjectIds = async (userId: string): Promise<string[]> => {
     .not('accepted_at', 'is', null)
   
   if (error) return []
-  return data.map(item => item.project_id)
+  return (data || []).map(item => item.project_id)
 }
 
 export const getUserProjectRole = async (projectId: string, userId: string) => {
@@ -320,7 +320,7 @@ export const getUserTeams = async (userId: string) => {
     throw error
   }
   
-  return data.map(member => ({
+  return (data || []).map(member => ({
     ...member.team,
     user_role: member.role
   }))
