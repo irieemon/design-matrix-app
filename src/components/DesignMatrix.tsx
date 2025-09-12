@@ -76,7 +76,7 @@ const DesignMatrix: React.FC<DesignMatrixProps> = ({ ideas, activeId, currentUse
 
 
         {/* Idea Cards */}
-        {ideas.map((idea) => {
+        {(ideas || []).map((idea) => {
           // Use direct pixel positions with 40px padding offset
           const x = idea.x + 40  // Add padding offset
           const y = idea.y + 40  // Add padding offset
@@ -105,7 +105,7 @@ const DesignMatrix: React.FC<DesignMatrixProps> = ({ ideas, activeId, currentUse
         })}
 
         {/* Empty State */}
-        {ideas.length === 0 && (
+        {(ideas || []).length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
               <div className="text-gray-400 text-4xl mb-4">💡</div>

@@ -114,10 +114,10 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
             {/* Modern Statistics */}
             <div className="mt-10 grid grid-cols-1 md:grid-cols-4 gap-6">
               {[
-                { label: 'Total Ideas', value: ideas.length, color: 'slate', bgColor: 'bg-slate-50', textColor: 'text-slate-600', valueColor: 'text-slate-900', icon: Lightbulb },
-                { label: 'Quick Wins', value: ideas.filter(i => i.x <= 260 && i.y < 260).length, color: 'emerald', bgColor: 'bg-emerald-50', textColor: 'text-emerald-600', valueColor: 'text-emerald-900', icon: Target },
-                { label: 'Strategic', value: ideas.filter(i => i.x > 260 && i.y < 260).length, color: 'blue', bgColor: 'bg-blue-50', textColor: 'text-blue-600', valueColor: 'text-blue-900', icon: Target },
-                { label: 'Avoid', value: ideas.filter(i => i.x > 260 && i.y >= 260).length, color: 'red', bgColor: 'bg-red-50', textColor: 'text-red-600', valueColor: 'text-red-900', icon: Target }
+                { label: 'Total Ideas', value: (ideas || []).length, color: 'slate', bgColor: 'bg-slate-50', textColor: 'text-slate-600', valueColor: 'text-slate-900', icon: Lightbulb },
+                { label: 'Quick Wins', value: (ideas || []).filter(i => i.x <= 260 && i.y < 260).length, color: 'emerald', bgColor: 'bg-emerald-50', textColor: 'text-emerald-600', valueColor: 'text-emerald-900', icon: Target },
+                { label: 'Strategic', value: (ideas || []).filter(i => i.x > 260 && i.y < 260).length, color: 'blue', bgColor: 'bg-blue-50', textColor: 'text-blue-600', valueColor: 'text-blue-900', icon: Target },
+                { label: 'Avoid', value: (ideas || []).filter(i => i.x > 260 && i.y >= 260).length, color: 'red', bgColor: 'bg-red-50', textColor: 'text-red-600', valueColor: 'text-red-900', icon: Target }
               ].map((stat, index) => (
                 <div key={index} className={`${stat.bgColor} rounded-2xl p-6 border border-${stat.color}-200/60 shadow-sm hover:shadow-md transition-shadow`}>
                   <div className="flex items-center justify-between mb-4">
