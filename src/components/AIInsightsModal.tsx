@@ -3,7 +3,7 @@ import { X, Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Calendar, 
 import { IdeaCard, Project } from '../types'
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
-import { exportInsightsToPDF } from '../utils/pdfExport'
+import { exportInsightsToPDF } from '../utils/pdfExportSimple'
 import { logger } from '../utils/logger'
 
 interface AIInsightsModalProps {

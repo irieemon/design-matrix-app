@@ -3,7 +3,7 @@ import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, Arr
 import { Project, IdeaCard, ProjectRoadmap as ProjectRoadmapType } from '../types'
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
-import { exportRoadmapToPDF } from '../utils/pdfExport'
+import { exportRoadmapToPDF } from '../utils/pdfExportSimple'
 import { logger } from '../utils/logger'
 
 interface ProjectRoadmapProps {

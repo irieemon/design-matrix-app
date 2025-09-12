@@ -1,4 +1,3 @@
-// @ts-nocheck
 import jsPDF from 'jspdf'
 import { Project, RoadmapData } from '../types'
 
