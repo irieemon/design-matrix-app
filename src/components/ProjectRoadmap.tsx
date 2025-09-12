@@ -151,8 +151,8 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   }
 
   const handleExportToPDF = () => {
-    if (roadmapData && currentProject) {
-      exportRoadmapToPDF(roadmapData, ideas.length, currentProject)
+    if (roadmapData && currentProject && roadmapData.roadmapAnalysis && roadmapData.executionStrategy) {
+      exportRoadmapToPDF(roadmapData as ProjectRoadmapType['roadmap_data'], ideas.length, currentProject)
     }
   }
 
@@ -422,10 +422,10 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                             <div>
                               <h4 className="font-medium text-slate-900 mb-3 flex items-center space-x-2">
                                 <Lightbulb className="w-4 h-4" />
-                                <span>Epics ({phase.epics.length})</span>
+                                <span>Epics ({phase.epics?.length || 0})</span>
                               </h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {phase.epics.map((epic, epicIndex) => (
+                                {(phase.epics || []).map((epic, epicIndex) => (
                                   <div key={epicIndex} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
                                     <div className="flex items-start justify-between mb-3">
                                       <h5 className="font-medium text-slate-900">{epic.title}</h5>
@@ -445,7 +445,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                                     <div className="mb-3">
                                       <p className="text-xs font-medium text-slate-700 mb-1">User Stories:</p>
                                       <ul className="text-xs text-slate-600 space-y-1">
-                                        {epic.userStories.map((story, storyIndex) => (
+                                        {(epic.userStories || []).map((story, storyIndex) => (
                                           <li key={storyIndex} className="flex items-start space-x-1">
                                             <span className="text-slate-400">•</span>
                                             <span>{story}</span>
@@ -458,7 +458,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                                     <div className="mb-3">
                                       <p className="text-xs font-medium text-slate-700 mb-1">Deliverables:</p>
                                       <div className="flex flex-wrap gap-1">
-                                        {epic.deliverables.map((deliverable, deliverableIndex) => (
+                                        {(epic.deliverables || []).map((deliverable, deliverableIndex) => (
                                           <span 
                                             key={deliverableIndex}
                                             className="bg-white text-slate-700 px-2 py-1 rounded text-xs border border-slate-200"
@@ -470,11 +470,11 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                                     </div>
                                     
                                     {/* Related Ideas */}
-                                    {epic.relatedIdeas.length > 0 && (
+                                    {(epic.relatedIdeas || []).length > 0 && (
                                       <div>
                                         <p className="text-xs font-medium text-slate-700 mb-1">Related Ideas:</p>
                                         <div className="flex flex-wrap gap-1">
-                                          {epic.relatedIdeas.map((idea, ideaIndex) => (
+                                          {(epic.relatedIdeas || []).map((idea, ideaIndex) => (
                                             <span 
                                               key={ideaIndex}
                                               className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs"
@@ -498,7 +498,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                                   <span>Risks</span>
                                 </h4>
                                 <ul className="text-sm text-red-800 space-y-1">
-                                  {phase.risks.map((risk, riskIndex) => (
+                                  {(phase.risks || []).map((risk, riskIndex) => (
                                     <li key={riskIndex} className="flex items-start space-x-1">
                                       <span className="text-red-400">•</span>
                                       <span>{risk}</span>
@@ -513,7 +513,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                                   <span>Success Criteria</span>
                                 </h4>
                                 <ul className="text-sm text-green-800 space-y-1">
-                                  {phase.successCriteria.map((criteria, criteriaIndex) => (
+                                  {(phase.successCriteria || []).map((criteria, criteriaIndex) => (
                                     <li key={criteriaIndex} className="flex items-start space-x-1">
                                       <span className="text-green-400">•</span>
                                       <span>{criteria}</span>
