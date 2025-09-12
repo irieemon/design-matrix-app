@@ -232,13 +232,13 @@ export const exportInsightsToPDF = (insights: InsightsReport, ideaCount: number,
     const focusHeight = addWrappedText(phase.focus, marginLeft + 5, yPosition, contentWidth - 5)
     yPosition += focusHeight + 8
 
-    if (phase.ideas.length > 0) {
+    if ((phase.ideas || []).length > 0) {
       doc.setFont('helvetica', 'bold')
       doc.text('Key Ideas:', marginLeft + 5, yPosition)
       yPosition += 6
       
       doc.setFont('helvetica', 'normal')
-      phase.ideas.forEach((idea) => {
+      (phase.ideas || []).forEach((idea) => {
         checkPageBreak(10)
         doc.text(`• ${idea}`, marginLeft + 10, yPosition)
         yPosition += 5
@@ -369,7 +369,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
   doc.text('Implementation Roadmap', marginLeft, yPosition)
   yPosition += 15
 
-  roadmapData.roadmapAnalysis.phases.forEach((phase, _index) => {
+  (roadmapData.roadmapAnalysis?.phases || []).forEach((phase, _index) => {
     checkPageBreak(60)
     
     // Phase Header
@@ -387,13 +387,13 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     yPosition += descHeight + 10
 
     // Phase Epics
-    if (phase.epics && phase.epics.length > 0) {
+    if (phase.epics && (phase.epics || []).length > 0) {
       doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
       doc.text('Key Epics:', marginLeft + 5, yPosition)
       yPosition += 8
 
-      phase.epics.forEach((epic, epicIndex) => {
+      (phase.epics || []).forEach((epic, epicIndex) => {
         checkPageBreak(25)
         
         // Epic Title
@@ -414,14 +414,14 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
         }
 
         // User Stories
-        if (epic.userStories && epic.userStories.length > 0) {
+        if (epic.userStories && (epic.userStories || []).length > 0) {
           doc.setFontSize(9)
           doc.setFont('helvetica', 'bold')
           doc.text('User Stories:', marginLeft + 15, yPosition)
           yPosition += 5
           
           doc.setFont('helvetica', 'normal')
-          epic.userStories.forEach((story) => {
+          (epic.userStories || []).forEach((story) => {
             checkPageBreak(10)
             const storyHeight = addWrappedText(`• ${story}`, marginLeft + 20, yPosition, contentWidth - 25, 9)
             yPosition += storyHeight + 2
@@ -430,14 +430,14 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
         }
 
         // Deliverables
-        if (epic.deliverables && epic.deliverables.length > 0) {
+        if (epic.deliverables && (epic.deliverables || []).length > 0) {
           doc.setFontSize(9)
           doc.setFont('helvetica', 'bold')
           doc.text('Deliverables:', marginLeft + 15, yPosition)
           yPosition += 5
           
           doc.setFont('helvetica', 'normal')
-          epic.deliverables.forEach((deliverable) => {
+          (epic.deliverables || []).forEach((deliverable) => {
             checkPageBreak(10)
             const deliverableHeight = addWrappedText(`• ${deliverable}`, marginLeft + 20, yPosition, contentWidth - 25, 9)
             yPosition += deliverableHeight + 2
@@ -448,7 +448,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     }
 
     // Risks
-    if (phase.risks && phase.risks.length > 0) {
+    if (phase.risks && (phase.risks || []).length > 0) {
       checkPageBreak(20)
       doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
@@ -459,7 +459,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
 
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
-      phase.risks.forEach((risk) => {
+      (phase.risks || []).forEach((risk) => {
         checkPageBreak(10)
         const riskHeight = addWrappedText(`• ${risk}`, marginLeft + 10, yPosition, contentWidth - 15)
         yPosition += riskHeight + 3
@@ -468,7 +468,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     }
 
     // Success Criteria
-    if (phase.successCriteria && phase.successCriteria.length > 0) {
+    if (phase.successCriteria && (phase.successCriteria || []).length > 0) {
       checkPageBreak(20)
       doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
@@ -479,7 +479,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
 
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
-      phase.successCriteria.forEach((criteria) => {
+      (phase.successCriteria || []).forEach((criteria) => {
         checkPageBreak(10)
         const criteriaHeight = addWrappedText(`• ${criteria}`, marginLeft + 10, yPosition, contentWidth - 15)
         yPosition += criteriaHeight + 3
@@ -530,7 +530,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
   doc.text('Key Milestones', marginLeft, yPosition)
   yPosition += 10
 
-  roadmapData.executionStrategy.keyMilestones.forEach((milestone, index) => {
+  (roadmapData.executionStrategy?.keyMilestones || []).forEach((milestone, index) => {
     checkPageBreak(15)
     doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
