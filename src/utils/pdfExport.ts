@@ -376,7 +376,20 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
   checkPageBreak(40)
   console.log('🔍 checkPageBreak(40) completed successfully')
   console.log('🔍 About to call doc.setFontSize(16)', { doc: typeof doc, setFontSize: typeof doc.setFontSize })
-  doc.setFontSize(16)
+  try {
+    doc.setFontSize(16)
+    console.log('🔍 doc.setFontSize(16) succeeded')
+  } catch (error) {
+    console.error('🔍 doc.setFontSize(16) failed:', error)
+    console.log('🔍 Trying alternative: doc.setFontSize("16")')
+    try {
+      doc.setFontSize("16")
+      console.log('🔍 doc.setFontSize("16") with string succeeded')
+    } catch (error2) {
+      console.error('🔍 Even string version failed:', error2)
+      throw error
+    }
+  }
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
   doc.text('Implementation Roadmap', marginLeft, yPosition)
