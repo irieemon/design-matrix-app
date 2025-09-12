@@ -12,6 +12,8 @@ interface DesignMatrixProps {
 }
 
 const DesignMatrix: React.FC<DesignMatrixProps> = ({ ideas, activeId, currentUser, onEditIdea, onDeleteIdea, onToggleCollapse }) => {
+  console.log('🔍 DesignMatrix render - ideas:', ideas, 'type:', typeof ideas, 'isArray:', Array.isArray(ideas), 'length:', ideas?.length)
+  
   const { setNodeRef } = useDroppable({
     id: 'matrix'
   })

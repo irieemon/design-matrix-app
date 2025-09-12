@@ -43,6 +43,7 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
   deleteIdea,
   toggleCollapse
 }) => {
+  console.log('🔍 MatrixPage render - ideas:', ideas, 'type:', typeof ideas, 'isArray:', Array.isArray(ideas), 'length:', ideas?.length)
 
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
 
