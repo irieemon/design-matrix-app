@@ -363,31 +363,91 @@ class SecureAIService {
   }
 
   private generateMockInsights(ideas: IdeaCard[]): any {
+    const quickWins = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'quick-wins').map(i => i.content)
+    const majorProjects = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'major-projects').map(i => i.content)
+    const fillIns = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'fill-ins').map(i => i.content)
+    
     return {
-      matrixAnalysis: {
-        quickWins: (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'quick-wins').map(i => i.content),
-        majorProjects: (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'major-projects').map(i => i.content),
-        fillIns: (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'fill-ins').map(i => i.content),
-        thanklessItems: (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'thankless-tasks').map(i => i.content)
+      executiveSummary: `Based on analysis of ${(ideas || []).length} ideas in your priority matrix, your project shows a balanced distribution across all quadrants. ${quickWins.length} quick wins have been identified for immediate implementation, while ${majorProjects.length} major projects represent strategic initiatives requiring significant investment. Focus should be placed on executing quick wins first to build momentum, followed by careful planning and resource allocation for major initiatives.`,
+      
+      keyInsights: [
+        {
+          insight: 'Quick Wins Opportunity',
+          impact: `${quickWins.length} ideas identified in the quick wins quadrant can provide immediate value with minimal resource investment`
+        },
+        {
+          insight: 'Strategic Balance',
+          impact: `Your portfolio shows ${majorProjects.length} high-impact projects that will drive long-term success when properly resourced`
+        },
+        {
+          insight: 'Resource Optimization',
+          impact: `${fillIns.length} fill-in items can be used strategically to balance team capacity during slower periods`
+        }
+      ],
+      
+      priorityRecommendations: {
+        immediate: [
+          'Execute quick wins to build momentum and show early success',
+          'Validate assumptions for major projects through MVPs or prototypes',
+          'Align stakeholder expectations on timeline and resource requirements'
+        ],
+        shortTerm: [
+          'Begin implementation of highest-priority major projects',
+          'Establish metrics and KPIs for measuring success',
+          'Build cross-functional teams for complex initiatives'
+        ],
+        longTerm: [
+          'Scale successful initiatives across the organization',
+          'Develop capabilities and infrastructure for sustained growth',
+          'Continuously refine and optimize based on learnings'
+        ]
       },
-      priorityRecommendations: [
-        'Focus on quick wins first to build momentum',
-        'Plan major projects with adequate resources',
-        'Use fill-ins for capacity balancing'
+      
+      riskAssessment: {
+        highRisk: [
+          'Resource allocation may be challenging across multiple initiatives',
+          'Timeline dependencies between projects could create bottlenecks',
+          'Stakeholder alignment is critical for major project success'
+        ],
+        opportunities: [
+          'Quick wins can demonstrate value and secure additional resources',
+          'Cross-functional collaboration can improve innovation',
+          'Data-driven decision making can optimize resource allocation'
+        ]
+      },
+      
+      suggestedRoadmap: [
+        {
+          phase: 'Phase 1: Foundation',
+          duration: '4-6 weeks',
+          focus: 'Execute quick wins and validate major project assumptions',
+          ideas: quickWins.slice(0, 3)
+        },
+        {
+          phase: 'Phase 2: Development',
+          duration: '8-12 weeks', 
+          focus: 'Implement high-priority major projects with dedicated teams',
+          ideas: majorProjects.slice(0, 2)
+        },
+        {
+          phase: 'Phase 3: Optimization',
+          duration: '4-8 weeks',
+          focus: 'Scale successful initiatives and incorporate fill-in items',
+          ideas: [...majorProjects.slice(2), ...fillIns.slice(0, 2)]
+        }
       ],
-      riskAssessments: [
-        'Resource allocation may be challenging',
-        'Timeline dependencies need careful management',
-        'Stakeholder alignment is critical'
-      ],
-      resourceOptimization: [
-        'Consider cross-functional teams',
-        'Leverage existing infrastructure'
-      ],
+      
+      resourceAllocation: {
+        quickWins: 'Assign 20-30% of available capacity to quick wins for immediate impact and momentum building',
+        strategic: 'Dedicate 60-70% of resources to major projects with clear success metrics and milestone tracking'
+      },
+      
       nextSteps: [
-        'Validate assumptions with stakeholders',
-        'Create detailed implementation plan',
-        'Set up progress tracking'
+        'Validate assumptions for top 3 quick wins and begin immediate implementation',
+        'Create detailed project plans for highest-priority major initiatives',
+        'Establish success metrics and regular review cycles',
+        'Align stakeholder expectations and secure necessary resources',
+        'Set up project tracking and progress monitoring systems'
       ]
     }
   }
