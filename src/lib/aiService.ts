@@ -175,7 +175,22 @@ class SecureAIService {
       }
 
       const data = await response.json()
-      return data.insights || this.generateMockInsights(ideas)
+      const insights = data.insights || {}
+      
+      // Transform API response to match expected InsightsReport structure
+      if (insights.executiveSummary && insights.keyInsights) {
+        // Already in correct format
+        logger.debug('✅ Insights data in correct format')
+        return insights
+      } else if (insights.matrixAnalysis || insights.priorityRecommendations) {
+        // Transform legacy format to new structure
+        logger.debug('🔄 Transforming legacy insights format')
+        return this.transformLegacyInsights(insights, ideas)
+      } else {
+        // Use mock data
+        logger.debug('📊 Using mock insights data')
+        return this.generateMockInsights(ideas)
+      }
 
     } catch (error) {
       logger.warn('🚫 AI insights failed, using mock:', error)
@@ -360,6 +375,95 @@ class SecureAIService {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }))
+  }
+
+  private transformLegacyInsights(legacyInsights: any, ideas: IdeaCard[]): any {
+    const quickWins = legacyInsights.matrixAnalysis?.quickWins || []
+    const majorProjects = legacyInsights.matrixAnalysis?.majorProjects || []
+    
+    return {
+      executiveSummary: `Strategic analysis of ${(ideas || []).length} initiatives reveals significant market opportunity. ${quickWins.length} quick wins identified for immediate execution, while ${majorProjects.length} major projects represent transformational growth opportunities. Market timing and competitive positioning suggest strong potential for category leadership and investor returns.`,
+      
+      keyInsights: [
+        {
+          insight: 'Market Opportunity Analysis',
+          impact: 'Current market conditions and competitive landscape present significant opportunity for rapid growth and market share capture.'
+        },
+        {
+          insight: 'Strategic Execution Priority',
+          impact: 'Portfolio balance between quick wins and strategic initiatives optimizes risk-adjusted returns and stakeholder value creation.'
+        },
+        {
+          insight: 'Competitive Positioning',
+          impact: 'First-mover advantages and differentiated capabilities create defensible market position with scalable growth potential.'
+        }
+      ],
+      
+      priorityRecommendations: {
+        immediate: legacyInsights.priorityRecommendations?.slice(0, 3) || [
+          'Execute market validation and customer discovery initiatives',
+          'Secure strategic partnerships and distribution channels',
+          'Establish funding pipeline and investor relations'
+        ],
+        shortTerm: legacyInsights.priorityRecommendations?.slice(3, 6) || [
+          'Scale go-to-market operations and sales processes',
+          'Build product-market fit and customer success programs',
+          'Develop strategic moats and competitive advantages'
+        ],
+        longTerm: legacyInsights.nextSteps || [
+          'Expand to adjacent markets and international opportunities',
+          'Build platform ecosystem and strategic partnerships',
+          'Position for strategic exit or public offering'
+        ]
+      },
+      
+      riskAssessment: {
+        highRisk: legacyInsights.riskAssessments || [
+          'Market entry timing and competitive response risks',
+          'Customer acquisition economics and unit profitability',
+          'Technology scalability and operational complexity'
+        ],
+        opportunities: legacyInsights.resourceOptimization || [
+          'Market consolidation and acquisition opportunities',
+          'Strategic partnership and channel expansion potential',
+          'Data monetization and platform revenue streams'
+        ]
+      },
+      
+      suggestedRoadmap: [
+        {
+          phase: 'Market Validation',
+          duration: '0-6 months',
+          focus: 'Validate product-market fit and establish initial customer base',
+          ideas: quickWins.slice(0, 3)
+        },
+        {
+          phase: 'Growth Acceleration',
+          duration: '6-18 months',
+          focus: 'Scale operations and capture market share',
+          ideas: majorProjects.slice(0, 2)
+        },
+        {
+          phase: 'Market Leadership',
+          duration: '18+ months',
+          focus: 'Establish category leadership and strategic positioning',
+          ideas: [...majorProjects.slice(2), ...quickWins.slice(3)]
+        }
+      ],
+      
+      resourceAllocation: {
+        quickWins: 'Deploy 30% of resources to high-velocity market validation and customer acquisition initiatives with rapid feedback cycles.',
+        strategic: 'Invest 70% of capital in scalable growth infrastructure, strategic partnerships, and competitive differentiation capabilities.'
+      },
+      
+      nextSteps: legacyInsights.nextSteps || [
+        'Conduct comprehensive market analysis and competitive intelligence',
+        'Develop investor materials and funding strategy',
+        'Establish strategic advisory board and industry partnerships',
+        'Implement customer discovery and validation processes',
+        'Build minimum viable product and early customer pipeline'
+      ]
+    }
   }
 
   private generateMockInsights(ideas: IdeaCard[]): any {
