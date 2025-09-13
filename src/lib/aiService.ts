@@ -148,8 +148,51 @@ class SecureAIService {
     }
   }
 
-  async generateInsights(ideas: IdeaCard[], projectName?: string, projectType?: string): Promise<any> {
+  async generateInsights(ideas: IdeaCard[], projectName?: string, projectType?: string, projectId?: string): Promise<any> {
     logger.debug('🔍 Generating insights for', (ideas || []).length, 'ideas')
+    
+    // Get additional context if project ID is provided
+    let roadmapContext = null
+    let documentContext = null
+    
+    if (projectId) {
+      try {
+        // Get latest roadmap for the project
+        const { DatabaseService } = await import('./database')
+        const roadmaps = await DatabaseService.getProjectRoadmaps(projectId)
+        if (roadmaps && roadmaps.length > 0) {
+          // Get the most recent roadmap
+          const latestRoadmap = roadmaps.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+          roadmapContext = latestRoadmap.roadmap_data
+          logger.debug('📋 Found roadmap context:', latestRoadmap.name)
+        }
+        
+        // Get project files for document context
+        // For now, we'll get this from localStorage where files are stored
+        try {
+          const projectFilesData = localStorage.getItem('project-files')
+          if (projectFilesData) {
+            const allFiles = JSON.parse(projectFilesData)
+            const projectFiles = allFiles[projectId] || []
+            if (projectFiles.length > 0) {
+              // Extract content previews from text files
+              documentContext = projectFiles
+                .filter((file: any) => file.content_preview && file.content_preview.trim())
+                .map((file: any) => ({
+                  name: file.name,
+                  type: file.file_type,
+                  content: file.content_preview
+                }))
+              logger.debug('📁 Found document context:', documentContext.length, 'files with content')
+            }
+          }
+        } catch (error) {
+          logger.warn('Could not parse project files from localStorage:', error)
+        }
+      } catch (error) {
+        logger.warn('Could not fetch additional project context:', error)
+      }
+    }
     
     try {
       const headers = await this.getAuthHeaders()
@@ -163,7 +206,9 @@ class SecureAIService {
             quadrant: this.getQuadrantFromPosition(idea.x, idea.y)
           })),
           projectName: projectName || 'Project',
-          projectType: projectType || 'General'
+          projectType: projectType || 'General',
+          roadmapContext: roadmapContext,
+          documentContext: documentContext
         })
       })
 

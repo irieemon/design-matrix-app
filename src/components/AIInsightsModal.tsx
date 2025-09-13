@@ -92,7 +92,12 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
     
     try {
       logger.debug('🔍 Generating AI insights for', (ideas || []).length, 'ideas...')
-      const report = await aiService.generateInsights(ideas)
+      const report = await aiService.generateInsights(
+        ideas, 
+        currentProject?.name, 
+        currentProject?.project_type, 
+        currentProject?.id
+      )
       setInsights(report)
     } catch (err) {
       logger.error('Error generating insights:', err)

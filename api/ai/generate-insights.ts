@@ -36,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   
   try {
-    const { ideas, projectName, projectType } = req.body
+    const { ideas, projectName, projectType, roadmapContext, documentContext } = req.body
     
     if (!ideas || !Array.isArray(ideas)) {
       return res.status(400).json({ error: 'Ideas array is required' })
@@ -52,9 +52,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let insights = {}
     
     if (openaiKey) {
-      insights = await generateInsightsWithOpenAI(openaiKey, ideas, projectName, projectType)
+      insights = await generateInsightsWithOpenAI(openaiKey, ideas, projectName, projectType, roadmapContext, documentContext)
     } else if (anthropicKey) {
-      insights = await generateInsightsWithAnthropic(anthropicKey, ideas, projectName, projectType)
+      insights = await generateInsightsWithAnthropic(anthropicKey, ideas, projectName, projectType, roadmapContext, documentContext)
     }
     
     return res.status(200).json({ insights })
@@ -65,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectName: string, projectType: string) {
+async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = []) {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -116,24 +116,57 @@ Return a JSON object with this exact structure:
         },
         {
           role: 'user',
-          content: `Perform a comprehensive strategic business analysis for this venture:
+          content: `Perform a comprehensive strategic business analysis for this venture. This should be DEEPLY PERSONALIZED and UNIQUE to this specific project - no generic responses.
 
+===== PROJECT CONTEXT =====
 PROJECT: ${projectName}
-INDUSTRY: ${projectType}
+INDUSTRY/TYPE: ${projectType}
 
 IDEA PORTFOLIO:
 ${ideas.map(idea => `- ${idea.title} (Priority: ${idea.quadrant}): ${idea.description}`).join('\n')}
 
-ANALYSIS REQUIREMENTS:
-1. Market Opportunity: Size, growth rate, timing, competitive landscape
-2. Revenue Model: Monetization strategy, unit economics, scalability potential  
-3. Competitive Positioning: Moats, differentiation, competitive response risks
-4. Customer Strategy: Segmentation, acquisition channels, retention tactics
-5. Investment Thesis: Funding needs, milestones, valuation drivers, exit strategy
-6. Strategic Partnerships: Channel opportunities, platform integrations
-7. Execution Risks: Market entry, team scaling, technology dependencies
+${roadmapContext ? `
+===== EXISTING ROADMAP CONTEXT =====
+The project already has a roadmap with the following structure:
+${JSON.stringify(roadmapContext, null, 2)}
 
-Think like a board advisor providing strategic guidance for maximum market impact and investor returns.`
+Use this roadmap information to provide insights that COMPLEMENT and ENHANCE the existing plan, identifying gaps, optimization opportunities, and strategic pivots.
+` : ''}
+
+${documentContext && documentContext.length > 0 ? `
+===== PROJECT DOCUMENTS CONTEXT =====
+The following documents have been uploaded to this project:
+${documentContext.map(doc => `
+Document: ${doc.name} (${doc.type})
+Content Preview: ${doc.content.substring(0, 1000)}${doc.content.length > 1000 ? '...' : ''}
+`).join('\n')}
+
+Use these documents to understand the project's deeper context, requirements, constraints, and vision. Reference specific content from these documents in your analysis.
+` : ''}
+
+===== ANALYSIS REQUIREMENTS =====
+Based on the PROJECT TYPE "${projectType}", tailor your analysis specifically for this domain:
+
+${getProjectTypeSpecificRequirements(projectType)}
+
+UNIVERSAL REQUIREMENTS:
+1. Market Opportunity Analysis (sized specifically for this project's scope and type)
+2. Execution Strategy (tailored to ${projectType} best practices)
+3. Risk Assessment (specific to ${projectType} challenges and this project's unique aspects)
+4. Resource Optimization (based on actual project roadmap and constraints)
+5. Competitive Intelligence (relevant to this specific market/industry)
+6. Success Metrics & KPIs (appropriate for ${projectType} projects)
+7. Timeline & Milestone Optimization (considering existing roadmap if available)
+
+CRITICAL INSTRUCTIONS:
+- Reference specific ideas by name throughout your analysis
+- If roadmap exists, suggest specific improvements, gaps, or optimizations
+- If documents are provided, reference specific content and insights from them
+- Make recommendations that are ACTIONABLE and SPECIFIC to this exact project
+- Avoid generic business advice - everything should be tailored to this project
+- Think like a ${projectType} expert who deeply understands this specific venture
+
+Think like a board advisor providing strategic guidance for maximum impact and success in the ${projectType} domain.`
         }
       ],
       temperature: 0.6,
@@ -155,7 +188,7 @@ Think like a board advisor providing strategic guidance for maximum market impac
   }
 }
 
-async function generateInsightsWithAnthropic(apiKey: string, ideas: any[], projectName: string, projectType: string) {
+async function generateInsightsWithAnthropic(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = []) {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -169,22 +202,55 @@ async function generateInsightsWithAnthropic(apiKey: string, ideas: any[], proje
       messages: [
         {
           role: 'user',
-          content: `You are a world-class strategic business advisor. Perform comprehensive strategic analysis for this venture from a market opportunity, competitive positioning, and investment perspective.
+          content: `You are a world-class strategic business advisor. Perform comprehensive strategic analysis for this venture. This should be DEEPLY PERSONALIZED and UNIQUE to this specific project - no generic responses.
 
-PROJECT: ${projectName} 
-INDUSTRY: ${projectType}
+===== PROJECT CONTEXT =====
+PROJECT: ${projectName}
+INDUSTRY/TYPE: ${projectType}
 
 IDEA PORTFOLIO:
 ${ideas.map(idea => `- ${idea.title} (Priority: ${idea.quadrant}): ${idea.description}`).join('\n')}
 
-ANALYSIS REQUIREMENTS:
-1. Market Opportunity: Size, growth rate, timing, competitive landscape
-2. Revenue Model: Monetization strategy, unit economics, scalability potential  
-3. Competitive Positioning: Moats, differentiation, competitive response risks
-4. Customer Strategy: Segmentation, acquisition channels, retention tactics
-5. Investment Thesis: Funding needs, milestones, valuation drivers, exit strategy
-6. Strategic Partnerships: Channel opportunities, platform integrations
-7. Execution Risks: Market entry, team scaling, technology dependencies
+${roadmapContext ? `
+===== EXISTING ROADMAP CONTEXT =====
+The project already has a roadmap with the following structure:
+${JSON.stringify(roadmapContext, null, 2)}
+
+Use this roadmap information to provide insights that COMPLEMENT and ENHANCE the existing plan, identifying gaps, optimization opportunities, and strategic pivots.
+` : ''}
+
+${documentContext && documentContext.length > 0 ? `
+===== PROJECT DOCUMENTS CONTEXT =====
+The following documents have been uploaded to this project:
+${documentContext.map(doc => `
+Document: ${doc.name} (${doc.type})
+Content Preview: ${doc.content.substring(0, 1000)}${doc.content.length > 1000 ? '...' : ''}
+`).join('\n')}
+
+Use these documents to understand the project's deeper context, requirements, constraints, and vision. Reference specific content from these documents in your analysis.
+` : ''}
+
+===== ANALYSIS REQUIREMENTS =====
+Based on the PROJECT TYPE "${projectType}", tailor your analysis specifically for this domain:
+
+${getProjectTypeSpecificRequirements(projectType)}
+
+UNIVERSAL REQUIREMENTS:
+1. Market Opportunity Analysis (sized specifically for this project's scope and type)
+2. Execution Strategy (tailored to ${projectType} best practices)
+3. Risk Assessment (specific to ${projectType} challenges and this project's unique aspects)
+4. Resource Optimization (based on actual project roadmap and constraints)
+5. Competitive Intelligence (relevant to this specific market/industry)
+6. Success Metrics & KPIs (appropriate for ${projectType} projects)
+7. Timeline & Milestone Optimization (considering existing roadmap if available)
+
+CRITICAL INSTRUCTIONS:
+- Reference specific ideas by name throughout your analysis
+- If roadmap exists, suggest specific improvements, gaps, or optimizations
+- If documents are provided, reference specific content and insights from them
+- Make recommendations that are ACTIONABLE and SPECIFIC to this exact project
+- Avoid generic business advice - everything should be tailored to this project
+- Think like a ${projectType} expert who deeply understands this specific venture
 
 Return ONLY a JSON object with this exact structure:
 {
@@ -235,5 +301,86 @@ Return ONLY a JSON object with this exact structure:
     return JSON.parse(content)
   } catch {
     return {}
+  }
+}
+
+function getProjectTypeSpecificRequirements(projectType: string): string {
+  switch (projectType.toLowerCase()) {
+    case 'software':
+      return `SOFTWARE PROJECT SPECIFIC ANALYSIS:
+- Technical Architecture & Scalability Assessment
+- User Acquisition & Retention Strategies
+- Development Timeline & Resource Planning
+- Technology Stack & Security Considerations
+- API Strategy & Third-party Integrations
+- DevOps & Deployment Strategy
+- User Experience & Interface Design Priorities
+- Data Privacy & Compliance Requirements`
+
+    case 'marketing':
+      return `MARKETING PROJECT SPECIFIC ANALYSIS:
+- Campaign Performance & Attribution Modeling
+- Audience Segmentation & Targeting Strategy
+- Content Strategy & Creative Asset Planning
+- Channel Mix & Budget Allocation Optimization
+- Brand Positioning & Messaging Framework
+- Customer Journey & Conversion Optimization
+- Social Media & Influencer Strategy
+- Marketing Technology Stack & Automation`
+
+    case 'business_plan':
+      return `BUSINESS PLAN SPECIFIC ANALYSIS:
+- Business Model Validation & Unit Economics
+- Market Sizing & Competitive Landscape
+- Financial Projections & Funding Strategy
+- Go-to-Market Strategy & Customer Validation
+- Operational Framework & Organizational Structure
+- Revenue Streams & Pricing Strategy
+- Risk Assessment & Mitigation Planning
+- Exit Strategy & Investor Relations`
+
+    case 'product_development':
+      return `PRODUCT DEVELOPMENT SPECIFIC ANALYSIS:
+- Product-Market Fit Validation
+- Feature Prioritization & Development Roadmap
+- User Research & Customer Feedback Integration
+- Design & User Experience Optimization
+- Manufacturing & Supply Chain Considerations
+- Quality Assurance & Testing Strategy
+- Launch Strategy & Market Entry
+- Product Lifecycle & Iteration Planning`
+
+    case 'operations':
+      return `OPERATIONS SPECIFIC ANALYSIS:
+- Process Optimization & Efficiency Gains
+- Resource Allocation & Capacity Planning
+- Supply Chain & Vendor Management
+- Quality Control & Performance Metrics
+- Cost Reduction & Operational Excellence
+- Technology & Automation Opportunities
+- Team Structure & Workflow Optimization
+- Compliance & Risk Management`
+
+    case 'research':
+      return `RESEARCH PROJECT SPECIFIC ANALYSIS:
+- Research Methodology & Data Collection Strategy
+- Literature Review & Competitive Analysis
+- Resource Requirements & Timeline Planning
+- Data Analysis & Interpretation Framework
+- Publication & Dissemination Strategy
+- Collaboration & Partnership Opportunities
+- Funding Sources & Grant Applications
+- Intellectual Property & Commercialization`
+
+    default:
+      return `GENERAL PROJECT ANALYSIS:
+- Strategic Objectives & Success Metrics
+- Resource Requirements & Timeline Planning
+- Stakeholder Analysis & Communication Strategy
+- Risk Assessment & Mitigation Planning
+- Market Analysis & Competitive Intelligence
+- Implementation Strategy & Change Management
+- Performance Measurement & Optimization
+- Scalability & Growth Planning`
   }
 }
