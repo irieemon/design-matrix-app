@@ -77,51 +77,74 @@ async function generateRoadmapWithOpenAI(apiKey: string, projectName: string, pr
       messages: [
         {
           role: 'system',
-          content: `You are a strategic project manager creating a comprehensive roadmap. Generate a strategic roadmap with 3-4 phases that logically progress from planning to execution to optimization.
+          content: `You are a strategic project manager creating a comprehensive roadmap for professional PDF documentation. Generate a detailed roadmap with 3-5 phases that logically progress from planning to execution to optimization.
 
-Return a JSON object with this exact structure:
+Return a JSON object with this EXACT structure matching the RoadmapData interface:
 {
-  "id": "unique-id",
-  "name": "Roadmap Name", 
-  "description": "Brief description",
-  "phases": [
-    {
-      "id": "phase-1",
-      "name": "Phase Name",
-      "description": "Phase description",
-      "duration": "2-3 weeks",
-      "objectives": ["objective 1", "objective 2"],
-      "epics": [
-        {
-          "id": "epic-1",
-          "title": "Epic Title",
-          "description": "Epic description", 
-          "priority": "High|Medium|Low",
-          "stories": ["User story 1", "User story 2"],
-          "deliverables": ["Deliverable 1", "Deliverable 2"],
-          "relatedIdeas": ["idea title 1", "idea title 2"]
-        }
-      ],
-      "risks": ["Risk 1", "Risk 2"],
-      "successCriteria": ["Criteria 1", "Criteria 2"]
-    }
-  ],
-  "timeline": "3-4 months",
-  "keyMilestones": ["Milestone 1", "Milestone 2"]
+  "roadmapAnalysis": {
+    "totalDuration": "12-16 weeks",
+    "phases": [
+      {
+        "phase": "Foundation & Planning",
+        "duration": "3-4 weeks",
+        "description": "Detailed phase description explaining goals, approach, and expected outcomes",
+        "epics": [
+          {
+            "title": "Epic Title (specific and actionable)",
+            "description": "Comprehensive epic description with technical details and business value",
+            "userStories": ["As a [user type], I want [functionality] so that [benefit]", "Another user story"],
+            "deliverables": ["Specific deliverable 1", "Specific deliverable 2", "Technical artifact"],
+            "priority": "high|medium|low",
+            "complexity": "high|medium|low",
+            "relatedIdeas": ["idea title 1", "idea title 2"]
+          }
+        ],
+        "risks": ["Specific risk with mitigation strategy", "Another risk"],
+        "successCriteria": ["Measurable success criteria 1", "Measurable success criteria 2"]
+      }
+    ]
+  },
+  "executionStrategy": {
+    "methodology": "Agile Development with 2-week sprints",
+    "sprintLength": "2 weeks",
+    "teamRecommendations": "Detailed team structure recommendation including roles, skills, and responsibilities needed for successful execution",
+    "keyMilestones": [
+      {
+        "milestone": "Phase 1 Completion",
+        "timeline": "Week 4",
+        "description": "Detailed milestone description with deliverables and acceptance criteria"
+      }
+    ]
+  }
 }`
         },
         {
           role: 'user',
-          content: `Create a strategic roadmap for:
+          content: `Create a comprehensive strategic roadmap for professional PDF documentation:
+
 Project: ${projectName}
 Type: ${projectType}
 Ideas to incorporate: ${ideas.map(idea => `- ${idea.title}: ${idea.description}`).join('\n')}
 
-Generate a comprehensive roadmap with logical phases and actionable epics.`
+Requirements for comprehensive roadmap:
+1. Generate 3-5 logical phases (Foundation, Development, Enhancement, Testing, Launch)
+2. Each phase should have 2-4 epics with different priorities (high/medium/low)
+3. Each epic should have 3-5 detailed user stories in "As a [user], I want [goal] so that [benefit]" format
+4. Each epic should have 2-4 specific technical deliverables (APIs, databases, UI components, etc.)
+5. Include 2-3 realistic risks per phase with specific mitigation strategies
+6. Provide 2-3 measurable success criteria per phase (KPIs, metrics, benchmarks)
+7. Create 4-6 key milestones with specific week timelines and detailed descriptions
+8. Team recommendations should specify exact roles: Product Owner, Tech Lead, Frontend Dev, Backend Dev, QA, DevOps
+9. Include complexity ratings (high/medium/low) for each epic
+10. Relate epics back to original ideas by title
+11. Ensure totalDuration covers all phases realistically
+12. All content should be detailed enough for enterprise-level documentation
+
+Generate a roadmap that will create a beautiful, comprehensive PDF report with professional depth.`
         }
       ],
       temperature: 0.7,
-      max_tokens: 2500,
+      max_tokens: 4000,
     }),
   })
   
@@ -157,46 +180,56 @@ async function generateRoadmapWithAnthropic(apiKey: string, projectName: string,
     },
     body: JSON.stringify({
       model: 'claude-3-haiku-20240307',
-      max_tokens: 2500,
+      max_tokens: 4000,
       messages: [
         {
           role: 'user',
-          content: `Create a strategic roadmap for this project. Return ONLY a JSON object with the exact structure below:
+          content: `Create a comprehensive strategic roadmap for professional PDF documentation. Return ONLY a JSON object matching the RoadmapData interface structure.
 
 Project: ${projectName}
 Type: ${projectType}
-Ideas: ${ideas.map(idea => `- ${idea.title}: ${idea.description}`).join('\n')}
+Ideas to incorporate: ${ideas.map(idea => `- ${idea.title}: ${idea.description}`).join('\n')}
 
-Required JSON structure:
+Required JSON structure (RoadmapData interface):
 {
-  "id": "unique-id",
-  "name": "Roadmap Name",
-  "description": "Brief description", 
-  "phases": [
-    {
-      "id": "phase-1",
-      "name": "Phase Name",
-      "description": "Phase description",
-      "duration": "2-3 weeks", 
-      "objectives": ["objective 1", "objective 2"],
-      "epics": [
-        {
-          "id": "epic-1",
-          "title": "Epic Title",
-          "description": "Epic description",
-          "priority": "High|Medium|Low",
-          "stories": ["User story 1", "User story 2"],
-          "deliverables": ["Deliverable 1", "Deliverable 2"], 
-          "relatedIdeas": ["idea title 1", "idea title 2"]
-        }
-      ],
-      "risks": ["Risk 1", "Risk 2"],
-      "successCriteria": ["Criteria 1", "Criteria 2"]
-    }
-  ],
-  "timeline": "3-4 months",
-  "keyMilestones": ["Milestone 1", "Milestone 2"]
-}`
+  "roadmapAnalysis": {
+    "totalDuration": "12-16 weeks",
+    "phases": [
+      {
+        "phase": "Foundation & Planning", 
+        "duration": "3-4 weeks",
+        "description": "Comprehensive phase description with goals and approach",
+        "epics": [
+          {
+            "title": "Specific Epic Title",
+            "description": "Detailed epic description with business value", 
+            "userStories": ["As a [user], I want [goal] so that [benefit]"],
+            "deliverables": ["Concrete deliverable 1", "Technical artifact 2"],
+            "priority": "high|medium|low",
+            "complexity": "high|medium|low",
+            "relatedIdeas": ["related idea titles from input"]
+          }
+        ],
+        "risks": ["Specific risk with mitigation"],
+        "successCriteria": ["Measurable success criteria"]
+      }
+    ]
+  },
+  "executionStrategy": {
+    "methodology": "Agile Development",
+    "sprintLength": "2 weeks", 
+    "teamRecommendations": "Detailed team structure and roles needed",
+    "keyMilestones": [
+      {
+        "milestone": "Milestone Name",
+        "timeline": "Week X",
+        "description": "Milestone description with deliverables"
+      }
+    ]
+  }
+}
+
+Generate 3-5 logical phases with comprehensive details for professional documentation.`
         }
       ],
       temperature: 0.7,
