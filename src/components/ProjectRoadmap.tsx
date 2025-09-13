@@ -252,7 +252,13 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           duration: Math.max(1, Math.floor(phaseDuration / (phase.epics?.length || 1))),
           team: getTeamForEpic(epic),
           priority,
-          status: phaseIndex === 0 ? 'in-progress' : 'planned' as const
+          status: phaseIndex === 0 ? 'in-progress' : 'planned' as const,
+          userStories: epic.userStories,
+          deliverables: epic.deliverables,
+          relatedIdeas: epic.relatedIdeas,
+          risks: phase.risks, // Use phase risks for the feature
+          successCriteria: phase.successCriteria, // Use phase success criteria
+          complexity: epic.complexity
         })
       })
 

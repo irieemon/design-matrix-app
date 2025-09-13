@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { Users, Monitor, Smartphone, TrendingUp, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
+import FeatureDetailModal from './FeatureDetailModal'
 
 interface RoadmapFeature {
   id: string
@@ -10,6 +11,12 @@ interface RoadmapFeature {
   team: string
   priority: 'high' | 'medium' | 'low'
   status: 'planned' | 'in-progress' | 'completed'
+  userStories?: string[]
+  deliverables?: string[]
+  relatedIdeas?: string[]
+  risks?: string[]
+  successCriteria?: string[]
+  complexity?: string
 }
 
 interface TeamLane {
@@ -34,6 +41,18 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   subtitle = "ENVISION 6.0"
 }) => {
   const [currentQuarter, setCurrentQuarter] = useState(0)
+  const [selectedFeature, setSelectedFeature] = useState<RoadmapFeature | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleFeatureClick = (feature: RoadmapFeature) => {
+    setSelectedFeature(feature)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedFeature(null)
+  }
   
   // Define team lanes
   const teamLanes: TeamLane[] = [
@@ -315,12 +334,13 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                       return (
                         <div
                           key={feature.id}
-                          className={`absolute h-8 rounded-lg border-2 ${styles.bgColor} ${styles.textColor} ${styles.borderColor} flex items-center px-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer`}
+                          className={`absolute h-8 rounded-lg border-2 ${styles.bgColor} ${styles.textColor} ${styles.borderColor} flex items-center px-3 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-105 hover:z-10`}
                           style={{
                             ...position,
                             top: `${index * 36 + 10}px`
                           }}
-                          title={feature.description}
+                          title={`Click to view details: ${feature.title}`}
+                          onClick={() => handleFeatureClick(feature)}
                         >
                           <span className="text-xs font-semibold truncate">{feature.title}</span>
                         </div>
@@ -368,6 +388,14 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Feature Detail Modal */}
+      <FeatureDetailModal 
+        feature={selectedFeature}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        startDate={startDate}
+      />
     </div>
   )
 }
