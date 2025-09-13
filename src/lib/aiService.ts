@@ -467,57 +467,87 @@ class SecureAIService {
   }
 
   private generateMockInsights(ideas: IdeaCard[]): any {
-    const quickWins = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'quick-wins').map(i => i.content)
-    const majorProjects = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'major-projects').map(i => i.content)
+    const quickWins = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'quick-wins')
+    const majorProjects = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'major-projects')
+    const fillIns = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'fill-ins')
+    const thankless = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'thankless-tasks')
+    
+    // Analyze the actual ideas to generate specific insights
+    const hasUserFeatures = (ideas || []).some(i => i.content.toLowerCase().includes('user') || i.content.toLowerCase().includes('customer'))
+    const hasTechFeatures = (ideas || []).some(i => i.content.toLowerCase().includes('api') || i.content.toLowerCase().includes('system') || i.content.toLowerCase().includes('platform'))
+    const hasAnalyticsFeatures = (ideas || []).some(i => i.content.toLowerCase().includes('analytics') || i.content.toLowerCase().includes('data') || i.content.toLowerCase().includes('reporting'))
+    const hasMobileFeatures = (ideas || []).some(i => i.content.toLowerCase().includes('mobile') || i.content.toLowerCase().includes('app'))
+    const hasMarketingFeatures = (ideas || []).some(i => i.content.toLowerCase().includes('marketing') || i.content.toLowerCase().includes('social') || i.content.toLowerCase().includes('campaign'))
+    
+    // Generate industry-specific TAM based on idea content
+    let estimatedTAM = '$500M'
+    let industryFocus = 'software'
+    if (hasAnalyticsFeatures && hasTechFeatures) {
+      estimatedTAM = '$12B'
+      industryFocus = 'business intelligence and analytics'
+    } else if (hasMobileFeatures && hasUserFeatures) {
+      estimatedTAM = '$8B'
+      industryFocus = 'mobile application development'
+    } else if (hasMarketingFeatures) {
+      estimatedTAM = '$6B'
+      industryFocus = 'marketing technology'
+    } else if (hasTechFeatures) {
+      estimatedTAM = '$15B'
+      industryFocus = 'enterprise software'
+    }
     
     return {
-      executiveSummary: `Strategic analysis reveals a $2.3B addressable market opportunity with 15-20% projected annual growth. Your ${(ideas || []).length} initiatives position you to capture significant market share through a dual-strategy approach: rapid market entry via ${quickWins.length} quick wins (estimated 6-month ROI), while building sustainable competitive advantages through ${majorProjects.length} transformational initiatives. Market timing is optimal - competitive landscape shows fragmentation with no dominant player, creating a 18-24 month window for category leadership. Customer acquisition cost trends and lifetime value projections suggest 3.2x revenue multiplier potential within 24 months.`,
+      executiveSummary: `Strategic analysis of your ${(ideas || []).length} initiatives reveals strong positioning in the ${industryFocus} market (${estimatedTAM} TAM). Your portfolio shows ${quickWins.length} quick wins like "${quickWins[0]?.content || 'user-focused features'}" that could generate immediate traction, balanced with ${majorProjects.length} transformational projects including "${majorProjects[0]?.content || 'platform development'}". ${hasAnalyticsFeatures ? 'Data-driven features create strong competitive moats and recurring revenue opportunities.' : ''} ${hasMobileFeatures ? 'Mobile-first approach aligns with market trends showing 67% user preference for mobile experiences.' : ''} ${hasUserFeatures ? 'User-centric initiatives suggest strong product-market fit potential with high retention rates.' : ''} Market timing favors execution now - competitive gaps exist in your specific feature combinations.`,
       
       keyInsights: [
+        ...(quickWins.length > 0 ? [{
+          insight: `Quick Win Opportunity: "${quickWins[0].content}"`,
+          impact: `This ${quickWins[0].content.toLowerCase()} initiative sits in your quick wins quadrant and could generate immediate user value with minimal development investment. Similar features in the market show 30-40% user adoption rates within 60 days of launch.`
+        }] : []),
+        ...(majorProjects.length > 0 ? [{
+          insight: `Strategic Investment: "${majorProjects[0].content}"`,
+          impact: `Your ${majorProjects[0].content.toLowerCase()} represents a high-impact, high-effort initiative that could become a core competitive differentiator. This type of capability typically requires 6-12 months to build but creates 18-24 month competitive moats.`
+        }] : []),
+        ...(hasAnalyticsFeatures ? [{
+          insight: 'Data-Driven Revenue Model',
+          impact: 'Your analytics and reporting features create opportunities for data monetization. Companies with similar capabilities generate 15-25% of revenue from data insights, with 80% gross margins on analytics products.'
+        }] : []),
+        ...(hasMobileFeatures ? [{
+          insight: 'Mobile-First Market Positioning', 
+          impact: 'Mobile features align with user behavior trends - 73% of users prefer mobile-native experiences. Mobile-first products show 40% higher engagement and 2.5x better retention rates.'
+        }] : []),
+        ...(hasUserFeatures && hasAnalyticsFeatures ? [{
+          insight: 'User Intelligence Advantage',
+          impact: 'Combination of user-focused features with analytics creates powerful product intelligence capabilities. This data flywheel effect typically increases customer lifetime value by 35-50%.'
+        }] : []),
         {
-          insight: 'Market Disruption Window',
-          impact: 'Analysis shows 18-month window before incumbents respond. First-mover advantage could capture 35-40% market share with aggressive execution. Customer pain points are under-served, creating blue ocean opportunity.'
-        },
-        {
-          insight: 'Revenue Model Innovation',
-          impact: 'Subscription + transaction hybrid model could generate 40% higher ARPU than pure SaaS. Freemium tier with premium features creates viral growth coefficient of 1.8x, reducing CAC by 60%.'
-        },
-        {
-          insight: 'Strategic Partnership Leverage',
-          impact: 'Integration with 3 key platform players could accelerate user acquisition by 300%. Channel partnerships represent $50M+ revenue opportunity with 70% gross margins through co-selling motions.'
-        },
-        {
-          insight: 'Competitive Moat Building',
-          impact: 'Network effects and data flywheel create defendable competitive advantages. Each user increases platform value exponentially - critical mass at 10K users creates winner-take-all dynamics.'
-        },
-        {
-          insight: 'Investment Thesis Validation',
-          impact: 'Market timing, team execution capability, and technology readiness align for Series A funding. Comparable companies achieved 8-12x revenue multiples post-traction.'
+          insight: 'Portfolio Balance Optimization',
+          impact: `Your ${quickWins.length} quick wins balanced with ${majorProjects.length} major projects creates optimal risk-adjusted execution strategy. Quick wins fund major project development while proving market demand.`
         }
-      ],
+      ].slice(0, 5),
       
       priorityRecommendations: {
         immediate: [
-          'Secure $2-3M seed funding to capitalize on market timing - VCs are actively seeking this category',
-          'Launch customer discovery with 100+ target users to validate willingness to pay and price sensitivity',
-          'Establish strategic partnership discussions with top 3 distribution channels',
-          'Build minimal viable audience through thought leadership content - capture emails pre-launch',
-          'Prototype core value proposition with design partners for product-market fit validation'
-        ],
+          ...(quickWins.length > 0 ? [`Execute "${quickWins[0].content}" immediately - sits in quick wins quadrant with high ROI potential and minimal risk`] : []),
+          ...(hasUserFeatures ? ['Launch user research sprint: interview 50+ target users to validate core user experience assumptions'] : ['Validate core assumptions through customer discovery and market research']),
+          ...(hasTechFeatures ? ['Establish technical architecture and platform strategy to support scalable growth'] : []),
+          'Build MVP focusing on highest-value features to prove product-market fit',
+          ...(hasAnalyticsFeatures ? ['Implement basic analytics infrastructure to capture user behavior data from day 1'] : [])
+        ].slice(0, 5),
         shortTerm: [
-          'Execute land-and-expand strategy: focus on 2-3 high-value customer segments initially',
-          'Implement viral growth mechanisms and referral programs to achieve organic growth coefficient >1.5x',
-          'Build strategic moats through proprietary data collection and network effects',
-          'Establish pricing strategy with value-based model aligned to customer ROI',
-          'Create board advisory structure with industry veterans and potential acquirers'
-        ],
+          ...(majorProjects.length > 0 ? [`Begin scoping "${majorProjects[0].content}" as primary strategic differentiator - plan 6-12 month development timeline`] : []),
+          ...(hasMobileFeatures ? ['Develop mobile-first user experience strategy to capture 67% mobile user preference'] : []),
+          ...(hasAnalyticsFeatures ? ['Build data monetization strategy - analytics products typically generate 15-25% of revenue'] : []),
+          ...(hasMarketingFeatures ? ['Execute go-to-market strategy leveraging marketing automation and viral growth mechanisms'] : ['Execute go-to-market strategy with focus on user acquisition and retention']),
+          'Establish pricing strategy and customer success processes for sustainable growth'
+        ].slice(0, 5),
         longTerm: [
-          'Scale to adjacent markets and international expansion following proven playbook',
-          'Build acquisition strategy for complementary technologies and teams',
-          'Develop platform ecosystem allowing third-party integrations and marketplace revenue',
-          'Position for strategic exit to maximize stakeholder value - IPO vs acquisition strategy',
-          'Establish category leadership through industry partnerships and standard-setting initiatives'
-        ]
+          ...(thankless.length > 0 ? [`Revisit "${thankless[0]?.content || 'low-priority items'}" - may become strategic as market evolves`] : []),
+          ...(hasAnalyticsFeatures && hasTechFeatures ? ['Build platform ecosystem enabling third-party integrations and data partnerships'] : []),
+          'Scale to adjacent market segments and geographic expansion opportunities',
+          ...(hasMobileFeatures ? ['Expand mobile platform capabilities to capture emerging mobile commerce trends'] : []),
+          'Position for strategic exit through category leadership and acquisition-ready operations'
+        ].slice(0, 5)
       },
       
       riskAssessment: {
@@ -541,22 +571,22 @@ class SecureAIService {
       
       suggestedRoadmap: [
         {
-          phase: 'Market Validation & Fundraising',
-          duration: '0-6 months',
-          focus: 'Validate product-market fit, secure seed funding, build design partnerships. Target: $2M raised, 50+ validated customers, proven unit economics.',
-          ideas: ['Customer discovery', 'MVP development', 'Investor outreach', 'Strategic partnerships']
+          phase: 'Quick Wins Execution',
+          duration: '0-3 months',
+          focus: `Launch ${quickWins.length} quick wins to prove traction and validate core assumptions. Build momentum with early adopters.`,
+          ideas: quickWins.map(i => i.content).slice(0, 3)
         },
         {
-          phase: 'Scale & Revenue Growth',
-          duration: '6-18 months', 
-          focus: 'Execute go-to-market strategy, achieve $1M ARR, build scalable operations. Target: 500+ paying customers, Series A readiness.',
-          ideas: ['Sales team hiring', 'Marketing automation', 'Product expansion', 'Customer success']
+          phase: 'Strategic Development',
+          duration: '3-12 months', 
+          focus: `Build ${majorProjects.length} major initiatives as competitive differentiators. ${hasAnalyticsFeatures ? 'Focus on data capabilities for long-term moats.' : ''} ${hasMobileFeatures ? 'Prioritize mobile experience for market leadership.' : ''}`,
+          ideas: majorProjects.map(i => i.content).slice(0, 2)
         },
         {
-          phase: 'Market Leadership & Expansion',
-          duration: '18-36 months',
-          focus: 'Dominate primary market, expand to adjacent segments, prepare for strategic exit. Target: $10M ARR, category leadership position.',
-          ideas: ['International expansion', 'Acquisition strategy', 'Platform development', 'IPO preparation']
+          phase: 'Market Expansion & Scale',
+          duration: '12+ months',
+          focus: `Scale proven capabilities and expand market reach. ${hasAnalyticsFeatures ? 'Monetize data insights and build platform ecosystem.' : ''} Position for category leadership.`,
+          ideas: [...fillIns.map(i => i.content).slice(0, 2), 'Strategic partnerships', 'International expansion']
         }
       ],
       
@@ -566,14 +596,14 @@ class SecureAIService {
       },
       
       nextSteps: [
-        'Conduct 30-day customer discovery sprint: interview 100+ prospects to validate willingness-to-pay and price sensitivity',
-        'Prepare Series A investor materials: pitch deck, financial model, and market analysis targeting Q2 fundraising window',
-        'Execute partnership LOI process with top 3 strategic distribution channels for accelerated market entry',
-        'Establish advisory board with 2-3 industry veterans and potential acquirers for strategic guidance and credibility',
-        'Build competitive intelligence system and IP protection strategy to defend market position',
-        'Implement customer success metrics and retention analytics to prove unit economics for investors',
-        'Create board governance structure and monthly investor reporting framework for transparency and accountability'
-      ]
+        ...(quickWins.length > 0 ? [`Immediate: Start development of "${quickWins[0].content}" - highest ROI opportunity with 30-60 day implementation timeline`] : []),
+        ...(hasUserFeatures ? ['Week 1-2: Launch user interviews focusing on pain points around user experience and feature priorities'] : ['Week 1-2: Conduct market research to validate core product assumptions']),
+        ...(majorProjects.length > 0 ? [`Month 2: Create detailed technical specification for "${majorProjects[0].content}" with resource requirements and timeline`] : []),
+        ...(hasAnalyticsFeatures ? ['Month 1: Implement basic analytics tracking to establish baseline metrics for data-driven decisions'] : []),
+        ...(hasTechFeatures ? ['Month 1-2: Finalize technical architecture decisions and establish development infrastructure'] : []),
+        ...(hasMarketingFeatures ? ['Month 2-3: Build go-to-market strategy leveraging marketing capabilities as competitive advantage'] : ['Month 2-3: Develop customer acquisition and retention strategy']),
+        'Month 3: Establish funding strategy and begin investor outreach with traction metrics and product roadmap'
+      ].slice(0, 7)
     }
   }
 
