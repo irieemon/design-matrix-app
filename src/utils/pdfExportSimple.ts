@@ -3,7 +3,8 @@ import { Project, RoadmapData } from '../types'
 
 export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, project: Project | null = null) => {
   try {
-    const doc = new jsPDF()
+    // Create PDF in landscape orientation
+    const doc = new jsPDF('landscape', 'pt', 'a4')
     let yPos = 20
     const pageH = doc.internal.pageSize.height
     const pageW = doc.internal.pageSize.width
@@ -477,6 +478,180 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     
     addText('For questions or clarification on this roadmap, contact the project team.', 10, 'italic', [128, 128, 128])
     addText('This document should be reviewed and updated regularly as the project progresses.', 10, 'italic', [128, 128, 128])
+
+    // ADD TIMELINE VIEW
+    addSectionDivider()
+    addDecorativeHeader('VISUAL TIMELINE ROADMAP', 16, [102, 16, 242])
+    
+    // Create timeline features data
+    const createTimelineFeatures = () => {
+      if (!roadmapData?.roadmapAnalysis?.phases) return []
+
+      const features: any[] = []
+      let currentMonth = 0
+      
+      const getTeamForEpic = (epic: any) => {
+        const title = epic.title?.toLowerCase() || ''
+        const description = epic.description?.toLowerCase() || ''
+        
+        if (title.includes('mobile') || title.includes('app') || description.includes('mobile')) {
+          return 'mobile'
+        } else if (title.includes('market') || title.includes('analytics') || title.includes('campaign') || description.includes('marketing')) {
+          return 'marketing'
+        } else if (title.includes('platform') || title.includes('infrastructure') || title.includes('security') || description.includes('backend')) {
+          return 'platform'
+        } else {
+          return 'web'
+        }
+      }
+
+      roadmapData.roadmapAnalysis.phases.forEach((phase, phaseIndex) => {
+        const durationText = phase.duration || '1 month'
+        let phaseDuration = 1
+        
+        if (durationText.includes('week')) {
+          const weeks = parseInt(durationText) || 2
+          phaseDuration = Math.ceil(weeks / 4)
+        } else if (durationText.includes('month')) {
+          phaseDuration = parseInt(durationText) || 1
+        }
+
+        phase.epics?.forEach((epic, epicIndex) => {
+          const priority = epic.priority?.toLowerCase() || 'medium'
+          
+          features.push({
+            id: `${phaseIndex}-${epicIndex}`,
+            title: epic.title || `Epic ${epicIndex + 1}`,
+            description: epic.description,
+            startMonth: currentMonth,
+            duration: Math.max(1, Math.floor(phaseDuration / (phase.epics?.length || 1))),
+            team: getTeamForEpic(epic),
+            priority,
+            status: phaseIndex === 0 ? 'in-progress' : 'planned'
+          })
+        })
+
+        currentMonth += phaseDuration
+      })
+
+      return features
+    }
+
+    const timelineFeatures = createTimelineFeatures()
+    
+    if (timelineFeatures.length > 0) {
+      // Add new page for timeline
+      pageBreak(pageH)
+      
+      // Timeline header
+      addText('Team-Based Timeline View', 14, 'bold')
+      addText('Features organized by team with monthly timeline progression', 10)
+      yPos += 20
+
+      // Define teams and colors
+      const teams = [
+        { id: 'web', name: 'Web Team', color: [255, 165, 0] },      // Orange
+        { id: 'mobile', name: 'Mobile Team', color: [59, 130, 246] }, // Blue  
+        { id: 'marketing', name: 'Marketing Team', color: [147, 51, 234] }, // Purple
+        { id: 'platform', name: 'Platform Team', color: [34, 197, 94] }  // Green
+      ]
+
+      // Calculate timeline dimensions
+      const timelineStartX = marginL + 120 // Space for team labels
+      const timelineWidth = contentW - 140
+      const maxMonths = Math.max(...timelineFeatures.map(f => f.startMonth + f.duration), 6)
+      const monthWidth = timelineWidth / maxMonths
+      const teamHeight = 50
+      const featureHeight = 16
+
+      // Draw month headers
+      yPos += 10
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'bold')
+      for (let month = 0; month < maxMonths; month++) {
+        const x = timelineStartX + (month * monthWidth)
+        const monthName = new Date(2024, month).toLocaleDateString('en-US', { month: 'short' })
+        doc.text(monthName, x + monthWidth/2 - 10, yPos)
+      }
+      yPos += 20
+
+      // Draw timeline for each team
+      teams.forEach((team, teamIndex) => {
+        const teamFeatures = timelineFeatures.filter(f => f.team === team.id)
+        const teamY = yPos + (teamIndex * (teamHeight + 20))
+        
+        // Team label
+        doc.setFillColor(team.color[0], team.color[1], team.color[2])
+        doc.rect(marginL, teamY, 110, teamHeight, 'F')
+        doc.setTextColor(255, 255, 255)
+        doc.setFontSize(12)
+        doc.setFont('helvetica', 'bold')
+        doc.text(team.name, marginL + 10, teamY + 25)
+        doc.setTextColor(0, 0, 0)
+
+        // Team timeline background
+        doc.setFillColor(240, 240, 240)
+        doc.rect(timelineStartX, teamY, timelineWidth, teamHeight, 'F')
+        
+        // Month grid lines
+        doc.setDrawColor(200, 200, 200)
+        doc.setLineWidth(0.5)
+        for (let month = 1; month < maxMonths; month++) {
+          const x = timelineStartX + (month * monthWidth)
+          doc.line(x, teamY, x, teamY + teamHeight)
+        }
+
+        // Draw features
+        teamFeatures.forEach((feature, featureIndex) => {
+          const featureX = timelineStartX + (feature.startMonth * monthWidth)
+          const featureWidth = feature.duration * monthWidth - 4
+          const featureY = teamY + 8 + (featureIndex * (featureHeight + 2))
+          
+          // Feature background color based on priority
+          let featureColor = [200, 200, 200] // default gray
+          if (feature.priority === 'high') featureColor = [239, 68, 68] // red
+          else if (feature.priority === 'medium') featureColor = [245, 158, 11] // yellow
+          else if (feature.priority === 'low') featureColor = [59, 130, 246] // blue
+
+          // Draw feature block
+          doc.setFillColor(featureColor[0], featureColor[1], featureColor[2])
+          doc.rect(featureX + 2, featureY, Math.max(featureWidth, 20), featureHeight, 'F')
+          
+          // Feature text
+          doc.setTextColor(255, 255, 255)
+          doc.setFontSize(8)
+          doc.setFont('helvetica', 'bold')
+          const truncatedTitle = feature.title.length > 25 ? feature.title.substring(0, 22) + '...' : feature.title
+          doc.text(truncatedTitle, featureX + 5, featureY + 11)
+          doc.setTextColor(0, 0, 0)
+        })
+      })
+
+      // Timeline legend
+      yPos = yPos + (teams.length * (teamHeight + 20)) + 30
+      addText('Timeline Legend:', 12, 'bold')
+      yPos += 10
+      
+      // Priority legend
+      const priorityItems = [
+        { label: 'High Priority', color: [239, 68, 68] },
+        { label: 'Medium Priority', color: [245, 158, 11] },
+        { label: 'Low Priority', color: [59, 130, 246] }
+      ]
+      
+      priorityItems.forEach((item, index) => {
+        const legendX = marginL + (index * 150)
+        doc.setFillColor(item.color[0], item.color[1], item.color[2])
+        doc.rect(legendX, yPos, 20, 10, 'F')
+        doc.setFontSize(9)
+        doc.text(item.label, legendX + 25, yPos + 8)
+      })
+      
+      yPos += 20
+      addText('• Each block represents a feature or epic from the roadmap analysis', 9)
+      addText('• Block width indicates duration in months', 9)
+      addText('• Team assignment is based on feature content and keywords', 9)
+    }
 
     // Footer on all pages
     const totalPages = doc.getNumberOfPages()
