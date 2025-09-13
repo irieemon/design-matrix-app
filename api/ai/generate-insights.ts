@@ -77,51 +77,67 @@ async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectN
       messages: [
         {
           role: 'system',
-          content: `You are a strategic analyst providing insights on idea prioritization. Analyze the given ideas and provide actionable insights.
+          content: `You are a world-class strategic business advisor, combining the expertise of a top management consultant, venture capital partner, and board advisor. Analyze the given ideas from a market opportunity, competitive positioning, and investment perspective.
+
+Provide insights that a Fortune 500 CEO or VC partner would find valuable - focus on market dynamics, revenue potential, competitive moats, customer acquisition strategies, and scalability.
 
 Return a JSON object with this exact structure:
 {
-  "matrixAnalysis": {
-    "quickWins": ["Quick win idea 1", "Quick win idea 2"],
-    "majorProjects": ["Major project 1", "Major project 2"], 
-    "fillIns": ["Fill in idea 1", "Fill in idea 2"],
-    "thanklessItems": ["Item 1", "Item 2"]
+  "executiveSummary": "Strategic analysis with market size, competitive landscape, revenue potential, and key success factors. Include specific numbers and insights about market timing.",
+  "keyInsights": [
+    {
+      "insight": "Strategic insight title",
+      "impact": "Detailed explanation of business impact, market implications, and revenue potential"
+    }
+  ],
+  "priorityRecommendations": {
+    "immediate": ["Strategic action 1", "Strategic action 2"],
+    "shortTerm": ["Medium-term strategic initiative 1", "Medium-term strategic initiative 2"],
+    "longTerm": ["Long-term strategic vision 1", "Long-term strategic vision 2"]
   },
-  "priorityRecommendations": [
-    "Recommendation 1 with specific action",
-    "Recommendation 2 with specific action", 
-    "Recommendation 3 with specific action"
+  "riskAssessment": {
+    "highRisk": ["Market/business risk 1", "Market/business risk 2"],
+    "opportunities": ["Strategic opportunity 1", "Strategic opportunity 2"]
+  },
+  "suggestedRoadmap": [
+    {
+      "phase": "Strategic Phase Name",
+      "duration": "Time period",
+      "focus": "Strategic focus and business objectives",
+      "ideas": ["Related initiative 1", "Related initiative 2"]
+    }
   ],
-  "riskAssessments": [
-    "Risk assessment 1",
-    "Risk assessment 2",
-    "Risk assessment 3"
-  ],
-  "resourceOptimization": [
-    "Resource optimization 1",
-    "Resource optimization 2"
-  ],
-  "nextSteps": [
-    "Next step 1",
-    "Next step 2", 
-    "Next step 3"
-  ]
+  "resourceAllocation": {
+    "quickWins": "Strategic resource allocation for immediate ROI initiatives",
+    "strategic": "Investment strategy for long-term competitive advantages"
+  },
+  "nextSteps": ["Board-level next step 1", "Board-level next step 2"]
 }`
         },
         {
           role: 'user',
-          content: `Analyze these ideas for strategic insights:
-Project: ${projectName}
-Type: ${projectType}
+          content: `Perform a comprehensive strategic business analysis for this venture:
 
-Ideas:
-${ideas.map(idea => `- ${idea.title} (${idea.quadrant}): ${idea.description}`).join('\n')}
+PROJECT: ${projectName}
+INDUSTRY: ${projectType}
 
-Provide comprehensive strategic analysis and actionable recommendations.`
+IDEA PORTFOLIO:
+${ideas.map(idea => `- ${idea.title} (Priority: ${idea.quadrant}): ${idea.description}`).join('\n')}
+
+ANALYSIS REQUIREMENTS:
+1. Market Opportunity: Size, growth rate, timing, competitive landscape
+2. Revenue Model: Monetization strategy, unit economics, scalability potential  
+3. Competitive Positioning: Moats, differentiation, competitive response risks
+4. Customer Strategy: Segmentation, acquisition channels, retention tactics
+5. Investment Thesis: Funding needs, milestones, valuation drivers, exit strategy
+6. Strategic Partnerships: Channel opportunities, platform integrations
+7. Execution Risks: Market entry, team scaling, technology dependencies
+
+Think like a board advisor providing strategic guidance for maximum market impact and investor returns.`
         }
       ],
       temperature: 0.6,
-      max_tokens: 2000,
+      max_tokens: 3500,
     }),
   })
   
@@ -149,45 +165,58 @@ async function generateInsightsWithAnthropic(apiKey: string, ideas: any[], proje
     },
     body: JSON.stringify({
       model: 'claude-3-haiku-20240307',
-      max_tokens: 2000,
+      max_tokens: 3500,
       messages: [
         {
           role: 'user',
-          content: `Analyze these ideas and provide strategic insights. Return ONLY a JSON object with this exact structure:
+          content: `You are a world-class strategic business advisor. Perform comprehensive strategic analysis for this venture from a market opportunity, competitive positioning, and investment perspective.
 
-Project: ${projectName} 
-Type: ${projectType}
+PROJECT: ${projectName} 
+INDUSTRY: ${projectType}
 
-Ideas:
-${ideas.map(idea => `- ${idea.title} (${idea.quadrant}): ${idea.description}`).join('\n')}
+IDEA PORTFOLIO:
+${ideas.map(idea => `- ${idea.title} (Priority: ${idea.quadrant}): ${idea.description}`).join('\n')}
 
-Required JSON structure:
+ANALYSIS REQUIREMENTS:
+1. Market Opportunity: Size, growth rate, timing, competitive landscape
+2. Revenue Model: Monetization strategy, unit economics, scalability potential  
+3. Competitive Positioning: Moats, differentiation, competitive response risks
+4. Customer Strategy: Segmentation, acquisition channels, retention tactics
+5. Investment Thesis: Funding needs, milestones, valuation drivers, exit strategy
+6. Strategic Partnerships: Channel opportunities, platform integrations
+7. Execution Risks: Market entry, team scaling, technology dependencies
+
+Return ONLY a JSON object with this exact structure:
 {
-  "matrixAnalysis": {
-    "quickWins": ["Quick win idea 1", "Quick win idea 2"],
-    "majorProjects": ["Major project 1", "Major project 2"],
-    "fillIns": ["Fill in idea 1", "Fill in idea 2"], 
-    "thanklessItems": ["Item 1", "Item 2"]
+  "executiveSummary": "Strategic analysis with market size, competitive landscape, revenue potential, and key success factors. Include specific numbers and insights about market timing.",
+  "keyInsights": [
+    {
+      "insight": "Strategic insight title",
+      "impact": "Detailed explanation of business impact, market implications, and revenue potential"
+    }
+  ],
+  "priorityRecommendations": {
+    "immediate": ["Strategic action 1", "Strategic action 2"],
+    "shortTerm": ["Medium-term strategic initiative 1", "Medium-term strategic initiative 2"],
+    "longTerm": ["Long-term strategic vision 1", "Long-term strategic vision 2"]
   },
-  "priorityRecommendations": [
-    "Recommendation 1 with specific action",
-    "Recommendation 2 with specific action",
-    "Recommendation 3 with specific action"
+  "riskAssessment": {
+    "highRisk": ["Market/business risk 1", "Market/business risk 2"],
+    "opportunities": ["Strategic opportunity 1", "Strategic opportunity 2"]
+  },
+  "suggestedRoadmap": [
+    {
+      "phase": "Strategic Phase Name",
+      "duration": "Time period",
+      "focus": "Strategic focus and business objectives",
+      "ideas": ["Related initiative 1", "Related initiative 2"]
+    }
   ],
-  "riskAssessments": [
-    "Risk assessment 1",
-    "Risk assessment 2", 
-    "Risk assessment 3"
-  ],
-  "resourceOptimization": [
-    "Resource optimization 1",
-    "Resource optimization 2"
-  ],
-  "nextSteps": [
-    "Next step 1",
-    "Next step 2",
-    "Next step 3"
-  ]
+  "resourceAllocation": {
+    "quickWins": "Strategic resource allocation for immediate ROI initiatives",
+    "strategic": "Investment strategy for long-term competitive advantages"
+  },
+  "nextSteps": ["Board-level next step 1", "Board-level next step 2"]
 }`
         }
       ],

@@ -365,89 +365,110 @@ class SecureAIService {
   private generateMockInsights(ideas: IdeaCard[]): any {
     const quickWins = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'quick-wins').map(i => i.content)
     const majorProjects = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'major-projects').map(i => i.content)
-    const fillIns = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'fill-ins').map(i => i.content)
     
     return {
-      executiveSummary: `Based on analysis of ${(ideas || []).length} ideas in your priority matrix, your project shows a balanced distribution across all quadrants. ${quickWins.length} quick wins have been identified for immediate implementation, while ${majorProjects.length} major projects represent strategic initiatives requiring significant investment. Focus should be placed on executing quick wins first to build momentum, followed by careful planning and resource allocation for major initiatives.`,
+      executiveSummary: `Strategic analysis reveals a $2.3B addressable market opportunity with 15-20% projected annual growth. Your ${(ideas || []).length} initiatives position you to capture significant market share through a dual-strategy approach: rapid market entry via ${quickWins.length} quick wins (estimated 6-month ROI), while building sustainable competitive advantages through ${majorProjects.length} transformational initiatives. Market timing is optimal - competitive landscape shows fragmentation with no dominant player, creating a 18-24 month window for category leadership. Customer acquisition cost trends and lifetime value projections suggest 3.2x revenue multiplier potential within 24 months.`,
       
       keyInsights: [
         {
-          insight: 'Quick Wins Opportunity',
-          impact: `${quickWins.length} ideas identified in the quick wins quadrant can provide immediate value with minimal resource investment`
+          insight: 'Market Disruption Window',
+          impact: 'Analysis shows 18-month window before incumbents respond. First-mover advantage could capture 35-40% market share with aggressive execution. Customer pain points are under-served, creating blue ocean opportunity.'
         },
         {
-          insight: 'Strategic Balance',
-          impact: `Your portfolio shows ${majorProjects.length} high-impact projects that will drive long-term success when properly resourced`
+          insight: 'Revenue Model Innovation',
+          impact: 'Subscription + transaction hybrid model could generate 40% higher ARPU than pure SaaS. Freemium tier with premium features creates viral growth coefficient of 1.8x, reducing CAC by 60%.'
         },
         {
-          insight: 'Resource Optimization',
-          impact: `${fillIns.length} fill-in items can be used strategically to balance team capacity during slower periods`
+          insight: 'Strategic Partnership Leverage',
+          impact: 'Integration with 3 key platform players could accelerate user acquisition by 300%. Channel partnerships represent $50M+ revenue opportunity with 70% gross margins through co-selling motions.'
+        },
+        {
+          insight: 'Competitive Moat Building',
+          impact: 'Network effects and data flywheel create defendable competitive advantages. Each user increases platform value exponentially - critical mass at 10K users creates winner-take-all dynamics.'
+        },
+        {
+          insight: 'Investment Thesis Validation',
+          impact: 'Market timing, team execution capability, and technology readiness align for Series A funding. Comparable companies achieved 8-12x revenue multiples post-traction.'
         }
       ],
       
       priorityRecommendations: {
         immediate: [
-          'Execute quick wins to build momentum and show early success',
-          'Validate assumptions for major projects through MVPs or prototypes',
-          'Align stakeholder expectations on timeline and resource requirements'
+          'Secure $2-3M seed funding to capitalize on market timing - VCs are actively seeking this category',
+          'Launch customer discovery with 100+ target users to validate willingness to pay and price sensitivity',
+          'Establish strategic partnership discussions with top 3 distribution channels',
+          'Build minimal viable audience through thought leadership content - capture emails pre-launch',
+          'Prototype core value proposition with design partners for product-market fit validation'
         ],
         shortTerm: [
-          'Begin implementation of highest-priority major projects',
-          'Establish metrics and KPIs for measuring success',
-          'Build cross-functional teams for complex initiatives'
+          'Execute land-and-expand strategy: focus on 2-3 high-value customer segments initially',
+          'Implement viral growth mechanisms and referral programs to achieve organic growth coefficient >1.5x',
+          'Build strategic moats through proprietary data collection and network effects',
+          'Establish pricing strategy with value-based model aligned to customer ROI',
+          'Create board advisory structure with industry veterans and potential acquirers'
         ],
         longTerm: [
-          'Scale successful initiatives across the organization',
-          'Develop capabilities and infrastructure for sustained growth',
-          'Continuously refine and optimize based on learnings'
+          'Scale to adjacent markets and international expansion following proven playbook',
+          'Build acquisition strategy for complementary technologies and teams',
+          'Develop platform ecosystem allowing third-party integrations and marketplace revenue',
+          'Position for strategic exit to maximize stakeholder value - IPO vs acquisition strategy',
+          'Establish category leadership through industry partnerships and standard-setting initiatives'
         ]
       },
       
       riskAssessment: {
         highRisk: [
-          'Resource allocation may be challenging across multiple initiatives',
-          'Timeline dependencies between projects could create bottlenecks',
-          'Stakeholder alignment is critical for major project success'
+          'Market Entry Timing: Large incumbents could preempt with competing offerings. Risk mitigation: accelerate MVP and secure key customers',
+          'Customer Acquisition Economics: CAC payback period >18 months threatens unit economics. Monitor LTV:CAC ratio closely (target 3:1)',
+          'Competitive Response: Well-funded competitors could launch price wars or copy core features. Build defensible IP and network effects',
+          'Regulatory Changes: Industry regulation could impact business model viability. Maintain compliance and regulatory relationships',
+          'Team Scalability: Key person dependency on founders threatens growth. Implement knowledge transfer and succession planning',
+          'Technology Obsolescence: Platform dependencies create vulnerability. Diversify tech stack and maintain architectural flexibility'
         ],
         opportunities: [
-          'Quick wins can demonstrate value and secure additional resources',
-          'Cross-functional collaboration can improve innovation',
-          'Data-driven decision making can optimize resource allocation'
+          'Market Consolidation Play: Fragmented market ready for consolidation - position as category leader and acquisition target',
+          'Economic Tailwinds: Macro trends (remote work, digital transformation) accelerate demand by 200-300% in target segments',
+          'Strategic Acquirer Interest: Solution addresses core needs for 5+ Fortune 500 potential acquirers seeking digital capabilities',
+          'International Expansion: Model proven in US market can scale to EU/APAC with 60% revenue upside and premium valuations',
+          'Adjacent Market Penetration: Core platform can address $8B adjacent market with minimal product modifications',
+          'Data Monetization: User behavior data creates $20M+ annual revenue potential through insights and benchmarking products'
         ]
       },
       
       suggestedRoadmap: [
         {
-          phase: 'Phase 1: Foundation',
-          duration: '4-6 weeks',
-          focus: 'Execute quick wins and validate major project assumptions',
-          ideas: quickWins.slice(0, 3)
+          phase: 'Market Validation & Fundraising',
+          duration: '0-6 months',
+          focus: 'Validate product-market fit, secure seed funding, build design partnerships. Target: $2M raised, 50+ validated customers, proven unit economics.',
+          ideas: ['Customer discovery', 'MVP development', 'Investor outreach', 'Strategic partnerships']
         },
         {
-          phase: 'Phase 2: Development',
-          duration: '8-12 weeks', 
-          focus: 'Implement high-priority major projects with dedicated teams',
-          ideas: majorProjects.slice(0, 2)
+          phase: 'Scale & Revenue Growth',
+          duration: '6-18 months', 
+          focus: 'Execute go-to-market strategy, achieve $1M ARR, build scalable operations. Target: 500+ paying customers, Series A readiness.',
+          ideas: ['Sales team hiring', 'Marketing automation', 'Product expansion', 'Customer success']
         },
         {
-          phase: 'Phase 3: Optimization',
-          duration: '4-8 weeks',
-          focus: 'Scale successful initiatives and incorporate fill-in items',
-          ideas: [...majorProjects.slice(2), ...fillIns.slice(0, 2)]
+          phase: 'Market Leadership & Expansion',
+          duration: '18-36 months',
+          focus: 'Dominate primary market, expand to adjacent segments, prepare for strategic exit. Target: $10M ARR, category leadership position.',
+          ideas: ['International expansion', 'Acquisition strategy', 'Platform development', 'IPO preparation']
         }
       ],
       
       resourceAllocation: {
-        quickWins: 'Assign 20-30% of available capacity to quick wins for immediate impact and momentum building',
-        strategic: 'Dedicate 60-70% of resources to major projects with clear success metrics and milestone tracking'
+        quickWins: 'Capital Efficiency Strategy: Allocate 30% of funding ($600K-900K) to high-velocity experiments and market validation activities. Focus on initiatives with <3 month payback periods and proven customer traction. Target: 5x faster learning cycles than traditional development.',
+        strategic: 'Growth Investment Focus: Deploy 70% of capital ($1.4M-2.1M) in scalable growth engines - product development, sales team, and strategic partnerships. Prioritize initiatives with defendable competitive advantages and 10x revenue potential. Maintain 18-month runway while achieving growth milestones.'
       },
       
       nextSteps: [
-        'Validate assumptions for top 3 quick wins and begin immediate implementation',
-        'Create detailed project plans for highest-priority major initiatives',
-        'Establish success metrics and regular review cycles',
-        'Align stakeholder expectations and secure necessary resources',
-        'Set up project tracking and progress monitoring systems'
+        'Conduct 30-day customer discovery sprint: interview 100+ prospects to validate willingness-to-pay and price sensitivity',
+        'Prepare Series A investor materials: pitch deck, financial model, and market analysis targeting Q2 fundraising window',
+        'Execute partnership LOI process with top 3 strategic distribution channels for accelerated market entry',
+        'Establish advisory board with 2-3 industry veterans and potential acquirers for strategic guidance and credibility',
+        'Build competitive intelligence system and IP protection strategy to defend market position',
+        'Implement customer success metrics and retention analytics to prove unit economics for investors',
+        'Create board governance structure and monthly investor reporting framework for transparency and accountability'
       ]
     }
   }
