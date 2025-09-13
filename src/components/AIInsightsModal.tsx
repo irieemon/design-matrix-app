@@ -39,6 +39,13 @@ interface InsightsReport {
     quickWins: string
     strategic: string
   }
+  futureEnhancements: Array<{
+    title: string
+    description: string
+    relatedIdea?: string
+    impact: 'high' | 'medium' | 'low'
+    timeframe: string
+  }>
   nextSteps: string[]
 }
 
@@ -341,6 +348,39 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
                     <h4 className="font-semibold text-blue-800 mb-2">Strategic Initiatives</h4>
                     <p className="text-sm text-blue-700">{insights.resourceAllocation?.strategic || 'No strategic recommendations defined'}</p>
                   </div>
+                </div>
+              </div>
+
+              {/* Future Enhancements */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Lightbulb className="w-5 h-5 mr-2 text-yellow-600" />
+                  Future Enhancement Opportunities
+                </h3>
+                <div className="grid gap-4">
+                  {(insights.futureEnhancements || []).map((enhancement, index) => (
+                    <div key={index} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-semibold text-gray-900">{enhancement.title}</h4>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            enhancement.impact === 'high' ? 'bg-red-100 text-red-800' :
+                            enhancement.impact === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {enhancement.impact} impact
+                          </span>
+                          <span className="text-xs text-purple-600 font-medium">{enhancement.timeframe}</span>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 text-sm mb-2">{enhancement.description}</p>
+                      {enhancement.relatedIdea && (
+                        <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-md inline-block">
+                          Related to: {enhancement.relatedIdea}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
 

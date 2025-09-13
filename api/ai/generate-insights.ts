@@ -111,6 +111,15 @@ Return a JSON object with this exact structure:
     "quickWins": "Strategic resource allocation for immediate ROI initiatives",
     "strategic": "Investment strategy for long-term competitive advantages"
   },
+  "futureEnhancements": [
+    {
+      "title": "Enhancement Title",
+      "description": "Detailed description of the enhancement opportunity that builds on existing ideas",
+      "relatedIdea": "Name of related idea from the portfolio",
+      "impact": "high|medium|low",
+      "timeframe": "Time estimate for implementation"
+    }
+  ],
   "nextSteps": ["Board-level next step 1", "Board-level next step 2"]
 }`
         },
@@ -245,12 +254,17 @@ UNIVERSAL REQUIREMENTS:
 7. Timeline & Milestone Optimization (considering existing roadmap if available)
 
 CRITICAL INSTRUCTIONS:
-- Reference specific ideas by name throughout your analysis
+- Reference specific ideas by name throughout your analysis - mention each idea by its exact title
+- Provide specific insights for each individual idea, not just broad categories
 - If roadmap exists, suggest specific improvements, gaps, or optimizations
 - If documents are provided, reference specific content and insights from them
+- Create futureEnhancements that build upon or extend existing ideas with new capabilities
 - Make recommendations that are ACTIONABLE and SPECIFIC to this exact project
 - Avoid generic business advice - everything should be tailored to this project
 - Think like a ${projectType} expert who deeply understands this specific venture
+- Each insight should feel personally crafted for this specific project and idea set
+
+EXAMPLE: Instead of "User features show strong potential", write "Your 'Referral Program for Users' idea sits in the quick-wins quadrant and could generate 30-40% user growth within 60 days based on similar B2B referral programs."
 
 Return ONLY a JSON object with this exact structure:
 {
@@ -282,6 +296,15 @@ Return ONLY a JSON object with this exact structure:
     "quickWins": "Strategic resource allocation for immediate ROI initiatives",
     "strategic": "Investment strategy for long-term competitive advantages"
   },
+  "futureEnhancements": [
+    {
+      "title": "Enhancement Title",
+      "description": "Detailed description of the enhancement opportunity that builds on existing ideas",
+      "relatedIdea": "Name of related idea from the portfolio",
+      "impact": "high|medium|low",
+      "timeframe": "Time estimate for implementation"
+    }
+  ],
   "nextSteps": ["Board-level next step 1", "Board-level next step 2"]
 }`
         }

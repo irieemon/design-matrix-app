@@ -524,6 +524,12 @@ class SecureAIService {
     const hasMobileFeatures = (ideas || []).some(i => i.content.toLowerCase().includes('mobile') || i.content.toLowerCase().includes('app'))
     const hasMarketingFeatures = (ideas || []).some(i => i.content.toLowerCase().includes('marketing') || i.content.toLowerCase().includes('social') || i.content.toLowerCase().includes('campaign'))
     
+    // Get specific idea names for personalized insights
+    const userIdeas = (ideas || []).filter(i => i.content.toLowerCase().includes('user') || i.content.toLowerCase().includes('customer'))
+    const analyticsIdeas = (ideas || []).filter(i => i.content.toLowerCase().includes('analytics') || i.content.toLowerCase().includes('data') || i.content.toLowerCase().includes('reporting'))
+    const mobileIdeas = (ideas || []).filter(i => i.content.toLowerCase().includes('mobile') || i.content.toLowerCase().includes('app'))
+    const marketingIdeas = (ideas || []).filter(i => i.content.toLowerCase().includes('marketing') || i.content.toLowerCase().includes('social') || i.content.toLowerCase().includes('campaign'))
+    
     // Generate industry-specific TAM based on idea content
     let estimatedTAM = '$500M'
     let industryFocus = 'software'
@@ -546,30 +552,34 @@ class SecureAIService {
       
       keyInsights: [
         ...(quickWins.length > 0 ? [{
-          insight: `Quick Win Opportunity: "${quickWins[0].content}"`,
-          impact: `This ${quickWins[0].content.toLowerCase()} initiative sits in your quick wins quadrant and could generate immediate user value with minimal development investment. Similar features in the market show 30-40% user adoption rates within 60 days of launch.`
+          insight: `Immediate Value Driver: "${quickWins[0].content}"`,
+          impact: `Your "${quickWins[0].content}" idea sits in the quick wins quadrant and represents an immediate opportunity. Based on similar implementations, this could deliver ROI within 30-60 days with minimal resource investment. The low complexity but high impact nature makes this perfect for early momentum building.`
         }] : []),
         ...(majorProjects.length > 0 ? [{
-          insight: `Strategic Investment: "${majorProjects[0].content}"`,
-          impact: `Your ${majorProjects[0].content.toLowerCase()} represents a high-impact, high-effort initiative that could become a core competitive differentiator. This type of capability typically requires 6-12 months to build but creates 18-24 month competitive moats.`
+          insight: `Strategic Differentiator: "${majorProjects[0].content}"`,
+          impact: `"${majorProjects[0].content}" is positioned as a high-impact, high-effort strategic initiative. This represents your core competitive advantage opportunity, likely requiring 6-12 months of focused development but creating sustainable market differentiation for 18+ months.`
         }] : []),
-        ...(hasAnalyticsFeatures ? [{
-          insight: 'Data-Driven Revenue Model',
-          impact: 'Your analytics and reporting features create opportunities for data monetization. Companies with similar capabilities generate 15-25% of revenue from data insights, with 80% gross margins on analytics products.'
+        ...(userIdeas.length > 0 ? [{
+          insight: `User Experience Excellence: "${userIdeas[0].content}"`,
+          impact: `Your focus on "${userIdeas[0].content}" aligns with market demand for user-centric solutions. Similar user experience improvements typically drive 40-60% increase in user satisfaction and 25-35% reduction in churn rates.`
         }] : []),
-        ...(hasMobileFeatures ? [{
-          insight: 'Mobile-First Market Positioning', 
-          impact: 'Mobile features align with user behavior trends - 73% of users prefer mobile-native experiences. Mobile-first products show 40% higher engagement and 2.5x better retention rates.'
+        ...(analyticsIdeas.length > 0 ? [{
+          insight: `Data Intelligence Opportunity: "${analyticsIdeas[0].content}"`,
+          impact: `"${analyticsIdeas[0].content}" creates a data monetization pathway. Analytics features typically generate 15-25% of total revenue with 80%+ gross margins, while also improving customer retention through insights-driven value delivery.`
         }] : []),
-        ...(hasUserFeatures && hasAnalyticsFeatures ? [{
-          insight: 'User Intelligence Advantage',
-          impact: 'Combination of user-focused features with analytics creates powerful product intelligence capabilities. This data flywheel effect typically increases customer lifetime value by 35-50%.'
+        ...(mobileIdeas.length > 0 ? [{
+          insight: `Mobile-First Advantage: "${mobileIdeas[0].content}"`,
+          impact: `"${mobileIdeas[0].content}" positions you for the 73% of users who prefer mobile-native experiences. Mobile-first implementations show 40% higher engagement rates and 2.5x better user retention compared to desktop-only solutions.`
+        }] : []),
+        ...(marketingIdeas.length > 0 ? [{
+          insight: `Growth Engine: "${marketingIdeas[0].content}"`,
+          impact: `"${marketingIdeas[0].content}" represents a key growth driver. Marketing automation and social features typically reduce customer acquisition costs by 30-50% while improving lifetime value through viral and referral mechanics.`
         }] : []),
         {
-          insight: 'Portfolio Balance Optimization',
-          impact: `Your ${quickWins.length} quick wins balanced with ${majorProjects.length} major projects creates optimal risk-adjusted execution strategy. Quick wins fund major project development while proving market demand.`
+          insight: 'Strategic Portfolio Balance',
+          impact: `Your ${quickWins.length} quick wins balanced with ${majorProjects.length} major projects creates optimal risk-adjusted execution. Quick wins provide immediate validation and funding for longer-term strategic investments, ensuring sustainable growth momentum.`
         }
-      ].slice(0, 5),
+      ].filter(Boolean).slice(0, 6),
       
       priorityRecommendations: {
         immediate: [
@@ -636,9 +646,54 @@ class SecureAIService {
       ],
       
       resourceAllocation: {
-        quickWins: 'Capital Efficiency Strategy: Allocate 30% of funding ($600K-900K) to high-velocity experiments and market validation activities. Focus on initiatives with <3 month payback periods and proven customer traction. Target: 5x faster learning cycles than traditional development.',
-        strategic: 'Growth Investment Focus: Deploy 70% of capital ($1.4M-2.1M) in scalable growth engines - product development, sales team, and strategic partnerships. Prioritize initiatives with defendable competitive advantages and 10x revenue potential. Maintain 18-month runway while achieving growth milestones.'
+        quickWins: `Quick Wins Focus: Allocate 30% of resources to executing ${quickWins.map(i => `"${i.content}"`).slice(0, 3).join(', ')}${quickWins.length > 3 ? ` and ${quickWins.length - 3} other quick wins` : ''}. These high-velocity initiatives provide immediate market validation and funding for strategic investments with <3 month payback periods.`,
+        strategic: `Strategic Investment: Deploy 70% of resources to major initiatives like ${majorProjects.map(i => `"${i.content}"`).slice(0, 2).join(', ')}${majorProjects.length > 2 ? ` and ${majorProjects.length - 2} other strategic projects` : ''}. These high-impact initiatives create sustainable competitive advantages and 10x revenue growth potential.`
       },
+      
+      futureEnhancements: [
+        ...(quickWins.length > 0 ? [{
+          title: `Advanced ${quickWins[0].content.split(' ')[0]} Intelligence`,
+          description: `Building on "${quickWins[0].content}", add AI-powered insights, predictive analytics, and automated optimization to create a self-improving system that learns from user behavior and market patterns.`,
+          relatedIdea: quickWins[0].content,
+          impact: 'high' as const,
+          timeframe: '6-9 months'
+        }] : []),
+        ...(majorProjects.length > 0 ? [{
+          title: `${majorProjects[0].content} Ecosystem Platform`,
+          description: `Transform "${majorProjects[0].content}" into a platform that enables third-party integrations, marketplace functionality, and partner ecosystem development for exponential growth.`,
+          relatedIdea: majorProjects[0].content,
+          impact: 'high' as const,
+          timeframe: '12-18 months'
+        }] : []),
+        ...(userIdeas.length > 0 ? [{
+          title: `Personalized ${userIdeas[0].content.split(' ').pop()} Engine`,
+          description: `Enhance "${userIdeas[0].content}" with machine learning personalization, behavioral prediction, and adaptive interfaces that customize experiences for each individual user's preferences and usage patterns.`,
+          relatedIdea: userIdeas[0].content,
+          impact: 'medium' as const,
+          timeframe: '9-12 months'
+        }] : []),
+        ...(analyticsIdeas.length > 0 ? [{
+          title: `Predictive ${analyticsIdeas[0].content.split(' ')[0]} Modeling`,
+          description: `Expand "${analyticsIdeas[0].content}" with forecasting capabilities, anomaly detection, and automated insights generation that proactively identifies opportunities and risks before they impact business performance.`,
+          relatedIdea: analyticsIdeas[0].content,
+          impact: 'high' as const,
+          timeframe: '6-12 months'
+        }] : []),
+        ...(ideas.length > 4 ? [{
+          title: 'Cross-Feature Integration Hub',
+          description: `Create intelligent connections between ${ideas.slice(0, 3).map(i => `"${i.content}"`).join(', ')} to enable seamless workflows, data sharing, and compound value creation across all your platform capabilities.`,
+          relatedIdea: undefined,
+          impact: 'medium' as const,
+          timeframe: '9-15 months'
+        }] : []),
+        {
+          title: 'AI-Powered Innovation Engine',
+          description: `Develop a system that continuously analyzes user behavior, market trends, and competitive landscape to automatically suggest new features and optimizations based on your existing idea portfolio.`,
+          relatedIdea: undefined,
+          impact: 'high' as const,
+          timeframe: '18-24 months'
+        }
+      ].filter(Boolean).slice(0, 5),
       
       nextSteps: [
         ...(quickWins.length > 0 ? [`Immediate: Start development of "${quickWins[0].content}" - highest ROI opportunity with 30-60 day implementation timeline`] : []),
