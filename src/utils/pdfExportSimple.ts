@@ -5,85 +5,133 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
   try {
     // Create PDF in landscape orientation
     const doc = new jsPDF('landscape', 'pt', 'a4')
-    let yPos = 20
+    let yPos = 50
     const pageH = doc.internal.pageSize.height
     const pageW = doc.internal.pageSize.width
-    const marginL = 20
-    const marginR = 20
+    const marginL = 40
+    const marginR = 40
     const contentW = pageW - marginL - marginR
 
     // Simple page break function
     const pageBreak = (space: number) => {
-      if (yPos + space > pageH - 20) {
+      if (yPos + space > pageH - 60) {
         doc.addPage()
-        yPos = 20
+        yPos = 50
       }
     }
 
     // Helper function for wrapped text with proper spacing
-    const addText = (text: string, fontSize: number = 10, fontStyle: string = 'normal', color: number[] = [0, 0, 0]) => {
+    const addText = (text: string, fontSize: number = 12, fontStyle: string = 'normal', color: number[] = [0, 0, 0], lineSpacing: number = 1.4) => {
+      pageBreak(fontSize * lineSpacing + 10)
       doc.setFontSize(fontSize)
       doc.setFont('helvetica', fontStyle)
       doc.setTextColor(color[0], color[1], color[2])
-      const lines = doc.splitTextToSize(text, contentW)
+      const lines = doc.splitTextToSize(text, contentW - 20)
       doc.text(lines, marginL, yPos)
-      yPos += lines.length * (fontSize * 0.4) + 4
+      yPos += lines.length * (fontSize * lineSpacing) + 8
       return lines.length
     }
 
-    // Helper function for section dividers
-    const addSectionDivider = () => {
-      pageBreak(15)
-      doc.setDrawColor(200, 200, 200)
-      doc.setLineWidth(0.5)
-      doc.line(marginL, yPos, pageW - marginR, yPos)
-      yPos += 10
-    }
-
-    // Helper function for decorative headers with background
-    const addDecorativeHeader = (text: string, fontSize: number = 16, bgColor: number[] = [102, 16, 242]) => {
-      pageBreak(25)
+    // Helper function for main headers
+    const addMainHeader = (text: string, fontSize: number = 18) => {
+      pageBreak(60)
       // Background rectangle
-      doc.setFillColor(bgColor[0], bgColor[1], bgColor[2])
-      doc.rect(marginL - 5, yPos - 8, contentW + 10, fontSize + 6, 'F')
+      doc.setFillColor(102, 16, 242)
+      doc.rect(marginL - 10, yPos - 15, contentW + 20, fontSize + 25, 'F')
       // White text on colored background
       doc.setTextColor(255, 255, 255)
       doc.setFontSize(fontSize)
       doc.setFont('helvetica', 'bold')
       doc.text(text, marginL, yPos + fontSize/2)
       doc.setTextColor(0, 0, 0)
-      yPos += fontSize + 10
+      yPos += fontSize + 25
     }
 
-    // Helper function for creating simple tables
-    const addTable = (headers: string[], rows: string[][], cellWidth: number = 50) => {
-      pageBreak(20 + rows.length * 8)
-      
-      // Draw header row
-      doc.setFillColor(240, 240, 240)
-      doc.rect(marginL, yPos, headers.length * cellWidth, 8, 'F')
-      doc.setDrawColor(0, 0, 0)
-      doc.setLineWidth(0.3)
-      doc.rect(marginL, yPos, headers.length * cellWidth, 8, 'S')
-      
-      doc.setFontSize(9)
+    // Helper function for section headers
+    const addSectionHeader = (text: string, fontSize: number = 14, bgColor: number[] = [220, 53, 69]) => {
+      pageBreak(40)
+      // Background rectangle
+      doc.setFillColor(bgColor[0], bgColor[1], bgColor[2])
+      doc.rect(marginL - 5, yPos - 8, contentW + 10, fontSize + 16, 'F')
+      // White text on colored background
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(fontSize)
       doc.setFont('helvetica', 'bold')
-      headers.forEach((header, i) => {
-        doc.text(header, marginL + 2 + (i * cellWidth), yPos + 6)
-      })
-      yPos += 8
+      doc.text(text, marginL, yPos + fontSize/2)
+      doc.setTextColor(0, 0, 0)
+      yPos += fontSize + 20
+    }
+
+
+    // Helper function for section dividers
+    const addSectionDivider = () => {
+      pageBreak(30)
+      yPos += 10
+      doc.setDrawColor(102, 16, 242)
+      doc.setLineWidth(2)
+      doc.line(marginL, yPos, pageW - marginR, yPos)
+      yPos += 20
+    }
+
+    // Helper function for creating beautiful tables
+    const addTable = (headers: string[], rows: string[][], cellWidths?: number[]) => {
+      const totalWidth = contentW - 40
+      const numCols = headers.length
+      const defaultCellWidth = totalWidth / numCols
+      const widths = cellWidths || new Array(numCols).fill(defaultCellWidth)
+      const rowHeight = 25
       
-      // Draw data rows
-      doc.setFont('helvetica', 'normal')
-      rows.forEach(row => {
-        doc.rect(marginL, yPos, headers.length * cellWidth, 8, 'S')
-        row.forEach((cell, i) => {
-          const cellText = doc.splitTextToSize(cell, cellWidth - 4)
-          doc.text(cellText[0] || '', marginL + 2 + (i * cellWidth), yPos + 6)
-        })
-        yPos += 8
+      pageBreak(40 + rows.length * rowHeight)
+      
+      // Draw header row with gradient
+      doc.setFillColor(102, 16, 242)
+      doc.rect(marginL, yPos, totalWidth, rowHeight, 'F')
+      doc.setDrawColor(102, 16, 242)
+      doc.setLineWidth(1)
+      doc.rect(marginL, yPos, totalWidth, rowHeight, 'S')
+      
+      // Header text
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(255, 255, 255)
+      let currentX = marginL
+      headers.forEach((header, i) => {
+        const cellWidth = widths[i]
+        const textLines = doc.splitTextToSize(header, cellWidth - 10)
+        doc.text(textLines, currentX + 5, yPos + 16)
+        currentX += cellWidth
       })
-      yPos += 5
+      yPos += rowHeight
+      doc.setTextColor(0, 0, 0)
+      
+      // Draw data rows with alternating colors
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(10)
+      rows.forEach((row, rowIndex) => {
+        // Alternating row colors
+        if (rowIndex % 2 === 0) {
+          doc.setFillColor(248, 249, 250)
+        } else {
+          doc.setFillColor(255, 255, 255)
+        }
+        doc.rect(marginL, yPos, totalWidth, rowHeight, 'F')
+        
+        // Row border
+        doc.setDrawColor(200, 200, 200)
+        doc.setLineWidth(0.5)
+        doc.rect(marginL, yPos, totalWidth, rowHeight, 'S')
+        
+        // Cell content
+        currentX = marginL
+        row.forEach((cell, cellIndex) => {
+          const cellWidth = widths[cellIndex]
+          const textLines = doc.splitTextToSize(cell || '', cellWidth - 10)
+          doc.text(textLines.slice(0, 2), currentX + 5, yPos + 14) // Max 2 lines per cell
+          currentX += cellWidth
+        })
+        yPos += rowHeight
+      })
+      yPos += 15
     }
 
     // Phase name mapping for better readability
@@ -133,7 +181,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     yPos += 10
 
     // TABLE OF CONTENTS
-    addDecorativeHeader('TABLE OF CONTENTS', 16, [102, 16, 242])
+    addMainHeader('TABLE OF CONTENTS', 16)
     addText('1. Executive Summary', 11)
     addText('2. Technical Requirements & Architecture', 11)
     addText('3. Implementation Phases (Detailed)', 11)
@@ -144,7 +192,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     addSectionDivider()
 
     // 1. EXECUTIVE SUMMARY
-    addDecorativeHeader('1. EXECUTIVE SUMMARY', 16, [220, 53, 69])
+    addSectionHeader('1. EXECUTIVE SUMMARY', 16)
 
     const teamRec = roadmapData.executionStrategy?.teamRecommendations || 'Team structure to be determined based on project requirements'
     addText('Project Overview:', 12, 'bold')
@@ -170,11 +218,11 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
       ['Epic Features', totalEpics.toString(), 'Key functional areas'],
       ['Deliverables', totalDeliverables.toString(), 'Specific outputs and artifacts']
     ]
-    addTable(summaryHeaders, summaryRows, 60)
+    addTable(summaryHeaders, summaryRows, [180, 100, 300])
     addSectionDivider()
 
     // 2. TECHNICAL REQUIREMENTS
-    addDecorativeHeader('2. TECHNICAL REQUIREMENTS & ARCHITECTURE', 16, [220, 53, 69])
+    addSectionHeader('2. TECHNICAL REQUIREMENTS & ARCHITECTURE', 16)
 
     addText('Development Stack & Technologies:', 12, 'bold')
     addText('• Frontend: React.js, TypeScript, Tailwind CSS', 10)
@@ -194,7 +242,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     addSectionDivider()
 
     // 3. DETAILED IMPLEMENTATION PHASES
-    addDecorativeHeader('3. IMPLEMENTATION PHASES (DETAILED)', 16, [220, 53, 69])
+    addSectionHeader('3. IMPLEMENTATION PHASES (DETAILED)', 16)
 
     phases.forEach((phase, phaseIndex) => {
       if (!phase) return
@@ -204,7 +252,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
       pageBreak(60)
       
       // Phase Header with colored background
-      addDecorativeHeader(`PHASE ${phaseIndex + 1}: ${phaseName.toUpperCase()}`, 14, [102, 16, 242])
+      addMainHeader(`PHASE ${phaseIndex + 1}: ${phaseName.toUpperCase()}`, 14)
       
       // Phase info table
       const phaseHeaders = ['Attribute', 'Details']
@@ -214,7 +262,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
         ['Status', 'Planning Phase'],
         ['Dependencies', phaseIndex === 0 ? 'None - Foundation Phase' : `Phase ${phaseIndex} Completion`]
       ]
-      addTable(phaseHeaders, phaseRows, 90)
+      addTable(phaseHeaders, phaseRows, [120, 460])
       
       // Phase Description
       addText('Business Objective:', 11, 'bold')
@@ -315,7 +363,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
 
     // 4. RESOURCE REQUIREMENTS
     addSectionDivider()
-    addDecorativeHeader('4. RESOURCE REQUIREMENTS & TEAM STRUCTURE', 16, [220, 53, 69])
+    addSectionHeader('4. RESOURCE REQUIREMENTS & TEAM STRUCTURE', 16)
 
     addText('Recommended Team Composition:', 12, 'bold')
     
@@ -330,7 +378,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
       ['QA Engineer', '1 (full-time)', 'Testing strategy, quality assurance'],
       ['DevOps Engineer', '1 (part-time)', 'CI/CD, deployment, infrastructure']
     ]
-    addTable(teamHeaders, teamRows, 55)
+    addTable(teamHeaders, teamRows, [140, 120, 320])
 
     addText('Infrastructure & Tools Required:', 12, 'bold')
     addText('• Development environments (local + staging)', 10)
@@ -343,7 +391,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
 
     // 5. KEY MILESTONES
     addSectionDivider()
-    addDecorativeHeader('5. KEY MILESTONES & DELIVERABLES', 16, [220, 53, 69])
+    addSectionHeader('5. KEY MILESTONES & DELIVERABLES', 16)
 
     const milestones = roadmapData.executionStrategy?.keyMilestones || []
     if (milestones.length > 0) {
@@ -354,7 +402,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
         milestone?.timeline || 'TBD',
         (milestone?.description || 'Description to be defined').substring(0, 50) + '...'
       ])
-      addTable(milestoneHeaders, milestoneRows, 60)
+      addTable(milestoneHeaders, milestoneRows, [160, 120, 300])
     } else {
       addText('Key Milestones (Generated from Phases):', 12, 'bold')
       // Create phase-based milestones table
@@ -364,12 +412,12 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
         `${getPhaseDisplayName(phase, pIndex)} Complete`,
         phase.duration || 'TBD'
       ])
-      addTable(phaseHeaders, phaseRows, 60)
+      addTable(phaseHeaders, phaseRows, [80, 380, 120])
     }
 
     // 6. TESTING & QUALITY ASSURANCE
     addSectionDivider()
-    addDecorativeHeader('6. QUALITY ASSURANCE & TESTING STRATEGY', 16, [220, 53, 69])
+    addSectionHeader('6. QUALITY ASSURANCE & TESTING STRATEGY', 16)
 
     addText('Testing Framework Overview:', 12, 'bold')
     
@@ -383,7 +431,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
       ['Security Testing', 'OWASP/Snyk', '100% scan', 'Security Team'],
       ['UAT', 'Manual/TestRail', 'User scenarios', 'Product/Users']
     ]
-    addTable(testingHeaders, testingRows, 45)
+    addTable(testingHeaders, testingRows, [120, 120, 120, 120])
 
     addText('Quality Gates Checklist:', 12, 'bold')
     addText('✓ Code review approval required for all changes', 10)
@@ -393,7 +441,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
 
     // 7. DEPLOYMENT PLAN
     addSectionDivider()
-    addDecorativeHeader('7. DEPLOYMENT & OPERATIONS PLAN', 16, [220, 53, 69])
+    addSectionHeader('7. DEPLOYMENT & OPERATIONS PLAN', 16)
 
     addText('Deployment Strategy Overview:', 12, 'bold')
     
@@ -404,7 +452,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
       ['Staging', 'Integration testing', 'Manual trigger', 'QA approval'],
       ['Production', 'Live system', 'Blue-Green deploy', 'Product owner']
     ]
-    addTable(deployHeaders, deployRows, 45)
+    addTable(deployHeaders, deployRows, [120, 140, 140, 180])
 
     addText('Operations & Monitoring:', 12, 'bold')
     addText('• Application performance monitoring (APM)', 10)
@@ -414,7 +462,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     addSectionDivider()
 
     // 8. SUCCESS METRICS & KPIS
-    addDecorativeHeader('8. SUCCESS METRICS & KPIS', 16, [220, 53, 69])
+    addSectionHeader('8. SUCCESS METRICS & KPIS', 16)
     
     addText('Key Performance Indicators Dashboard:', 12, 'bold')
     
@@ -428,11 +476,11 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
       ['User Adoption', 'Satisfaction score', '4.5/5', 'User surveys'],
       ['Reliability', 'System uptime', '99.9%+', 'Infrastructure monitoring']
     ]
-    addTable(kpiHeaders, kpiRows, 45)
+    addTable(kpiHeaders, kpiRows, [100, 140, 100, 240])
 
     // IMMEDIATE NEXT STEPS
     addSectionDivider()
-    addDecorativeHeader('IMMEDIATE NEXT STEPS FOR IMPLEMENTATION', 16, [102, 16, 242])
+    addMainHeader('IMMEDIATE NEXT STEPS FOR IMPLEMENTATION', 16)
 
     // Implementation timeline table
     const timelineHeaders = ['Phase', 'Duration', 'Key Activities', 'Deliverables']
@@ -441,7 +489,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
       ['Planning', 'Week 2', 'Requirements review, design', 'Wireframes, API specs'],
       ['Development', 'Week 3+', 'Sprint execution, testing', 'Working software, documentation']
     ]
-    addTable(timelineHeaders, timelineRows, 45)
+    addTable(timelineHeaders, timelineRows, [120, 80, 200, 180])
 
     addText('Week 1: Project Foundation', 14, 'bold', [25, 135, 84])
     addText('✓ Assemble development team and assign roles', 10)
@@ -460,7 +508,7 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
     addSectionDivider()
 
     // FINAL READINESS CHECKLIST
-    addDecorativeHeader('PROJECT READINESS CHECKLIST', 14, [220, 53, 69])
+    addSectionHeader('PROJECT READINESS CHECKLIST', 14)
     
     // Readiness checklist table
     const checklistHeaders = ['Category', 'Requirement', 'Status']
@@ -474,14 +522,14 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
       ['Communication', 'Team channels established', '☐ Pending'],
       ['Planning', 'First sprint planned', '☐ Pending']
     ]
-    addTable(checklistHeaders, checklistRows, 60)
+    addTable(checklistHeaders, checklistRows, [120, 360, 100])
     
     addText('For questions or clarification on this roadmap, contact the project team.', 10, 'italic', [128, 128, 128])
     addText('This document should be reviewed and updated regularly as the project progresses.', 10, 'italic', [128, 128, 128])
 
     // ADD TIMELINE VIEW
     addSectionDivider()
-    addDecorativeHeader('VISUAL TIMELINE ROADMAP', 16, [102, 16, 242])
+    addMainHeader('VISUAL TIMELINE ROADMAP', 16)
     
     // Create timeline features data
     const createTimelineFeatures = () => {
