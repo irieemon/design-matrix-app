@@ -1094,8 +1094,7 @@ export class DatabaseService {
       const { error } = await supabase
         .from('project_roadmaps')
         .update({
-          roadmap_data: updatedRoadmapData,
-          updated_at: new Date().toISOString()
+          roadmap_data: updatedRoadmapData
         })
         .eq('id', roadmapId)
 
