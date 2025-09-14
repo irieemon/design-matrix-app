@@ -215,62 +215,91 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
       </nav>
 
       {/* Footer Section */}
-      <div className={`${isCollapsed ? 'p-3' : 'p-4'} border-t border-slate-700/50 space-y-2 transition-all duration-300`}>
+      <div className={`${isCollapsed ? 'p-2' : 'p-3'} border-t border-slate-700/50 transition-all duration-300`}>
         
-        {/* User Button */}
-        <button
-          onClick={() => onPageChange('user')}
-          className={`group w-full transition-all duration-200 rounded-lg hover:scale-[1.01] active:scale-[0.99] ${
-            currentPage === 'user'
-              ? 'bg-gradient-to-r from-slate-700 to-slate-600 shadow-md'
-              : 'hover:bg-slate-800/40'
-          }`}
-          title={isCollapsed ? `${currentUser} - Settings` : undefined}
-        >
-          {isCollapsed ? (
-            <div className="flex justify-center py-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-500 rounded-lg flex items-center justify-center">
-                <User className="w-4 h-4 text-slate-200" />
+        {/* Combined User/Settings/Logout */}
+        {isCollapsed ? (
+          <div className="space-y-1">
+            {/* User Button - Collapsed */}
+            <button
+              onClick={() => onPageChange('user')}
+              className={`group w-full transition-all duration-200 rounded-lg hover:scale-[1.01] active:scale-[0.99] ${
+                currentPage === 'user'
+                  ? 'bg-gradient-to-r from-slate-700 to-slate-600 shadow-md'
+                  : 'hover:bg-slate-800/40'
+              }`}
+              title={`${currentUser} - Settings`}
+            >
+              <div className="flex justify-center py-1">
+                <div className="w-6 h-6 bg-gradient-to-br from-slate-600 to-slate-500 rounded-lg flex items-center justify-center">
+                  <User className="w-3 h-3 text-slate-200" />
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-3 px-3 py-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-500 rounded-lg flex items-center justify-center">
-                <User className="w-4 h-4 text-slate-200" />
-              </div>
-              <div className="flex-1 text-left min-w-0">
-                <p className="text-xs font-medium text-white truncate">{currentUser}</p>
-                <p className="text-xs text-slate-500">Account settings</p>
-              </div>
-            </div>
-          )}
-        </button>
+            </button>
+            
+            {/* Admin Access Button (only for admin users) */}
+            {currentUserObj && AdminService.isAdmin(currentUserObj) && (
+              <button
+                onClick={onAdminAccess}
+                className="group w-full flex justify-center p-1 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-400 hover:text-orange-400 hover:bg-gradient-to-r hover:from-orange-900/20 hover:to-red-800/10"
+                title="Admin Portal"
+              >
+                <Shield className="w-3 h-3" />
+              </button>
+            )}
 
-        {/* Admin Access Button (only for admin users) */}
-        {currentUserObj && AdminService.isAdmin(currentUserObj) && (
-          <button
-            onClick={onAdminAccess}
-            className={`group w-full flex items-center ${
-              isCollapsed ? 'justify-center p-2' : 'px-3 py-2 space-x-2'
-            } rounded-lg text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-400 hover:text-orange-400 hover:bg-gradient-to-r hover:from-orange-900/20 hover:to-red-800/10`}
-            title={isCollapsed ? 'Admin Portal' : undefined}
-          >
-            <Shield className="w-3 h-3" />
-            {!isCollapsed && <span>Admin Portal</span>}
-          </button>
+            {/* Logout Button */}
+            <button
+              onClick={onLogout}
+              className="group w-full flex justify-center p-1 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-400 hover:text-red-400 hover:bg-gradient-to-r hover:from-red-900/20 hover:to-red-800/10"
+              title="Sign Out"
+            >
+              <LogOut className="w-3 h-3" />
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {/* User Button with inline logout - Expanded */}
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => onPageChange('user')}
+                className={`group flex-1 transition-all duration-200 rounded-lg hover:scale-[1.01] active:scale-[0.99] ${
+                  currentPage === 'user'
+                    ? 'bg-gradient-to-r from-slate-700 to-slate-600 shadow-md'
+                    : 'hover:bg-slate-800/40'
+                }`}
+              >
+                <div className="flex items-center space-x-2 px-2 py-1">
+                  <div className="w-6 h-6 bg-gradient-to-br from-slate-600 to-slate-500 rounded-lg flex items-center justify-center">
+                    <User className="w-3 h-3 text-slate-200" />
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-xs font-medium text-white truncate">{currentUser}</p>
+                  </div>
+                </div>
+              </button>
+              
+              <button
+                onClick={onLogout}
+                className="group ml-2 p-1 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-[1.05] active:scale-[0.95] text-slate-400 hover:text-red-400 hover:bg-gradient-to-r hover:from-red-900/20 hover:to-red-800/10"
+                title="Sign Out"
+              >
+                <LogOut className="w-3 h-3" />
+              </button>
+            </div>
+            
+            {/* Admin Access Button (only for admin users) */}
+            {currentUserObj && AdminService.isAdmin(currentUserObj) && (
+              <button
+                onClick={onAdminAccess}
+                className="group w-full flex items-center px-2 py-1 space-x-2 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-400 hover:text-orange-400 hover:bg-gradient-to-r hover:from-orange-900/20 hover:to-red-800/10"
+              >
+                <Shield className="w-3 h-3" />
+                <span>Admin Portal</span>
+              </button>
+            )}
+          </div>
         )}
-
-        {/* Logout Button */}
-        <button
-          onClick={onLogout}
-          className={`group w-full flex items-center ${
-            isCollapsed ? 'justify-center p-2' : 'px-3 py-2 space-x-2'
-          } rounded-lg text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-400 hover:text-red-400 hover:bg-gradient-to-r hover:from-red-900/20 hover:to-red-800/10`}
-          title={isCollapsed ? 'Sign Out' : undefined}
-        >
-          <LogOut className="w-3 h-3" />
-          {!isCollapsed && <span>Sign Out</span>}
-        </button>
       </div>
     </div>
   )
