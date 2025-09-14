@@ -270,7 +270,7 @@ class SecureAIService {
     
     try {
       const headers = await this.getAuthHeaders()
-      const response = await fetch(`${this.baseUrl}/api/ai/generate-roadmap`, {
+      const response = await fetch(`${this.baseUrl}/api/ai/generate-roadmap-v2`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
