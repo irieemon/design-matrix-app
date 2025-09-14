@@ -11,7 +11,6 @@ interface MatrixPageProps {
   currentProject: Project | null
   onProjectChange: (project: Project | null) => void
   onNavigateToProjects: () => void
-  onIdeasCreated: (ideas: IdeaCard[]) => void
   onShowAddModal: () => void
   onShowAIModal: () => void
   // Props passed from AppLayout
@@ -31,7 +30,6 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
   currentProject,
   onProjectChange,
   onNavigateToProjects,
-  onIdeasCreated,
   onShowAddModal,
   onShowAIModal,
   activeId,
@@ -55,7 +53,6 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
           currentUser={currentUser}
           currentProject={currentProject}
           onProjectChange={onProjectChange}
-          onIdeasCreated={onIdeasCreated}
         />
         
         {/* Conditional Content Based on Project Selection */}

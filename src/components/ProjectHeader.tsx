@@ -8,10 +8,9 @@ interface ProjectHeaderProps {
   currentUser: User
   currentProject?: Project | null
   onProjectChange?: (project: Project | null) => void
-  onIdeasCreated?: (ideas: IdeaCard[]) => void
 }
 
-const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProject, onProjectChange, onIdeasCreated }) => {
+const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProject, onProjectChange }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
@@ -93,7 +92,7 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
     setEditDescription('')
   }
 
-  const handleAIProjectCreated = (newProject: Project, ideas: IdeaCard[]) => {
+  const handleAIProjectCreated = (newProject: Project, _ideas: IdeaCard[]) => {
     if (onProjectChange) {
       onProjectChange(newProject)
     }
