@@ -473,7 +473,23 @@ export class DatabaseService {
         }
       })
 
-    // Polling fallback removed since real-time is working reliably
+    // Load initial data when subscription is set up
+    const loadInitialData = async () => {
+      logger.debug('🔄 Loading initial data for subscription...', { projectId })
+      try {
+        const initialIdeas = projectId 
+          ? await this.getProjectIdeas(projectId)
+          : await this.getAllIdeas()
+        logger.debug('📊 Initial data loaded, calling callback with', (initialIdeas || []).length, 'ideas')
+        callback(initialIdeas || [])
+      } catch (error) {
+        logger.error('❌ Failed to load initial data:', error)
+        callback([]) // Fallback to empty array
+      }
+    }
+    
+    // Load initial data immediately
+    loadInitialData()
 
     return () => {
       logger.debug('Unsubscribing from real-time updates')
