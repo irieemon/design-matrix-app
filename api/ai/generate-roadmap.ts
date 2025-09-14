@@ -174,7 +174,7 @@ async function generateRoadmapWithOpenAI(apiKey: string, projectName: string, pr
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [
         {
           role: 'system',

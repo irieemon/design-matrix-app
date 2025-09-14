@@ -99,9 +99,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 async function generateIdeasWithOpenAI(apiKey: string, title: string, description: string, projectType: string, count: number = 8, tolerance: number = 50) {
   console.log('🚀 Making OpenAI request with:', {
-    model: 'gpt-4o-mini',
+    model: 'gpt-4o',
     temperature: 0.8,
-    max_tokens: 1500
+    max_tokens: 2500
   })
 
   // Get project-specific persona and context
@@ -114,7 +114,7 @@ async function generateIdeasWithOpenAI(apiKey: string, title: string, descriptio
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [
         {
           role: 'system',
@@ -162,7 +162,7 @@ ${personaContext.additionalPrompt}`
         }
       ],
       temperature: 0.8,
-      max_tokens: 1500,
+      max_tokens: 2500,
     }),
   })
   
@@ -353,7 +353,7 @@ async function generateIdeasWithAnthropic(apiKey: string, title: string, descrip
     },
     body: JSON.stringify({
       model: 'claude-3-haiku-20240307',
-      max_tokens: 1500,
+      max_tokens: 2500,
       messages: [
         {
           role: 'user',

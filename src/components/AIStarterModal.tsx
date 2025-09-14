@@ -76,13 +76,43 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
     if (combined.includes('quarter') || combined.includes('3 month') || combined.includes('short')) timeline = 'Short-term'
     if (combined.includes('year') || combined.includes('annual') || combined.includes('long')) timeline = 'Long-term'
     
-    // Determine industry  
+    // Intelligent industry detection with context awareness
     let industry = 'General'
-    if (combined.includes('tech') || combined.includes('software') || combined.includes('app')) industry = 'Technology'
-    if (combined.includes('health') || combined.includes('medical')) industry = 'Healthcare'
-    if (combined.includes('finance') || combined.includes('bank')) industry = 'Finance'
-    if (combined.includes('retail') || combined.includes('ecommerce')) industry = 'Retail'
-    if (combined.includes('education') || combined.includes('learning')) industry = 'Education'
+    
+    // Healthcare patterns (prioritized for care/senior services)
+    if (combined.match(/(healthcare|health|medical|care|senior|elder|aging|caregiver|patient|clinical|wellness|therapy|nursing)/)) {
+      industry = 'Healthcare'
+    }
+    // Finance patterns
+    else if (combined.match(/(finance|financial|bank|investment|insurance|loan|credit|payment|trading|fintech)/)) {
+      industry = 'Finance'
+    }
+    // Education patterns
+    else if (combined.match(/(education|school|university|learning|training|course|curriculum|student|academic)/)) {
+      industry = 'Education'
+    }
+    // Retail/E-commerce patterns
+    else if (combined.match(/(retail|ecommerce|e-commerce|store|shop|product|inventory|sales|customer|commerce)/)) {
+      industry = 'Retail'
+    }
+    // Real Estate patterns
+    else if (combined.match(/(real estate|property|housing|rental|lease|commercial|residential)/)) {
+      industry = 'Real Estate'
+    }
+    // Food & Hospitality patterns
+    else if (combined.match(/(restaurant|food|hospitality|hotel|catering|dining|cuisine|chef)/)) {
+      industry = 'Food & Hospitality'
+    }
+    // Non-profit patterns
+    else if (combined.match(/(nonprofit|non-profit|charity|community|volunteer|social impact|foundation|donation)/)) {
+      industry = 'Non-profit'
+    }
+    // Technology patterns (only if no other industry detected and clear tech focus)
+    else if (combined.match(/(software development|app development|programming|coding|api|database|saas|tech startup)/) || 
+             (combined.match(/(technology|software|app|platform|system|digital)/) && 
+              !combined.match(/(marketing|campaign|care|health|service|community|social)/))) {
+      industry = 'Technology'
+    }
     
     // Smart project type detection with improved priority
     let recommendedProjectType: ProjectType = 'other'
