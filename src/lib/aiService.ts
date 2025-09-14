@@ -317,6 +317,12 @@ class SecureAIService {
 
     } catch (error) {
       logger.warn('🚫 AI roadmap failed, using mock:', error)
+      logger.debug('Roadmap API error details:', {
+        projectName,
+        projectType,
+        ideaCount: (ideas || []).length,
+        error: error instanceof Error ? error.message : String(error)
+      })
       return this.generateMockRoadmap(projectName, projectType)
     }
   }
