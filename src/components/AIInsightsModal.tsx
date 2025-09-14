@@ -109,7 +109,8 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
       setInsights(report)
     } catch (err) {
       logger.error('Error generating insights:', err)
-      setError('Failed to generate insights. Please try again.')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate insights. Please try again.'
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
