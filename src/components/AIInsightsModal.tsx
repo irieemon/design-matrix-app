@@ -103,7 +103,8 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
         ideas, 
         currentProject?.name, 
         currentProject?.project_type, 
-        currentProject?.id
+        currentProject?.id,
+        currentProject
       )
       setInsights(report)
     } catch (err) {

@@ -148,12 +148,30 @@ class SecureAIService {
     }
   }
 
-  async generateInsights(ideas: IdeaCard[], projectName?: string, projectType?: string, projectId?: string): Promise<any> {
+  async generateInsights(ideas: IdeaCard[], projectName?: string, projectType?: string, projectId?: string, currentProject?: any): Promise<any> {
     logger.debug('🔍 Generating insights for', (ideas || []).length, 'ideas')
     
     // Get additional context if project ID is provided
     let roadmapContext = null
     let documentContext = null
+    let projectContext = null
+    
+    // Extract project context for intent analysis
+    if (currentProject) {
+      projectContext = {
+        name: currentProject.name,
+        description: currentProject.description,
+        type: currentProject.project_type,
+        startDate: currentProject.start_date,
+        targetDate: currentProject.target_date,
+        budget: currentProject.budget,
+        teamSize: currentProject.team_size,
+        priorityLevel: currentProject.priority_level,
+        tags: currentProject.tags,
+        aiAnalysis: currentProject.ai_analysis
+      }
+      logger.debug('📋 Project context extracted:', projectContext.name, projectContext.type)
+    }
     
     if (projectId) {
       try {
@@ -208,7 +226,8 @@ class SecureAIService {
           projectName: projectName || 'Project',
           projectType: projectType || 'General',
           roadmapContext: roadmapContext,
-          documentContext: documentContext
+          documentContext: documentContext,
+          projectContext: projectContext
         })
       })
 
@@ -234,12 +253,12 @@ class SecureAIService {
       } else {
         // Use mock data
         logger.debug('📊 Using mock insights data')
-        return this.generateMockInsights(ideas)
+        return this.generateMockInsights(ideas, projectContext)
       }
 
     } catch (error) {
       logger.warn('🚫 AI insights failed, using mock:', error)
-      return this.generateMockInsights(ideas)
+      return this.generateMockInsights(ideas, projectContext)
     }
   }
 
@@ -511,10 +530,7 @@ class SecureAIService {
     }
   }
 
-  private generateMockInsights(ideas: IdeaCard[]): any {
-    // Generate unique timestamp-based insights to prevent duplicates
-    const sessionId = Math.random().toString(36).substring(7)
-    
+  private generateMockInsights(ideas: IdeaCard[], projectContext?: any): any {
     const quickWins = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'quick-wins')
     const majorProjects = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'major-projects')
     const fillIns = (ideas || []).filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'fill-ins')
@@ -531,13 +547,6 @@ class SecureAIService {
       .sort(([,a], [,b]) => b - a)
       .slice(0, 3)
       .map(([word]) => word)
-    
-    // Analyze positioning patterns for strategic insights
-    const avgX = (ideas || []).reduce((sum, idea) => sum + idea.x, 0) / (ideas || []).length
-    const avgY = (ideas || []).reduce((sum, idea) => sum + idea.y, 0) / (ideas || []).length
-    const isRiskAverse = avgY < 200 // Most ideas in low-effort quadrants
-    const isAmbitious = avgX > 300 // Most ideas in high-impact quadrants
-    const isBalanced = Math.abs(avgX - 260) < 50 && Math.abs(avgY - 260) < 50
     
     // Find execution sequence patterns
     const recentIdeas = (ideas || []).filter(i => Date.now() - new Date(i.created_at).getTime() < 7 * 24 * 60 * 60 * 1000) // Last week
@@ -561,41 +570,42 @@ class SecureAIService {
       .map(theme => ({ theme, data: marketTrends[theme] }))
       .filter(t => t.data)
     
+    // Analyze project context and intent
+    const projectIntent = this.analyzeProjectIntent(projectContext, ideas, dominantThemes)
+    const strategicCoherence = this.analyzeStrategicCoherence(projectContext, ideas, quickWins, majorProjects)
+    const quadrantDistribution = this.getQuadrantDistribution(ideas)
+    
     return {
-      executiveSummary: `AI Pattern Analysis (Session ${sessionId.substring(0,4)}): Your portfolio reveals a ${evolutionPattern === 'rapid_iteration' ? 'dynamic iteration mindset' : 'strategic planning approach'} with ideas clustered at ${Math.round(avgX)},${Math.round(avgY)} - indicating ${isAmbitious && isRiskAverse ? 'calculated ambition' : isAmbitious ? 'high-impact focus' : isRiskAverse ? 'risk-conscious execution' : 'balanced optimization'}. Dominant themes "${dominantThemes.join('", "')}" appear ${Object.values(wordFreq).reduce((a,b) => Math.max(a,b), 0)} times, suggesting ${dominantThemes.length > 2 ? 'multi-domain expertise' : 'focused specialization'}. ${relevantTrends.length > 0 ? `Market intelligence shows ${relevantTrends[0].theme} sector growing ${relevantTrends[0].data.growth} with ${relevantTrends[0].data.competition.toLowerCase()} competition and "${relevantTrends[0].data.opportunity}" opportunity gaps.` : ''} Your execution sequence suggests ${recentIdeas.length > 2 ? 'accelerating momentum' : 'methodical progression'}.`,
+      executiveSummary: `Strategic Context Analysis for "${projectContext?.name || 'Your Project'}" (${projectContext?.type || 'General'} Initiative): ${projectIntent.purposeStatement} Your ${ideas.length} ideas show ${strategicCoherence.alignment}% strategic alignment with project objectives. Portfolio is ${quadrantDistribution.riskProfile} with ${quickWins.length} quick wins and ${majorProjects.length} strategic initiatives. ${dominantThemes.length > 0 ? `Core themes "${dominantThemes.join('", "')}" drive ${projectIntent.themeRelevance}.` : 'Diversified approach reduces single-domain risk.'} ${relevantTrends.length > 0 ? `Market timing is ${relevantTrends[0].data.competition.toLowerCase() === 'low' ? 'optimal' : 'competitive'} - ${relevantTrends[0].theme} sector growing ${relevantTrends[0].data.growth}.` : ''} ${strategicCoherence.gapAnalysis}`,
       
       keyInsights: [
         {
-          insight: `Hidden Pattern: ${dominantThemes.length > 0 ? `"${dominantThemes[0]}" Theme Convergence` : 'Distributed Focus Strategy'}`,
-          impact: dominantThemes.length > 0 ? 
-            `AI analysis reveals "${dominantThemes[0]}" appears ${wordFreq[dominantThemes[0]]} times across your ideas, creating unexpected synergies. Ideas like ${(ideas || []).filter(i => i.content.toLowerCase().includes(dominantThemes[0])).map(i => `"${i.content}"`).slice(0,2).join(' and ')} could be bundled for 40% faster execution and shared infrastructure costs.` :
-            `Your portfolio shows intentional diversification across domains, reducing market risk but requiring 25% more coordination overhead. Consider appointing domain champions.`
+          insight: `Project Intent Analysis: ${projectIntent.coherenceLevel} Strategic Coherence`,
+          impact: `${projectIntent.purposeStatement} ${projectIntent.strategicFit} The ideas directly support ${projectIntent.coreObjectives.length} of your primary objectives: ${projectIntent.coreObjectives.slice(0,2).join(' and ')}.`
         },
         {
-          insight: `Execution Psychology: ${isRiskAverse ? 'Risk-Conscious' : isAmbitious ? 'Impact-Driven' : 'Balanced'} Mindset Detected`,
-          impact: isRiskAverse ? 
-            `Your ideas cluster in lower-effort regions (avg Y: ${Math.round(avgY)}), suggesting preference for proven approaches. This reduces failure risk by 60% but may limit breakthrough potential. Consider one "moonshot" in high-impact zone.` :
-            isAmbitious ?
-            `Ideas gravitate toward high-impact territory (avg X: ${Math.round(avgX)}), indicating confidence in ambitious goals. This 2.5x multiplies potential returns but increases execution complexity. Ensure adequate runway.` :
-            `Perfect portfolio balance detected at ${Math.round(avgX)},${Math.round(avgY)} - rare achievement showing both strategic thinking and practical execution capability.`
+          insight: `Portfolio Architecture: ${quadrantDistribution.description}`,
+          impact: `Your ideas are positioned ${quadrantDistribution.details} This ${quadrantDistribution.riskProfile.toLowerCase()} approach ${quadrantDistribution.strategicImplication} Given your ${projectContext?.type || 'project'} goals, this distribution ${quadrantDistribution.recommendation}.`
+        },
+        {
+          insight: `Strategic Gap Analysis: ${strategicCoherence.missingElements.length > 0 ? 'Critical Capability Gaps Identified' : 'Comprehensive Coverage Achieved'}`,
+          impact: strategicCoherence.missingElements.length > 0 ? 
+            `Analysis reveals ${strategicCoherence.missingElements.length} strategic gaps in your portfolio: ${strategicCoherence.missingElements.slice(0,2).join(' and ')}. ${strategicCoherence.gapImpact} Consider adding ideas in these areas to strengthen project success probability.` :
+            `Excellent strategic coverage detected. Your ideas comprehensively address core project requirements with minimal gaps, indicating thorough strategic thinking and execution planning.`
         },
         ...(relevantTrends.length > 0 ? [{
-          insight: `Market Timing Intelligence: ${relevantTrends[0].theme.charAt(0).toUpperCase() + relevantTrends[0].theme.slice(1)} Sector Momentum`,
-          impact: `Real-time market data shows "${relevantTrends[0].theme}" growing ${relevantTrends[0].data.growth} annually with ${relevantTrends[0].data.competition.toLowerCase()} competition density. Your ${(ideas || []).filter(i => i.content.toLowerCase().includes(relevantTrends[0].theme)).length} related ideas hit this growth wave. Opportunity: "${relevantTrends[0].data.opportunity}" - competitors haven't addressed this gap yet.`
+          insight: `Market Context Alignment: ${projectContext?.type || 'Project'} Sector Dynamics`,
+          impact: `Your ${projectContext?.type || 'project'} initiative benefits from ${relevantTrends[0].theme} market momentum (${relevantTrends[0].data.growth} growth). Competition is ${relevantTrends[0].data.competition.toLowerCase()}, creating ${relevantTrends[0].data.competition.toLowerCase() === 'low' ? 'first-mover advantage' : 'need for differentiation'}. Key opportunity: "${relevantTrends[0].data.opportunity}".`
         }] : []),
         {
-          insight: `Temporal Analysis: ${evolutionPattern === 'rapid_iteration' ? 'Accelerating Innovation Velocity' : 'Methodical Strategic Development'}`,
+          insight: `Execution Readiness Assessment: ${evolutionPattern === 'rapid_iteration' ? 'High-Velocity Development Mode' : 'Methodical Strategic Approach'}`,
           impact: evolutionPattern === 'rapid_iteration' ?
-            `${recentIdeas.length} ideas added in past week (${Math.round(recentIdeas.length / (ideas || []).length * 100)}% of portfolio) indicates rapid ideation cycle. This velocity creates competitive advantage but risks execution fragmentation. Consider batch processing.` :
-            `Steady development pace suggests thorough validation process. While this reduces pivot risk by 45%, ensure market windows don't close during planning phases. Monitor competitive movement.`
+            `Your rapid ideation pace (${recentIdeas.length} ideas this week) suggests agile execution capability. This velocity advantage can capture market opportunities quickly but requires structured prioritization to prevent resource fragmentation.` :
+            `Methodical development approach indicates thorough validation and planning. This reduces execution risk but ensure ${projectContext?.type === 'marketing' ? 'campaign timing' : 'market windows'} don't close during extended planning phases.`
         },
-        ...(quickWins.length > 0 && majorProjects.length > 0 ? [{
-          insight: `Portfolio Architecture: Intelligent Resource Allocation Pattern`,
-          impact: `Your ${quickWins.length}:${majorProjects.length} quick-win to major-project ratio creates optimal funding cascade. Quick wins like "${quickWins[0].content}" can fund "${majorProjects[0].content}" development while proving market demand. This self-sustaining model reduces external funding dependency by 40%.`
-        }] : []),
-        ...(ideas.length > 5 ? [{
-          insight: `Cognitive Load Warning: ${ideas.length}-Idea Portfolio Complexity`,
-          impact: `Research shows peak execution efficiency at 5-7 concurrent initiatives. Your ${ideas.length} ideas may exceed cognitive bandwidth, reducing individual idea quality by 15-20%. Consider retiring bottom 20% or implementing batched execution cycles.`
+        ...(ideas.length > 7 ? [{
+          insight: `Resource Focus Warning: Portfolio Complexity Beyond Optimal Threshold`,
+          impact: `Your ${ideas.length} ideas exceed the research-backed optimal range of 5-7 concurrent initiatives for ${projectContext?.type || 'most projects'}. This complexity may dilute execution quality by 15-20% per idea. Consider consolidating related ideas or implementing phased execution batches.`
         }] : [])
       ].filter(Boolean).slice(0, 5),
       
@@ -604,7 +614,7 @@ class SecureAIService {
           dominantThemes.length > 0 ? 
             `Bundle "${dominantThemes[0]}" theme ideas for 40% efficiency gain - shared infrastructure reduces costs` :
             'Audit portfolio complexity - consider focusing on top 5 highest-impact ideas',
-          isRiskAverse ? 
+          quadrantDistribution.riskProfile === 'Risk-Conscious' ? 
             'Add one high-impact "moonshot" to balance portfolio risk profile' : 
             'Establish risk mitigation protocols for high-ambition initiatives',
           relevantTrends.length > 0 ?
@@ -636,7 +646,7 @@ class SecureAIService {
             'Leverage multi-domain expertise for consulting/advisory revenue streams' :
             'Build deep specialization for category leadership position',
           'Develop AI-powered feature suggestion engine based on user behavior patterns',
-          isBalanced ?
+          quadrantDistribution.riskProfile === 'Balanced' ?
             'Maintain optimal portfolio balance as market conditions evolve' :
             'Evolve toward balanced risk-reward profile for sustainable growth',
           'Position for strategic acquisition by demonstrating scalable, profitable growth'
@@ -648,9 +658,9 @@ class SecureAIService {
           ideas.length > 7 ?
             `Cognitive Overload Alert: ${ideas.length} concurrent ideas exceed optimal focus threshold. Risk: 15-20% quality degradation per idea.` :
             'Under-diversification Risk: Limited idea portfolio creates single-point-of-failure vulnerability.',
-          isRiskAverse ?
-            `Conservative Bias: Cluster at Y=${Math.round(avgY)} indicates risk aversion. Risk: Missing breakthrough opportunities by 2.3x.` :
-            `Ambition Risk: High-impact focus (X=${Math.round(avgX)}) increases execution complexity. Risk: Resource overextension.`,
+          quadrantDistribution.riskProfile === 'Risk-Conscious' ?
+            `Conservative Bias: ${quadrantDistribution.description} indicates risk aversion. Risk: Missing breakthrough opportunities by 2.3x.` :
+            `Execution Complexity: ${quadrantDistribution.description} increases coordination complexity. Risk: Resource overextension.`,
           evolutionPattern === 'rapid_iteration' ?
             `Velocity Risk: ${recentIdeas.length} ideas in 7 days suggests potential quality dilution. Risk: Execution fragmentation.` :
             'Innovation Lag Risk: Methodical pace may miss market windows. Risk: Competitive preemption.',
@@ -668,11 +678,11 @@ class SecureAIService {
           dominantThemes.length > 0 ?
             `Theme Synergy: "${dominantThemes[0]}" convergence creates 40% cost efficiency through shared infrastructure.` :
             'Diversification Advantage: Multi-domain portfolio reduces market-specific risks.',
-          isBalanced ?
+          quadrantDistribution.riskProfile === 'Balanced' ?
             'Portfolio Optimization: Rare balanced positioning enables both stability and growth potential.' :
-            isRiskAverse ? 
+            quadrantDistribution.riskProfile === 'Risk-Conscious' ? 
             'Moonshot Opportunity: Conservative base creates safety net for high-risk, high-reward experimentation.' :
-            'Risk Mitigation: High ambition provides differentiation opportunity with proper execution frameworks.',
+            'Differentiation Advantage: Ambitious positioning provides market differentiation with proper execution.',
           relevantTrends.length > 0 ?
             `Market Wave: ${relevantTrends[0].theme} growing ${relevantTrends[0].data.growth} with "${relevantTrends[0].data.opportunity}" gap unaddressed.` :
             'Blue Ocean Potential: Unique positioning outside major trend cycles reduces competitive pressure.',
@@ -766,6 +776,169 @@ class SecureAIService {
         evolutionPattern === 'rapid_iteration' ? 'Month 2-3: Implement batch processing to manage high-velocity development cycles' : 'Month 2-3: Develop customer acquisition and retention strategy',
         'Month 3: Establish funding strategy and begin investor outreach with traction metrics and product roadmap'
       ].slice(0, 7)
+    }
+  }
+
+  // Helper methods for contextual analysis
+  private analyzeProjectIntent(projectContext: any, _ideas: IdeaCard[], dominantThemes: string[]): any {
+    if (!projectContext) {
+      return {
+        purposeStatement: "This project aims to achieve strategic objectives through systematic execution.",
+        coherenceLevel: "Moderate",
+        strategicFit: "Ideas show general alignment with project goals.",
+        coreObjectives: ["execution", "growth"],
+        themeRelevance: "moderate strategic focus"
+      }
+    }
+
+    const projectType = projectContext.type || 'general'
+    const projectName = projectContext.name || 'the initiative'
+    const description = projectContext.description || ''
+    
+    // Analyze how themes relate to project type
+    const typeThemeMapping: Record<string, string[]> = {
+      'marketing': ['user', 'social', 'campaign', 'brand', 'audience'],
+      'software': ['user', 'system', 'api', 'platform', 'data'],
+      'business_plan': ['market', 'revenue', 'customer', 'growth', 'strategy'],
+      'product_development': ['user', 'feature', 'design', 'testing', 'launch'],
+      'operations': ['process', 'efficiency', 'automation', 'workflow', 'optimization'],
+      'research': ['data', 'analysis', 'testing', 'validation', 'insights']
+    }
+    
+    const expectedThemes = typeThemeMapping[projectType] || ['strategy', 'execution', 'growth']
+    const themeAlignment = dominantThemes.filter(theme => 
+      expectedThemes.some((expected: string) => theme.includes(expected) || expected.includes(theme))
+    ).length
+    
+    const alignmentScore = dominantThemes.length > 0 ? (themeAlignment / dominantThemes.length * 100) : 75
+    
+    let purposeStatement = `This ${projectType} project "${projectName}" `
+    if (description.length > 10) {
+      purposeStatement += `focuses on ${description.toLowerCase().substring(0, 100)}... `
+    }
+    
+    switch (projectType) {
+      case 'marketing':
+        purposeStatement += "seeks to maximize customer engagement and brand reach through targeted initiatives."
+        break
+      case 'software':
+        purposeStatement += "aims to deliver scalable technical solutions that drive user value and business growth."
+        break
+      case 'business_plan':
+        purposeStatement += "establishes strategic foundation for sustainable market entry and revenue generation."
+        break
+      case 'product_development':
+        purposeStatement += "focuses on creating market-ready solutions that address core customer needs."
+        break
+      default:
+        purposeStatement += "targets strategic objectives through coordinated execution and resource optimization."
+    }
+
+    return {
+      purposeStatement,
+      coherenceLevel: alignmentScore > 80 ? "Excellent" : alignmentScore > 60 ? "Good" : alignmentScore > 40 ? "Moderate" : "Limited",
+      strategicFit: alignmentScore > 70 ? 
+        "Ideas demonstrate strong strategic alignment with project objectives." :
+        alignmentScore > 50 ?
+        "Ideas show reasonable alignment but could be more focused." :
+        "Ideas require better alignment with core project objectives.",
+      coreObjectives: expectedThemes.slice(0, 3),
+      themeRelevance: alignmentScore > 70 ? 
+        "exceptional strategic focus" : 
+        alignmentScore > 50 ? 
+        "good strategic alignment" : 
+        "moderate strategic coherence"
+    }
+  }
+
+  private analyzeStrategicCoherence(projectContext: any, ideas: IdeaCard[], _quickWins: IdeaCard[], _majorProjects: IdeaCard[]): any {
+    const projectType = projectContext?.type || 'general'
+    
+    // Define what's typically needed for different project types
+    const requiredCapabilities: Record<string, string[]> = {
+      'marketing': ['audience research', 'content creation', 'campaign management', 'analytics tracking', 'conversion optimization'],
+      'software': ['user experience', 'technical architecture', 'data management', 'security', 'scalability'],
+      'business_plan': ['market analysis', 'revenue model', 'competitive positioning', 'financial projections', 'go-to-market'],
+      'product_development': ['user research', 'design', 'development', 'testing', 'launch strategy'],
+      'operations': ['process design', 'automation', 'quality control', 'resource optimization', 'performance tracking'],
+      'research': ['methodology', 'data collection', 'analysis', 'validation', 'documentation']
+    }
+
+    const needed = requiredCapabilities[projectType] || ['strategy', 'execution', 'measurement', 'optimization', 'growth']
+    const ideaTexts = ideas.map(i => i.content.toLowerCase()).join(' ')
+    
+    const coveredCapabilities = needed.filter((capability: string) => 
+      ideaTexts.includes(capability.toLowerCase()) || 
+      capability.split(' ').some((word: string) => ideaTexts.includes(word.toLowerCase()))
+    )
+    
+    const missingElements = needed.filter((capability: string) => !coveredCapabilities.includes(capability))
+    const alignmentScore = Math.round((coveredCapabilities.length / needed.length) * 100)
+    
+    let gapAnalysis = ""
+    if (missingElements.length === 0) {
+      gapAnalysis = "Complete strategic coverage achieved - all core capabilities addressed."
+    } else if (missingElements.length <= 2) {
+      gapAnalysis = `Minor gaps in ${missingElements.join(' and ')} could be addressed in future iterations.`
+    } else {
+      gapAnalysis = `Key strategic gaps in ${missingElements.slice(0, 2).join(' and ')} require immediate attention for project success.`
+    }
+
+    return {
+      alignment: alignmentScore,
+      missingElements,
+      gapAnalysis,
+      gapImpact: missingElements.length > 2 ? 
+        "These gaps may significantly impact project success probability." :
+        missingElements.length > 0 ?
+        "These gaps represent optimization opportunities." :
+        "No critical gaps detected - comprehensive strategic coverage."
+    }
+  }
+
+  private getQuadrantDistribution(ideas: IdeaCard[]): any {
+    const quickWins = ideas.filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'quick-wins').length
+    const majorProjects = ideas.filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'major-projects').length
+    const fillIns = ideas.filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'fill-ins').length
+    const thankless = ideas.filter(i => this.getQuadrantFromPosition(i.x, i.y) === 'thankless-tasks').length
+    
+    const total = ideas.length
+    const quickWinPct = Math.round((quickWins / total) * 100)
+    const majorPct = Math.round((majorProjects / total) * 100)
+    
+    let riskProfile = ""
+    let description = ""
+    let details = ""
+    let strategicImplication = ""
+    let recommendation = ""
+    
+    if (quickWinPct > 50) {
+      riskProfile = "Risk-Conscious"
+      description = "Quick-Win Focused Distribution"
+      details = `heavily in quick-wins (${quickWinPct}%) with ${majorProjects} strategic initiatives.`
+      strategicImplication = "minimizes execution risk while ensuring rapid value delivery."
+      recommendation = "is well-suited for proving market demand before major investments."
+    } else if (majorPct > 50) {
+      riskProfile = "Ambitious"  
+      description = "Strategic-Heavy Distribution"
+      details = `primarily in major projects (${majorPct}%) with ${quickWins} quick wins.`
+      strategicImplication = "maximizes long-term impact but increases execution complexity."
+      recommendation = "requires strong execution capabilities and adequate runway."
+    } else {
+      riskProfile = "Balanced"
+      description = "Optimal Balanced Distribution"
+      details = `strategically balanced between quick wins (${quickWinPct}%) and major projects (${majorPct}%).`
+      strategicImplication = "balances risk and reward for sustainable growth."
+      recommendation = "provides excellent foundation for both immediate traction and long-term success."
+    }
+    
+    return {
+      riskProfile,
+      description,
+      details,
+      strategicImplication,
+      recommendation,
+      distribution: { quickWins, majorProjects, fillIns, thankless }
     }
   }
 
