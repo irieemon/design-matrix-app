@@ -21,6 +21,11 @@ interface Epic {
   priority: string
   complexity: string
   relatedIdeas: string[]
+  // Timeline-specific properties
+  startMonth?: number
+  duration?: number
+  status?: 'planned' | 'in-progress' | 'completed'
+  team?: string
 }
 
 interface Phase {
@@ -366,11 +371,11 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           id: `${phaseIndex}-${epicIndex}`,
           title: epic.title || `Epic ${epicIndex + 1}`,
           description: epic.description,
-          startMonth: currentMonth,
-          duration: Math.max(1, Math.floor(phaseDuration / (phase.epics?.length || 1))),
-          team: getTeamForEpic(epic),
+          startMonth: epic.startMonth !== undefined ? epic.startMonth : currentMonth,
+          duration: epic.duration !== undefined ? epic.duration : Math.max(1, Math.floor(phaseDuration / (phase.epics?.length || 1))),
+          team: epic.team || getTeamForEpic(epic),
           priority,
-          status: phaseIndex === 0 ? 'in-progress' : 'planned' as const,
+          status: epic.status || (phaseIndex === 0 ? 'in-progress' : 'planned') as const,
           userStories: epic.userStories,
           deliverables: epic.deliverables,
           relatedIdeas: epic.relatedIdeas,
@@ -405,10 +410,18 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
             const featureId = `${phaseIndex}-${epicIndex}`
             const updatedFeature = updatedFeatures.find(f => f.id === featureId)
             if (updatedFeature) {
-              // Update the epic with the new feature data
+              // Update the epic with all the feature data
               epic.title = updatedFeature.title
               epic.description = updatedFeature.description
-              // Note: We could also update other properties as needed
+              epic.startMonth = updatedFeature.startMonth
+              epic.duration = updatedFeature.duration
+              epic.status = updatedFeature.status
+              epic.team = updatedFeature.team
+              epic.priority = updatedFeature.priority
+              epic.complexity = updatedFeature.complexity
+              epic.userStories = updatedFeature.userStories || epic.userStories
+              epic.deliverables = updatedFeature.deliverables || epic.deliverables
+              epic.relatedIdeas = updatedFeature.relatedIdeas || epic.relatedIdeas
             }
           })
         })
