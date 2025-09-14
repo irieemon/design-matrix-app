@@ -227,6 +227,45 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
     return features.filter(feature => feature.team === teamId)
   }
 
+  // Calculate non-overlapping row positions for features
+  const calculateFeatureRows = (teamFeatures: RoadmapFeature[]) => {
+    const rows: { [featureId: string]: number } = {}
+    const occupiedRows: { row: number; endMonth: number }[] = []
+    
+    // Sort features by start month for better positioning
+    const sortedFeatures = [...teamFeatures].sort((a, b) => a.startMonth - b.startMonth)
+    
+    sortedFeatures.forEach(feature => {
+      const featureStart = feature.startMonth
+      const featureEnd = feature.startMonth + feature.duration - 1
+      
+      // Find the first available row that doesn't conflict
+      let targetRow = 0
+      while (true) {
+        const conflict = occupiedRows.find(occupied => 
+          occupied.row === targetRow && 
+          occupied.endMonth >= featureStart
+        )
+        
+        if (!conflict) {
+          break
+        }
+        targetRow++
+      }
+      
+      // Assign the feature to this row
+      rows[feature.id] = targetRow
+      
+      // Mark this row as occupied until the feature ends
+      occupiedRows.push({ row: targetRow, endMonth: featureEnd })
+      
+      // Clean up expired occupations to allow reuse
+      occupiedRows.splice(0, occupiedRows.length, ...occupiedRows.filter(o => o.endMonth >= featureStart))
+    })
+    
+    return rows
+  }
+
   // Get color classes based on priority and status
   const getFeatureStyles = (priority: string, status: string) => {
     let bgColor = 'bg-gray-200'
@@ -392,9 +431,12 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
       <div className="divide-y divide-gray-200 min-h-0">
         {teamLanes.map((team) => {
           const teamFeatures = getFeaturesForTeam(team.id)
+          const featureRows = calculateFeatureRows(teamFeatures)
+          const maxRows = Math.max(1, ...Object.values(featureRows), 0) + 1
+          const laneHeight = Math.max(140, maxRows * 40 + 40) // 40px per row + padding
           
           return (
-            <div key={team.id} className="flex min-h-[140px] overflow-hidden">
+            <div key={team.id} className="flex overflow-hidden" style={{ minHeight: `${laneHeight}px` }}>
               {/* Team Label */}
               <div className={`w-48 ${team.bgColor} border-r-2 border-gray-200 flex items-center px-4 flex-shrink-0`}>
                 <div className="flex items-center space-x-3">
@@ -428,8 +470,9 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                 
                 {/* Features */}
                 <div className="relative h-full px-2 pt-2">
-                  {teamFeatures
-                    .map((feature, index) => {
+                  {(() => {
+                    const featureRows = calculateFeatureRows(teamFeatures)
+                    return teamFeatures.map((feature) => {
                       const styles = getFeatureStyles(feature.priority, feature.status)
                       const featureStart = feature.startMonth
                       const featureEnd = feature.startMonth + feature.duration - 1
@@ -459,7 +502,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                           } ${draggedFeature?.id === feature.id ? 'opacity-50' : ''} ${isResizing === feature.id ? 'ring-2 ring-blue-400 scale-105' : ''}`}
                           style={{
                             ...position,
-                            top: `${index * 36 + 16}px`
+                            top: `${(featureRows[feature.id] || 0) * 36 + 16}px`
                           }}
                           title={`${isPartiallyVisible ? '[Hidden] ' : ''}Drag to move, resize handles on hover: ${feature.title}`}
                         >
@@ -491,7 +534,8 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                           />
                         </div>
                       )
-                    })}
+                    })
+                  })()}
                 </div>
               </div>
             </div>
