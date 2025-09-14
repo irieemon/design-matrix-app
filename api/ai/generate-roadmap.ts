@@ -77,7 +77,15 @@ async function generateRoadmapWithOpenAI(apiKey: string, projectName: string, pr
       messages: [
         {
           role: 'system',
-          content: `You are a strategic project manager creating a comprehensive roadmap for professional PDF documentation. Generate a detailed roadmap with 3-5 phases that logically progress from planning to execution to optimization.
+          content: `You are a strategic project manager creating a comprehensive roadmap. Generate a detailed roadmap with 3-5 phases that logically progress from planning to execution to optimization. 
+
+IMPORTANT: Create epics that span ALL team layers including:
+- Platform/Infrastructure team: Backend services, databases, security, DevOps, APIs, system architecture
+- Web team: Frontend web applications, web interfaces, browser-based features
+- Mobile team: Mobile apps, mobile-specific features (if applicable to project)
+- Marketing team: User acquisition, analytics, campaigns, growth initiatives
+
+Ensure at least 2-3 epics are specifically for platform/infrastructure work in EVERY project type.
 
 Return a JSON object with this EXACT structure matching the RoadmapData interface:
 {
@@ -120,7 +128,15 @@ Return a JSON object with this EXACT structure matching the RoadmapData interfac
         },
         {
           role: 'user',
-          content: `Create a comprehensive strategic roadmap for professional PDF documentation:
+          content: `Create a comprehensive strategic roadmap:
+
+IMPORTANT: Create epics that span ALL team layers including:
+- Platform/Infrastructure team: Backend services, databases, security, DevOps, APIs, system architecture  
+- Web team: Frontend web applications, web interfaces, browser-based features
+- Mobile team: Mobile apps, mobile-specific features (if applicable to project)
+- Marketing team: User acquisition, analytics, campaigns, growth initiatives
+
+Ensure at least 2-3 epics are specifically for platform/infrastructure work in EVERY project type.
 
 Project: ${projectName}
 Type: ${projectType}
@@ -184,7 +200,15 @@ async function generateRoadmapWithAnthropic(apiKey: string, projectName: string,
       messages: [
         {
           role: 'user',
-          content: `Create a comprehensive strategic roadmap for professional PDF documentation. Return ONLY a JSON object matching the RoadmapData interface structure.
+          content: `Create a comprehensive strategic roadmap. Return ONLY a JSON object matching the RoadmapData interface structure.
+
+IMPORTANT: Create epics that span ALL team layers including:
+- Platform/Infrastructure team: Backend services, databases, security, DevOps, APIs, system architecture
+- Web team: Frontend web applications, web interfaces, browser-based features
+- Mobile team: Mobile apps, mobile-specific features (if applicable to project)
+- Marketing team: User acquisition, analytics, campaigns, growth initiatives
+
+Ensure at least 2-3 epics are specifically for platform/infrastructure work in EVERY project type.
 
 Project: ${projectName}
 Type: ${projectType}

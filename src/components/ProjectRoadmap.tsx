@@ -216,17 +216,28 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     const getTeamForEpic = (epic: Epic) => {
       const title = epic.title?.toLowerCase() || ''
       const description = epic.description?.toLowerCase() || ''
+      const combined = `${title} ${description}`
       
-      // Smart team assignment based on keywords
-      if (title.includes('mobile') || title.includes('app') || description.includes('mobile')) {
-        return 'mobile'
-      } else if (title.includes('market') || title.includes('analytics') || title.includes('campaign') || description.includes('marketing')) {
-        return 'marketing'
-      } else if (title.includes('platform') || title.includes('infrastructure') || title.includes('security') || description.includes('backend')) {
+      // Platform/Infrastructure keywords (check first for higher priority)
+      const platformKeywords = ['platform', 'infrastructure', 'backend', 'database', 'api', 'security', 'devops', 'server', 'architecture', 'deployment', 'authentication', 'authorization', 'data model', 'system design', 'scalability', 'performance', 'monitoring', 'logging']
+      if (platformKeywords.some(keyword => combined.includes(keyword))) {
         return 'platform'
-      } else {
-        return 'web' // default to web team
       }
+      
+      // Mobile keywords
+      const mobileKeywords = ['mobile', 'app', 'ios', 'android', 'react native', 'flutter', 'native app']
+      if (mobileKeywords.some(keyword => combined.includes(keyword))) {
+        return 'mobile'
+      }
+      
+      // Marketing keywords
+      const marketingKeywords = ['market', 'analytics', 'campaign', 'growth', 'acquisition', 'retention', 'conversion', 'seo', 'social', 'advertising', 'promotion', 'outreach', 'engagement']
+      if (marketingKeywords.some(keyword => combined.includes(keyword))) {
+        return 'marketing'
+      }
+      
+      // Default to web team for frontend/UI work
+      return 'web'
     }
 
     roadmapData.roadmapAnalysis.phases.forEach((phase, phaseIndex) => {

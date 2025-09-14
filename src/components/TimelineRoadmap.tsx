@@ -35,7 +35,7 @@ interface TimelineRoadmapProps {
 }
 
 const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
-  features,
+  features: initialFeatures,
   startDate = new Date(),
   title = "PRODUCT ROADMAP",
   subtitle = "ENVISION 6.0"
@@ -43,6 +43,14 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   const [currentQuarter, setCurrentQuarter] = useState(0)
   const [selectedFeature, setSelectedFeature] = useState<RoadmapFeature | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [features, setFeatures] = useState<RoadmapFeature[]>(initialFeatures)
+  const [draggedFeature, setDraggedFeature] = useState<RoadmapFeature | null>(null)
+  const [isResizing, setIsResizing] = useState<string | null>(null)
+
+  // Update features when props change
+  React.useEffect(() => {
+    setFeatures(initialFeatures)
+  }, [initialFeatures])
 
   const handleFeatureClick = (feature: RoadmapFeature) => {
     setSelectedFeature(feature)
@@ -53,38 +61,123 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
     setIsModalOpen(false)
     setSelectedFeature(null)
   }
-  
-  // Define team lanes
-  const teamLanes: TeamLane[] = [
-    {
-      id: 'web',
-      name: 'WEB TEAM',
-      icon: Monitor,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50'
-    },
-    {
-      id: 'mobile',
-      name: 'MOBILE TEAM',
-      icon: Smartphone,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50'
-    },
-    {
-      id: 'marketing',
-      name: 'MARKETING TEAM',
-      icon: TrendingUp,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50'
-    },
-    {
-      id: 'platform',
-      name: 'PLATFORM TEAM',
-      icon: Settings,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50'
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, feature: RoadmapFeature) => {
+    setDraggedFeature(feature)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e: React.DragEvent, targetTeamId: string, targetMonth: number) => {
+    e.preventDefault()
+    if (!draggedFeature) return
+
+    const updatedFeatures = features.map(feature => 
+      feature.id === draggedFeature.id 
+        ? { ...feature, team: targetTeamId, startMonth: targetMonth }
+        : feature
+    )
+    
+    setFeatures(updatedFeatures)
+    setDraggedFeature(null)
+  }
+
+  // Resizing handlers
+  const handleMouseDown = (e: React.MouseEvent, featureId: string, direction: 'left' | 'right') => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsResizing(featureId)
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      // Calculate new duration based on mouse position
+      const feature = features.find(f => f.id === featureId)
+      if (!feature) return
+
+      const rect = (e.target as HTMLElement).closest('.timeline-container')?.getBoundingClientRect()
+      if (!rect) return
+
+      const monthWidth = rect.width / 6
+      const relativeX = e.clientX - rect.left
+      const newMonth = Math.floor(relativeX / monthWidth)
+      
+      if (direction === 'right') {
+        const newDuration = Math.max(1, newMonth - feature.startMonth + 1)
+        setFeatures(prev => prev.map(f => 
+          f.id === featureId ? { ...f, duration: newDuration } : f
+        ))
+      } else {
+        const newStartMonth = Math.max(0, newMonth)
+        const newDuration = feature.duration + (feature.startMonth - newStartMonth)
+        setFeatures(prev => prev.map(f => 
+          f.id === featureId ? { ...f, startMonth: newStartMonth, duration: Math.max(1, newDuration) } : f
+        ))
+      }
     }
-  ]
+
+    const handleMouseUp = () => {
+      setIsResizing(null)
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }
+  
+  // Generate contextual team lanes based on project type and features
+  const getContextualTeamLanes = (): TeamLane[] => {
+    const baseTeams = [
+      {
+        id: 'platform',
+        name: 'PLATFORM TEAM',
+        icon: Settings,
+        color: 'text-green-600',
+        bgColor: 'bg-green-50'
+      }
+    ]
+
+    // Add project-specific teams based on features present
+    const teamIds = new Set(features.map(f => f.team))
+    
+    if (teamIds.has('web')) {
+      baseTeams.push({
+        id: 'web',
+        name: 'WEB TEAM',
+        icon: Monitor,
+        color: 'text-orange-600',
+        bgColor: 'bg-orange-50'
+      })
+    }
+    
+    if (teamIds.has('mobile')) {
+      baseTeams.push({
+        id: 'mobile',
+        name: 'MOBILE TEAM',
+        icon: Smartphone,
+        color: 'text-blue-600',
+        bgColor: 'bg-blue-50'
+      })
+    }
+    
+    if (teamIds.has('marketing')) {
+      baseTeams.push({
+        id: 'marketing',
+        name: 'MARKETING TEAM',
+        icon: TrendingUp,
+        color: 'text-purple-600',
+        bgColor: 'bg-purple-50'
+      })
+    }
+
+    return baseTeams
+  }
+
+  const teamLanes = getContextualTeamLanes()
 
   // Generate months starting from startDate
   const generateMonths = (count: number) => {
@@ -305,7 +398,17 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
               </div>
               
               {/* Feature Timeline */}
-              <div className="flex-1 relative py-4">
+              <div 
+                className="flex-1 relative py-4 timeline-container" 
+                onDragOver={handleDragOver}
+                onDrop={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  const relativeX = e.clientX - rect.left
+                  const monthWidth = rect.width / 6
+                  const targetMonth = Math.floor(relativeX / monthWidth) + currentQuarter * 6
+                  handleDrop(e, team.id, targetMonth)
+                }}
+              >
                 {/* Month grid lines */}
                 <div className="absolute inset-0 flex">
                   {visibleMonths.map((month) => (
@@ -316,33 +419,66 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                 {/* Features */}
                 <div className="relative h-full px-2">
                   {teamFeatures
-                    .filter(feature => {
+                    .map((feature, index) => {
+                      const styles = getFeatureStyles(feature.priority, feature.status)
                       const featureStart = feature.startMonth
                       const featureEnd = feature.startMonth + feature.duration - 1
                       const viewStart = currentQuarter * 6
                       const viewEnd = viewStart + 5
-                      return featureEnd >= viewStart && featureStart <= viewEnd
-                    })
-                    .map((feature, index) => {
-                      const styles = getFeatureStyles(feature.priority, feature.status)
+                      
+                      // Show if feature overlaps with current view
+                      const isVisible = featureEnd >= viewStart && featureStart <= viewEnd
                       const adjustedStartMonth = Math.max(0, feature.startMonth - currentQuarter * 6)
                       const position = getFeaturePosition({
                         ...feature,
                         startMonth: adjustedStartMonth
                       })
                       
+                      // Show partially visible tasks with different styling
+                      const isPartiallyVisible = !isVisible && (featureStart <= viewEnd + 6 && featureEnd >= viewStart - 6)
+                      
+                      if (!isVisible && !isPartiallyVisible) return null
+                      
                       return (
                         <div
                           key={feature.id}
-                          className={`absolute h-8 rounded-lg border-2 ${styles.bgColor} ${styles.textColor} ${styles.borderColor} flex items-center px-3 shadow-sm hover:shadow-md transition-all cursor-pointer hover:scale-105 hover:z-10`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, feature)}
+                          className={`group absolute h-8 rounded-lg border-2 ${styles.bgColor} ${styles.textColor} ${styles.borderColor} flex items-center shadow-sm hover:shadow-md transition-all cursor-move hover:scale-105 hover:z-10 ${
+                            isPartiallyVisible ? 'opacity-50 border-dashed' : ''
+                          } ${draggedFeature?.id === feature.id ? 'opacity-50' : ''}`}
                           style={{
                             ...position,
                             top: `${index * 36 + 10}px`
                           }}
-                          title={`Click to view details: ${feature.title}`}
-                          onClick={() => handleFeatureClick(feature)}
+                          title={`${isPartiallyVisible ? '[Hidden] ' : ''}Drag to move, resize handles on hover: ${feature.title}`}
                         >
-                          <span className="text-xs font-semibold truncate">{feature.title}</span>
+                          {/* Left resize handle */}
+                          <div
+                            className="absolute left-0 top-0 w-2 h-full bg-transparent hover:bg-blue-400 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                            onMouseDown={(e) => handleMouseDown(e, feature.id, 'left')}
+                            title="Drag to resize start date"
+                          />
+                          
+                          {/* Task content */}
+                          <div 
+                            className="flex-1 px-3 py-1 truncate"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleFeatureClick(feature)
+                            }}
+                          >
+                            <span className="text-xs font-semibold">
+                              {isPartiallyVisible ? '••• ' : ''}{feature.title}
+                            </span>
+                          </div>
+                          
+                          {/* Right resize handle */}
+                          <div
+                            className="absolute right-0 top-0 w-2 h-full bg-transparent hover:bg-blue-400 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                            onMouseDown={(e) => handleMouseDown(e, feature.id, 'right')}
+                            title="Drag to resize duration"
+                          />
                         </div>
                       )
                     })}
