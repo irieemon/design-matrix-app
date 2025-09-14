@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { Users, Monitor, Smartphone, TrendingUp, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Users, Monitor, Smartphone, TrendingUp, Settings, ChevronLeft, ChevronRight, BarChart3, Grid3X3 } from 'lucide-react'
 import FeatureDetailModal from './FeatureDetailModal'
 
 interface RoadmapFeature {
@@ -33,6 +33,8 @@ interface TimelineRoadmapProps {
   title?: string
   subtitle?: string
   onFeaturesChange?: (features: RoadmapFeature[]) => void
+  viewMode?: 'timeline' | 'detailed'
+  onViewModeChange?: (mode: 'timeline' | 'detailed') => void
 }
 
 const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
@@ -40,7 +42,9 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   startDate = new Date(),
   title = "PRODUCT ROADMAP",
   subtitle = "ENVISION 6.0",
-  onFeaturesChange
+  onFeaturesChange,
+  viewMode = 'timeline',
+  onViewModeChange
 }) => {
   const [currentQuarter, setCurrentQuarter] = useState(0)
   const [selectedFeature, setSelectedFeature] = useState<RoadmapFeature | null>(null)
@@ -347,6 +351,32 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
             <p className="text-slate-300 text-sm">{subtitle}</p>
           </div>
           <div className="flex items-center space-x-4">
+            {onViewModeChange && (
+              <div className="flex items-center bg-slate-700/50 rounded-lg border border-slate-600 p-1">
+                <button
+                  onClick={() => onViewModeChange('timeline')}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'timeline'
+                      ? 'bg-slate-600 text-white'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  <span>Timeline</span>
+                </button>
+                <button
+                  onClick={() => onViewModeChange('detailed')}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'detailed'
+                      ? 'bg-slate-600 text-white'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                  <span>Detailed</span>
+                </button>
+              </div>
+            )}
             <div className="flex items-center space-x-2">
               <div className="flex items-center space-x-1">
                 <div className="w-3 h-3 bg-slate-700 rounded-full"></div>

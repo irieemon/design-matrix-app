@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown, Download, Grid3X3, BarChart3 } from 'lucide-react'
+import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown, Download } from 'lucide-react'
 import { Project, IdeaCard, ProjectRoadmap as ProjectRoadmapType } from '../types'
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
@@ -351,40 +351,13 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           </div>
           <div className="flex items-center space-x-3">
             {roadmapData && (
-              <>
-                {/* View Mode Toggle */}
-                <div className="flex items-center bg-white rounded-lg border border-slate-200 p-1">
-                  <button
-                    onClick={() => setViewMode('timeline')}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      viewMode === 'timeline'
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    <span>Timeline</span>
-                  </button>
-                  <button
-                    onClick={() => setViewMode('detailed')}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      viewMode === 'detailed'
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <Grid3X3 className="w-4 h-4" />
-                    <span>Detailed</span>
-                  </button>
-                </div>
-                <button
-                  onClick={handleExportToPDF}
-                  className="flex items-center space-x-2 bg-slate-600 text-white px-4 py-3 rounded-xl hover:bg-slate-700 transition-colors"
-                >
-                  <Download className="w-5 h-5" />
-                  <span>Export PDF</span>
-                </button>
-              </>
+              <button
+                onClick={handleExportToPDF}
+                className="flex items-center space-x-2 bg-slate-600 text-white px-4 py-3 rounded-xl hover:bg-slate-700 transition-colors"
+              >
+                <Download className="w-5 h-5" />
+                <span>Export PDF</span>
+              </button>
             )}
             <button
               onClick={generateRoadmap}
@@ -458,6 +431,8 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
               title={currentProject?.name || 'PROJECT ROADMAP'}
               subtitle={`${timelineFeatures.length} Features • ${roadmapData.roadmapAnalysis?.totalDuration || '6 months'}`}
               onFeaturesChange={handleFeaturesChange}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
             />
           )}
 
