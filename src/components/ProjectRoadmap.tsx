@@ -212,32 +212,128 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     const features: any[] = []
     let currentMonth = 0
     
-    // Team mapping based on epic characteristics
+    // Team mapping based on project type and epic characteristics
     const getTeamForEpic = (epic: Epic) => {
       const title = epic.title?.toLowerCase() || ''
       const description = epic.description?.toLowerCase() || ''
       const combined = `${title} ${description}`
+      const projectType = currentProject?.project_type?.toLowerCase() || 'other'
       
-      // Platform/Infrastructure keywords (check first for higher priority)
-      const platformKeywords = ['platform', 'infrastructure', 'backend', 'database', 'api', 'security', 'devops', 'server', 'architecture', 'deployment', 'authentication', 'authorization', 'data model', 'system design', 'scalability', 'performance', 'monitoring', 'logging']
-      if (platformKeywords.some(keyword => combined.includes(keyword))) {
-        return 'platform'
+      // Define team categories based on project type
+      if (projectType.includes('software') || projectType.includes('app') || projectType.includes('platform') || projectType.includes('system')) {
+        // Software development teams
+        const platformKeywords = ['platform', 'infrastructure', 'backend', 'database', 'api', 'security', 'devops', 'server', 'architecture', 'deployment', 'authentication', 'authorization', 'data model', 'system design', 'scalability', 'performance', 'monitoring', 'logging']
+        if (platformKeywords.some(keyword => combined.includes(keyword))) {
+          return 'platform'
+        }
+        
+        const mobileKeywords = ['mobile', 'app', 'ios', 'android', 'react native', 'flutter', 'native app']
+        if (mobileKeywords.some(keyword => combined.includes(keyword))) {
+          return 'mobile'
+        }
+        
+        const testingKeywords = ['test', 'quality', 'qa', 'automation', 'testing', 'validation', 'verification']
+        if (testingKeywords.some(keyword => combined.includes(keyword))) {
+          return 'testing'
+        }
+        
+        return 'web' // Default for software projects
+        
+      } else if (projectType.includes('marketing') || projectType.includes('campaign') || projectType.includes('brand')) {
+        // Marketing campaign teams
+        const creativeKeywords = ['creative', 'content', 'design', 'brand', 'visual', 'asset', 'copy', 'material', 'identity']
+        if (creativeKeywords.some(keyword => combined.includes(keyword))) {
+          return 'creative'
+        }
+        
+        const digitalKeywords = ['digital', 'social', 'online', 'advertising', 'seo', 'sem', 'email', 'web', 'channel']
+        if (digitalKeywords.some(keyword => combined.includes(keyword))) {
+          return 'digital'
+        }
+        
+        const analyticsKeywords = ['analytics', 'tracking', 'measurement', 'data', 'report', 'roi', 'performance', 'metrics']
+        if (analyticsKeywords.some(keyword => combined.includes(keyword))) {
+          return 'analytics'
+        }
+        
+        return 'operations' // Default for marketing projects
+        
+      } else if (projectType.includes('event') || projectType.includes('conference') || projectType.includes('meeting')) {
+        // Event management teams
+        const planningKeywords = ['planning', 'logistics', 'venue', 'coordination', 'vendor', 'timeline', 'budget']
+        if (planningKeywords.some(keyword => combined.includes(keyword))) {
+          return 'planning'
+        }
+        
+        const marketingKeywords = ['marketing', 'promotion', 'attendee', 'acquisition', 'communication', 'outreach']
+        if (marketingKeywords.some(keyword => combined.includes(keyword))) {
+          return 'marketing'
+        }
+        
+        const operationsKeywords = ['operations', 'registration', 'on-site', 'technical', 'staff', 'setup']
+        if (operationsKeywords.some(keyword => combined.includes(keyword))) {
+          return 'operations'
+        }
+        
+        return 'experience' // Default for event projects
+        
+      } else if (projectType.includes('research') || projectType.includes('study') || projectType.includes('analysis')) {
+        // Research project teams
+        const researchKeywords = ['research', 'data collection', 'survey', 'interview', 'methodology', 'literature']
+        if (researchKeywords.some(keyword => combined.includes(keyword))) {
+          return 'research'
+        }
+        
+        const analysisKeywords = ['analysis', 'processing', 'statistical', 'pattern', 'insights', 'findings']
+        if (analysisKeywords.some(keyword => combined.includes(keyword))) {
+          return 'analysis'
+        }
+        
+        const documentationKeywords = ['documentation', 'report', 'writing', 'visualization', 'presentation', 'publication']
+        if (documentationKeywords.some(keyword => combined.includes(keyword))) {
+          return 'documentation'
+        }
+        
+        return 'stakeholder' // Default for research projects
+        
+      } else if (projectType.includes('business') || projectType.includes('strategy') || projectType.includes('consulting')) {
+        // Business strategy teams
+        const strategyKeywords = ['strategy', 'business', 'analysis', 'market', 'competitive', 'planning']
+        if (strategyKeywords.some(keyword => combined.includes(keyword))) {
+          return 'strategy'
+        }
+        
+        const operationsKeywords = ['operations', 'process', 'optimization', 'workflow', 'resource', 'implementation']
+        if (operationsKeywords.some(keyword => combined.includes(keyword))) {
+          return 'operations'
+        }
+        
+        const stakeholderKeywords = ['stakeholder', 'client', 'communication', 'change', 'training', 'engagement']
+        if (stakeholderKeywords.some(keyword => combined.includes(keyword))) {
+          return 'stakeholder'
+        }
+        
+        return 'measurement' // Default for business projects
+        
+      } else {
+        // Generic project teams
+        const planningKeywords = ['planning', 'resource', 'timeline', 'risk', 'framework', 'strategy']
+        if (planningKeywords.some(keyword => combined.includes(keyword))) {
+          return 'planning'
+        }
+        
+        const executionKeywords = ['execution', 'implementation', 'deliverable', 'creation', 'development', 'build']
+        if (executionKeywords.some(keyword => combined.includes(keyword))) {
+          return 'execution'
+        }
+        
+        const coordinationKeywords = ['coordination', 'management', 'communication', 'stakeholder', 'vendor', 'team']
+        if (coordinationKeywords.some(keyword => combined.includes(keyword))) {
+          return 'coordination'
+        }
+        
+        return 'evaluation' // Default for generic projects
       }
-      
-      // Mobile keywords
-      const mobileKeywords = ['mobile', 'app', 'ios', 'android', 'react native', 'flutter', 'native app']
-      if (mobileKeywords.some(keyword => combined.includes(keyword))) {
-        return 'mobile'
-      }
-      
-      // Marketing keywords
-      const marketingKeywords = ['market', 'analytics', 'campaign', 'growth', 'acquisition', 'retention', 'conversion', 'seo', 'social', 'advertising', 'promotion', 'outreach', 'engagement']
-      if (marketingKeywords.some(keyword => combined.includes(keyword))) {
-        return 'marketing'
-      }
-      
-      // Default to web team for frontend/UI work
-      return 'web'
     }
 
     roadmapData.roadmapAnalysis.phases.forEach((phase, phaseIndex) => {

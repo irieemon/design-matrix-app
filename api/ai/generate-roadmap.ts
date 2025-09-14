@@ -66,6 +66,107 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function generateRoadmapWithOpenAI(apiKey: string, projectName: string, projectType: string, ideas: any[]) {
+  
+  // Define contextual team structures based on project type
+  const getProjectTypeContext = (projectType: string) => {
+    const type = projectType.toLowerCase()
+    
+    if (type.includes('software') || type.includes('app') || type.includes('platform') || type.includes('system')) {
+      return {
+        teams: [
+          'PLATFORM/INFRASTRUCTURE: Backend APIs, databases, authentication, security, DevOps, system architecture, data models, cloud infrastructure',
+          'FRONTEND/WEB: Frontend applications, web interfaces, user dashboards, responsive design, web-based features',
+          'MOBILE: Mobile applications, native features, app store deployment (if applicable)',
+          'QA/TESTING: Testing frameworks, quality assurance, performance testing, automated testing'
+        ],
+        mandatoryEpics: [
+          'Backend API architecture and development',
+          'Database design and implementation',
+          'Authentication and security systems',
+          'DevOps and deployment pipeline'
+        ]
+      }
+    } else if (type.includes('marketing') || type.includes('campaign') || type.includes('brand')) {
+      return {
+        teams: [
+          'CREATIVE: Content creation, design assets, brand materials, visual identity',
+          'DIGITAL MARKETING: Social media, online advertising, email campaigns, SEO/SEM',
+          'ANALYTICS: Performance tracking, data analysis, reporting, ROI measurement',
+          'OPERATIONS: Campaign management, vendor coordination, budget management, timeline execution'
+        ],
+        mandatoryEpics: [
+          'Creative asset development and brand guidelines',
+          'Digital marketing strategy and channel setup',
+          'Analytics and measurement framework',
+          'Campaign operations and workflow management'
+        ]
+      }
+    } else if (type.includes('event') || type.includes('conference') || type.includes('meeting')) {
+      return {
+        teams: [
+          'PLANNING: Event logistics, venue management, timeline coordination, vendor selection',
+          'MARKETING: Promotion strategy, attendee acquisition, communications, brand presence',
+          'OPERATIONS: Registration systems, on-site coordination, technical setup, staff management',
+          'EXPERIENCE: Content curation, speaker management, attendee engagement, networking facilitation'
+        ],
+        mandatoryEpics: [
+          'Event planning and logistics coordination',
+          'Marketing and attendee acquisition strategy',
+          'Registration and operational systems',
+          'Content and experience design'
+        ]
+      }
+    } else if (type.includes('research') || type.includes('study') || type.includes('analysis')) {
+      return {
+        teams: [
+          'RESEARCH: Data collection, survey design, interview protocols, literature review',
+          'ANALYSIS: Data processing, statistical analysis, pattern identification, insights generation',
+          'DOCUMENTATION: Report writing, visualization, presentation development, publication',
+          'STAKEHOLDER: Stakeholder communication, findings dissemination, recommendation implementation'
+        ],
+        mandatoryEpics: [
+          'Research methodology and data collection framework',
+          'Data analysis and insights generation',
+          'Documentation and reporting systems',
+          'Stakeholder engagement and communication plan'
+        ]
+      }
+    } else if (type.includes('business') || type.includes('strategy') || type.includes('consulting')) {
+      return {
+        teams: [
+          'STRATEGY: Business analysis, market research, competitive analysis, strategic planning',
+          'OPERATIONS: Process optimization, workflow design, resource allocation, implementation',
+          'STAKEHOLDER: Client management, communication, change management, training',
+          'MEASUREMENT: KPI definition, performance tracking, ROI analysis, reporting'
+        ],
+        mandatoryEpics: [
+          'Strategic analysis and planning framework',
+          'Operational process design and optimization',
+          'Stakeholder engagement and change management',
+          'Performance measurement and tracking systems'
+        ]
+      }
+    } else {
+      // Generic project structure
+      return {
+        teams: [
+          'PLANNING: Project planning, resource allocation, timeline management, risk assessment',
+          'EXECUTION: Implementation, deliverable creation, quality control, milestone tracking',
+          'COORDINATION: Team management, communication, stakeholder alignment, vendor management',
+          'EVALUATION: Performance measurement, outcome assessment, feedback collection, reporting'
+        ],
+        mandatoryEpics: [
+          'Project planning and framework establishment',
+          'Implementation strategy and execution plan',
+          'Coordination and communication systems',
+          'Evaluation and measurement framework'
+        ]
+      }
+    }
+  }
+
+  const projectContext = getProjectTypeContext(projectType)
+  
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -77,24 +178,14 @@ async function generateRoadmapWithOpenAI(apiKey: string, projectName: string, pr
       messages: [
         {
           role: 'system',
-          content: `You are an expert technical project manager with deep experience in full-stack software development. Your task is to create a comprehensive roadmap that MUST include all technical layers.
+          content: `You are an expert project manager with deep experience across various project types. Your task is to create a comprehensive roadmap tailored to the specific project type.
 
 CRITICAL REQUIREMENTS - YOU MUST FOLLOW THESE:
-1. Generate epics for ALL 4 team layers (do not skip any):
-   - PLATFORM/INFRASTRUCTURE: Backend APIs, databases, authentication, security, DevOps, system architecture, data models, cloud infrastructure
-   - WEB TEAM: Frontend applications, web interfaces, user dashboards, responsive design, web-based features
-   - MOBILE TEAM: Mobile applications, native features, app store deployment (if project needs mobile)
-   - MARKETING TEAM: User acquisition strategies, analytics implementation, growth campaigns, SEO, social media
-
-2. PLATFORM LAYER IS MANDATORY: Every roadmap MUST contain at least 3-4 platform/infrastructure epics regardless of project type
-3. REQUIRED PLATFORM EPICS (include variations of these):
-   - Backend API architecture and development
-   - Database design, modeling, and implementation  
-   - Authentication, authorization, and security systems
-   - DevOps, CI/CD, deployment pipeline, and infrastructure
-   - System monitoring, logging, and performance optimization
-4. Use technical keywords in epic titles that will trigger platform team assignment
-5. Each epic must be technically specific and actionable
+1. Generate epics for the contextual team structure based on project type: ${projectContext.teams.join(', ')}
+2. Each team should have 2-4 epics appropriate to their domain and the project type
+3. MANDATORY CORE EPICS for this project type (include variations of these): ${projectContext.mandatoryEpics.join(', ')}
+4. Use terminology and keywords specific to the project type domain
+5. Each epic must be specific, actionable, and relevant to the project type
 
 Return a JSON object with this EXACT structure matching the RoadmapData interface:
 {
@@ -137,34 +228,23 @@ Return a JSON object with this EXACT structure matching the RoadmapData interfac
         },
         {
           role: 'user',
-          content: `Generate a technical roadmap for this project. YOU MUST create epics for all 4 layers.
+          content: `Generate a comprehensive roadmap for this ${projectType} project. YOU MUST create epics for all team areas relevant to this project type.
 
 Project: ${projectName}
 Type: ${projectType}
 Ideas to incorporate: ${ideas.map(idea => `- ${idea.title}: ${idea.description}`).join('\n')}
 
-MANDATORY EPIC DISTRIBUTION (create these specific types):
-PLATFORM/INFRASTRUCTURE (must have 3-4 epics):
-- "Core API Development" or "Backend Services Architecture"  
-- "Database Design and Implementation"
-- "Authentication and Security System"
-- "DevOps and Deployment Pipeline"
+MANDATORY TEAM DISTRIBUTION (create epics for these areas):
+${projectContext.teams.map(team => `- ${team}`).join('\n')}
 
-WEB TEAM (must have 2-3 epics):
-- "Frontend Application Development" 
-- "User Interface and Dashboard"
-- "Web-based Features Implementation"
+CORE REQUIRED EPICS for this project type (must include variations of these):
+${projectContext.mandatoryEpics.map(epic => `- "${epic}"`).join('\n')}
 
-MOBILE TEAM (if applicable, 1-2 epics):
-- "Mobile Application Development"
-- "Native Mobile Features"
-
-MARKETING TEAM (must have 2-3 epics):
-- "Analytics and Tracking Implementation"
-- "User Acquisition Strategy"
-- "SEO and Growth Optimization"
-
-IMPORTANT: Use these exact epic title patterns and ensure each epic has technical deliverables.
+IMPORTANT: 
+- Use terminology and keywords specific to ${projectType} projects
+- Each epic should be relevant to the project type and team domain
+- Ensure deliverables are appropriate for ${projectType} projects
+- Focus on outcomes and value specific to this project type
 
 Requirements for comprehensive roadmap:
 1. Generate 3-5 logical phases (Foundation, Development, Enhancement, Testing, Launch)
@@ -212,6 +292,107 @@ Generate a roadmap that will create a beautiful, comprehensive PDF report with p
 }
 
 async function generateRoadmapWithAnthropic(apiKey: string, projectName: string, projectType: string, ideas: any[]) {
+  
+  // Define contextual team structures based on project type (same as OpenAI function)
+  const getProjectTypeContext = (projectType: string) => {
+    const type = projectType.toLowerCase()
+    
+    if (type.includes('software') || type.includes('app') || type.includes('platform') || type.includes('system')) {
+      return {
+        teams: [
+          'PLATFORM/INFRASTRUCTURE: Backend APIs, databases, authentication, security, DevOps, system architecture, data models, cloud infrastructure',
+          'FRONTEND/WEB: Frontend applications, web interfaces, user dashboards, responsive design, web-based features',
+          'MOBILE: Mobile applications, native features, app store deployment (if applicable)',
+          'QA/TESTING: Testing frameworks, quality assurance, performance testing, automated testing'
+        ],
+        mandatoryEpics: [
+          'Backend API architecture and development',
+          'Database design and implementation',
+          'Authentication and security systems',
+          'DevOps and deployment pipeline'
+        ]
+      }
+    } else if (type.includes('marketing') || type.includes('campaign') || type.includes('brand')) {
+      return {
+        teams: [
+          'CREATIVE: Content creation, design assets, brand materials, visual identity',
+          'DIGITAL MARKETING: Social media, online advertising, email campaigns, SEO/SEM',
+          'ANALYTICS: Performance tracking, data analysis, reporting, ROI measurement',
+          'OPERATIONS: Campaign management, vendor coordination, budget management, timeline execution'
+        ],
+        mandatoryEpics: [
+          'Creative asset development and brand guidelines',
+          'Digital marketing strategy and channel setup',
+          'Analytics and measurement framework',
+          'Campaign operations and workflow management'
+        ]
+      }
+    } else if (type.includes('event') || type.includes('conference') || type.includes('meeting')) {
+      return {
+        teams: [
+          'PLANNING: Event logistics, venue management, timeline coordination, vendor selection',
+          'MARKETING: Promotion strategy, attendee acquisition, communications, brand presence',
+          'OPERATIONS: Registration systems, on-site coordination, technical setup, staff management',
+          'EXPERIENCE: Content curation, speaker management, attendee engagement, networking facilitation'
+        ],
+        mandatoryEpics: [
+          'Event planning and logistics coordination',
+          'Marketing and attendee acquisition strategy',
+          'Registration and operational systems',
+          'Content and experience design'
+        ]
+      }
+    } else if (type.includes('research') || type.includes('study') || type.includes('analysis')) {
+      return {
+        teams: [
+          'RESEARCH: Data collection, survey design, interview protocols, literature review',
+          'ANALYSIS: Data processing, statistical analysis, pattern identification, insights generation',
+          'DOCUMENTATION: Report writing, visualization, presentation development, publication',
+          'STAKEHOLDER: Stakeholder communication, findings dissemination, recommendation implementation'
+        ],
+        mandatoryEpics: [
+          'Research methodology and data collection framework',
+          'Data analysis and insights generation',
+          'Documentation and reporting systems',
+          'Stakeholder engagement and communication plan'
+        ]
+      }
+    } else if (type.includes('business') || type.includes('strategy') || type.includes('consulting')) {
+      return {
+        teams: [
+          'STRATEGY: Business analysis, market research, competitive analysis, strategic planning',
+          'OPERATIONS: Process optimization, workflow design, resource allocation, implementation',
+          'STAKEHOLDER: Client management, communication, change management, training',
+          'MEASUREMENT: KPI definition, performance tracking, ROI analysis, reporting'
+        ],
+        mandatoryEpics: [
+          'Strategic analysis and planning framework',
+          'Operational process design and optimization',
+          'Stakeholder engagement and change management',
+          'Performance measurement and tracking systems'
+        ]
+      }
+    } else {
+      // Generic project structure
+      return {
+        teams: [
+          'PLANNING: Project planning, resource allocation, timeline management, risk assessment',
+          'EXECUTION: Implementation, deliverable creation, quality control, milestone tracking',
+          'COORDINATION: Team management, communication, stakeholder alignment, vendor management',
+          'EVALUATION: Performance measurement, outcome assessment, feedback collection, reporting'
+        ],
+        mandatoryEpics: [
+          'Project planning and framework establishment',
+          'Implementation strategy and execution plan',
+          'Coordination and communication systems',
+          'Evaluation and measurement framework'
+        ]
+      }
+    }
+  }
+
+  const projectContext = getProjectTypeContext(projectType)
+  
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -225,19 +406,19 @@ async function generateRoadmapWithAnthropic(apiKey: string, projectName: string,
       messages: [
         {
           role: 'user',
-          content: `Create a comprehensive strategic roadmap. Return ONLY a JSON object matching the RoadmapData interface structure.
+          content: `Create a comprehensive strategic roadmap for this ${projectType} project. Return ONLY a JSON object matching the RoadmapData interface structure.
 
-IMPORTANT: Create epics that span ALL team layers including:
-- Platform/Infrastructure team: Backend services, databases, security, DevOps, APIs, system architecture
-- Web team: Frontend web applications, web interfaces, browser-based features
-- Mobile team: Mobile apps, mobile-specific features (if applicable to project)
-- Marketing team: User acquisition, analytics, campaigns, growth initiatives
+IMPORTANT: Create epics that span these contextual team areas for ${projectType} projects:
+${projectContext.teams.map(team => `- ${team}`).join('\n')}
 
-Ensure at least 2-3 epics are specifically for platform/infrastructure work in EVERY project type.
+Core required epics for this project type:
+${projectContext.mandatoryEpics.map(epic => `- ${epic}`).join('\n')}
 
 Project: ${projectName}
 Type: ${projectType}
 Ideas to incorporate: ${ideas.map(idea => `- ${idea.title}: ${idea.description}`).join('\n')}
+
+Use terminology and deliverables appropriate for ${projectType} projects.
 
 Required JSON structure (RoadmapData interface):
 {
