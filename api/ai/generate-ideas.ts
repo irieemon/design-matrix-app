@@ -30,9 +30,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       userAgent: req.headers['user-agent']
     })
     
-    const { title, description, projectType } = req.body
+    const { title, description, projectType, count = 8, tolerance = 50 } = req.body
     
-    console.log('🔍 Extracted fields:', { title, description, projectType })
+    console.log('🔍 Extracted fields:', { title, description, projectType, count, tolerance })
     
     // Validate required fields
     if (!title || !description) {
@@ -61,7 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Use OpenAI
       console.log('🤖 Calling OpenAI API...')
       try {
-        ideas = await generateIdeasWithOpenAI(openaiKey, title, description, projectType)
+        ideas = await generateIdeasWithOpenAI(openaiKey, title, description, projectType, count, tolerance)
         console.log('✅ OpenAI API call completed, ideas count:', ideas?.length || 0)
         console.log('🔍 Sample idea:', ideas?.[0])
       } catch (openaiError) {
@@ -72,7 +72,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Use Anthropic
       console.log('🤖 Calling Anthropic API...')
       try {
-        ideas = await generateIdeasWithAnthropic(anthropicKey, title, description, projectType)
+        ideas = await generateIdeasWithAnthropic(anthropicKey, title, description, projectType, count, tolerance)
         console.log('✅ Anthropic API call completed, ideas count:', ideas?.length || 0)
         console.log('🔍 Sample idea:', ideas?.[0])
       } catch (anthropicError) {
@@ -97,7 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function generateIdeasWithOpenAI(apiKey: string, title: string, description: string, projectType: string) {
+async function generateIdeasWithOpenAI(apiKey: string, title: string, description: string, projectType: string, count: number = 8, tolerance: number = 50) {
   console.log('🚀 Making OpenAI request with:', {
     model: 'gpt-4o-mini',
     temperature: 0.8,
@@ -115,7 +115,12 @@ async function generateIdeasWithOpenAI(apiKey: string, title: string, descriptio
       messages: [
         {
           role: 'system',
-          content: `You are a creative project manager helping generate ideas for priority matrix placement. Generate exactly 8 diverse, actionable ideas that vary in effort (easy to hard) and impact (low to high). Each idea should be realistic and specific to the project context.
+          content: `You are a creative project manager helping generate ideas for priority matrix placement. Generate exactly ${count} diverse, actionable ideas that vary in effort (easy to hard) and impact (low to high). Each idea should be realistic and specific to the project context.
+
+Idea tolerance level: ${tolerance}% (0% = safe, proven ideas only; 100% = highly experimental, cutting-edge ideas)
+${tolerance < 30 ? 'Focus on safe, proven, low-risk ideas with established success patterns.' : 
+  tolerance < 70 ? 'Include a mix of proven ideas and some innovative approaches with moderate risk.' : 
+  'Emphasize experimental, cutting-edge, high-risk/high-reward ideas that push boundaries.'}
 
 Return a JSON array with this exact format:
 [
@@ -130,7 +135,7 @@ Return a JSON array with this exact format:
         },
         {
           role: 'user',
-          content: `Project: ${title}\nDescription: ${description}\nType: ${projectType}\n\nGenerate 8 actionable ideas with varying effort and impact levels.`
+          content: `Project: ${title}\nDescription: ${description}\nType: ${projectType}\n\nGenerate ${count} actionable ideas with varying effort and impact levels.`
         }
       ],
       temperature: 0.8,
@@ -173,7 +178,7 @@ Return a JSON array with this exact format:
   }
 }
 
-async function generateIdeasWithAnthropic(apiKey: string, title: string, description: string, projectType: string) {
+async function generateIdeasWithAnthropic(apiKey: string, title: string, description: string, projectType: string, count: number = 8, tolerance: number = 50) {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -187,7 +192,12 @@ async function generateIdeasWithAnthropic(apiKey: string, title: string, descrip
       messages: [
         {
           role: 'user',
-          content: `You are a creative project manager. Generate exactly 8 diverse, actionable ideas for this project that vary in effort and impact levels.
+          content: `You are a creative project manager. Generate exactly ${count} diverse, actionable ideas for this project that vary in effort and impact levels.
+
+Idea tolerance level: ${tolerance}% (0% = safe, proven ideas only; 100% = highly experimental, cutting-edge ideas)
+${tolerance < 30 ? 'Focus on safe, proven, low-risk ideas with established success patterns.' : 
+  tolerance < 70 ? 'Include a mix of proven ideas and some innovative approaches with moderate risk.' : 
+  'Emphasize experimental, cutting-edge, high-risk/high-reward ideas that push boundaries.'}
 
 Project: ${title}
 Description: ${description}

@@ -61,7 +61,8 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         projectName, 
         projectDescription,
         selectedProjectType === 'auto' ? 'General' : selectedProjectType,
-        ideaCount
+        ideaCount,
+        ideaTolerance
       )
       setAnalysis({ 
         needsClarification: false,
@@ -105,7 +106,8 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         projectName,
         projectDescription + ` Additional context: ${additionalContext}`,
         selectedProjectType === 'auto' ? 'General' : selectedProjectType,
-        ideaCount
+        ideaCount,
+        ideaTolerance
       )
       
       setAnalysis({ 

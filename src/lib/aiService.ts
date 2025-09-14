@@ -102,8 +102,8 @@ class SecureAIService {
     }
   }
 
-  async generateMultipleIdeas(title: string, description: string, projectType: string = 'General', count: number = 8): Promise<IdeaCard[]> {
-    logger.debug(`🧠 Generating ${count} ideas for project: "${title}"`)
+  async generateMultipleIdeas(title: string, description: string, projectType: string = 'General', count: number = 8, tolerance: number = 50): Promise<IdeaCard[]> {
+    logger.debug(`🧠 Generating ${count} ideas for project: "${title}" with ${tolerance}% tolerance`)
     
     try {
       const headers = await this.getAuthHeaders()
@@ -113,7 +113,9 @@ class SecureAIService {
         body: JSON.stringify({
           title,
           description,
-          projectType
+          projectType,
+          count,
+          tolerance
         })
       })
 
@@ -320,8 +322,8 @@ class SecureAIService {
   }
 
   // Legacy method for backward compatibility - now uses secure endpoints
-  async generateProjectIdeas(projectName: string, description: string, projectType?: string, count: number = 8): Promise<IdeaCard[]> {
-    return this.generateMultipleIdeas(projectName, description, projectType || 'General', count)
+  async generateProjectIdeas(projectName: string, description: string, projectType?: string, count: number = 8, tolerance: number = 50): Promise<IdeaCard[]> {
+    return this.generateMultipleIdeas(projectName, description, projectType || 'General', count, tolerance)
   }
 
   // Helper methods
