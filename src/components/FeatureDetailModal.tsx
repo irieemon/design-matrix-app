@@ -39,7 +39,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
   startDate = new Date(),
   mode = 'view',
   availableTeams = [],
-  projectType = 'software'
+  projectType: _ = 'software'
 }) => {
   const [editMode, setEditMode] = useState(mode === 'edit' || mode === 'create')
   const [editedFeature, setEditedFeature] = useState<FeatureDetail | null>(null)
