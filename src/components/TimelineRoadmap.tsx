@@ -32,13 +32,15 @@ interface TimelineRoadmapProps {
   startDate?: Date
   title?: string
   subtitle?: string
+  onFeaturesChange?: (features: RoadmapFeature[]) => void
 }
 
 const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   features: initialFeatures,
   startDate = new Date(),
   title = "PRODUCT ROADMAP",
-  subtitle = "ENVISION 6.0"
+  subtitle = "ENVISION 6.0",
+  onFeaturesChange
 }) => {
   const [currentQuarter, setCurrentQuarter] = useState(0)
   const [selectedFeature, setSelectedFeature] = useState<RoadmapFeature | null>(null)
@@ -84,6 +86,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
     )
     
     setFeatures(updatedFeatures)
+    onFeaturesChange?.(updatedFeatures)
     setDraggedFeature(null)
   }
 
@@ -107,15 +110,19 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
       
       if (direction === 'right') {
         const newDuration = Math.max(1, newMonth - feature.startMonth + 1)
-        setFeatures(prev => prev.map(f => 
+        const updatedFeatures = features.map(f => 
           f.id === featureId ? { ...f, duration: newDuration } : f
-        ))
+        )
+        setFeatures(updatedFeatures)
+        onFeaturesChange?.(updatedFeatures)
       } else {
         const newStartMonth = Math.max(0, newMonth)
         const newDuration = feature.duration + (feature.startMonth - newStartMonth)
-        setFeatures(prev => prev.map(f => 
+        const updatedFeatures = features.map(f => 
           f.id === featureId ? { ...f, startMonth: newStartMonth, duration: Math.max(1, newDuration) } : f
-        ))
+        )
+        setFeatures(updatedFeatures)
+        onFeaturesChange?.(updatedFeatures)
       }
     }
 
@@ -289,7 +296,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   const visibleMonths = getVisibleMonths()
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
       {/* Header */}
       <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-6 py-4">
         <div className="flex items-center justify-between">
@@ -379,14 +386,14 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
       </div>
 
       {/* Team Swim Lanes */}
-      <div className="divide-y divide-gray-200">
+      <div className="divide-y divide-gray-200 min-h-0">
         {teamLanes.map((team) => {
           const teamFeatures = getFeaturesForTeam(team.id)
           
           return (
-            <div key={team.id} className="flex min-h-[120px]">
+            <div key={team.id} className="flex min-h-[120px] overflow-hidden">
               {/* Team Label */}
-              <div className={`w-48 ${team.bgColor} border-r-2 border-gray-200 flex items-center px-4`}>
+              <div className={`w-48 ${team.bgColor} border-r-2 border-gray-200 flex items-center px-4 flex-shrink-0`}>
                 <div className="flex items-center space-x-3">
                   <div className={`p-2 bg-white rounded-lg shadow-sm border ${team.color}`}>
                     <team.icon className={`w-6 h-6 ${team.color}`} />
@@ -399,7 +406,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
               
               {/* Feature Timeline */}
               <div 
-                className="flex-1 relative py-4 timeline-container" 
+                className="flex-1 relative py-4 timeline-container overflow-hidden" 
                 onDragOver={handleDragOver}
                 onDrop={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect()

@@ -1071,6 +1071,31 @@ export class DatabaseService {
     }
   }
 
+  static async updateProjectRoadmap(roadmapId: string, updatedRoadmapData: any): Promise<boolean> {
+    try {
+      logger.debug('🔄 DatabaseService: Updating roadmap:', roadmapId)
+
+      const { error } = await supabase
+        .from('project_roadmaps')
+        .update({
+          roadmap_data: updatedRoadmapData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', roadmapId)
+
+      if (error) {
+        logger.error('❌ DatabaseService: Error updating roadmap:', error)
+        return false
+      }
+
+      logger.debug('✅ DatabaseService: Roadmap updated successfully')
+      return true
+    } catch (error) {
+      logger.error('💥 DatabaseService: Error in updateProjectRoadmap:', error)
+      return false
+    }
+  }
+
   // Insights Management
   static async saveProjectInsights(projectId: string, insightsData: any, createdBy: string, ideasAnalyzed: number): Promise<string | null> {
     try {

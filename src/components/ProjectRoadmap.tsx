@@ -281,6 +281,39 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
 
   const timelineFeatures = convertToTimelineFeatures()
 
+  // Handle feature changes and save them back to roadmap data
+  const handleFeaturesChange = async (updatedFeatures: any[]) => {
+    if (!roadmapData || !currentProject || !selectedRoadmapId) return
+    
+    try {
+      // Convert features back to roadmap phases
+      const updatedRoadmapData = { ...roadmapData }
+      if (updatedRoadmapData.roadmapAnalysis?.phases) {
+        // Update the roadmap data with the new feature information
+        updatedRoadmapData.roadmapAnalysis.phases.forEach((phase, phaseIndex) => {
+          phase.epics?.forEach((epic, epicIndex) => {
+            const featureId = `${phaseIndex}-${epicIndex}`
+            const updatedFeature = updatedFeatures.find(f => f.id === featureId)
+            if (updatedFeature) {
+              // Update the epic with the new feature data
+              epic.title = updatedFeature.title
+              epic.description = updatedFeature.description
+              // Note: We could also update other properties as needed
+            }
+          })
+        })
+      }
+      
+      // Save the updated roadmap data to the database
+      await DatabaseService.updateProjectRoadmap(selectedRoadmapId, updatedRoadmapData)
+      setRoadmapData(updatedRoadmapData)
+      
+      logger.debug('✅ Roadmap changes saved to database')
+    } catch (error) {
+      logger.error('❌ Failed to save roadmap changes:', error)
+    }
+  }
+
   if (!currentProject) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -312,14 +345,11 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
             <p className="text-slate-600 mb-2">
               AI-generated roadmap for <strong>{currentProject.name}</strong>
             </p>
-            <p className="text-sm text-slate-500">
-              Analyzing {(ideas || []).length} ideas • Created by {currentUser}
-            </p>
-          </div>
-          <div className="flex items-center space-x-3">
-            {roadmapData && (
-              <>
-                {/* View Mode Toggle */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-500">
+                Analyzing {(ideas || []).length} ideas • Created by {currentUser}
+              </p>
+              {roadmapData && (
                 <div className="flex items-center bg-white rounded-lg border border-slate-200 p-1">
                   <button
                     onClick={() => setViewMode('timeline')}
@@ -344,15 +374,18 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                     <span>Detailed</span>
                   </button>
                 </div>
-                
-                <button
-                  onClick={handleExportToPDF}
-                  className="flex items-center space-x-2 bg-slate-600 text-white px-4 py-3 rounded-xl hover:bg-slate-700 transition-colors"
-                >
-                  <Download className="w-5 h-5" />
-                  <span>Export PDF</span>
-                </button>
-              </>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            {roadmapData && (
+              <button
+                onClick={handleExportToPDF}
+                className="flex items-center space-x-2 bg-slate-600 text-white px-4 py-3 rounded-xl hover:bg-slate-700 transition-colors"
+              >
+                <Download className="w-5 h-5" />
+                <span>Export PDF</span>
+              </button>
             )}
             <button
               onClick={generateRoadmap}
@@ -370,66 +403,6 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         </div>
       </div>
 
-      {/* Roadmap History Section */}
-      {roadmapHistory.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-50 rounded-xl">
-                <History className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900">Roadmap History</h3>
-                <p className="text-sm text-slate-600">{roadmapHistory.length} saved roadmap{roadmapHistory.length !== 1 ? 's' : ''}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className="flex items-center space-x-2 text-slate-500 hover:text-slate-700 transition-colors"
-            >
-              <span className="text-sm">{showHistory ? 'Hide' : 'Show'} History</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
-            </button>
-          </div>
-          
-          {showHistory && (
-            <div className="space-y-3">
-              {(roadmapHistory || []).map((roadmap) => (
-                <div 
-                  key={roadmap.id} 
-                  className={`bg-slate-50 rounded-xl p-4 border transition-colors cursor-pointer hover:bg-slate-100 ${
-                    selectedRoadmapId === roadmap.id ? 'border-purple-200 bg-purple-50' : 'border-slate-200'
-                  }`}
-                  onClick={() => {
-                    setSelectedRoadmapId(roadmap.id)
-                    setRoadmapData(roadmap.roadmap_data)
-                  }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-slate-900">{roadmap.name}</h4>
-                      <div className="flex items-center space-x-4 mt-1 text-sm text-slate-500">
-                        <span className="flex items-center space-x-1">
-                          <Clock className="w-3 h-3" />
-                          <span>{new Date(roadmap.created_at).toLocaleDateString()}</span>
-                        </span>
-                        <span>{roadmap.ideas_analyzed} ideas analyzed</span>
-                        <span>Version {roadmap.version}</span>
-                      </div>
-                    </div>
-                    {selectedRoadmapId === roadmap.id && (
-                      <div className="flex items-center space-x-1 text-purple-600 bg-purple-100 px-2 py-1 rounded text-sm">
-                        <CheckCircle className="w-3 h-3" />
-                        <span>Active</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Error State */}
       {error && (
@@ -485,6 +458,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
               features={timelineFeatures}
               title={currentProject?.name || 'PROJECT ROADMAP'}
               subtitle={`${timelineFeatures.length} Features • ${roadmapData.roadmapAnalysis?.totalDuration || '6 months'}`}
+              onFeaturesChange={handleFeaturesChange}
             />
           )}
 
@@ -707,6 +681,67 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           </div>
               </>
             )}
+        </div>
+      )}
+
+      {/* Roadmap History Section */}
+      {roadmapHistory.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-50 rounded-xl">
+                <History className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Roadmap History</h3>
+                <p className="text-sm text-slate-600">{roadmapHistory.length} saved roadmap{roadmapHistory.length !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="flex items-center space-x-2 text-slate-500 hover:text-slate-700 transition-colors"
+            >
+              <span className="text-sm">{showHistory ? 'Hide' : 'Show'} History</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+          
+          {showHistory && (
+            <div className="space-y-3">
+              {(roadmapHistory || []).map((roadmap) => (
+                <div 
+                  key={roadmap.id} 
+                  className={`bg-slate-50 rounded-xl p-4 border transition-colors cursor-pointer hover:bg-slate-100 ${
+                    selectedRoadmapId === roadmap.id ? 'border-purple-200 bg-purple-50' : 'border-slate-200'
+                  }`}
+                  onClick={() => {
+                    setSelectedRoadmapId(roadmap.id)
+                    setRoadmapData(roadmap.roadmap_data)
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-slate-900">{roadmap.name}</h4>
+                      <div className="flex items-center space-x-4 mt-1 text-sm text-slate-500">
+                        <span className="flex items-center space-x-1">
+                          <Clock className="w-3 h-3" />
+                          <span>{new Date(roadmap.created_at).toLocaleDateString()}</span>
+                        </span>
+                        <span>{roadmap.ideas_analyzed} ideas analyzed</span>
+                        <span>Version {roadmap.version}</span>
+                      </div>
+                    </div>
+                    {selectedRoadmapId === roadmap.id && (
+                      <div className="flex items-center space-x-1 text-purple-600 bg-purple-100 px-2 py-1 rounded text-sm">
+                        <CheckCircle className="w-3 h-3" />
+                        <span>Active</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
