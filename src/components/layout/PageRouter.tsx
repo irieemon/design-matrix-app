@@ -69,7 +69,7 @@ const PageRouter: React.FC<PageRouterProps> = ({
             currentProject={currentProject}
             onProjectChange={onProjectSelect}
             onNavigateToProjects={() => onPageChange('projects')}
-            onIdeasCreated={(newIdeas) => setIdeas && setIdeas(prev => [...prev, ...newIdeas])}
+            onIdeasCreated={(newIdeas) => setIdeas && setIdeas(newIdeas)}
             onShowAddModal={onShowAddModal}
             onShowAIModal={onShowAIModal}
             activeId={activeId}
