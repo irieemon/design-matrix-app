@@ -207,7 +207,18 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
 
   // Convert roadmap data to timeline format
   const convertToTimelineFeatures = () => {
-    if (!roadmapData?.roadmapAnalysis?.phases) return []
+    logger.debug('🔄 Converting roadmap data to timeline features...')
+    logger.debug('📋 Roadmap data structure:', { 
+      hasRoadmapAnalysis: !!roadmapData?.roadmapAnalysis,
+      hasPhases: !!roadmapData?.roadmapAnalysis?.phases,
+      phasesCount: roadmapData?.roadmapAnalysis?.phases?.length || 0,
+      projectType: currentProject?.project_type
+    })
+    
+    if (!roadmapData?.roadmapAnalysis?.phases) {
+      logger.warn('❌ No roadmap phases found')
+      return []
+    }
 
     const features: any[] = []
     let currentMonth = 0
@@ -372,6 +383,9 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       currentMonth += phaseDuration
     })
 
+    logger.debug('✅ Generated', features.length, 'timeline features')
+    logger.debug('🎯 Feature teams:', features.map(f => ({ title: f.title, team: f.team })))
+    
     return features
   }
 
@@ -529,6 +543,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
               onFeaturesChange={handleFeaturesChange}
               viewMode={viewMode}
               onViewModeChange={setViewMode}
+              projectType={currentProject?.project_type || 'software'}
             />
           )}
 
