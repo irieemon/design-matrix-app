@@ -84,12 +84,18 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
     if (combined.includes('retail') || combined.includes('ecommerce')) industry = 'Retail'
     if (combined.includes('education') || combined.includes('learning')) industry = 'Education'
     
-    // Smart project type detection
+    // Smart project type detection with improved priority
     let recommendedProjectType: ProjectType = 'other'
     let reasoning = ''
     
-    // Software patterns
-    if (combined.match(/(app|software|platform|system|website|mobile|web|api|database|backend|frontend)/)) {
+    // Marketing patterns (checked first for higher priority)
+    if (combined.match(/(marketing|campaign|brand|customer|audience|social|content|seo|ads|advertising|promotion)/)) {
+      recommendedProjectType = 'marketing'
+      reasoning = 'Contains marketing, branding, and customer acquisition elements'
+    }
+    // Software patterns (only if no marketing terms detected)
+    else if (combined.match(/(software development|app development|coding|programming|api|database|backend|frontend)/) || 
+             (combined.match(/(app|software|platform|system|website|mobile|web)/) && !combined.match(/(marketing|campaign|brand|customer|audience|social|content|seo|ads)/))) {
       recommendedProjectType = 'software'
       reasoning = 'Detected software development keywords and technical requirements'
     }
@@ -97,11 +103,6 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
     else if (combined.match(/(product|prototype|design|feature|mvp|launch|release)/)) {
       recommendedProjectType = 'product_development' 
       reasoning = 'Focus on product creation, features, and market launch activities'
-    }
-    // Marketing patterns
-    else if (combined.match(/(marketing|campaign|brand|customer|audience|social|content|seo|ads)/)) {
-      recommendedProjectType = 'marketing'
-      reasoning = 'Contains marketing, branding, and customer acquisition elements'
     }
     // Business plan patterns
     else if (combined.match(/(business|strategy|plan|revenue|model|growth|expansion|partnership)/)) {
