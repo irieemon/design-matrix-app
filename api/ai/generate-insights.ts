@@ -225,11 +225,20 @@ Think like a board advisor providing strategic guidance for maximum impact and s
   console.log('OpenAI raw response:', content.substring(0, 200) + '...')
   
   try {
-    const parsed = JSON.parse(content)
+    // Remove markdown code blocks if present (```json ... ```)
+    let cleanContent = content.trim()
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+    } else if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '')
+    }
+    
+    const parsed = JSON.parse(cleanContent)
     console.log('OpenAI parsed response keys:', Object.keys(parsed))
     return parsed
   } catch (parseError) {
     console.error('Failed to parse OpenAI response:', parseError)
+    console.error('Content that failed to parse:', content.substring(0, 500))
     throw new Error(`OpenAI returned invalid JSON: ${parseError}`)
   }
 }
@@ -374,11 +383,20 @@ Return ONLY a JSON object with this exact structure:
   console.log('Anthropic raw response:', content.substring(0, 200) + '...')
   
   try {
-    const parsed = JSON.parse(content)
+    // Remove markdown code blocks if present (```json ... ```)
+    let cleanContent = content.trim()
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+    } else if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '')
+    }
+    
+    const parsed = JSON.parse(cleanContent)
     console.log('Anthropic parsed response keys:', Object.keys(parsed))
     return parsed
   } catch (parseError) {
     console.error('Failed to parse Anthropic response:', parseError)
+    console.error('Content that failed to parse:', content.substring(0, 500))
     throw new Error(`Anthropic returned invalid JSON: ${parseError}`)
   }
 }
