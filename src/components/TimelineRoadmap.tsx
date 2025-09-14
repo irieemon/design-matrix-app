@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
-import { Users, Monitor, Smartphone, TrendingUp, Settings, ChevronLeft, ChevronRight, BarChart3, Grid3X3, Plus } from 'lucide-react'
+import { Users, Monitor, Smartphone, TrendingUp, Settings, ChevronLeft, ChevronRight, BarChart3, Grid3X3, Plus, Download } from 'lucide-react'
 import FeatureDetailModal from './FeatureDetailModal'
+import RoadmapExportModal from './RoadmapExportModal'
 
 interface RoadmapFeature {
   id: string
@@ -51,6 +52,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   const [currentQuarter, setCurrentQuarter] = useState(0)
   const [selectedFeature, setSelectedFeature] = useState<RoadmapFeature | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   const [features, setFeatures] = useState<RoadmapFeature[]>(initialFeatures)
   const [draggedFeature, setDraggedFeature] = useState<RoadmapFeature | null>(null)
   const [isResizing, setIsResizing] = useState<string | null>(null)
@@ -532,7 +534,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   const visibleMonths = getVisibleMonths()
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full">
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full" data-roadmap-export>
       {/* Header */}
       <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-6 py-4">
         <div className="flex items-center justify-between">
@@ -547,6 +549,13 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
             >
               <Plus className="w-4 h-4" />
               <span>Add Feature</span>
+            </button>
+            <button
+              onClick={() => setIsExportModalOpen(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export</span>
             </button>
             {onViewModeChange && (
               <div className="flex items-center bg-slate-700/50 rounded-lg border border-slate-600 p-1">
@@ -816,6 +825,17 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
         startDate={startDate}
         mode={selectedFeature ? 'edit' : 'create'}
         availableTeams={teamLanes.map(team => team.name)}
+        projectType={projectType}
+      />
+
+      {/* Export Modal */}
+      <RoadmapExportModal 
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        features={features}
+        title={title}
+        subtitle={subtitle}
+        startDate={startDate}
         projectType={projectType}
       />
     </div>
