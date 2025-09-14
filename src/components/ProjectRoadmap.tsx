@@ -345,11 +345,14 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
             <p className="text-slate-600 mb-2">
               AI-generated roadmap for <strong>{currentProject.name}</strong>
             </p>
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">
-                Analyzing {(ideas || []).length} ideas • Created by {currentUser}
-              </p>
-              {roadmapData && (
+            <p className="text-sm text-slate-500">
+              Analyzing {(ideas || []).length} ideas • Created by {currentUser}
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            {roadmapData && (
+              <>
+                {/* View Mode Toggle */}
                 <div className="flex items-center bg-white rounded-lg border border-slate-200 p-1">
                   <button
                     onClick={() => setViewMode('timeline')}
@@ -374,18 +377,14 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                     <span>Detailed</span>
                   </button>
                 </div>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            {roadmapData && (
-              <button
-                onClick={handleExportToPDF}
-                className="flex items-center space-x-2 bg-slate-600 text-white px-4 py-3 rounded-xl hover:bg-slate-700 transition-colors"
-              >
-                <Download className="w-5 h-5" />
-                <span>Export PDF</span>
-              </button>
+                <button
+                  onClick={handleExportToPDF}
+                  className="flex items-center space-x-2 bg-slate-600 text-white px-4 py-3 rounded-xl hover:bg-slate-700 transition-colors"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>Export PDF</span>
+                </button>
+              </>
             )}
             <button
               onClick={generateRoadmap}

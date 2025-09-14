@@ -49,10 +49,13 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   const [draggedFeature, setDraggedFeature] = useState<RoadmapFeature | null>(null)
   const [isResizing, setIsResizing] = useState<string | null>(null)
 
-  // Update features when props change
+  // Update features when props change - but preserve user modifications
   React.useEffect(() => {
-    setFeatures(initialFeatures)
-  }, [initialFeatures])
+    // Only update if we don't have any features yet or if the number of features changed significantly
+    if (features.length === 0 || Math.abs(features.length - initialFeatures.length) > 2) {
+      setFeatures(initialFeatures)
+    }
+  }, [initialFeatures.length]) // Only depend on length, not the full array
 
   const handleFeatureClick = (feature: RoadmapFeature) => {
     setSelectedFeature(feature)
@@ -391,7 +394,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
           const teamFeatures = getFeaturesForTeam(team.id)
           
           return (
-            <div key={team.id} className="flex min-h-[120px] overflow-hidden">
+            <div key={team.id} className="flex min-h-[140px] overflow-hidden">
               {/* Team Label */}
               <div className={`w-48 ${team.bgColor} border-r-2 border-gray-200 flex items-center px-4 flex-shrink-0`}>
                 <div className="flex items-center space-x-3">
@@ -424,7 +427,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                 </div>
                 
                 {/* Features */}
-                <div className="relative h-full px-2">
+                <div className="relative h-full px-2 pt-2">
                   {teamFeatures
                     .map((feature, index) => {
                       const styles = getFeatureStyles(feature.priority, feature.status)
@@ -456,7 +459,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                           } ${draggedFeature?.id === feature.id ? 'opacity-50' : ''} ${isResizing === feature.id ? 'ring-2 ring-blue-400 scale-105' : ''}`}
                           style={{
                             ...position,
-                            top: `${index * 36 + 10}px`
+                            top: `${index * 36 + 16}px`
                           }}
                           title={`${isPartiallyVisible ? '[Hidden] ' : ''}Drag to move, resize handles on hover: ${feature.title}`}
                         >
