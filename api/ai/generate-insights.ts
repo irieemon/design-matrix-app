@@ -46,22 +46,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const anthropicKey = process.env.ANTHROPIC_API_KEY
     
     if (!openaiKey && !anthropicKey) {
-      return res.status(500).json({ error: 'No AI service configured' })
+      return res.status(500).json({ error: 'No AI service configured. Please set OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable.' })
     }
     
     let insights = {}
     
     if (openaiKey) {
+      console.log('Using OpenAI for insights generation')
       insights = await generateInsightsWithOpenAI(openaiKey, ideas, projectName, projectType, roadmapContext, documentContext, projectContext)
     } else if (anthropicKey) {
+      console.log('Using Anthropic for insights generation')
       insights = await generateInsightsWithAnthropic(anthropicKey, ideas, projectName, projectType, roadmapContext, documentContext, projectContext)
+    }
+    
+    console.log('Generated insights:', Object.keys(insights))
+    
+    // Validate that we got proper insights structure
+    if (!insights || typeof insights !== 'object' || Object.keys(insights).length === 0) {
+      throw new Error('AI service returned empty or invalid response')
     }
     
     return res.status(200).json({ insights })
     
   } catch (error) {
     console.error('Error generating insights:', error)
-    return res.status(500).json({ error: 'Failed to generate insights' })
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    return res.status(500).json({ error: `Failed to generate insights: ${errorMessage}` })
   }
 }
 
@@ -206,12 +216,21 @@ Think like a board advisor providing strategic guidance for maximum impact and s
   }
   
   const data = await response.json()
-  const content = data.choices[0]?.message?.content || '{}'
+  const content = data.choices[0]?.message?.content
+  
+  if (!content) {
+    throw new Error('OpenAI returned empty response')
+  }
+  
+  console.log('OpenAI raw response:', content.substring(0, 200) + '...')
   
   try {
-    return JSON.parse(content)
-  } catch {
-    return {}
+    const parsed = JSON.parse(content)
+    console.log('OpenAI parsed response keys:', Object.keys(parsed))
+    return parsed
+  } catch (parseError) {
+    console.error('Failed to parse OpenAI response:', parseError)
+    throw new Error(`OpenAI returned invalid JSON: ${parseError}`)
   }
 }
 
@@ -346,12 +365,21 @@ Return ONLY a JSON object with this exact structure:
   }
   
   const data = await response.json()
-  const content = data.content[0]?.text || '{}'
+  const content = data.content[0]?.text
+  
+  if (!content) {
+    throw new Error('Anthropic returned empty response')
+  }
+  
+  console.log('Anthropic raw response:', content.substring(0, 200) + '...')
   
   try {
-    return JSON.parse(content)
-  } catch {
-    return {}
+    const parsed = JSON.parse(content)
+    console.log('Anthropic parsed response keys:', Object.keys(parsed))
+    return parsed
+  } catch (parseError) {
+    console.error('Failed to parse Anthropic response:', parseError)
+    throw new Error(`Anthropic returned invalid JSON: ${parseError}`)
   }
 }
 
