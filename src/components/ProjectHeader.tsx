@@ -97,9 +97,7 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
     if (onProjectChange) {
       onProjectChange(newProject)
     }
-    if (onIdeasCreated) {
-      onIdeasCreated(ideas)
-    }
+    // Skip onIdeasCreated - real-time subscription will handle idea updates
   }
 
   if (isCreating) {
