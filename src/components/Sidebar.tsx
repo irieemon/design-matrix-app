@@ -215,32 +215,32 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
       </nav>
 
       {/* Footer Section */}
-      <div className={`${isCollapsed ? 'p-4' : 'p-6'} border-t border-slate-700/50 space-y-3 transition-all duration-300`}>
+      <div className={`${isCollapsed ? 'p-3' : 'p-4'} border-t border-slate-700/50 space-y-2 transition-all duration-300`}>
         
         {/* User Button */}
         <button
           onClick={() => onPageChange('user')}
-          className={`group w-full transition-all duration-200 rounded-xl hover:scale-[1.02] active:scale-[0.98] ${
+          className={`group w-full transition-all duration-200 rounded-lg hover:scale-[1.01] active:scale-[0.99] ${
             currentPage === 'user'
-              ? 'bg-gradient-to-r from-slate-700 to-slate-600 shadow-lg'
-              : 'hover:bg-slate-800/50'
+              ? 'bg-gradient-to-r from-slate-700 to-slate-600 shadow-md'
+              : 'hover:bg-slate-800/40'
           }`}
           title={isCollapsed ? `${currentUser} - Settings` : undefined}
         >
           {isCollapsed ? (
-            <div className="flex justify-center py-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-500 rounded-xl flex items-center justify-center">
-                <User className="w-5 h-5 text-slate-200" />
+            <div className="flex justify-center py-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-500 rounded-lg flex items-center justify-center">
+                <User className="w-4 h-4 text-slate-200" />
               </div>
             </div>
           ) : (
-            <div className="flex items-center space-x-3 px-4 py-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-500 rounded-xl flex items-center justify-center">
-                <User className="w-5 h-5 text-slate-200" />
+            <div className="flex items-center space-x-3 px-3 py-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-500 rounded-lg flex items-center justify-center">
+                <User className="w-4 h-4 text-slate-200" />
               </div>
               <div className="flex-1 text-left min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{currentUser}</p>
-                <p className="text-xs text-slate-400">Account settings</p>
+                <p className="text-xs font-medium text-white truncate">{currentUser}</p>
+                <p className="text-xs text-slate-500">Account settings</p>
               </div>
             </div>
           )}
@@ -251,11 +251,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
           <button
             onClick={onAdminAccess}
             className={`group w-full flex items-center ${
-              isCollapsed ? 'justify-center p-3' : 'px-4 py-3 space-x-3'
-            } rounded-xl text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] text-slate-400 hover:text-orange-400 hover:bg-gradient-to-r hover:from-orange-900/20 hover:to-red-800/10 hover:shadow-md`}
+              isCollapsed ? 'justify-center p-2' : 'px-3 py-2 space-x-2'
+            } rounded-lg text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-400 hover:text-orange-400 hover:bg-gradient-to-r hover:from-orange-900/20 hover:to-red-800/10`}
             title={isCollapsed ? 'Admin Portal' : undefined}
           >
-            <Shield className="w-4 h-4" />
+            <Shield className="w-3 h-3" />
             {!isCollapsed && <span>Admin Portal</span>}
           </button>
         )}
@@ -264,11 +264,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
         <button
           onClick={onLogout}
           className={`group w-full flex items-center ${
-            isCollapsed ? 'justify-center p-3' : 'px-4 py-3 space-x-3'
-          } rounded-xl text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] text-slate-400 hover:text-red-400 hover:bg-gradient-to-r hover:from-red-900/20 hover:to-red-800/10 hover:shadow-md`}
+            isCollapsed ? 'justify-center p-2' : 'px-3 py-2 space-x-2'
+          } rounded-lg text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-400 hover:text-red-400 hover:bg-gradient-to-r hover:from-red-900/20 hover:to-red-800/10`}
           title={isCollapsed ? 'Sign Out' : undefined}
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="w-3 h-3" />
           {!isCollapsed && <span>Sign Out</span>}
         </button>
       </div>
