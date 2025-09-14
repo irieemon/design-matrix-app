@@ -46,7 +46,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
   const [questionAnswers, setQuestionAnswers] = useState<Record<number, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [ideaCount, setIdeaCount] = useState(6)
+  const [ideaCount, setIdeaCount] = useState(8)
   const [ideaTolerance, setIdeaTolerance] = useState(50) // 0-100 scale
 
   const handleInitialAnalysis = async () => {
@@ -60,7 +60,8 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
       const result = await aiService.generateProjectIdeas(
         projectName, 
         projectDescription,
-        selectedProjectType === 'auto' ? 'General' : selectedProjectType
+        selectedProjectType === 'auto' ? 'General' : selectedProjectType,
+        ideaCount
       )
       setAnalysis({ 
         needsClarification: false,
@@ -103,7 +104,8 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
       const result = await aiService.generateProjectIdeas(
         projectName,
         projectDescription + ` Additional context: ${additionalContext}`,
-        selectedProjectType === 'auto' ? 'General' : selectedProjectType
+        selectedProjectType === 'auto' ? 'General' : selectedProjectType,
+        ideaCount
       )
       
       setAnalysis({ 

@@ -320,8 +320,8 @@ class SecureAIService {
   }
 
   // Legacy method for backward compatibility - now uses secure endpoints
-  async generateProjectIdeas(projectName: string, description: string, projectType?: string): Promise<IdeaCard[]> {
-    return this.generateMultipleIdeas(projectName, description, projectType || 'General', 8)
+  async generateProjectIdeas(projectName: string, description: string, projectType?: string, count: number = 8): Promise<IdeaCard[]> {
+    return this.generateMultipleIdeas(projectName, description, projectType || 'General', count)
   }
 
   // Helper methods
