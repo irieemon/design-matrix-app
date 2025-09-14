@@ -18,6 +18,30 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
   const [selectedInsightId, setSelectedInsightId] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
   // const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+
+  // Function to convert user ID to display name
+  const getUserDisplayName = (userId: string | null): string => {
+    if (!userId) return 'Unknown'
+    
+    // If it's the current user, show "You"
+    if (userId === currentUser) return 'You'
+    
+    // If it looks like a UUID, try to generate a readable name
+    if (userId.length === 36 && userId.includes('-')) {
+      // For UUIDs, create a short identifier based on the first part
+      const shortId = userId.split('-')[0].substring(0, 8)
+      return `User-${shortId}`
+    }
+    
+    // If it looks like an email, extract the name part
+    if (userId.includes('@')) {
+      const emailName = userId.split('@')[0]
+      return emailName.charAt(0).toUpperCase() + emailName.slice(1).replace(/[._-]/g, ' ')
+    }
+    
+    // If it's already a display name or other format, return as is
+    return userId
+  }
   
   // Load insights history when component mounts or project changes
   useEffect(() => {
@@ -68,7 +92,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
   }
 
   const contributorData = (ideas || []).reduce((acc, idea) => {
-    const contributor = idea.created_by || 'Unknown'
+    const contributor = getUserDisplayName(idea.created_by)
     acc[contributor] = (acc[contributor] || 0) + 1
     return acc
   }, {} as Record<string, number>)
@@ -245,9 +269,6 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
                     {contributor.charAt(0).toUpperCase()}
                   </div>
                   <span className="text-sm font-medium text-slate-700">{contributor}</span>
-                  {contributor === currentUser && (
-                    <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">You</span>
-                  )}
                 </div>
                 <span className="text-sm font-semibold text-slate-900">{count} ideas</span>
               </div>
@@ -274,7 +295,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-900 truncate">{idea.content}</p>
                   <p className="text-xs text-slate-500 mt-1">
-                    by {idea.created_by} • {new Date(idea.created_at).toLocaleDateString()}
+                    by {getUserDisplayName(idea.created_by)} • {new Date(idea.created_at).toLocaleDateString()}
                   </p>
                 </div>
               </div>
