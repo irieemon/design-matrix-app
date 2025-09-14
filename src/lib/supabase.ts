@@ -17,15 +17,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   logger.error('You need to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file')
 }
 
-// Create Supabase client with simplified config to avoid conflicts
+// Create Supabase client with configuration to handle email confirmations
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-key',
   {
     auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: false,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
       storageKey: 'prioritas-auth'
     }
   }

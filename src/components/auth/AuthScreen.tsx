@@ -22,6 +22,19 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
+  // Determine the correct redirect URL based on the environment
+  const getRedirectUrl = () => {
+    const currentOrigin = window.location.origin
+    if (currentOrigin.includes('prioritas.ai')) {
+      return 'https://prioritas.ai'
+    } else if (currentOrigin.includes('vercel.app')) {
+      return currentOrigin
+    } else {
+      // For production, always redirect to the main domain
+      return 'https://prioritas.ai'
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -45,6 +58,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           email,
           password,
           options: {
+            emailRedirectTo: `${getRedirectUrl()}/auth/confirm`,
             data: {
               full_name: fullName.trim(),
             }
@@ -73,7 +87,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
       } else if (mode === 'forgot-password') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`
+          redirectTo: `${getRedirectUrl()}/reset-password`
         })
 
         if (error) throw error
