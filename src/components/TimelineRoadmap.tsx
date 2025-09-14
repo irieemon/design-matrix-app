@@ -446,7 +446,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                           onDragStart={(e) => handleDragStart(e, feature)}
                           className={`group absolute h-8 rounded-lg border-2 ${styles.bgColor} ${styles.textColor} ${styles.borderColor} flex items-center shadow-sm hover:shadow-md transition-all cursor-move hover:scale-105 hover:z-10 ${
                             isPartiallyVisible ? 'opacity-50 border-dashed' : ''
-                          } ${draggedFeature?.id === feature.id ? 'opacity-50' : ''}`}
+                          } ${draggedFeature?.id === feature.id ? 'opacity-50' : ''} ${isResizing === feature.id ? 'ring-2 ring-blue-400 scale-105' : ''}`}
                           style={{
                             ...position,
                             top: `${index * 36 + 10}px`
