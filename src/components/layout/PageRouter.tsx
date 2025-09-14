@@ -107,7 +107,7 @@ const PageRouter: React.FC<PageRouterProps> = ({
           <div className="bg-slate-50 min-h-screen">
             <ReportsAnalytics 
               ideas={ideas}
-              currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
+              currentUser={currentUser}
               currentProject={currentProject}
             />
           </div>

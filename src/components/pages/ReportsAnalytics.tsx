@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Download, Sparkles, History, Clock } from 'lucide-react'
-import { IdeaCard, Project, ProjectInsights as ProjectInsightsType } from '../../types'
+import { IdeaCard, Project, ProjectInsights as ProjectInsightsType, User } from '../../types'
 import { exportToCSV } from '../../utils/csvUtils'
 import { DatabaseService } from '../../lib/database'
 import AIInsightsModal from '../AIInsightsModal'
@@ -8,7 +8,7 @@ import { logger } from '../../utils/logger'
 
 interface ReportsAnalyticsProps {
   ideas: IdeaCard[]
-  currentUser: string
+  currentUser: User
   currentProject: Project | null
 }
 
@@ -23,8 +23,10 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
   const getUserDisplayName = (userId: string | null): string => {
     if (!userId) return 'Unknown'
     
-    // If it's the current user, show "You"
-    if (userId === currentUser) return 'You'
+    // If it's the current user, show the current user's name or "You"
+    if (userId === currentUser.id) {
+      return currentUser.full_name || currentUser.email || 'You'
+    }
     
     // If it looks like a UUID, try to generate a readable name
     if (userId.length === 36 && userId.includes('-')) {
