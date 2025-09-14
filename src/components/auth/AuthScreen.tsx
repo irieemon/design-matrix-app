@@ -24,15 +24,32 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
   // Determine the correct redirect URL based on the environment
   const getRedirectUrl = () => {
-    const currentOrigin = window.location.origin
-    if (currentOrigin.includes('prioritas.ai')) {
-      return 'https://prioritas.ai'
-    } else if (currentOrigin.includes('vercel.app')) {
-      return currentOrigin
-    } else {
-      // For production, always redirect to the main domain
-      return 'https://prioritas.ai'
+    // Check for environment variable override first
+    const envRedirectUrl = import.meta.env.VITE_REDIRECT_URL
+    if (envRedirectUrl) {
+      console.log('🎛️ Using environment redirect URL:', envRedirectUrl)
+      return envRedirectUrl
     }
+    
+    const currentOrigin = window.location.origin
+    const isProduction = !currentOrigin.includes('localhost')
+    
+    console.log('🔍 Current origin for redirect:', currentOrigin)
+    console.log('🏭 Is production environment:', isProduction)
+    
+    let redirectUrl
+    if (isProduction) {
+      // Always use prioritas.ai for production deployments
+      redirectUrl = 'https://prioritas.ai'
+      console.log('🌐 Production detected, using prioritas.ai')
+    } else {
+      // Use localhost for development
+      redirectUrl = currentOrigin
+      console.log('🛠️ Development detected, using localhost')
+    }
+    
+    console.log('🎯 Final redirect URL:', redirectUrl)
+    return redirectUrl
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,16 +71,22 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           throw new Error('Full name is required')
         }
 
+        const redirectUrl = getRedirectUrl()
+        const fullRedirectUrl = `${redirectUrl}`
+        console.log('🚀 Signing up with email redirect to:', fullRedirectUrl)
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${getRedirectUrl()}/auth/confirm`,
+            emailRedirectTo: fullRedirectUrl,
             data: {
               full_name: fullName.trim(),
             }
           }
         })
+
+        console.log('📧 Signup response:', { data: data?.user?.id, error: error?.message })
 
         if (error) throw error
 
