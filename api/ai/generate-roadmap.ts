@@ -77,15 +77,24 @@ async function generateRoadmapWithOpenAI(apiKey: string, projectName: string, pr
       messages: [
         {
           role: 'system',
-          content: `You are a strategic project manager creating a comprehensive roadmap. Generate a detailed roadmap with 3-5 phases that logically progress from planning to execution to optimization. 
+          content: `You are an expert technical project manager with deep experience in full-stack software development. Your task is to create a comprehensive roadmap that MUST include all technical layers.
 
-IMPORTANT: Create epics that span ALL team layers including:
-- Platform/Infrastructure team: Backend services, databases, security, DevOps, APIs, system architecture
-- Web team: Frontend web applications, web interfaces, browser-based features
-- Mobile team: Mobile apps, mobile-specific features (if applicable to project)
-- Marketing team: User acquisition, analytics, campaigns, growth initiatives
+CRITICAL REQUIREMENTS - YOU MUST FOLLOW THESE:
+1. Generate epics for ALL 4 team layers (do not skip any):
+   - PLATFORM/INFRASTRUCTURE: Backend APIs, databases, authentication, security, DevOps, system architecture, data models, cloud infrastructure
+   - WEB TEAM: Frontend applications, web interfaces, user dashboards, responsive design, web-based features
+   - MOBILE TEAM: Mobile applications, native features, app store deployment (if project needs mobile)
+   - MARKETING TEAM: User acquisition strategies, analytics implementation, growth campaigns, SEO, social media
 
-Ensure at least 2-3 epics are specifically for platform/infrastructure work in EVERY project type.
+2. PLATFORM LAYER IS MANDATORY: Every roadmap MUST contain at least 3-4 platform/infrastructure epics regardless of project type
+3. REQUIRED PLATFORM EPICS (include variations of these):
+   - Backend API architecture and development
+   - Database design, modeling, and implementation  
+   - Authentication, authorization, and security systems
+   - DevOps, CI/CD, deployment pipeline, and infrastructure
+   - System monitoring, logging, and performance optimization
+4. Use technical keywords in epic titles that will trigger platform team assignment
+5. Each epic must be technically specific and actionable
 
 Return a JSON object with this EXACT structure matching the RoadmapData interface:
 {
@@ -128,19 +137,34 @@ Return a JSON object with this EXACT structure matching the RoadmapData interfac
         },
         {
           role: 'user',
-          content: `Create a comprehensive strategic roadmap:
-
-IMPORTANT: Create epics that span ALL team layers including:
-- Platform/Infrastructure team: Backend services, databases, security, DevOps, APIs, system architecture  
-- Web team: Frontend web applications, web interfaces, browser-based features
-- Mobile team: Mobile apps, mobile-specific features (if applicable to project)
-- Marketing team: User acquisition, analytics, campaigns, growth initiatives
-
-Ensure at least 2-3 epics are specifically for platform/infrastructure work in EVERY project type.
+          content: `Generate a technical roadmap for this project. YOU MUST create epics for all 4 layers.
 
 Project: ${projectName}
 Type: ${projectType}
 Ideas to incorporate: ${ideas.map(idea => `- ${idea.title}: ${idea.description}`).join('\n')}
+
+MANDATORY EPIC DISTRIBUTION (create these specific types):
+PLATFORM/INFRASTRUCTURE (must have 3-4 epics):
+- "Core API Development" or "Backend Services Architecture"  
+- "Database Design and Implementation"
+- "Authentication and Security System"
+- "DevOps and Deployment Pipeline"
+
+WEB TEAM (must have 2-3 epics):
+- "Frontend Application Development" 
+- "User Interface and Dashboard"
+- "Web-based Features Implementation"
+
+MOBILE TEAM (if applicable, 1-2 epics):
+- "Mobile Application Development"
+- "Native Mobile Features"
+
+MARKETING TEAM (must have 2-3 epics):
+- "Analytics and Tracking Implementation"
+- "User Acquisition Strategy"
+- "SEO and Growth Optimization"
+
+IMPORTANT: Use these exact epic title patterns and ensure each epic has technical deliverables.
 
 Requirements for comprehensive roadmap:
 1. Generate 3-5 logical phases (Foundation, Development, Enhancement, Testing, Launch)
@@ -159,8 +183,9 @@ Requirements for comprehensive roadmap:
 Generate a roadmap that will create a beautiful, comprehensive PDF report with professional depth.`
         }
       ],
-      temperature: 0.7,
+      temperature: 0.3,
       max_tokens: 4000,
+      response_format: { type: "json_object" },
     }),
   })
   
