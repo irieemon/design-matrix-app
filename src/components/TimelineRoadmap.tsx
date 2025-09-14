@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { Users, Monitor, Smartphone, TrendingUp, Settings, ChevronLeft, ChevronRight, BarChart3, Grid3X3 } from 'lucide-react'
+import { Users, Monitor, Smartphone, TrendingUp, Settings, ChevronLeft, ChevronRight, BarChart3, Grid3X3, Plus } from 'lucide-react'
 import FeatureDetailModal from './FeatureDetailModal'
 
 interface RoadmapFeature {
@@ -71,6 +71,43 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   const handleCloseModal = () => {
     setIsModalOpen(false)
     setSelectedFeature(null)
+  }
+
+  const handleSaveFeature = (updatedFeature: RoadmapFeature) => {
+    let updatedFeatures: RoadmapFeature[]
+    
+    // Check if this is a new feature (temp id) or existing
+    if (updatedFeature.id.startsWith('temp-')) {
+      // Create new feature with real ID
+      const newFeature = {
+        ...updatedFeature,
+        id: `feature-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      }
+      updatedFeatures = [...features, newFeature]
+    } else {
+      // Update existing feature
+      updatedFeatures = features.map(f => 
+        f.id === updatedFeature.id ? updatedFeature : f
+      )
+    }
+    
+    setFeatures(updatedFeatures)
+    if (onFeaturesChange) {
+      onFeaturesChange(updatedFeatures)
+    }
+  }
+
+  const handleDeleteFeature = (featureId: string) => {
+    const updatedFeatures = features.filter(f => f.id !== featureId)
+    setFeatures(updatedFeatures)
+    if (onFeaturesChange) {
+      onFeaturesChange(updatedFeatures)
+    }
+  }
+
+  const handleCreateFeature = () => {
+    setSelectedFeature(null) // Create mode with no selected feature
+    setIsModalOpen(true)
   }
 
   // Drag and drop handlers
@@ -504,6 +541,13 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
             <p className="text-slate-300 text-sm">{subtitle}</p>
           </div>
           <div className="flex items-center space-x-4">
+            <button
+              onClick={handleCreateFeature}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Feature</span>
+            </button>
             {onViewModeChange && (
               <div className="flex items-center bg-slate-700/50 rounded-lg border border-slate-600 p-1">
                 <button
@@ -767,7 +811,12 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
         feature={selectedFeature}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+        onSave={handleSaveFeature}
+        onDelete={handleDeleteFeature}
         startDate={startDate}
+        mode={selectedFeature ? 'edit' : 'create'}
+        availableTeams={teamLanes.map(team => team.name)}
+        projectType={projectType}
       />
     </div>
   )
