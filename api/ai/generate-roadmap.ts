@@ -60,17 +60,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ roadmap })
     
   } catch (error) {
-    console.error('Error generating roadmap:', {
-      error: error instanceof Error ? error.message : error,
-      stack: error instanceof Error ? error.stack : undefined,
-      projectName,
-      projectType,
-      ideaCount: ideas?.length || 0
-    })
-    return res.status(500).json({ 
-      error: 'Failed to generate roadmap',
-      details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
-    })
+    console.error('Error generating roadmap:', error)
+    return res.status(500).json({ error: 'Failed to generate roadmap' })
   }
 }
 
@@ -279,7 +270,7 @@ Generate a roadmap that will create a beautiful, comprehensive PDF report with p
         }
       ],
       temperature: 0.3,
-      max_tokens: 3000,
+      max_tokens: 4000,
       response_format: { type: "json_object" },
     }),
   })
@@ -573,7 +564,7 @@ async function generateRoadmapWithAnthropic(apiKey: string, projectName: string,
     },
     body: JSON.stringify({
       model: 'claude-3-haiku-20240307',
-      max_tokens: 3000,
+      max_tokens: 4000,
       messages: [
         {
           role: 'user',
