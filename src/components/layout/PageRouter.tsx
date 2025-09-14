@@ -123,7 +123,7 @@ const PageRouter: React.FC<PageRouterProps> = ({
               onProjectCreated={(project, projectIdeas) => {
                 onProjectSelect(project)
                 if (projectIdeas && setIdeas) {
-                  setIdeas(prev => [...prev, ...projectIdeas])
+                  setIdeas(projectIdeas)
                 }
                 onPageChange('matrix')
               }}
