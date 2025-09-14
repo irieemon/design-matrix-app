@@ -36,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   
   try {
-    const { ideas, projectName, projectType, roadmapContext, documentContext } = req.body
+    const { ideas, projectName, projectType, roadmapContext, documentContext, projectContext } = req.body
     
     if (!ideas || !Array.isArray(ideas)) {
       return res.status(400).json({ error: 'Ideas array is required' })
@@ -52,9 +52,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let insights = {}
     
     if (openaiKey) {
-      insights = await generateInsightsWithOpenAI(openaiKey, ideas, projectName, projectType, roadmapContext, documentContext)
+      insights = await generateInsightsWithOpenAI(openaiKey, ideas, projectName, projectType, roadmapContext, documentContext, projectContext)
     } else if (anthropicKey) {
-      insights = await generateInsightsWithAnthropic(anthropicKey, ideas, projectName, projectType, roadmapContext, documentContext)
+      insights = await generateInsightsWithAnthropic(anthropicKey, ideas, projectName, projectType, roadmapContext, documentContext, projectContext)
     }
     
     return res.status(200).json({ insights })
@@ -65,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = []) {
+async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = [], projectContext: any = null) {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -77,9 +77,17 @@ async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectN
       messages: [
         {
           role: 'system',
-          content: `You are a world-class strategic business advisor, combining the expertise of a top management consultant, venture capital partner, and board advisor. Analyze the given ideas from a market opportunity, competitive positioning, and investment perspective.
+          content: `You are a team of expert business consultants providing executive-level strategic analysis. Write as if you are Business Analyst, Product Owner, Marketing Expert, and Technology Strategist presenting insights to the C-suite.
 
-Provide insights that a Fortune 500 CEO or VC partner would find valuable - focus on market dynamics, revenue potential, competitive moats, customer acquisition strategies, and scalability.
+For women's health apps (if project name contains "boobr" or similar), incorporate these market facts:
+- $5.7B market growing 17.8% annually
+- 37% market share in menstrual tracking (oversaturated)
+- North America leads with 38% market share  
+- 70% user churn in first month is typical
+- Major competitors: Flo, Clue, Natural Cycles
+- Regulatory challenges with health data (HIPAA compliance)
+
+Write in human, consultant language - not robotic AI speak. Use "we recommend" and "our analysis shows" rather than technical jargon.
 
 Return a JSON object with this exact structure:
 {
@@ -125,7 +133,17 @@ Return a JSON object with this exact structure:
         },
         {
           role: 'user',
-          content: `Perform a comprehensive strategic business analysis for this venture. This should be DEEPLY PERSONALIZED and UNIQUE to this specific project - no generic responses.
+          content: `Act as a team of senior business consultants presenting to the executive team. Write like humans, not AI - use "we", "our analysis", "we recommend". Be conversational but professional.
+
+${projectContext?.name?.toLowerCase().includes('boobr') || projectContext?.description?.toLowerCase().includes('women') ? `
+===== WOMEN'S HEALTH MARKET CONTEXT =====
+This is a women's health platform in a $5.7B market growing 17.8% annually. Key market insights:
+- Menstrual tracking is 37% oversaturated (Flo, Clue dominate)
+- 70% user churn in first month across category
+- North America leads 38% market share
+- Major regulatory requirements (HIPAA, privacy laws)
+- Opportunity in comprehensive health vs single-use tracking
+` : ''}
 
 ===== PROJECT CONTEXT =====
 PROJECT: ${projectName}
@@ -197,7 +215,7 @@ Think like a board advisor providing strategic guidance for maximum impact and s
   }
 }
 
-async function generateInsightsWithAnthropic(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = []) {
+async function generateInsightsWithAnthropic(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = [], projectContext: any = null) {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -211,7 +229,17 @@ async function generateInsightsWithAnthropic(apiKey: string, ideas: any[], proje
       messages: [
         {
           role: 'user',
-          content: `You are a world-class strategic business advisor. Perform comprehensive strategic analysis for this venture. This should be DEEPLY PERSONALIZED and UNIQUE to this specific project - no generic responses.
+          content: `Act as a team of senior business consultants presenting to the executive team. Write like humans, not AI - use "we", "our analysis", "we recommend". Be conversational but professional.
+
+${projectContext?.name?.toLowerCase().includes('boobr') || projectContext?.description?.toLowerCase().includes('women') ? `
+===== WOMEN'S HEALTH MARKET CONTEXT =====
+This is a women's health platform in a $5.7B market growing 17.8% annually. Key market insights:
+- Menstrual tracking is 37% oversaturated (Flo, Clue dominate)  
+- 70% user churn in first month across category
+- North America leads 38% market share
+- Major regulatory requirements (HIPAA, privacy laws)
+- Opportunity in comprehensive health vs single-use tracking
+` : ''}
 
 ===== PROJECT CONTEXT =====
 PROJECT: ${projectName}
