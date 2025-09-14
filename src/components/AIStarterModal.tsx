@@ -49,6 +49,118 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
   const [ideaCount, setIdeaCount] = useState(8)
   const [ideaTolerance, setIdeaTolerance] = useState(50) // 0-100 scale
 
+  const analyzeProjectContext = (projectName: string, description: string): { 
+    recommendedProjectType: ProjectType, 
+    reasoning: string,
+    industry: string,
+    timeline: string,
+    primaryGoals: string[],
+    needsClarification: boolean,
+    clarifyingQuestions: ClarifyingQuestion[]
+  } => {
+    const descLower = description.toLowerCase()
+    const nameLower = projectName.toLowerCase()
+    const combined = `${nameLower} ${descLower}`
+    
+    // Extract key information
+    const goals = []
+    if (combined.includes('launch') || combined.includes('release')) goals.push('Product Launch')
+    if (combined.includes('improve') || combined.includes('optimize')) goals.push('Process Improvement')
+    if (combined.includes('market') || combined.includes('campaign')) goals.push('Market Expansion')
+    if (combined.includes('develop') || combined.includes('build')) goals.push('Development')
+    if (combined.includes('research')) goals.push('Research & Analysis')
+    if (goals.length === 0) goals.push(projectName)
+    
+    // Determine timeline
+    let timeline = 'Medium-term'
+    if (combined.includes('quarter') || combined.includes('3 month') || combined.includes('short')) timeline = 'Short-term'
+    if (combined.includes('year') || combined.includes('annual') || combined.includes('long')) timeline = 'Long-term'
+    
+    // Determine industry  
+    let industry = 'General'
+    if (combined.includes('tech') || combined.includes('software') || combined.includes('app')) industry = 'Technology'
+    if (combined.includes('health') || combined.includes('medical')) industry = 'Healthcare'
+    if (combined.includes('finance') || combined.includes('bank')) industry = 'Finance'
+    if (combined.includes('retail') || combined.includes('ecommerce')) industry = 'Retail'
+    if (combined.includes('education') || combined.includes('learning')) industry = 'Education'
+    
+    // Smart project type detection
+    let recommendedProjectType: ProjectType = 'other'
+    let reasoning = ''
+    
+    // Software patterns
+    if (combined.match(/(app|software|platform|system|website|mobile|web|api|database|backend|frontend)/)) {
+      recommendedProjectType = 'software'
+      reasoning = 'Detected software development keywords and technical requirements'
+    }
+    // Product development patterns
+    else if (combined.match(/(product|prototype|design|feature|mvp|launch|release)/)) {
+      recommendedProjectType = 'product_development' 
+      reasoning = 'Focus on product creation, features, and market launch activities'
+    }
+    // Marketing patterns
+    else if (combined.match(/(marketing|campaign|brand|customer|audience|social|content|seo|ads)/)) {
+      recommendedProjectType = 'marketing'
+      reasoning = 'Contains marketing, branding, and customer acquisition elements'
+    }
+    // Business plan patterns
+    else if (combined.match(/(business|strategy|plan|revenue|model|growth|expansion|partnership)/)) {
+      recommendedProjectType = 'business_plan'
+      reasoning = 'Strategic business planning and growth-focused initiative'
+    }
+    // Operations patterns  
+    else if (combined.match(/(process|workflow|operation|efficiency|automat|improve|optimize)/)) {
+      recommendedProjectType = 'operations'
+      reasoning = 'Operational improvement and process optimization focus'
+    }
+    // Research patterns
+    else if (combined.match(/(research|study|analysis|investigate|explore|experiment)/)) {
+      recommendedProjectType = 'research'
+      reasoning = 'Research and development focus with analytical components'
+    }
+    else {
+      reasoning = 'Could not clearly categorize - general project approach recommended'
+    }
+    
+    // Determine if clarification is needed
+    let needsClarification = false
+    const clarifyingQuestions: ClarifyingQuestion[] = []
+    
+    if (description.length < 50) {
+      needsClarification = true
+      clarifyingQuestions.push({
+        question: 'Can you provide more details about the project scope and objectives?',
+        context: 'More context will help generate better-targeted ideas'
+      })
+    }
+    
+    if (!combined.match(/(target|audience|user|customer)/) && recommendedProjectType !== 'operations') {
+      needsClarification = true
+      clarifyingQuestions.push({
+        question: 'Who is the primary target audience or user base for this project?',
+        context: 'Understanding the audience helps prioritize features and ideas'
+      })
+    }
+    
+    if (recommendedProjectType === 'other' && !combined.includes('timeline')) {
+      needsClarification = true
+      clarifyingQuestions.push({
+        question: 'What are the key milestones or deadlines for this project?',
+        context: 'Timeline information helps with prioritization and planning'
+      })
+    }
+    
+    return {
+      recommendedProjectType,
+      reasoning, 
+      industry,
+      timeline,
+      primaryGoals: goals,
+      needsClarification,
+      clarifyingQuestions
+    }
+  }
+
   const handleInitialAnalysis = async () => {
     if (!projectName.trim() || !projectDescription.trim()) return
 
@@ -57,26 +169,38 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
 
     try {
       logger.debug('🎯 Starting AI project analysis...')
+      
+      // Analyze project context
+      const contextAnalysis = analyzeProjectContext(projectName, projectDescription)
+      
+      // Generate ideas with appropriate project type
+      const effectiveProjectType = selectedProjectType === 'auto' 
+        ? contextAnalysis.recommendedProjectType 
+        : selectedProjectType
+        
       const result = await aiService.generateProjectIdeas(
         projectName, 
         projectDescription,
-        selectedProjectType === 'auto' ? 'General' : selectedProjectType,
+        effectiveProjectType,
         ideaCount,
         ideaTolerance
       )
+      
       setAnalysis({ 
-        needsClarification: false,
-        clarifyingQuestions: [],
+        needsClarification: contextAnalysis.needsClarification,
+        clarifyingQuestions: contextAnalysis.clarifyingQuestions,
         projectAnalysis: {
-          industry: 'General',
+          industry: contextAnalysis.industry,
           scope: 'Standard',
-          timeline: 'Medium-term',
-          primaryGoals: [projectName]
+          timeline: contextAnalysis.timeline,
+          primaryGoals: contextAnalysis.primaryGoals,
+          recommendedProjectType: contextAnalysis.recommendedProjectType,
+          projectTypeReasoning: contextAnalysis.reasoning
         },
         generatedIdeas: result
       })
 
-      if (false) { // removed needsClarification logic for simplicity
+      if (contextAnalysis.needsClarification) {
         setStep('questions')
       } else {
         setStep('review')
@@ -102,10 +226,21 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         .join('\n')
 
       logger.debug('🎯 Re-analyzing with additional context...')
+      
+      // Enhanced description with user answers
+      const enhancedDescription = `${projectDescription}\n\nAdditional Details:\n${additionalContext}`
+      
+      // Re-analyze with enhanced context
+      const contextAnalysis = analyzeProjectContext(projectName, enhancedDescription)
+      
+      const effectiveProjectType = selectedProjectType === 'auto' 
+        ? contextAnalysis.recommendedProjectType 
+        : selectedProjectType
+        
       const result = await aiService.generateProjectIdeas(
         projectName,
-        projectDescription + ` Additional context: ${additionalContext}`,
-        selectedProjectType === 'auto' ? 'General' : selectedProjectType,
+        enhancedDescription,
+        effectiveProjectType,
         ideaCount,
         ideaTolerance
       )
@@ -114,10 +249,12 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         needsClarification: false,
         clarifyingQuestions: [],
         projectAnalysis: {
-          industry: 'General',
-          scope: 'Standard',
-          timeline: 'Medium-term',
-          primaryGoals: [projectName]
+          industry: contextAnalysis.industry,
+          scope: 'Enhanced',
+          timeline: contextAnalysis.timeline,
+          primaryGoals: contextAnalysis.primaryGoals,
+          recommendedProjectType: contextAnalysis.recommendedProjectType,
+          projectTypeReasoning: contextAnalysis.reasoning
         },
         generatedIdeas: result
       })
