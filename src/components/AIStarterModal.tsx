@@ -153,31 +153,61 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
       reasoning = 'Could not clearly categorize - general project approach recommended'
     }
     
-    // Determine if clarification is needed
+    // Generate contextual clarifying questions based on project type and content
     let needsClarification = false
     const clarifyingQuestions: ClarifyingQuestion[] = []
     
+    // Always check for missing key details, but make questions contextual to project type
     if (description.length < 50) {
       needsClarification = true
       clarifyingQuestions.push({
-        question: 'Can you provide more details about the project scope and objectives?',
-        context: 'More context will help generate better-targeted ideas'
+        question: `Can you provide more details about the ${recommendedProjectType === 'marketing' ? 'campaign objectives and target messaging' : 
+                   recommendedProjectType === 'software' ? 'technical requirements and key features' :
+                   recommendedProjectType === 'business_plan' ? 'business model and revenue strategy' :
+                   'project scope and key objectives'}?`,
+        context: 'More specific context will help generate better-targeted ideas'
       })
     }
     
-    if (!combined.match(/(target|audience|user|customer)/) && recommendedProjectType !== 'operations') {
+    // Context-aware audience questions
+    if (!combined.match(/(target|audience|user|customer|demographic)/) && recommendedProjectType !== 'operations') {
       needsClarification = true
+      const audienceQuestion = recommendedProjectType === 'marketing' ? 
+        'Who is your target demographic and what are their key characteristics (age, income, location, interests)?' :
+        industry === 'Healthcare' ?
+        'Who are the primary patients/clients and what are their specific care needs?' :
+        recommendedProjectType === 'software' ?
+        'Who are the primary users and what problems are you solving for them?' :
+        'Who is the primary target audience or user base for this project?'
+        
       clarifyingQuestions.push({
-        question: 'Who is the primary target audience or user base for this project?',
+        question: audienceQuestion,
         context: 'Understanding the audience helps prioritize features and ideas'
       })
     }
     
-    if (recommendedProjectType === 'other' && !combined.includes('timeline')) {
+    // Project-type specific clarifying questions
+    if (recommendedProjectType === 'marketing' && !combined.match(/(budget|spend|cost|timeline|duration)/)) {
       needsClarification = true
       clarifyingQuestions.push({
-        question: 'What are the key milestones or deadlines for this project?',
-        context: 'Timeline information helps with prioritization and planning'
+        question: 'What is your marketing budget range and campaign timeline?',
+        context: 'Budget and timeline inform realistic marketing strategies and channel selection'
+      })
+    }
+    
+    if (industry === 'Healthcare' && !combined.match(/(regulation|compliance|hipaa|privacy)/)) {
+      needsClarification = true
+      clarifyingQuestions.push({
+        question: 'Are there specific healthcare regulations or compliance requirements to consider?',
+        context: 'Healthcare projects often have regulatory constraints that affect strategy'
+      })
+    }
+    
+    if (recommendedProjectType === 'software' && !combined.match(/(platform|mobile|web|desktop|api)/)) {
+      needsClarification = true  
+      clarifyingQuestions.push({
+        question: 'What platforms or technologies should this solution support (web, mobile, desktop, API)?',
+        context: 'Platform decisions affect development approach and user experience'
       })
     }
     
