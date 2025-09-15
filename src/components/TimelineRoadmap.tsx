@@ -688,6 +688,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
               {/* Feature Timeline */}
               <div 
                 className="flex-1 relative py-4 timeline-container overflow-hidden" 
+                data-timeline-content
                 onDragOver={handleDragOver}
                 onDrop={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect()

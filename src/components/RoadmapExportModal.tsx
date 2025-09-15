@@ -58,23 +58,36 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
     setIsExporting(true)
     
     try {
+      // Check if we have any features to export
+      if (features.length === 0) {
+        alert('No roadmap features found to export. Please add some features first.')
+        return
+      }
+
       if (exportMode === 'detailed') {
         // For detailed mode, capture the current roadmap view
-        const roadmapElement = document.querySelector('[data-roadmap-export]') as HTMLElement
+        // Try timeline content first, then fall back to full roadmap
+        let roadmapElement = document.querySelector('[data-timeline-content]') as HTMLElement
+        if (!roadmapElement) {
+          roadmapElement = document.querySelector('[data-roadmap-export]') as HTMLElement
+        }
+        
         if (roadmapElement) {
+          console.log('Exporting detailed view from element:', roadmapElement.className)
           await RoadmapExporter.exportDetailed(roadmapElement, title, exportFormat)
+        } else {
+          throw new Error('Roadmap element not found for export')
         }
       } else {
         // For overview and track modes, we'll render the export view in a hidden div
         const container = document.createElement('div')
         container.style.position = 'fixed'
-        container.style.left = '50px'  // Temporarily visible for debugging
-        container.style.top = '50px'
+        container.style.left = '-9999px'  // Hidden off-screen
+        container.style.top = '0'
         container.style.width = '1400px'
         container.style.height = '1000px'
         container.style.backgroundColor = 'white'
-        container.style.zIndex = '9999'
-        container.style.border = '2px solid red'  // Debug border
+        container.style.zIndex = '-1'
         container.style.overflow = 'hidden'
         document.body.appendChild(container)
         
@@ -346,6 +359,17 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
               )}
               <div>• <strong>Orientation:</strong> Landscape</div>
             </div>
+            
+            {features.length === 0 && (
+              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <span className="text-yellow-600">⚠️</span>
+                  <p className="text-sm text-yellow-800">
+                    <strong>No features found.</strong> Please add roadmap features before exporting.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -360,7 +384,7 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
             </button>
             <button
               onClick={handleExport}
-              disabled={isExporting || (exportMode === 'track' && !selectedTeam)}
+              disabled={isExporting || (exportMode === 'track' && !selectedTeam) || features.length === 0}
               className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isExporting ? (
