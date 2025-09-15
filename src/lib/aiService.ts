@@ -419,76 +419,120 @@ class SecureAIService {
     const hasFiles = documentContext && documentContext.length > 0
     const ideaCount = (ideas || []).length
     
-    // Determine industry and focus based on project type and name
+    // Analyze actual idea content to understand what this project is really about
+    const allIdeaText = (ideas || []).map(idea => `${idea.content} ${idea.details || ''}`).join(' ').toLowerCase()
+    const projectText = `${projectName} ${projectType}`.toLowerCase()
+    const combinedText = `${projectText} ${allIdeaText}`
+    
+    // Smart context detection based on actual project content
     let industry = 'business'
     let focus = 'operations'
     let marketContext = 'market'
+    let specificFocus = []
+    let keyThemes = []
     
-    const projectLower = `${projectName} ${projectType}`.toLowerCase()
-    
-    if (projectLower.includes('health') || projectLower.includes('medical') || projectLower.includes('care')) {
+    // Analyze the actual ideas to understand the project's real focus
+    if (combinedText.includes('health') || combinedText.includes('medical') || combinedText.includes('patient')) {
       industry = 'healthcare'
-      focus = 'patient care and outcomes'
+      focus = 'patient care and health outcomes'
       marketContext = 'healthcare market'
-    } else if (projectLower.includes('senior') || projectLower.includes('aging') || projectLower.includes('elderly')) {
+    } else if (combinedText.includes('senior') || combinedText.includes('aging') || combinedText.includes('elderly')) {
       industry = 'senior care'
       focus = 'senior wellness and care quality'
       marketContext = 'senior care market'
-    } else if (projectLower.includes('marketing') || projectLower.includes('campaign') || projectLower.includes('brand')) {
+    } else if (combinedText.includes('marketing') || combinedText.includes('campaign') || combinedText.includes('brand')) {
       industry = 'marketing'
       focus = 'brand engagement and customer acquisition'
       marketContext = 'target market'
-    } else if (projectLower.includes('holiday') || projectLower.includes('seasonal')) {
+    } else if (combinedText.includes('holiday') || combinedText.includes('seasonal')) {
       industry = 'seasonal marketing'
       focus = 'holiday customer engagement'
       marketContext = 'seasonal market'
-    } else if (projectLower.includes('tech') || projectLower.includes('software') || projectLower.includes('app')) {
-      industry = 'technology'
-      focus = 'user experience and product development'
+    } else if (combinedText.includes('platform') || combinedText.includes('app') || combinedText.includes('software')) {
+      industry = 'technology platform'
+      focus = 'platform development and user experience'
       marketContext = 'technology market'
+    } else if (combinedText.includes('subscription') || combinedText.includes('premium') || combinedText.includes('features')) {
+      industry = 'subscription technology'
+      focus = 'subscription model and premium feature development'
+      marketContext = 'SaaS market'
     }
     
+    // Extract specific themes from actual ideas
+    const ideaTitles = (ideas || []).map(idea => idea.content)
+    if (ideaTitles.some(title => title.toLowerCase().includes('subscription'))) {
+      specificFocus.push('subscription model optimization')
+      keyThemes.push('recurring revenue growth')
+    }
+    if (ideaTitles.some(title => title.toLowerCase().includes('premium') || title.toLowerCase().includes('advanced'))) {
+      specificFocus.push('premium feature development')
+      keyThemes.push('feature differentiation')
+    }
+    if (ideaTitles.some(title => title.toLowerCase().includes('user') || title.toLowerCase().includes('experience'))) {
+      specificFocus.push('user experience enhancement')
+      keyThemes.push('customer satisfaction')
+    }
+    if (ideaTitles.some(title => title.toLowerCase().includes('social') || title.toLowerCase().includes('sharing'))) {
+      specificFocus.push('social engagement features')
+      keyThemes.push('community building')
+    }
+    if (ideaTitles.some(title => title.toLowerCase().includes('onboarding') || title.toLowerCase().includes('tutorial'))) {
+      specificFocus.push('user onboarding optimization')
+      keyThemes.push('user activation')
+    }
+    
+    // If no specific themes detected, use more generic but project-relevant themes
+    if (specificFocus.length === 0) {
+      specificFocus = ['core functionality improvement', 'user engagement enhancement']
+      keyThemes = ['market positioning', 'competitive advantage']
+    }
+    
+    // Get the top 3 most relevant ideas for insights
+    const topIdeas = (ideas || []).slice(0, 3)
+    const mainFocus = specificFocus[0] || focus
+    const primaryTheme = keyThemes[0] || 'growth'
+    
     return {
-      executiveSummary: `Strategic analysis of ${ideaCount} initiatives for ${projectName} reveals significant opportunities within the ${marketContext}. Analysis shows strong potential for growth through focused ${focus} improvements${hasFiles ? `, informed by ${documentContext.length} supporting documents` : ''}.`,
+      executiveSummary: `Strategic analysis of ${ideaCount} initiatives for ${projectName} reveals focused opportunities in ${mainFocus}${specificFocus.length > 1 ? ` and ${specificFocus[1]}` : ''}. Key ideas like "${topIdeas[0]?.content || 'core features'}" and "${topIdeas[1]?.content || 'user experience'}" position ${projectName} for ${primaryTheme} in the ${marketContext}${hasFiles ? `, supported by ${documentContext.length} uploaded documents` : ''}.`,
       
       keyInsights: [
         {
-          insight: `${industry.charAt(0).toUpperCase() + industry.slice(1)} Market Opportunity`,
-          impact: `Current ${marketContext} conditions present significant opportunity for ${projectName} to capture market share through strategic ${focus} initiatives.`
+          insight: `${specificFocus[0]?.charAt(0).toUpperCase() + specificFocus[0]?.slice(1) || 'Strategic Focus'}`,
+          impact: `Initiative "${topIdeas[0]?.content || 'Primary feature'}" represents a core opportunity for ${projectName} to establish ${primaryTheme} through targeted ${mainFocus} in the ${marketContext}.`
         },
         {
-          insight: 'Strategic Initiative Balance',
-          impact: `Portfolio balance between quick wins and strategic initiatives optimizes risk-adjusted returns for ${industry} sector operations.`
+          insight: `${keyThemes[0]?.charAt(0).toUpperCase() + keyThemes[0]?.slice(1) || 'Market Positioning'}`,
+          impact: `Features like "${topIdeas[1]?.content || 'Secondary feature'}" and "${topIdeas[2]?.content || 'Supporting feature'}" create a cohesive strategy for ${projectName} ${primaryTheme} and competitive differentiation.`
         },
         {
-          insight: hasFiles ? 'Document-Supported Strategy' : 'Competitive Positioning',
+          insight: hasFiles ? 'Document-Informed Strategy' : `${industry.charAt(0).toUpperCase() + industry.slice(1)} Implementation`,
           impact: hasFiles 
-            ? `Project documentation provides valuable context for ${industry} strategic planning and ${focus} optimization.`
-            : `Strategic positioning in ${marketContext} creates defensible competitive advantages for ${projectName}.`
+            ? `Uploaded documentation provides specific context for implementing ${specificFocus.join(' and ')} within ${projectName}'s ${industry} strategy.`
+            : `${projectName}'s focus on ${specificFocus.join(' and ')} aligns with current ${industry} market demands and user expectations.`
         }
       ],
       
       priorityRecommendations: {
         immediate: hasFiles 
           ? [
-              `Leverage document insights for immediate ${industry} market validation`,
-              `Execute ${focus} quick wins identified through analysis`,
-              `Establish stakeholder alignment for ${projectName} initiatives`
+              `Implement "${topIdeas[0]?.content || 'primary feature'}" leveraging document insights`,
+              `Execute quick wins from "${topIdeas[1]?.content || 'secondary feature'}" for immediate ${primaryTheme}`,
+              `Validate ${specificFocus[0]} approach with target users`
             ]
           : [
-              `Execute ${industry} market validation and customer discovery`,
-              `Secure strategic partnerships within ${marketContext}`,
-              `Establish ${focus} improvement pipeline`
+              `Prioritize "${topIdeas[0]?.content || 'core feature'}" development for ${projectName}`,
+              `Launch pilot program for "${topIdeas[1]?.content || 'key feature'}" testing`,
+              `Establish ${mainFocus} metrics and success criteria`
             ],
         shortTerm: [
-          `Scale ${focus} operations and ${industry} processes`,
-          `Build ${projectName} market fit and customer success programs`,
-          `Develop strategic advantages in ${marketContext}`
+          `Scale "${topIdeas[0]?.content || 'primary initiative'}" based on user feedback`,
+          `Integrate ${specificFocus.join(' with ')} for comprehensive user experience`,
+          `Develop ${projectName} competitive advantages in ${keyThemes.join(' and ')}`
         ],
         longTerm: [
-          `Expand ${projectName} to adjacent ${industry} markets`,
-          `Build platform ecosystem and strategic partnerships`,
-          `Position for ${industry} market leadership`
+          `Expand ${projectName} platform with advanced ${specificFocus.join(' and ')} capabilities`,
+          `Build ecosystem around successful features like "${topIdeas[0]?.content || 'core offering'}"`,
+          `Position ${projectName} for ${industry} market leadership through ${primaryTheme}`
         ]
       },
       
@@ -513,17 +557,17 @@ class SecureAIService {
       
       suggestedRoadmap: [
         {
-          phase: `${industry.charAt(0).toUpperCase() + industry.slice(1)} Validation`,
+          phase: `${specificFocus[0]?.charAt(0).toUpperCase() + specificFocus[0]?.slice(1) || 'Foundation'} Phase`,
           duration: '0-6 months',
           focus: hasFiles 
-            ? `Validate ${industry} insights from documentation and establish initial ${focus} improvements`
-            : `Validate ${projectName} market fit and establish initial customer base`,
+            ? `Implement core features like "${topIdeas[0]?.content}" using document insights for ${primaryTheme}`
+            : `Launch "${topIdeas[0]?.content}" and "${topIdeas[1]?.content}" to establish ${projectName} in ${marketContext}`,
           ideas: (ideas || []).slice(0, 3).map(idea => idea.content)
         },
         {
-          phase: 'Growth Acceleration',
+          phase: `${keyThemes[0]?.charAt(0).toUpperCase() + keyThemes[0]?.slice(1) || 'Growth'} Acceleration`,
           duration: '6-18 months',
-          focus: `Scale ${focus} operations and capture ${marketContext} share`,
+          focus: `Scale successful features and develop advanced ${specificFocus.join(' and ')} capabilities`,
           ideas: (ideas || []).slice(3, 6).map(idea => idea.content)
         }
       ],
@@ -538,17 +582,17 @@ class SecureAIService {
       futureEnhancements: hasFiles 
         ? [
             {
-              title: `${industry.charAt(0).toUpperCase() + industry.slice(1)} Analytics Enhancement`,
-              description: `Advanced analytics for ${focus} optimization based on document insights`,
-              relatedIdea: (ideas || [])[0]?.content || `${industry} Analytics`,
+              title: `Advanced ${specificFocus[0] || 'Feature'} Analytics`,
+              description: `Enhanced analytics and insights for ${topIdeas[0]?.content || 'core features'} based on document guidance`,
+              relatedIdea: (ideas || [])[0]?.content || `${specificFocus[0]} Analytics`,
               impact: 'high',
               timeframe: '3-6 months'
             }
           ]
         : [
             {
-              title: `${projectName} Platform Enhancement`,
-              description: `Comprehensive ${focus} platform with advanced ${industry} capabilities`,
+              title: `${topIdeas[0]?.content || projectName} Enhancement Platform`,
+              description: `Next-generation ${specificFocus.join(' and ')} capabilities building on "${topIdeas[1]?.content || 'current features'}"`,
               relatedIdea: (ideas || [])[0]?.content || 'Platform Enhancement',
               impact: 'high',
               timeframe: '3-6 months'
