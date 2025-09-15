@@ -733,10 +733,15 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
     const marginR = 20
     const contentW = pageW - marginL - marginR
     
-    // University template color palette
-    const darkBlue = [52, 116, 181]       // #3474b5 - Main blue from template
+    // Professional color palette for information design
+    const darkBlue = [52, 116, 181]       // #3474b5 - Main blue
+    const orange = [245, 130, 32]         // #f58220 - Orange for phases
+    const green = [76, 175, 80]           // #4caf50 - Green for success
+    const red = [244, 67, 54]             // #f44336 - Red for urgent
+    const purple = [156, 39, 176]         // #9c27b0 - Purple for strategy
+    const teal = [0, 150, 136]            // #009688 - Teal for insights
     const darkText = [51, 51, 51]         // Dark gray for text
-    const lightGray = [240, 240, 240]     // Light gray for table rows
+    const lightGray = [245, 245, 245]     // Light gray for backgrounds
     const white = [255, 255, 255]         // White
 
     // Simple page break function
@@ -747,24 +752,64 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       }
     }
 
+    // Professional phase box creator
+    const createPhaseBox = (phaseNum: number, title: string, duration: string, content: string, color: number[]) => {
+      pageBreak(60)
+      
+      const boxHeight = 50
+      
+      // Main colored box
+      doc.setFillColor(color[0], color[1], color[2])
+      doc.roundedRect(marginL, yPos, contentW, boxHeight, 3, 3, 'F')
+      
+      // Phase number circle
+      doc.setFillColor(white[0], white[1], white[2])
+      doc.circle(marginL + 20, yPos + 25, 12, 'F')
+      doc.setTextColor(color[0], color[1], color[2])
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.text(phaseNum.toString(), marginL + 17, yPos + 29)
+      
+      // Phase title
+      doc.setTextColor(white[0], white[1], white[2])
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.text(title, marginL + 40, yPos + 20)
+      
+      // Duration
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      doc.text(duration, marginL + 40, yPos + 35)
+      
+      yPos += boxHeight + 10
+      
+      // Content description below box
+      doc.setTextColor(darkText[0], darkText[1], darkText[2])
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'normal')
+      const contentLines = doc.splitTextToSize(content, contentW - 20)
+      doc.text(contentLines, marginL + 10, yPos)
+      yPos += contentLines.length * 11 + 15
+    }
+
     // Template-style table function
-    const createTemplateTable = (data: {label: string, content: string}[], title?: string) => {
+    const createTemplateTable = (data: {label: string, content: string}[], title?: string, sectionColor: number[] = darkBlue) => {
       pageBreak(100)
       
       if (title) {
-        // Blue header bar for section
-        doc.setFillColor(darkBlue[0], darkBlue[1], darkBlue[2])
-        doc.rect(marginL, yPos, contentW, 20, 'F')
+        // Colored header bar for section
+        doc.setFillColor(sectionColor[0], sectionColor[1], sectionColor[2])
+        doc.rect(marginL, yPos, contentW, 22, 'F')
         
         doc.setTextColor(white[0], white[1], white[2])
         doc.setFontSize(12)
         doc.setFont('helvetica', 'bold')
-        doc.text(title.toUpperCase(), marginL + 8, yPos + 13)
-        yPos += 25
+        doc.text(title.toUpperCase(), marginL + 8, yPos + 14)
+        yPos += 27
       }
       
       // Calculate table dimensions
-      const labelWidth = contentW * 0.3  // Wider label column like template
+      const labelWidth = contentW * 0.3
       const contentColWidth = contentW * 0.7
       
       data.forEach((row, index) => {
@@ -772,36 +817,70 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
         const labelLines = doc.splitTextToSize(row.label, labelWidth - 10)
         const contentLines = doc.splitTextToSize(row.content, contentColWidth - 15)
         const maxLines = Math.max(labelLines.length, contentLines.length)
-        const rowHeight = Math.max(20, maxLines * 10 + 10)  // Dynamic height
+        const rowHeight = Math.max(22, maxLines * 10 + 12)
         
         pageBreak(rowHeight + 5)
         
-        // Alternating row colors like template
+        // Alternating row colors
         const isEven = index % 2 === 0
         doc.setFillColor(isEven ? lightGray[0] : white[0], isEven ? lightGray[1] : white[1], isEven ? lightGray[2] : white[2])
         doc.rect(marginL, yPos, contentW, rowHeight, 'F')
         
+        // Colored left border accent
+        doc.setFillColor(sectionColor[0], sectionColor[1], sectionColor[2])
+        doc.rect(marginL, yPos, 3, rowHeight, 'F')
+        
         // Table borders
-        doc.setDrawColor(180, 180, 180)
+        doc.setDrawColor(200, 200, 200)
         doc.setLineWidth(0.3)
         doc.rect(marginL, yPos, labelWidth, rowHeight, 'S')
         doc.rect(marginL + labelWidth, yPos, contentColWidth, rowHeight, 'S')
         
-        // Label column (left) - better positioning
+        // Label column (left)
         doc.setTextColor(darkText[0], darkText[1], darkText[2])
         doc.setFontSize(8)
         doc.setFont('helvetica', 'bold')
-        doc.text(labelLines, marginL + 5, yPos + 8)
+        doc.text(labelLines, marginL + 8, yPos + 10)
         
-        // Content column (right) - better positioning
+        // Content column (right)
         doc.setFontSize(8)
         doc.setFont('helvetica', 'normal')
-        doc.text(contentLines, marginL + labelWidth + 5, yPos + 8)
+        doc.text(contentLines, marginL + labelWidth + 8, yPos + 10)
         
         yPos += rowHeight
       })
       
-      yPos += 10
+      yPos += 15
+    }
+
+    // Eye-catching insight card
+    const createInsightCard = (title: string, content: string, color: number[]) => {
+      pageBreak(50)
+      
+      const cardHeight = 45
+      
+      // Card background
+      doc.setFillColor(lightGray[0], lightGray[1], lightGray[2])
+      doc.roundedRect(marginL, yPos, contentW, cardHeight, 2, 2, 'F')
+      
+      // Colored left accent bar
+      doc.setFillColor(color[0], color[1], color[2])
+      doc.rect(marginL, yPos, 5, cardHeight, 'F')
+      
+      // Title
+      doc.setTextColor(color[0], color[1], color[2])
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'bold')
+      doc.text(title, marginL + 15, yPos + 15)
+      
+      // Content
+      doc.setTextColor(darkText[0], darkText[1], darkText[2])
+      doc.setFontSize(8)
+      doc.setFont('helvetica', 'normal')
+      const contentLines = doc.splitTextToSize(content, contentW - 25)
+      doc.text(contentLines, marginL + 15, yPos + 25)
+      
+      yPos += cardHeight + 10
     }
 
 
@@ -855,9 +934,56 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       }
     ]
 
-    createTemplateTable(overviewData, 'PROJECT OVERVIEW - ABOUT US')
+    createTemplateTable(overviewData, 'PROJECT OVERVIEW - ABOUT US', darkBlue)
 
-    // GOALS SECTION - Template Style
+    // KEY INSIGHTS - Eye-catching cards
+    if (insights.keyInsights && insights.keyInsights.length > 0) {
+      yPos += 10
+      // Section header
+      doc.setFillColor(teal[0], teal[1], teal[2])
+      doc.rect(marginL, yPos, contentW, 22, 'F')
+      doc.setTextColor(white[0], white[1], white[2])
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'bold')
+      doc.text('KEY STRATEGIC INSIGHTS', marginL + 8, yPos + 14)
+      yPos += 32
+      
+      insights.keyInsights.forEach((item: any, index: number) => {
+        createInsightCard(
+          `INSIGHT ${index + 1}`,
+          `${item.insight} - ${item.impact}`,
+          teal
+        )
+      })
+    }
+
+    // IMPLEMENTATION PHASES - Eye-catching phase boxes
+    if (insights.suggestedRoadmap && insights.suggestedRoadmap.length > 0) {
+      yPos += 15
+      // Section header
+      doc.setFillColor(orange[0], orange[1], orange[2])
+      doc.rect(marginL, yPos, contentW, 22, 'F')
+      doc.setTextColor(white[0], white[1], white[2])
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'bold')
+      doc.text('IMPLEMENTATION PHASES', marginL + 8, yPos + 14)
+      yPos += 32
+      
+      const phaseColors = [orange, green, purple, red, teal]
+      
+      insights.suggestedRoadmap.forEach((phase: any, index: number) => {
+        const color = phaseColors[index % phaseColors.length]
+        createPhaseBox(
+          index + 1,
+          phase.phase || `Phase ${index + 1}`,
+          phase.duration || 'TBD',
+          `${phase.focus} | Key Initiatives: ${phase.ideas?.join(', ') || 'To be defined'}`,
+          color
+        )
+      })
+    }
+
+    // GOALS SECTION - Template Style with green theme
     const goalsData = [
       {
         label: 'OBSTACLES - what could prevent us from realizing our vision',
@@ -877,9 +1003,9 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       }
     ]
 
-    createTemplateTable(goalsData, 'GOALS')
+    createTemplateTable(goalsData, 'GOALS', green)
 
-    // STRATEGY SECTION - Template Style
+    // STRATEGY SECTION - Template Style with purple theme
     const strategyData = [
       {
         label: 'RESOURCE ASSESSMENT - infrastructure required to realize vision',
@@ -899,30 +1025,7 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       }
     ]
 
-    createTemplateTable(strategyData, 'STRATEGY')
-
-    // KEY INSIGHTS TABLE - Template Style  
-    const insightsData = insights.keyInsights?.map((item: any, index: number) => ({
-      label: `INSIGHT ${index + 1}`,
-      content: `${item.insight} - ${item.impact}`
-    })) || [
-      {
-        label: 'STRATEGIC ANALYSIS',
-        content: 'Comprehensive analysis of current initiatives and opportunities for strategic growth and development.'
-      }
-    ]
-
-    createTemplateTable(insightsData, 'KEY STRATEGIC INSIGHTS')
-
-    // IMPLEMENTATION TIMELINE - Template Style
-    if (insights.suggestedRoadmap && insights.suggestedRoadmap.length > 0) {
-      const timelineData = insights.suggestedRoadmap.map((phase: any, index: number) => ({
-        label: `PHASE ${index + 1}: ${phase.phase?.toUpperCase() || 'IMPLEMENTATION PHASE'}`,
-        content: `Duration: ${phase.duration} | Focus: ${phase.focus} | Key Initiatives: ${phase.ideas?.join(', ') || 'To be defined'}`
-      }))
-
-      createTemplateTable(timelineData, 'IMPLEMENTATION TIMELINE')
-    }
+    createTemplateTable(strategyData, 'STRATEGY', purple)
 
     // Professional filename with proper character handling
     const timestamp = new Date().toISOString().split('T')[0]
