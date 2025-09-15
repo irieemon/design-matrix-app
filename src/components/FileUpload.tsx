@@ -4,12 +4,11 @@ import { ProjectFile, User, Project, FileType } from '../types'
 import { logger } from '../utils/logger'
 import * as pdfjsLib from 'pdfjs-dist'
 
-// Configure PDF.js to work without workers at all
-// Use empty string instead of false for better compatibility
+// Configure PDF.js 2.x worker (much simpler than 5.x)
+// For version 2.x, we can use a simple CDN URL or disable workers entirely
 if (typeof window !== 'undefined') {
+  // PDF.js 2.x allows empty string to disable workers
   pdfjsLib.GlobalWorkerOptions.workerSrc = ''
-  // Also try to disable worker creation entirely
-  pdfjsLib.GlobalWorkerOptions.workerPort = null
 }
 
 interface FileUploadProps {
@@ -99,30 +98,13 @@ const FileUpload: React.FC<FileUploadProps> = ({
       logger.debug('🔄 Starting PDF text extraction for:', file.name)
       const arrayBuffer = await file.arrayBuffer()
       
-      // Multiple attempts to configure PDF.js without workers
-      try {
-        // Method 1: Set empty string and null port
-        pdfjsLib.GlobalWorkerOptions.workerSrc = ''
-        pdfjsLib.GlobalWorkerOptions.workerPort = null
-      } catch (e) {
-        logger.debug('⚠️ Worker config method 1 failed:', e)
-      }
+      // PDF.js 2.x configuration - much simpler
+      pdfjsLib.GlobalWorkerOptions.workerSrc = ''
       
-      try {
-        // Method 2: Use data URL
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'data:application/javascript;base64,'
-      } catch (e) {
-        logger.debug('⚠️ Worker config method 2 failed:', e)
-      }
-      
-      // Configure PDF.js for maximum compatibility - disable workers entirely
+      // Simple PDF.js 2.x document loading
       const pdf = await pdfjsLib.getDocument({
         data: arrayBuffer,
-        useWorkerFetch: false,
-        isEvalSupported: false,
-        useSystemFonts: false,
-        verbosity: 0, // Suppress PDF.js warnings
-        disableWorker: true // Additional worker disable flag
+        verbosity: 0 // Suppress PDF.js warnings
       }).promise
       
       let fullText = ''
