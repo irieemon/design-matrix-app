@@ -882,9 +882,9 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       doc.setFillColor(pearl[0], pearl[1], pearl[2])
       doc.rect(marginL - 10, yPos - 8, contentW + 20, fontSize + 16, 'F')
       
-      // Accent line
+      // Much thinner accent line
       doc.setFillColor(accentColor[0], accentColor[1], accentColor[2])
-      doc.rect(marginL - 10, yPos - 8, 4, fontSize + 16, 'F')
+      doc.rect(marginL - 10, yPos - 8, 2, fontSize + 16, 'F')
       
       // Section title with refined typography
       doc.setTextColor(charcoal[0], charcoal[1], charcoal[2])
@@ -949,9 +949,9 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       doc.setLineWidth(0.5)
       doc.roundedRect(marginL, yPos, contentW, boxHeight, 2, 2, 'S')
       
-      // Accent line
+      // Thinner accent line for info boxes
       doc.setFillColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-      doc.rect(marginL, yPos, 3, boxHeight, 'F')
+      doc.rect(marginL, yPos, 1.5, boxHeight, 'F')
       
       // Title with sophisticated typography
       doc.setFontSize(12)
@@ -1064,21 +1064,24 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       
       pageBreak(75)
       
-      // Elegant insight numbering
+      // More subtle insight presentation
+      const insightHeight = 65
+      
+      // Very subtle background
       doc.setFillColor(pearl[0], pearl[1], pearl[2])
-      doc.roundedRect(marginL, yPos, contentW, 50, 2, 2, 'F')
+      doc.roundedRect(marginL, yPos, contentW, insightHeight, 1, 1, 'F')
       
-      // Subtle accent line
+      // Minimal accent line - much thinner
       doc.setFillColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-      doc.rect(marginL, yPos, 3, 50, 'F')
+      doc.rect(marginL, yPos, 1.5, insightHeight, 'F')
       
-      // Refined number badge
+      // Smaller, more refined number badge
       doc.setFillColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-      doc.circle(marginL + 18, yPos + 18, 8, 'F')
+      doc.circle(marginL + 15, yPos + 20, 6, 'F')
       doc.setTextColor(cream[0], cream[1], cream[2])
-      doc.setFontSize(11)
+      doc.setFontSize(9)
       doc.setFont('helvetica', 'bold')
-      doc.text(`${i + 1}`, marginL + 15, yPos + 21)
+      doc.text(`${i + 1}`, marginL + 13, yPos + 23)
       
       // Clean insight text
       const cleanInsight = (item.insight || 'No insight provided')
@@ -1087,14 +1090,14 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
         .replace(/\u2013/g, '-')
         .replace(/\u2014/g, '--')
       
-      // Insight title with sophisticated typography
+      // Insight title with better spacing
       doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(charcoal[0], charcoal[1], charcoal[2])
-      const titleLines = doc.splitTextToSize(cleanInsight, contentW - 50)
-      doc.text(titleLines, marginL + 35, yPos + 15)
+      const titleLines = doc.splitTextToSize(cleanInsight, contentW - 40)
+      doc.text(titleLines, marginL + 25, yPos + 18)
       
-      // Impact description
+      // Impact description with refined positioning
       const cleanImpact = (item.impact || 'No impact provided')
         .replace(/[\u201C\u201D]/g, '"')
         .replace(/[\u2018\u2019]/g, "'")
@@ -1104,10 +1107,10 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(slate[0], slate[1], slate[2])
-      const impactLines = doc.splitTextToSize(cleanImpact, contentW - 35)
-      doc.text(impactLines, marginL + 20, yPos + 32)
+      const impactLines = doc.splitTextToSize(cleanImpact, contentW - 30)
+      doc.text(impactLines, marginL + 10, yPos + 35)
       
-      yPos += 65
+      yPos += insightHeight + 10
     })
 
     // PRIORITY RECOMMENDATIONS - Refined structure
@@ -1148,7 +1151,7 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
         doc.setFillColor(pearl[0], pearl[1], pearl[2])
         doc.roundedRect(marginL, yPos, contentW, 25, 2, 2, 'F')
         doc.setFillColor(185, 28, 28)
-        doc.rect(marginL, yPos, 3, 25, 'F')
+        doc.rect(marginL, yPos, 1.5, 25, 'F')
         
         doc.setFontSize(12)
         doc.setFont('helvetica', 'bold')
@@ -1167,7 +1170,7 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
         doc.setFillColor(pearl[0], pearl[1], pearl[2])
         doc.roundedRect(marginL, yPos, contentW, 25, 2, 2, 'F')
         doc.setFillColor(22, 163, 74)
-        doc.rect(marginL, yPos, 3, 25, 'F')
+        doc.rect(marginL, yPos, 1.5, 25, 'F')
         
         doc.setFontSize(12)
         doc.setFont('helvetica', 'bold')
