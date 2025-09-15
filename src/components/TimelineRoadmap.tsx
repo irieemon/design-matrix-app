@@ -116,6 +116,8 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   const handleLoadSampleData = () => {
     let sampleData: RoadmapFeature[]
     
+    console.log('Loading sample data for project type:', projectType)
+    
     // Choose sample data based on project type
     switch (projectType) {
       case 'marketing':
@@ -131,10 +133,14 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
         sampleData = sampleMarketingRoadmap // Default to marketing for current case
     }
     
+    console.log('Sample data to load:', sampleData)
+    
     setFeatures(sampleData)
     if (onFeaturesChange) {
       onFeaturesChange(sampleData)
     }
+    
+    console.log('Sample data loaded, features count:', sampleData.length)
   }
 
   // Drag and drop handlers

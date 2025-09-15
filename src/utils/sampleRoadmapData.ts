@@ -6,7 +6,7 @@ export const sampleMarketingRoadmap = [
     description: 'Launch comprehensive Halloween marketing campaign across all channels',
     startMonth: 0,
     duration: 2,
-    team: 'CREATIVE TEAM',
+    team: 'creative',
     priority: 'high' as const,
     status: 'in-progress' as const,
     userStories: [
@@ -38,7 +38,7 @@ export const sampleMarketingRoadmap = [
     description: 'Amplify Halloween campaign through social media channels with influencer partnerships',
     startMonth: 1,
     duration: 1,
-    team: 'DIGITAL MARKETING',
+    team: 'digital',
     priority: 'high' as const,
     status: 'planned' as const,
     userStories: [
@@ -66,7 +66,7 @@ export const sampleMarketingRoadmap = [
     description: 'Create comprehensive analytics dashboard to track campaign performance in real-time',
     startMonth: 0,
     duration: 3,
-    team: 'ANALYTICS TEAM', 
+    team: 'analytics', 
     priority: 'medium' as const,
     status: 'planned' as const,
     userStories: [
@@ -94,7 +94,7 @@ export const sampleMarketingRoadmap = [
     description: 'Ensure smooth operations and order fulfillment during high-traffic Halloween period',
     startMonth: 0,
     duration: 2,
-    team: 'OPERATIONS TEAM',
+    team: 'operations',
     priority: 'medium' as const,
     status: 'in-progress' as const,
     userStories: [
@@ -125,7 +125,7 @@ export const sampleSoftwareRoadmap = [
     description: 'Implement secure user authentication with OAuth and 2FA support',
     startMonth: 0,
     duration: 2,
-    team: 'PLATFORM',
+    team: 'platform',
     priority: 'high' as const,
     status: 'in-progress' as const,
     userStories: [
@@ -184,7 +184,7 @@ export const sampleEventRoadmap = [
     description: 'Secure venue and coordinate all setup logistics for the annual conference',
     startMonth: 0,
     duration: 1,
-    team: 'OPERATIONS TEAM',
+    team: 'operations',
     priority: 'high' as const,
     status: 'completed' as const,
     userStories: [
