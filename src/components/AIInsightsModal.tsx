@@ -104,9 +104,15 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
         logger.debug('✅ FILES WITH CONTENT FOUND - should show in UI!')
         filesWithExtractedContent.forEach((file: ProjectFile, index: number) => {
           logger.debug(`✅ File ${index + 1} with content: ${file.name}`)
+          logger.debug(`📝 File ${index + 1} content preview: "${file.content_preview?.substring(0, 200)}..."`)
         })
+        
+        // Also log to console for easier debugging
+        console.log('🎯 AI INSIGHTS: Files with content found:', filesWithExtractedContent.length)
+        console.log('🎯 AI INSIGHTS: File names:', filesWithExtractedContent.map(f => f.name))
       } else {
         logger.warn('❌ NO FILES WITH CONTENT FOUND - file references will not show')
+        console.warn('🎯 AI INSIGHTS: No files with content found for project:', currentProject?.id)
       }
     } catch (error) {
       logger.warn('Could not load project files from backend:', error)

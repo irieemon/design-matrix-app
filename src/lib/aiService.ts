@@ -205,6 +205,13 @@ class SecureAIService {
             logger.debug('📁 Found document context from backend:', documentContext.length, 'files with content')
             logger.debug('📄 File types being analyzed:', fileTypes)
             
+            // Enhanced console logging for easier debugging
+            console.log('🎯 AI SERVICE: Document context loaded:', {
+              fileCount: documentContext.length,
+              fileNames: documentContext.map(doc => doc.name),
+              totalContent: documentContext.reduce((sum, doc) => sum + doc.content.length, 0)
+            })
+            
             // Log detailed file analysis information
             if (documentContext.length > 0) {
               const totalContentLength = documentContext.reduce((sum: number, doc: any) => sum + doc.content.length, 0)
