@@ -4,8 +4,11 @@ import { ProjectFile, User, Project, FileType } from '../types'
 import { logger } from '../utils/logger'
 import * as pdfjsLib from 'pdfjs-dist'
 
-// Configure PDF.js to work without external worker dependencies
-// We'll handle worker setup in the extraction function
+// Configure PDF.js to work without workers at all
+// Disable worker completely for browser compatibility
+if (typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = false
+}
 
 interface FileUploadProps {
   currentProject: Project
@@ -94,16 +97,15 @@ const FileUpload: React.FC<FileUploadProps> = ({
       logger.debug('🔄 Starting PDF text extraction for:', file.name)
       const arrayBuffer = await file.arrayBuffer()
       
-      // Disable worker completely for reliable operation
-      pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+      // Ensure worker is disabled completely
+      pdfjsLib.GlobalWorkerOptions.workerSrc = false
       
-      // Configure PDF.js for maximum compatibility
-      const pdf = await pdfjsLib.getDocument({ 
+      // Configure PDF.js for maximum compatibility - disable workers entirely
+      const pdf = await pdfjsLib.getDocument({
         data: arrayBuffer,
         useWorkerFetch: false,
         isEvalSupported: false,
-        useSystemFonts: true,
-        verbosity: 0 // Reduce console spam
+        useSystemFonts: false
       }).promise
       
       let fullText = ''
