@@ -88,47 +88,43 @@ async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectN
       messages: [
         {
           role: 'system',
-          content: `You are a team of expert business consultants providing executive-level strategic analysis. Write as if you are Business Analyst, Product Owner, Marketing Expert, and Technology Strategist presenting insights to the C-suite.
+          content: `You are an experienced strategic consultant analyzing this specific project. Think like a seasoned advisor who asks the right questions and provides insights based on what you actually see.
 
-For women's health apps (if project name contains "boobr" or similar), incorporate these market facts:
-- $5.7B market growing 17.8% annually
-- 37% market share in menstrual tracking (oversaturated)
-- North America leads with 38% market share  
-- 70% user churn in first month is typical
-- Major competitors: Flo, Clue, Natural Cycles
-- Regulatory challenges with health data (HIPAA compliance)
+Analyze the actual ideas provided - what do they tell you about this project's real focus, challenges, and opportunities? Look for patterns, gaps, and strategic priorities that emerge from the specific context.
 
-Write in human, consultant language - not robotic AI speak. Use "we recommend" and "our analysis shows" rather than technical jargon.
+Avoid generic business templates. Instead, provide thoughtful analysis that someone familiar with this exact project would find valuable and actionable.
 
-Return a JSON object with this exact structure:
+Write conversationally and insightfully, like you're advising a founder or product team who knows their domain well.
+
+Provide your analysis as a JSON object with these sections:
 {
-  "executiveSummary": "Strategic analysis with market size, competitive landscape, revenue potential, and key success factors. Include specific numbers and insights about market timing.",
+  "executiveSummary": "Your strategic overview of what you see in this project",
   "keyInsights": [
     {
-      "insight": "Strategic insight title",
-      "impact": "Detailed explanation of business impact, market implications, and revenue potential"
+      "insight": "What stands out to you",
+      "impact": "Why this matters for the project"
     }
   ],
   "priorityRecommendations": {
-    "immediate": ["Strategic action 1", "Strategic action 2"],
-    "shortTerm": ["Medium-term strategic initiative 1", "Medium-term strategic initiative 2"],
-    "longTerm": ["Long-term strategic vision 1", "Long-term strategic vision 2"]
+    "immediate": ["What should they do first"],
+    "shortTerm": ["Next steps"],
+    "longTerm": ["Bigger picture moves"]
   },
   "riskAssessment": {
-    "highRisk": ["Market/business risk 1", "Market/business risk 2"],
-    "opportunities": ["Strategic opportunity 1", "Strategic opportunity 2"]
+    "highRisk": ["What concerns you"],
+    "opportunities": ["What excites you about this"]
   },
   "suggestedRoadmap": [
     {
-      "phase": "Strategic Phase Name",
-      "duration": "Time period",
-      "focus": "Strategic focus and business objectives",
-      "ideas": ["Related initiative 1", "Related initiative 2"]
+      "phase": "Logical next phase",
+      "duration": "Realistic timeframe",
+      "focus": "What this phase accomplishes",
+      "ideas": ["Specific ideas from their list that fit here"]
     }
   ],
   "resourceAllocation": {
-    "quickWins": "Strategic resource allocation for immediate ROI initiatives",
-    "strategic": "Investment strategy for long-term competitive advantages"
+    "quickWins": "Where to focus energy first",
+    "strategic": "Longer-term investments"
   },
   "futureEnhancements": [
     {
@@ -144,116 +140,25 @@ Return a JSON object with this exact structure:
         },
         {
           role: 'user',
-          content: `Act as a team of senior business consultants presenting to the executive team. Write like humans, not AI - use "we", "our analysis", "we recommend". Be conversational but professional.
+          content: `I'm looking for strategic insights on this project. Take a look at what we're working on and give me your honest assessment - what do you see? What patterns emerge? What should we be thinking about?
 
-${projectContext?.name?.toLowerCase().includes('boobr') || projectContext?.description?.toLowerCase().includes('women') ? `
-===== WOMEN'S HEALTH MARKET CONTEXT =====
-This is a women's health platform in a $5.7B market growing 17.8% annually. Key market insights:
-- Menstrual tracking is 37% oversaturated (Flo, Clue dominate)
-- 70% user churn in first month across category
-- North America leads 38% market share
-- Major regulatory requirements (HIPAA, privacy laws)
-- Opportunity in comprehensive health vs single-use tracking
-` : ''}
+Here's what we're building:
 
-${getConsultancyGradePrompt()}
+PROJECT: ${projectName} (${projectType})
 
-CRITICAL ANALYSIS REQUIREMENTS:
-- MANDATORY: Reference specific content, data points, and insights from uploaded documents by name and page/section
-- NO GENERIC STATEMENTS: Replace any generic consulting phrases with specific, quantified insights
-- REAL DATA ONLY: Use actual market research, competitor financials, and industry benchmarks - no made-up statistics
-- DOCUMENT INTEGRATION: Extract and build upon specific methodologies, frameworks, or data found in uploaded files
-- CONCRETE NUMBERS: Provide specific market sizes ($X billion), growth rates (X% CAGR), CAC ($X), LTV ($X), conversion rates (X%)
-- PRECISE TIMELINES: Include exact dates, quarters, and implementation windows
-- NAMED COMPETITORS: Reference actual companies with real market share data and revenue figures
-- QUANTIFIED IMPACT: Specify exact percentage improvements, dollar amounts, and measurable outcomes
-- ACTIONABLE RECOMMENDATIONS: Include specific experiments, tests, metrics to track, and resource requirements (FTEs, budget, timeline)
+IDEAS WE'RE CONSIDERING:
+${ideas.map(idea => `• ${idea.title} - ${idea.description}`).join('\n')}
 
-===== PROJECT CONTEXT =====
-PROJECT: ${projectName}
-INDUSTRY/TYPE: ${projectType}
-
-IDEA PORTFOLIO:
-${ideas.map(idea => `- ${idea.title} (Priority: ${idea.quadrant}): ${idea.description}`).join('\n')}
-
-${roadmapContext ? `
-===== EXISTING ROADMAP CONTEXT =====
-The project already has a roadmap with the following structure:
-${JSON.stringify(roadmapContext, null, 2)}
-
-Use this roadmap information to provide insights that COMPLEMENT and ENHANCE the existing plan, identifying gaps, optimization opportunities, and strategic pivots.
-` : ''}
+${roadmapContext ? `We already have some roadmap planning in place.` : ''}
 
 ${documentContext && documentContext.length > 0 ? `
-===== PROJECT DOCUMENTS CONTEXT =====
-The following documents have been uploaded to this project:
-${documentContext.map(doc => `
-Document: ${doc.name} (${doc.type})
-Content Preview: ${doc.content.substring(0, 1000)}${doc.content.length > 1000 ? '...' : ''}
-`).join('\n')}
-
-Use these documents to understand the project's deeper context, requirements, constraints, and vision. Reference specific content from these documents in your analysis.
+ADDITIONAL CONTEXT:
+${documentContext.map(doc => `• ${doc.name}: ${doc.content.substring(0, 200)}...`).join('\n')}
 ` : ''}
 
-===== ANALYSIS REQUIREMENTS =====
-Based on the PROJECT TYPE "${projectType}", tailor your analysis specifically for this domain:
+What insights jump out at you? What should we be prioritizing or watching out for?
 
-${getProjectTypeSpecificRequirements(projectType)}
-
-UNIVERSAL REQUIREMENTS:
-1. Market Opportunity Analysis (sized specifically for this project's scope and type)
-2. Execution Strategy (tailored to ${projectType} best practices)
-3. Risk Assessment (specific to ${projectType} challenges and this project's unique aspects)
-4. Resource Optimization (based on actual project roadmap and constraints)
-5. Competitive Intelligence (relevant to this specific market/industry)
-6. Success Metrics & KPIs (appropriate for ${projectType} projects)
-7. Timeline & Milestone Optimization (considering existing roadmap if available)
-
-CRITICAL INSTRUCTIONS:
-- Reference specific ideas by name throughout your analysis
-- If roadmap exists, suggest specific improvements, gaps, or optimizations
-- If documents are provided, reference specific content and insights from them
-- Make recommendations that are ACTIONABLE and SPECIFIC to this exact project
-- Avoid generic business advice - everything should be tailored to this project
-- Think like a ${projectType} expert who deeply understands this specific venture
-
-BREAKTHROUGH INSIGHT METHODOLOGY:
-Apply these advanced analytical lenses to generate non-obvious strategic insights:
-
-SECOND-ORDER THINKING: Don't just identify what's happening - explain WHY it's happening and what it implies for the future. If users have hygiene concerns, what does this reveal about broader health anxieties, trust in institutions, or emerging lifestyle patterns? What secondary and tertiary effects will these trends create?
-
-CONTRARIAN ANALYSIS: Challenge obvious assumptions. If everyone is focused on X, what opportunities exist in Y and Z? What would a contrarian investor see that consensus misses? Where are incumbents overserving sophisticated users while underserving mainstream needs?
-
-SYSTEMS THINKING: Identify reinforcing loops, network effects, and flywheel mechanisms. How do different elements of the business model compound each other? What creates exponential rather than linear growth? Where are the highest-leverage intervention points?
-
-BEHAVIORAL ECONOMICS: Analyze the psychological drivers, cognitive biases, and decision-making heuristics that affect adoption. What mental models do users have? What triggers habit formation? How can behavioral interventions create unfair competitive advantages?
-
-DOCUMENT INTEGRATION REQUIREMENTS:
-- Quote specific sections from uploaded documents and build insights from that content
-- Reference methodologies, frameworks, and data points found in the files
-- Connect document insights to broader strategic implications and market opportunities
-- Use document content to ground all recommendations in real research and best practices
-
-STRATEGIC DEPTH REQUIREMENTS:
-Each insight must demonstrate sophisticated thinking:
-
-EXECUTIVE SUMMARY: Identify 2-3 non-obvious strategic opportunities that emerge from document analysis and market positioning. Include specific leverage points for competitive advantage and quantified growth potential.
-
-KEY INSIGHTS: Provide breakthrough observations that combine document insights with advanced strategic frameworks. Focus on:
-- Hidden patterns and inflection points others would miss
-- Psychological and behavioral drivers of adoption
-- Systemic advantages and defensive moats
-- Non-linear scaling opportunities and network effects
-
-PRIORITY RECOMMENDATIONS: Structure as venture capital-style value creation plan with:
-- Specific hypotheses to test and experiments to run
-- Behavioral interventions and growth hacking opportunities  
-- Operational leverage points and margin expansion strategies
-- Technology enablers and platform dynamics
-
-RISK ASSESSMENT: Apply venture capital risk framework - identify the 2-3 risks that could kill the business and the specific de-risking strategies with timelines and success metrics.
-
-Think like a senior partner who has seen patterns across hundreds of companies and can identify the subtle factors that separate category winners from also-rans.`
+`
         }
       ],
       temperature: getRandomTemperature(),
@@ -307,96 +212,57 @@ async function generateInsightsWithAnthropic(apiKey: string, ideas: any[], proje
       messages: [
         {
           role: 'user',
-          content: `Act as a team of senior business consultants presenting to the executive team. Write like humans, not AI - use "we", "our analysis", "we recommend". Be conversational but professional.
+          content: `I'm looking for strategic insights on this project. Take a look at what we're working on and give me your honest assessment - what do you see? What patterns emerge? What should we be thinking about?
 
-${projectContext?.name?.toLowerCase().includes('boobr') || projectContext?.description?.toLowerCase().includes('women') ? `
-===== WOMEN'S HEALTH MARKET CONTEXT =====
-This is a women's health platform in a $5.7B market growing 17.8% annually. Key market insights:
-- Menstrual tracking is 37% oversaturated (Flo, Clue dominate)  
-- 70% user churn in first month across category
-- North America leads 38% market share
-- Major regulatory requirements (HIPAA, privacy laws)
-- Opportunity in comprehensive health vs single-use tracking
-` : ''}
+Here's what we're building:
 
-${getConsultancyGradePrompt()}
+PROJECT: ${projectName} (${projectType})
 
-CRITICAL ANALYSIS REQUIREMENTS:
-- MANDATORY: Reference specific content, data points, and insights from uploaded documents by name and page/section
-- NO GENERIC STATEMENTS: Replace any generic consulting phrases with specific, quantified insights
-- REAL DATA ONLY: Use actual market research, competitor financials, and industry benchmarks - no made-up statistics
-- DOCUMENT INTEGRATION: Extract and build upon specific methodologies, frameworks, or data found in uploaded files
-- CONCRETE NUMBERS: Provide specific market sizes ($X billion), growth rates (X% CAGR), CAC ($X), LTV ($X), conversion rates (X%)
-- PRECISE TIMELINES: Include exact dates, quarters, and implementation windows
-- NAMED COMPETITORS: Reference actual companies with real market share data and revenue figures
-- QUANTIFIED IMPACT: Specify exact percentage improvements, dollar amounts, and measurable outcomes
-- ACTIONABLE RECOMMENDATIONS: Include specific experiments, tests, metrics to track, and resource requirements (FTEs, budget, timeline)
+IDEAS WE'RE CONSIDERING:
+${ideas.map(idea => `• ${idea.title} - ${idea.description}`).join('\n')}
 
-===== PROJECT CONTEXT =====
-PROJECT: ${projectName}
-INDUSTRY/TYPE: ${projectType}
-
-IDEA PORTFOLIO:
-${ideas.map(idea => `- ${idea.title} (Priority: ${idea.quadrant}): ${idea.description}`).join('\n')}
-
-${roadmapContext ? `
-===== EXISTING ROADMAP CONTEXT =====
-The project already has a roadmap with the following structure:
-${JSON.stringify(roadmapContext, null, 2)}
-
-Use this roadmap information to provide insights that COMPLEMENT and ENHANCE the existing plan, identifying gaps, optimization opportunities, and strategic pivots.
-` : ''}
+${roadmapContext ? `We already have some roadmap planning in place.` : ''}
 
 ${documentContext && documentContext.length > 0 ? `
-===== PROJECT DOCUMENTS CONTEXT =====
-The following documents have been uploaded to this project:
-${documentContext.map(doc => `
-Document: ${doc.name} (${doc.type})
-Content Preview: ${doc.content.substring(0, 1000)}${doc.content.length > 1000 ? '...' : ''}
-`).join('\n')}
-
-Use these documents to understand the project's deeper context, requirements, constraints, and vision. Reference specific content from these documents in your analysis.
+ADDITIONAL CONTEXT:
+${documentContext.map(doc => `• ${doc.name}: ${doc.content.substring(0, 200)}...`).join('\n')}
 ` : ''}
 
-===== ANALYSIS REQUIREMENTS =====
-Based on the PROJECT TYPE "${projectType}", tailor your analysis specifically for this domain:
+What insights jump out at you? What should we be prioritizing or watching out for?
 
-${getProjectTypeSpecificRequirements(projectType)}
-
-UNIVERSAL REQUIREMENTS:
-1. Market Opportunity Analysis (sized specifically for this project's scope and type)
-2. Execution Strategy (tailored to ${projectType} best practices)
-3. Risk Assessment (specific to ${projectType} challenges and this project's unique aspects)
-4. Resource Optimization (based on actual project roadmap and constraints)
-5. Competitive Intelligence (relevant to this specific market/industry)
-6. Success Metrics & KPIs (appropriate for ${projectType} projects)
-7. Timeline & Milestone Optimization (considering existing roadmap if available)
-
-CRITICAL INSTRUCTIONS:
-- Reference specific ideas by name throughout your analysis - mention each idea by its exact title
-- Provide specific insights for each individual idea, not just broad categories
-- If roadmap exists, suggest specific improvements, gaps, or optimizations
-- If documents are provided, reference specific content and insights from them
-- Create futureEnhancements that build upon or extend existing ideas with new capabilities
-- Make recommendations that are ACTIONABLE and SPECIFIC to this exact project
-- Avoid generic business advice - everything should be tailored to this project
-- Think like a ${projectType} expert who deeply understands this specific venture
-- Each insight should feel personally crafted for this specific project and idea set
-
-BREAKTHROUGH INSIGHT METHODOLOGY:
-Apply these advanced analytical lenses to generate non-obvious strategic insights:
-
-SECOND-ORDER THINKING: Don't just identify what's happening - explain WHY it's happening and what it implies for the future. If users have hygiene concerns, what does this reveal about broader health anxieties, trust in institutions, or emerging lifestyle patterns? What secondary and tertiary effects will these trends create?
-
-CONTRARIAN ANALYSIS: Challenge obvious assumptions. If everyone is focused on X, what opportunities exist in Y and Z? What would a contrarian investor see that consensus misses? Where are incumbents overserving sophisticated users while underserving mainstream needs?
-
-SYSTEMS THINKING: Identify reinforcing loops, network effects, and flywheel mechanisms. How do different elements of the business model compound each other? What creates exponential rather than linear growth? Where are the highest-leverage intervention points?
-
-BEHAVIORAL ECONOMICS: Analyze the psychological drivers, cognitive biases, and decision-making heuristics that affect adoption. What mental models do users have? What triggers habit formation? How can behavioral interventions create unfair competitive advantages?
-
-DOCUMENT INTEGRATION REQUIREMENTS:
-- Quote specific sections from uploaded documents and build insights from that content
-- Reference methodologies, frameworks, and data points found in the files
+Please provide your analysis as JSON with these sections:
+{
+  "executiveSummary": "Your strategic overview of what you see in this project",
+  "keyInsights": [
+    {
+      "insight": "What stands out to you",
+      "impact": "Why this matters for the project"
+    }
+  ],
+  "priorityRecommendations": {
+    "immediate": ["What should they do first"],
+    "shortTerm": ["Next steps"],
+    "longTerm": ["Bigger picture moves"]
+  },
+  "riskAssessment": {
+    "highRisk": ["What concerns you"],
+    "opportunities": ["What excites you about this"]
+  },
+  "suggestedRoadmap": [
+    {
+      "phase": "Logical next phase",
+      "duration": "Realistic timeframe",
+      "focus": "What this phase accomplishes",
+      "ideas": ["Specific ideas from their list that fit here"]
+    }
+  ],
+  "resourceAllocation": {
+    "quickWins": "Where to focus energy first",
+    "strategic": "Longer-term investments"
+  },
+  "futureEnhancements": [],
+  "nextSteps": ["Practical next steps"]
+}`
 - Connect document insights to broader strategic implications and market opportunities
 - Use document content to ground all recommendations in real research and best practices
 
