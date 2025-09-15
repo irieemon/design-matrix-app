@@ -768,7 +768,10 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       doc.setTextColor(color[0], color[1], color[2])
       doc.setFontSize(10)
       doc.setFont('helvetica', 'bold')
-      doc.text(phaseNum.toString(), marginL + 16, yPos + 20)
+      // Center the text in the circle - adjust for proper alignment
+      const circleX = marginL + 18
+      const circleY = yPos + 17.5
+      doc.text(phaseNum.toString(), circleX - 2.5, circleY + 3, { align: 'center' })
       
       // Phase title - better positioning
       doc.setTextColor(white[0], white[1], white[2])
