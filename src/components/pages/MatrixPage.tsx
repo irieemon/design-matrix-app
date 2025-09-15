@@ -141,7 +141,6 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
             {/* Project Files Section */}
             <div className="mt-10">
               <ProjectFiles
-                currentUser={currentUser}
                 currentProject={currentProject}
                 files={getCurrentProjectFiles()}
                 onFilesUploaded={handleFilesUploaded}

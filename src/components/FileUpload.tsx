@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react'
 import { Upload, X, FileText, AlertCircle } from 'lucide-react'
-import { ProjectFile, User, Project, FileType } from '../types'
+import { ProjectFile, Project } from '../types'
 import { logger } from '../utils/logger'
+import { FileService } from '../lib/fileService'
+import { getCurrentUser } from '../lib/supabase'
 import * as pdfjsLib from 'pdfjs-dist'
 
 // Configure PDF.js 2.x worker using CDN (standard approach for 2.x)
@@ -12,7 +14,6 @@ if (typeof window !== 'undefined') {
 
 interface FileUploadProps {
   currentProject: Project
-  currentUser: User
   onFilesUploaded: (files: ProjectFile[]) => void
   maxFileSize?: number // in MB, default 10MB
   allowedTypes?: string[] // MIME types
@@ -20,7 +21,6 @@ interface FileUploadProps {
 
 const FileUpload: React.FC<FileUploadProps> = ({ 
   currentProject, 
-  currentUser, 
   onFilesUploaded,
   maxFileSize = 10,
   allowedTypes = [
@@ -41,14 +41,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const getFileType = (mimeType: string): FileType => {
-    if (mimeType === 'application/pdf') return 'pdf'
-    if (mimeType === 'application/msword' || mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return 'doc'
-    if (mimeType === 'text/plain') return 'txt'
-    if (mimeType === 'text/markdown') return 'md'
-    if (mimeType.startsWith('image/')) return 'image'
-    return 'other'
-  }
 
   // Helper functions for file handling
   // const getFileIcon = (fileType: FileType) => {
@@ -167,14 +159,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
     return undefined
   }
 
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = error => reject(error)
-    })
-  }
 
   const handleFiles = async (files: FileList) => {
     setError(null)
@@ -195,11 +179,15 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
     try {
       const uploadedFiles: ProjectFile[] = []
+      
+      // Get current user for backend upload
+      const currentUser = await getCurrentUser()
+      const uploadedBy = currentUser?.id
 
       for (const file of validFiles) {
         logger.debug(`🔄 Processing file: ${file.name} (${file.type})`)
         
-        // Read content preview for text files
+        // Read content preview for text files and AI analysis
         const contentPreview = await readFileContent(file)
         
         if (contentPreview) {
@@ -209,30 +197,26 @@ const FileUpload: React.FC<FileUploadProps> = ({
           logger.debug(`ℹ️ No text content extracted from ${file.name} (${file.type})`)
         }
         
-        // Convert file to base64 for storage
-        const base64Data = await fileToBase64(file)
+        // Upload file to Supabase Storage and save metadata
+        const uploadResult = await FileService.uploadFile(
+          file,
+          currentProject.id,
+          contentPreview || '',
+          uploadedBy
+        )
 
-        // Create a mock uploaded file (in a real app, you'd upload to Supabase Storage)
-        const uploadedFile: ProjectFile = {
-          id: crypto.randomUUID(),
-          project_id: currentProject.id,
-          name: file.name.replace(/[^a-zA-Z0-9.-]/g, '_'), // sanitized name
-          original_name: file.name,
-          file_type: getFileType(file.type),
-          file_size: file.size,
-          mime_type: file.type,
-          storage_path: `projects/${currentProject.id}/files/${crypto.randomUUID()}_${file.name}`,
-          content_preview: contentPreview,
-          file_data: base64Data, // Store the actual file data
-          uploaded_by: currentUser.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          uploader: currentUser
+        if (uploadResult.success && uploadResult.file) {
+          uploadedFiles.push(uploadResult.file)
+          logger.debug(`✅ Successfully uploaded: ${file.name}`)
+        } else {
+          logger.error(`❌ Failed to upload ${file.name}:`, uploadResult.error)
+          setError(`Failed to upload "${file.name}": ${uploadResult.error}`)
+          setUploading(false)
+          return
         }
-
-        uploadedFiles.push(uploadedFile)
       }
 
+      logger.debug(`🎉 All files uploaded successfully: ${uploadedFiles.length} files`)
       onFilesUploaded(uploadedFiles)
       setError(null)
     } catch (err) {

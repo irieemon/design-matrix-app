@@ -3,6 +3,7 @@ import { X, Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Calendar, 
 import { IdeaCard, Project, ProjectFile } from '../types'
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
+import { FileService } from '../lib/fileService'
 import { exportInsightsToPDF } from '../utils/pdfExportSimple'
 import { logger } from '../utils/logger'
 
@@ -72,50 +73,43 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
     }
   }, [ideas, selectedInsightId])
 
-  const loadProjectFiles = () => {
+  const loadProjectFiles = async () => {
     if (!currentProject?.id) {
       logger.debug('📁 No current project ID, skipping file load')
       return
     }
     
     try {
-      const projectFilesData = localStorage.getItem('project-files')
-      logger.debug('📁 Raw projectFiles from localStorage:', projectFilesData ? 'found' : 'not found')
+      logger.debug('📁 Loading project files from backend for project:', currentProject.id)
+      const files = await FileService.getProjectFiles(currentProject.id)
+      logger.debug('📁 Files loaded from backend:', files.length, 'total')
       
-      if (projectFilesData) {
-        const allFiles = JSON.parse(projectFilesData)
-        const files = allFiles[currentProject.id] || []
-        logger.debug('📁 Files for project', currentProject.id, ':', files.length, 'total')
-        
-        // Log each file to see what we have
-        files.forEach((file: ProjectFile, index: number) => {
-          logger.debug(`📄 File ${index + 1}: ${file.original_name} (${file.file_type}) - content_preview: ${file.content_preview ? 'YES' : 'NO'}`)
-          if (file.content_preview) {
-            logger.debug(`📝 Content preview length: ${file.content_preview.length} characters`)
-          }
-        })
-        
-        // Filter files that have content available for AI analysis
-        const filesWithExtractedContent = files.filter((file: ProjectFile) => 
-          file.content_preview && file.content_preview.trim()
-        )
-        setFilesWithContent(filesWithExtractedContent)
-        
-        logger.debug('📁 FINAL RESULT: Loaded project files:', files.length, 'total,', filesWithExtractedContent.length, 'with content')
-        
-        if (filesWithExtractedContent.length > 0) {
-          logger.debug('✅ FILES WITH CONTENT FOUND - should show in UI!')
-          filesWithExtractedContent.forEach((file: ProjectFile, index: number) => {
-            logger.debug(`✅ File ${index + 1} with content: ${file.original_name}`)
-          })
-        } else {
-          logger.warn('❌ NO FILES WITH CONTENT FOUND - file references will not show')
+      // Log each file to see what we have
+      files.forEach((file: ProjectFile, index: number) => {
+        logger.debug(`📄 File ${index + 1}: ${file.name} (${file.file_type}) - content_preview: ${file.content_preview ? 'YES' : 'NO'}`)
+        if (file.content_preview) {
+          logger.debug(`📝 Content preview length: ${file.content_preview.length} characters`)
         }
+      })
+      
+      // Filter files that have content available for AI analysis
+      const filesWithExtractedContent = files.filter(file => 
+        file.content_preview && file.content_preview.trim()
+      )
+      setFilesWithContent(filesWithExtractedContent)
+      
+      logger.debug('📁 FINAL RESULT: Loaded project files:', files.length, 'total,', filesWithExtractedContent.length, 'with content')
+      
+      if (filesWithExtractedContent.length > 0) {
+        logger.debug('✅ FILES WITH CONTENT FOUND - should show in UI!')
+        filesWithExtractedContent.forEach((file: ProjectFile, index: number) => {
+          logger.debug(`✅ File ${index + 1} with content: ${file.name}`)
+        })
       } else {
-        logger.debug('📁 No projectFiles data in localStorage')
+        logger.warn('❌ NO FILES WITH CONTENT FOUND - file references will not show')
       }
     } catch (error) {
-      logger.warn('Could not load project files:', error)
+      logger.warn('Could not load project files from backend:', error)
     }
   }
 

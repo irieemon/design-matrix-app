@@ -202,7 +202,6 @@ const PageRouter: React.FC<PageRouterProps> = ({
         return (
           <div className="bg-slate-50 min-h-screen">
             <ProjectFiles
-              currentUser={currentUser}
               currentProject={currentProject}
               files={getCurrentProjectFiles()}
               onFilesUploaded={handleFilesUploaded}

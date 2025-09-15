@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Upload, FolderOpen } from 'lucide-react'
-import { ProjectFile, User, Project } from '../types'
+import { ProjectFile, Project } from '../types'
 import FileUpload from './FileUpload'
 import FileManager from './FileManager'
 import FileViewer from './FileViewer'
@@ -8,7 +8,6 @@ import { logger } from '../utils/logger'
 
 interface ProjectFilesProps {
   currentProject: Project
-  currentUser: User
   files: ProjectFile[]
   onFilesUploaded: (files: ProjectFile[]) => void
   onDeleteFile: (fileId: string) => void
@@ -17,7 +16,6 @@ interface ProjectFilesProps {
 
 const ProjectFiles: React.FC<ProjectFilesProps> = ({ 
   currentProject, 
-  currentUser,
   files,
   onFilesUploaded,
   onDeleteFile,
@@ -102,7 +100,6 @@ const ProjectFiles: React.FC<ProjectFilesProps> = ({
         {activeTab === 'upload' ? (
           <FileUpload
             currentProject={currentProject}
-            currentUser={currentUser}
             onFilesUploaded={handleFilesUploaded}
           />
         ) : (

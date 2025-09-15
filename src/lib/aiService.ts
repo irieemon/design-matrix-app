@@ -4,6 +4,7 @@
 import { IdeaCard } from '../types'
 import { supabase } from './supabase'
 import { logger } from '../utils/logger'
+import { FileService } from './fileService'
 
 interface AIIdeaResponse {
   content: string
@@ -187,45 +188,40 @@ class SecureAIService {
           logger.debug('📋 Found roadmap context:', latestRoadmap.name)
         }
         
-        // Get project files for document context
-        // For now, we'll get this from localStorage where files are stored
+        // Get project files for document context from backend
         try {
-          const projectFilesData = localStorage.getItem('project-files')
-          if (projectFilesData) {
-            const allFiles = JSON.parse(projectFilesData)
-            const projectFiles = allFiles[projectId] || []
-            if (projectFiles.length > 0) {
-              // Extract content previews from text files, PDFs, and other documents
-              documentContext = projectFiles
-                .filter((file: any) => file.content_preview && file.content_preview.trim())
-                .map((file: any) => ({
-                  name: file.name,
-                  type: file.file_type,
-                  content: file.content_preview
-                }))
+          const projectFiles = await FileService.getProjectFiles(projectId)
+          if (projectFiles.length > 0) {
+            // Extract content previews from text files, PDFs, and other documents
+            documentContext = projectFiles
+              .filter(file => file.content_preview && file.content_preview.trim())
+              .map(file => ({
+                name: file.name,
+                type: file.file_type,
+                content: file.content_preview
+              }))
+            
+            const fileTypes = documentContext.map((doc: any) => doc.type).join(', ')
+            logger.debug('📁 Found document context from backend:', documentContext.length, 'files with content')
+            logger.debug('📄 File types being analyzed:', fileTypes)
+            
+            // Log detailed file analysis information
+            if (documentContext.length > 0) {
+              const totalContentLength = documentContext.reduce((sum: number, doc: any) => sum + doc.content.length, 0)
+              logger.debug('📊 Total document content length:', totalContentLength, 'characters')
               
-              const fileTypes = documentContext.map((doc: any) => doc.type).join(', ')
-              logger.debug('📁 Found document context:', documentContext.length, 'files with content')
-              logger.debug('📄 File types being analyzed:', fileTypes)
-              
-              // Log detailed file analysis information
-              if (documentContext.length > 0) {
-                const totalContentLength = documentContext.reduce((sum: number, doc: any) => sum + doc.content.length, 0)
-                logger.debug('📊 Total document content length:', totalContentLength, 'characters')
-                
-                // Log each file being processed
-                documentContext.forEach((doc: any, index: number) => {
-                  const preview = doc.content.substring(0, 100).replace(/\n/g, ' ')
-                  logger.debug(`📄 File ${index + 1}: ${doc.name} (${doc.type}) - ${doc.content.length} chars`)
-                  logger.debug(`📝 Content preview: "${preview}${doc.content.length > 100 ? '...' : ''}"`)
-                })
-              } else {
-                logger.debug('📭 No document context found - no files with extractable content')
-              }
+              // Log each file being processed
+              documentContext.forEach((doc: any, index: number) => {
+                const preview = doc.content.substring(0, 100).replace(/\n/g, ' ')
+                logger.debug(`📄 File ${index + 1}: ${doc.name} (${doc.type}) - ${doc.content.length} chars`)
+                logger.debug(`📝 Content preview: "${preview}${doc.content.length > 100 ? '...' : ''}"`)
+              })
+            } else {
+              logger.debug('📭 No document context found - no files with extractable content')
             }
           }
         } catch (error) {
-          logger.warn('Could not parse project files from localStorage:', error)
+          logger.warn('Could not load project files from backend:', error)
         }
       } catch (error) {
         logger.warn('Could not fetch additional project context:', error)
@@ -314,7 +310,7 @@ class SecureAIService {
       // In development, if the API is not available, provide mock data with file context
       if (this.baseUrl.includes('localhost')) {
         logger.warn('🔧 Using mock insights with file context for development')
-        return this.generateMockInsightsWithFiles(ideas, documentContext)
+        return this.generateMockInsightsWithFiles(ideas, documentContext || [])
       }
       
       // Don't fall back to mock data in production - let the error propagate

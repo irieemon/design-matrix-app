@@ -1,63 +1,55 @@
 import { useState, useEffect } from 'react'
 import { ProjectFile, Project } from '../types'
 import { logger } from '../utils/logger'
+import { FileService } from '../lib/fileService'
 
 interface UseProjectFilesReturn {
   projectFiles: Record<string, ProjectFile[]>
   getCurrentProjectFiles: () => ProjectFile[]
   handleFilesUploaded: (newFiles: ProjectFile[]) => void
   handleDeleteFile: (fileId: string) => void
+  isLoading: boolean
+  refreshProjectFiles: () => Promise<void>
 }
 
 export const useProjectFiles = (currentProject: Project | null): UseProjectFilesReturn => {
-  // Initialize projectFiles from localStorage or empty object
-  const [projectFiles, setProjectFiles] = useState<Record<string, ProjectFile[]>>(() => {
-    try {
-      const savedFiles = localStorage.getItem('project-files')
-      logger.debug('Raw localStorage data:', savedFiles)
-      if (savedFiles && savedFiles !== 'null' && savedFiles !== '{}') {
-        const parsedFiles = JSON.parse(savedFiles)
-        logger.debug('Initializing project files from localStorage:', parsedFiles)
-        logger.debug('Number of projects with files:', Object.keys(parsedFiles).length)
-        return parsedFiles
-      } else {
-        logger.debug('Initializing with empty project files (no valid data found)')
-        return {}
-      }
-    } catch (error) {
-      logger.error('Error loading project files from localStorage:', error)
-      return {}
-    }
-  })
+  const [projectFiles, setProjectFiles] = useState<Record<string, ProjectFile[]>>({})
+  const [isLoading, setIsLoading] = useState(false)
 
-  // Save files to localStorage whenever projectFiles changes (but not on initial load)
-  const [isInitialLoad, setIsInitialLoad] = useState(true)
-  
-  useEffect(() => {
-    if (isInitialLoad) {
-      setIsInitialLoad(false)
-      return // Skip saving on initial component mount
-    }
-    
+  // Load files from backend when project changes
+  const loadProjectFiles = async (projectId: string) => {
     try {
-      const dataToSave = JSON.stringify(projectFiles)
-      const sizeInMB = new Blob([dataToSave]).size / (1024 * 1024)
-      logger.debug('💾 Saving project files to localStorage:', projectFiles)
-      logger.debug('💾 Data size:', sizeInMB.toFixed(2), 'MB')
+      setIsLoading(true)
+      logger.debug('📂 Loading files from backend for project:', projectId)
       
-      if (sizeInMB > 5) { // localStorage limit is usually 5-10MB
-        logger.warn('⚠️ File data is getting large, may hit localStorage limits')
-      }
+      const files = await FileService.getProjectFiles(projectId)
       
-      localStorage.setItem('project-files', dataToSave)
-      logger.debug('✅ Successfully saved to localStorage')
+      setProjectFiles(prev => ({
+        ...prev,
+        [projectId]: files
+      }))
+      
+      logger.debug('📂 Loaded project files from backend:', files.length)
     } catch (error) {
-      logger.error('❌ Error saving project files to localStorage:', error)
-      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-        alert('Storage quota exceeded! Files are too large to store locally. Consider using smaller files or clearing old files.')
-      }
+      logger.error('❌ Error loading project files from backend:', error)
+    } finally {
+      setIsLoading(false)
     }
-  }, [projectFiles, isInitialLoad])
+  }
+
+  // Load files when current project changes
+  useEffect(() => {
+    if (currentProject?.id) {
+      loadProjectFiles(currentProject.id)
+    }
+  }, [currentProject?.id])
+
+  // Refresh function to manually reload files
+  const refreshProjectFiles = async () => {
+    if (currentProject?.id) {
+      await loadProjectFiles(currentProject.id)
+    }
+  }
 
   // File management functions
   const handleFilesUploaded = (newFiles: ProjectFile[]) => {
@@ -76,13 +68,28 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
     })
   }
 
-  const handleDeleteFile = (fileId: string) => {
+  const handleDeleteFile = async (fileId: string) => {
     if (!currentProject?.id) return
     
-    setProjectFiles(prev => ({
-      ...prev,
-      [currentProject.id]: (prev[currentProject.id] || []).filter(f => f.id !== fileId)
-    }))
+    try {
+      logger.debug('🗑️ Deleting file:', fileId)
+      const result = await FileService.deleteFile(fileId)
+      
+      if (result.success) {
+        // Remove from local state
+        setProjectFiles(prev => ({
+          ...prev,
+          [currentProject.id]: (prev[currentProject.id] || []).filter(f => f.id !== fileId)
+        }))
+        logger.debug('✅ File deleted successfully:', fileId)
+      } else {
+        logger.error('❌ Failed to delete file:', result.error)
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      logger.error('💥 Error deleting file:', error)
+      throw error
+    }
   }
 
   // Get files for current project
@@ -95,6 +102,8 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
     projectFiles,
     getCurrentProjectFiles,
     handleFilesUploaded,
-    handleDeleteFile
+    handleDeleteFile,
+    isLoading,
+    refreshProjectFiles
   }
 }
