@@ -32,15 +32,15 @@ CREATE POLICY "Users can view project files they have access to" ON public.proje
         auth.uid() IS NULL OR  -- Allow if no auth (development mode)
         project_id IN (
             SELECT id FROM public.projects 
-            WHERE owner_id = auth.uid() OR
+            WHERE owner_id = auth.uid()::uuid OR
             owner_id IS NULL OR  -- Allow for projects without owner
             id IN (
                 SELECT project_id FROM public.project_collaborators 
-                WHERE user_id = auth.uid()
+                WHERE user_id = auth.uid()::uuid
             ) OR
             (team_id IS NOT NULL AND team_id IN (
                 SELECT team_id FROM public.team_members 
-                WHERE user_id = auth.uid()
+                WHERE user_id = auth.uid()::uuid
             ))
         )
     );
@@ -51,11 +51,11 @@ CREATE POLICY "Users can upload files to editable projects" ON public.project_fi
         auth.uid() IS NULL OR  -- Allow if no auth (development mode)
         project_id IN (
             SELECT id FROM public.projects 
-            WHERE owner_id = auth.uid() OR
+            WHERE owner_id = auth.uid()::uuid OR
             owner_id IS NULL OR  -- Allow for projects without owner
             id IN (
                 SELECT project_id FROM public.project_collaborators 
-                WHERE user_id = auth.uid() AND role IN ('owner', 'editor')
+                WHERE user_id = auth.uid()::uuid AND role IN ('owner', 'editor')
             )
         )
     );
@@ -64,13 +64,13 @@ CREATE POLICY "Users can upload files to editable projects" ON public.project_fi
 CREATE POLICY "Users can delete their own files or if project editor" ON public.project_files
     FOR DELETE USING (
         auth.uid() IS NULL OR  -- Allow if no auth (development mode)
-        uploaded_by = auth.uid() OR
+        uploaded_by = auth.uid()::uuid OR
         project_id IN (
             SELECT id FROM public.projects 
-            WHERE owner_id = auth.uid() OR
+            WHERE owner_id = auth.uid()::uuid OR
             id IN (
                 SELECT project_id FROM public.project_collaborators 
-                WHERE user_id = auth.uid() AND role IN ('owner', 'editor')
+                WHERE user_id = auth.uid()::uuid AND role IN ('owner', 'editor')
             )
         )
     );
