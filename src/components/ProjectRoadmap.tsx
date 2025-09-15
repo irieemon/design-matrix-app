@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown, BarChart3, Grid3X3 } from 'lucide-react'
+import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown, Download, BarChart3, Grid3X3 } from 'lucide-react'
 import { Project, IdeaCard, ProjectRoadmap as ProjectRoadmapType } from '../types'
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 import { logger } from '../utils/logger'
 import TimelineRoadmap from './TimelineRoadmap'
+import RoadmapExportModal from './RoadmapExportModal'
 
 interface ProjectRoadmapProps {
   currentUser: string
@@ -68,6 +69,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   const [selectedRoadmapId, setSelectedRoadmapId] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
   const [viewMode, setViewMode] = useState<'detailed' | 'timeline'>('timeline')
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
 
   // Load existing roadmaps when component mounts or project changes
   useEffect(() => {
@@ -556,21 +558,30 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                   <Calendar className="w-5 h-5" />
                   <span>Development Timeline</span>
                 </h2>
-                <div className="flex items-center bg-white rounded-lg border border-slate-200 p-1">
+                <div className="flex items-center space-x-3">
                   <button
-                    onClick={() => setViewMode('timeline')}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-slate-600 hover:text-slate-900"
+                    onClick={() => setIsExportModalOpen(true)}
+                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
                   >
-                    <BarChart3 className="w-4 h-4" />
-                    <span>Timeline</span>
+                    <Download className="w-4 h-4" />
+                    <span>Export</span>
                   </button>
-                  <button
-                    onClick={() => setViewMode('detailed')}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors bg-blue-600 text-white"
-                  >
-                    <Grid3X3 className="w-4 h-4" />
-                    <span>Detailed</span>
-                  </button>
+                  <div className="flex items-center bg-white rounded-lg border border-slate-200 p-1">
+                    <button
+                      onClick={() => setViewMode('timeline')}
+                      className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-slate-600 hover:text-slate-900"
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      <span>Timeline</span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode('detailed')}
+                      className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors bg-blue-600 text-white"
+                    >
+                      <Grid3X3 className="w-4 h-4" />
+                      <span>Detailed</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -845,6 +856,17 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           )}
         </div>
       )}
+
+      {/* Export Modal */}
+      <RoadmapExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        features={timelineFeatures}
+        title={currentProject?.name || 'PROJECT ROADMAP'}
+        subtitle={`${timelineFeatures.length} Features • ${roadmapData?.roadmapAnalysis?.totalDuration || '6 months'}`}
+        startDate={new Date()}
+        projectType={currentProject?.project_type || 'software'}
+      />
     </div>
   )
 }
