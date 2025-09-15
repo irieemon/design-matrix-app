@@ -234,21 +234,43 @@ class SecureAIService {
     
     try {
       const headers = await this.getAuthHeaders()
+      
+      const requestPayload = {
+        ideas: (ideas || []).map(idea => ({
+          title: idea.content,
+          description: idea.details,
+          quadrant: this.getQuadrantFromPosition(idea.x, idea.y)
+        })),
+        projectName: projectName || 'Project',
+        projectType: projectType || 'General',
+        roadmapContext: roadmapContext,
+        documentContext: documentContext,
+        projectContext: projectContext
+      }
+      
+      // Log what we're sending to the AI API
+      logger.debug('🚀 Sending AI insights request:', {
+        ideaCount: requestPayload.ideas.length,
+        projectName: requestPayload.projectName,
+        projectType: requestPayload.projectType,
+        hasRoadmapContext: !!roadmapContext,
+        hasDocumentContext: !!documentContext,
+        documentCount: documentContext?.length || 0,
+        hasProjectContext: !!projectContext
+      })
+      
+      if (documentContext && documentContext.length > 0) {
+        logger.debug('📄 Document context being sent to AI:', {
+          fileCount: documentContext.length,
+          fileNames: documentContext.map((doc: any) => doc.name),
+          totalContentLength: documentContext.reduce((sum: number, doc: any) => sum + doc.content.length, 0)
+        })
+      }
+      
       const response = await fetch(`${this.baseUrl}/api/ai/generate-insights`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          ideas: (ideas || []).map(idea => ({
-            title: idea.content,
-            description: idea.details,
-            quadrant: this.getQuadrantFromPosition(idea.x, idea.y)
-          })),
-          projectName: projectName || 'Project',
-          projectType: projectType || 'General',
-          roadmapContext: roadmapContext,
-          documentContext: documentContext,
-          projectContext: projectContext
-        })
+        body: JSON.stringify(requestPayload)
       })
 
       if (!response.ok) {
@@ -260,6 +282,16 @@ class SecureAIService {
 
       const data = await response.json()
       const insights = data.insights || {}
+      
+      // Log what we received from the AI API
+      logger.debug('📥 Received AI insights response:', {
+        hasExecutiveSummary: !!insights.executiveSummary,
+        hasKeyInsights: !!insights.keyInsights,
+        keyInsightsCount: insights.keyInsights?.length || 0,
+        hasPriorityRecommendations: !!insights.priorityRecommendations,
+        hasRiskAssessment: !!insights.riskAssessment,
+        responseSize: JSON.stringify(insights).length
+      })
       
       // Transform API response to match expected InsightsReport structure
       if (insights.executiveSummary && insights.keyInsights) {
