@@ -726,610 +726,198 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
 export const exportInsightsToPDF = (insights: any, ideaCount: number, project: Project | null = null, filesWithContent: any[] = []) => {
   try {
     const doc = new jsPDF()
-    let yPos = 50
+    let yPos = 40
     const pageH = doc.internal.pageSize.height
     const pageW = doc.internal.pageSize.width
-    const marginL = 40
-    const marginR = 40
+    const marginL = 20
+    const marginR = 20
     const contentW = pageW - marginL - marginR
     
-    // Sophisticated, subtle color palette
-    const charcoal = [45, 45, 48]         // #2d2d30 - Primary text
-    const slate = [71, 85, 105]           // #475569 - Secondary text
-    const steel = [100, 116, 139]         // #64748b - Accent text
-    const ash = [148, 163, 184]           // #94a3b8 - Light accent
-    const pearl = [241, 245, 249]         // #f1f5f9 - Background
-    const cream = [255, 255, 255]         // #ffffff - Paper white
-    const prioritasBlue = [30, 155, 218]  // #1e9bda - Brand blue from logo
+    // University template color palette
+    const darkBlue = [52, 116, 181]       // #3474b5 - Main blue from template
+    const darkText = [51, 51, 51]         // Dark gray for text
+    const lightGray = [240, 240, 240]     // Light gray for table rows
+    const white = [255, 255, 255]         // White
 
-    // Sophisticated page management
+    // Simple page break function
     const pageBreak = (space: number) => {
-      if (yPos + space > pageH - 90) {
-        addFooter(doc.getNumberOfPages())
+      if (yPos + space > pageH - 50) {
         doc.addPage()
-        addHeader()
-        yPos = 85
+        yPos = 40
       }
     }
 
-    // Create Prioritas target logo using vector drawing
-    const drawPrioritasLogo = (x: number, y: number, size: number = 24) => {
-      const center = { x: x + size/2, y: y + size/2 }
-      const radius = size * 0.4
+    // Template-style table function
+    const createTemplateTable = (data: {label: string, content: string}[], title?: string) => {
+      pageBreak(100)
       
-      // Outer circle (target ring)
-      doc.setDrawColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-      doc.setFillColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-      doc.setLineWidth(2)
-      doc.circle(center.x, center.y, radius, 'S')
+      if (title) {
+        // Blue header bar for section
+        doc.setFillColor(darkBlue[0], darkBlue[1], darkBlue[2])
+        doc.rect(marginL, yPos, contentW, 25, 'F')
+        
+        doc.setTextColor(white[0], white[1], white[2])
+        doc.setFontSize(14)
+        doc.setFont('helvetica', 'bold')
+        doc.text(title.toUpperCase(), marginL + 10, yPos + 17)
+        yPos += 30
+      }
       
-      // Inner circle
-      doc.circle(center.x, center.y, radius * 0.6, 'S')
+      // Calculate table dimensions
+      const rowHeight = 25
+      const labelWidth = contentW * 0.25
+      const contentColWidth = contentW * 0.75
       
-      // Arrow pointing up (priority indicator) - simplified
-      doc.setFillColor(cream[0], cream[1], cream[2])
-      const arrowSize = size * 0.25
-      
-      // Draw triangle arrow
-      doc.triangle(center.x, center.y - arrowSize*0.5, 
-                   center.x - arrowSize*0.3, center.y + arrowSize*0.2,
-                   center.x + arrowSize*0.3, center.y + arrowSize*0.2, 'F')
-    }
-
-    // Elegant, professional header
-    const addHeader = () => {
-      // Subtle header line
-      doc.setDrawColor(ash[0], ash[1], ash[2])
-      doc.setLineWidth(0.5)
-      doc.line(marginL, 50, pageW - marginR, 50)
-      
-      // Prioritas logo
-      drawPrioritasLogo(marginL, 20)
-      
-      // Brand text with sophisticated typography
-      doc.setTextColor(charcoal[0], charcoal[1], charcoal[2])
-      doc.setFontSize(18)
-      doc.setFont('helvetica', 'normal')
-      doc.text('PRIORITAS', marginL + 35, 35)
-      
-      doc.setFontSize(9)
-      doc.setTextColor(steel[0], steel[1], steel[2])
-      doc.text('Strategic Intelligence Platform', marginL + 35, 43)
-      
-      // Elegant document type indicator
-      doc.setTextColor(slate[0], slate[1], slate[2])
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      const docTypeText = 'Strategic Insights Report'
-      const textWidth = doc.getTextWidth(docTypeText)
-      doc.text(docTypeText, pageW - marginR - textWidth, 35)
-      
-      doc.setFontSize(8)
-      doc.setTextColor(steel[0], steel[1], steel[2])
-      const dateText = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+      data.forEach((row, index) => {
+        pageBreak(rowHeight + 5)
+        
+        // Alternating row colors like template
+        const isEven = index % 2 === 0
+        doc.setFillColor(isEven ? lightGray[0] : white[0], isEven ? lightGray[1] : white[1], isEven ? lightGray[2] : white[2])
+        doc.rect(marginL, yPos, contentW, rowHeight, 'F')
+        
+        // Table borders
+        doc.setDrawColor(200, 200, 200)
+        doc.setLineWidth(0.5)
+        doc.rect(marginL, yPos, labelWidth, rowHeight, 'S')
+        doc.rect(marginL + labelWidth, yPos, contentColWidth, rowHeight, 'S')
+        
+        // Label column (left)
+        doc.setTextColor(darkText[0], darkText[1], darkText[2])
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'bold')
+        const labelLines = doc.splitTextToSize(row.label, labelWidth - 10)
+        doc.text(labelLines, marginL + 8, yPos + 12)
+        
+        // Content column (right)
+        doc.setFont('helvetica', 'normal')
+        const contentLines = doc.splitTextToSize(row.content, contentColWidth - 15)
+        doc.text(contentLines, marginL + labelWidth + 8, yPos + 12)
+        
+        yPos += rowHeight
       })
-      const dateWidth = doc.getTextWidth(dateText)
-      doc.text(dateText, pageW - marginR - dateWidth, 43)
-    }
-
-    // Professional footer matching template style
-    const addFooter = (pageNum: number) => {
-      // Blue footer bar like in template
-      doc.setFillColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-      doc.rect(marginL, pageH - 40, contentW, 20, 'F')
       
-      // White text in footer
-      doc.setTextColor(255, 255, 255)
-      doc.setFontSize(8)
-      doc.setFont('helvetica', 'normal')
-      doc.text('Generated by Prioritas', marginL + 10, pageH - 28)
-      
-      // Date and time
-      const dateTimeText = new Date().toLocaleDateString('en-US') + ' • ' + new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})
-      doc.text(dateTimeText, marginL + 10, pageH - 23)
-      
-      // Page number on right
-      const pageText = `${pageNum}`
-      const pageTextWidth = doc.getTextWidth(pageText)
-      doc.text(pageText, pageW - marginR - pageTextWidth - 10, pageH - 28)
-      
-      // Confidentiality notice on right
-      doc.setFontSize(7)
-      const confText = 'CONFIDENTIAL'
-      const confWidth = doc.getTextWidth(confText)
-      doc.text(confText, pageW - marginR - confWidth - 10, pageH - 23)
-    }
-
-    // Sophisticated text rendering with proper character encoding
-    const addText = (text: string, fontSize: number = 11, fontStyle: string = 'normal', color: number[] = charcoal, lineSpacing: number = 1.4) => {
-      if (!text || text.trim().length === 0) return 0
-      
-      // Clean text for proper PDF encoding
-      const cleanText = text
-        .replace(/[\u201C\u201D]/g, '"')  // Replace smart quotes
-        .replace(/[\u2018\u2019]/g, "'")  // Replace smart apostrophes  
-        .replace(/\u2013/g, '-')         // Replace en dash
-        .replace(/\u2014/g, '--')        // Replace em dash
-        .replace(/\u2026/g, '...')       // Replace ellipsis
-        .replace(/[\u0080-\uFFFF]/g, (match) => {
-          // Replace other unicode characters with ASCII equivalents
-          const code = match.charCodeAt(0)
-          if (code > 127) return '?'
-          return match
-        })
-      
-      pageBreak(fontSize * lineSpacing + 10)
-      doc.setFontSize(fontSize)
-      doc.setFont('helvetica', fontStyle)
-      doc.setTextColor(color[0], color[1], color[2])
-      
-      const lines = doc.splitTextToSize(cleanText, contentW)
-      doc.text(lines, marginL, yPos)
-      yPos += lines.length * (fontSize * lineSpacing) + 6
-      return lines.length
-    }
-
-    // Professional section headers matching template style
-    const addSectionHeader = (text: string, fontSize: number = 16, accentColor: number[] = prioritasBlue) => {
-      pageBreak(70)
-      
-      // Blue header box like in template
-      doc.setFillColor(accentColor[0], accentColor[1], accentColor[2])
-      doc.rect(marginL, yPos, contentW, 30, 'F')
-      
-      // White text in header
-      doc.setTextColor(255, 255, 255)
-      doc.setFontSize(fontSize)
-      doc.setFont('helvetica', 'bold')
-      doc.text(text, marginL + 15, yPos + 20)
-      
-      // Reset text color for content
-      doc.setTextColor(charcoal[0], charcoal[1], charcoal[2])
-      yPos += 40
-    }
-
-    // Refined bullet points with proper spacing
-    const addBulletPoint = (text: string, indent: number = 0, bulletColor: number[] = steel) => {
-      if (!text || text.trim().length === 0) return
-      
-      pageBreak(25)
-      
-      // Clean text
-      const cleanText = text
-        .replace(/[\u201C\u201D]/g, '"')
-        .replace(/[\u2018\u2019]/g, "'")
-        .replace(/\u2013/g, '-')
-        .replace(/\u2014/g, '--')
-        .replace(/\u2026/g, '...')
-      
-      // Sophisticated bullet - small filled circle
-      doc.setFillColor(bulletColor[0], bulletColor[1], bulletColor[2])
-      doc.circle(marginL + indent + 6, yPos + 2, 1.5, 'F')
-      
-      // Text with proper character handling
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(charcoal[0], charcoal[1], charcoal[2])
-      const lines = doc.splitTextToSize(cleanText, contentW - indent - 20)
-      doc.text(lines, marginL + indent + 15, yPos + 5)
-      yPos += lines.length * 15 + 8
+      yPos += 15
     }
 
 
-    // Subtle priority indicators with refined styling
-    const addPriorityBadge = (text: string, priority: 'immediate' | 'short' | 'long') => {
-      const colors = {
-        immediate: [185, 28, 28],   // Subtle red
-        short: [217, 119, 6],       // Subtle amber  
-        long: [30, 64, 175]         // Subtle blue
-      }
-      
-      const badgeColor = colors[priority]
-      
-      // Subtle background
-      doc.setFillColor(pearl[0], pearl[1], pearl[2])
-      doc.roundedRect(marginL, yPos, 120, 20, 2, 2, 'F')
-      
-      // Colored accent bar
-      doc.setFillColor(badgeColor[0], badgeColor[1], badgeColor[2])
-      doc.rect(marginL, yPos, 4, 20, 'F')
-      
-      // Badge text with refined typography
-      doc.setTextColor(badgeColor[0], badgeColor[1], badgeColor[2])
-      doc.setFontSize(9)
-      doc.setFont('helvetica', 'bold')
-      doc.text(text, marginL + 12, yPos + 13)
-      
-      yPos += 28
-    }
 
-    // Initialize first page
-    addHeader()
-
-    // PROFESSIONAL DOCUMENT TITLE PAGE - Matching Strategic Plan Template
-    yPos = 110
+    // DOCUMENT TITLE PAGE - University Template Style
     
-    // Large blue header bar similar to template
-    doc.setFillColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-    doc.rect(marginL - 10, yPos, contentW + 20, 50, 'F')
-    
-    // White title text in header
-    doc.setFontSize(22)
+    // Main title 
+    doc.setFontSize(20)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(255, 255, 255)
-    const mainTitle = project ? project.name.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'") : 'Strategic Analysis'
-    doc.text(mainTitle, marginL + 10, yPos + 25)
-    
-    // Date in header
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'normal')
-    const dateText = new Date().toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    })
-    const dateWidth = doc.getTextWidth(dateText)
-    doc.text(dateText, pageW - marginR - dateWidth - 10, yPos + 15)
-    
-    // Report type in header
-    doc.setFontSize(14)
-    doc.setFont('helvetica', 'normal')
-    const reportTypeWidth = doc.getTextWidth('Strategic Insights Report')
-    doc.text('Strategic Insights Report', pageW - marginR - reportTypeWidth - 10, yPos + 35)
-    
-    yPos += 70
-    
-    // Center aligned project title
-    doc.setFontSize(28)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(charcoal[0], charcoal[1], charcoal[2])
-    const titleText = mainTitle
-    const titleWidth = doc.getTextWidth(titleText)
-    doc.text(titleText, (pageW - titleWidth) / 2, yPos)
+    doc.setTextColor(darkBlue[0], darkBlue[1], darkBlue[2])
+    const mainTitle = project?.name?.toUpperCase() || 'PROJECT STRATEGIC PLAN'
+    doc.text(mainTitle, marginL, yPos)
     yPos += 15
     
-    // Blue underline
-    doc.setDrawColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-    doc.setLineWidth(2)
-    doc.line((pageW - 100) / 2, yPos, (pageW + 100) / 2, yPos)
-    yPos += 8
-    
-    // Centered subtitle
-    doc.setFontSize(16)
-    doc.setTextColor(slate[0], slate[1], slate[2])
+    // Subtitle
+    doc.setFontSize(12)
     doc.setFont('helvetica', 'normal')
-    const subtitleText = 'Strategic Insights Report'
-    const subtitleWidth = doc.getTextWidth(subtitleText)
-    doc.text(subtitleText, (pageW - subtitleWidth) / 2, yPos)
-    yPos += 40
-
-    // PROFESSIONAL PROJECT OVERVIEW SECTION - Matching Template Style
-    
-    // Blue section header box
-    doc.setFillColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-    doc.rect(marginL, yPos, contentW, 30, 'F')
-    
-    doc.setTextColor(255, 255, 255)
-    doc.setFontSize(16)
-    doc.setFont('helvetica', 'bold')
-    doc.text('Project Overview', marginL + 15, yPos + 20)
-    yPos += 40
-    
-    // White content box with border
-    const overviewHeight = 120
-    doc.setFillColor(255, 255, 255)
-    doc.rect(marginL, yPos, contentW, overviewHeight, 'F')
-    doc.setDrawColor(200, 200, 200)
-    doc.setLineWidth(1)
-    doc.rect(marginL, yPos, contentW, overviewHeight, 'S')
-    
-    // Content inside the box
-    doc.setTextColor(charcoal[0], charcoal[1], charcoal[2])
-    
-    // Project description
-    if (project && project.description) {
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'normal')
-      const descLines = doc.splitTextToSize(project.description, contentW - 30)
-      doc.text(descLines, marginL + 15, yPos + 20)
-    }
-    
-    // Analysis details
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'bold')
-    doc.text('Analysis Scope:', marginL + 15, yPos + 70)
-    
-    doc.setFont('helvetica', 'normal')
-    const analysisText = `• ${ideaCount} strategic initiatives evaluated`
-    doc.text(analysisText, marginL + 15, yPos + 85)
-    
-    if (filesWithContent.length > 0) {
-      const documentsText = `• ${filesWithContent.length} supporting documents analyzed`
-      doc.text(documentsText, marginL + 15, yPos + 100)
-    }
-    
-    yPos += overviewHeight + 20
-    
-    // ANALYSIS SCOPE SECTION - Matching Template
-    
-    // Blue section header box
-    doc.setFillColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-    doc.rect(marginL, yPos, contentW, 30, 'F')
-    
-    doc.setTextColor(255, 255, 255)
-    doc.setFontSize(16)
-    doc.setFont('helvetica', 'bold')
-    doc.text('Analysis Scope', marginL + 15, yPos + 20)
-    yPos += 40
-    
-    // White content box with border
-    const scopeHeight = filesWithContent.length > 0 ? 100 : 60
-    doc.setFillColor(255, 255, 255)
-    doc.rect(marginL, yPos, contentW, scopeHeight, 'F')
-    doc.setDrawColor(200, 200, 200)
-    doc.setLineWidth(1)
-    doc.rect(marginL, yPos, contentW, scopeHeight, 'S')
-    
-    // Content inside the box
-    doc.setTextColor(charcoal[0], charcoal[1], charcoal[2])
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'normal')
-    
-    const scopeText = `Comprehensive analysis of ${ideaCount} strategic initiatives${filesWithContent.length > 0 ? ` informed by ${filesWithContent.length} supporting documents` : ''}.`
-    const scopeLines = doc.splitTextToSize(scopeText, contentW - 30)
-    doc.text(scopeLines, marginL + 15, yPos + 20)
-    
-    // Document sources if available
-    if (filesWithContent && filesWithContent.length > 0) {
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'bold')
-      doc.text('Document Sources:', marginL + 15, yPos + 50)
-      
-      doc.setFont('helvetica', 'normal')
-      filesWithContent.slice(0, 3).forEach((file, index) => {
-        const fileName = file.original_name || file.name
-        doc.text(`• ${fileName} (${file.file_type})`, marginL + 15, yPos + 65 + (index * 12))
-      })
-      
-      if (filesWithContent.length > 3) {
-        doc.text(`• ...and ${filesWithContent.length - 3} more documents`, marginL + 15, yPos + 65 + (3 * 12))
-      }
-    }
-    
-    yPos += scopeHeight + 20
-
-    // EXECUTIVE SUMMARY - Elegant presentation
-    addSectionHeader('Executive Summary', 16, prioritasBlue)
-    
-    const summaryText = insights.executiveSummary || 'No executive summary available'
-    addText(summaryText, 11, 'normal', charcoal, 1.5)
-    yPos += 12
-
-    // KEY INSIGHTS - Sophisticated presentation
-    addSectionHeader('Key Strategic Insights', 16, prioritasBlue)
-    
-    const keyInsights = insights.keyInsights || []
-    keyInsights.forEach((item: any, i: number) => {
-      if (!item) return
-      
-      pageBreak(75)
-      
-      // More subtle insight presentation
-      const insightHeight = 65
-      
-      // Very subtle background
-      doc.setFillColor(pearl[0], pearl[1], pearl[2])
-      doc.roundedRect(marginL, yPos, contentW, insightHeight, 1, 1, 'F')
-      
-      // Minimal accent line - much thinner
-      doc.setFillColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-      doc.rect(marginL, yPos, 1.5, insightHeight, 'F')
-      
-      // Smaller, more refined number badge
-      doc.setFillColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-      doc.circle(marginL + 15, yPos + 20, 6, 'F')
-      doc.setTextColor(cream[0], cream[1], cream[2])
-      doc.setFontSize(9)
-      doc.setFont('helvetica', 'bold')
-      doc.text(`${i + 1}`, marginL + 13, yPos + 23)
-      
-      // Clean insight text
-      const cleanInsight = (item.insight || 'No insight provided')
-        .replace(/[\u201C\u201D]/g, '"')
-        .replace(/[\u2018\u2019]/g, "'")
-        .replace(/\u2013/g, '-')
-        .replace(/\u2014/g, '--')
-      
-      // Insight title with better spacing
-      doc.setFontSize(12)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(charcoal[0], charcoal[1], charcoal[2])
-      const titleLines = doc.splitTextToSize(cleanInsight, contentW - 40)
-      doc.text(titleLines, marginL + 25, yPos + 18)
-      
-      // Impact description with refined positioning
-      const cleanImpact = (item.impact || 'No impact provided')
-        .replace(/[\u201C\u201D]/g, '"')
-        .replace(/[\u2018\u2019]/g, "'")
-        .replace(/\u2013/g, '-')
-        .replace(/\u2014/g, '--')
-      
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(slate[0], slate[1], slate[2])
-      const impactLines = doc.splitTextToSize(cleanImpact, contentW - 30)
-      doc.text(impactLines, marginL + 10, yPos + 35)
-      
-      yPos += insightHeight + 10
-    })
-
-    // PRIORITY RECOMMENDATIONS - Refined structure
-    addSectionHeader('Priority Recommendations', 16, prioritasBlue)
-
-    // Immediate Actions with subtle styling
-    addPriorityBadge('Immediate Actions (30 days)', 'immediate')
-    const immediate = insights.priorityRecommendations?.immediate || []
-    immediate.forEach((item: string) => {
-      addBulletPoint(item, 8, [185, 28, 28])
-    })
-    yPos += 10
-
-    yPos += 12
-    
-    // Short Term Actions with refined presentation
-    addPriorityBadge('Short Term Actions (3 months)', 'short')
-    const shortTerm = insights.priorityRecommendations?.shortTerm || []
-    shortTerm.forEach((item: string) => {
-      addBulletPoint(item, 8, [217, 119, 6])
-    })
-    yPos += 12
-
-    // Long Term Strategic Initiatives
-    addPriorityBadge('Long Term Initiatives (6-12 months)', 'long')
-    const longTerm = insights.priorityRecommendations?.longTerm || []
-    longTerm.forEach((item: string) => {
-      addBulletPoint(item, 8, [30, 64, 175])
-    })
+    doc.text('STRATEGIC INSIGHTS REPORT TEMPLATE', marginL, yPos)
     yPos += 20
+    
+    // Description
+    doc.setFontSize(10)
+    doc.setTextColor(darkText[0], darkText[1], darkText[2])
+    const description = project?.description || 
+      `This strategic plan serves as a roadmap for ${project?.name || 'this project'}'s journey towards achieving its vision and mission, addressing contemporary challenges, and seizing opportunities for growth and impact.`
+    const descLines = doc.splitTextToSize(description, contentW)
+    doc.text(descLines, marginL, yPos)
+    yPos += descLines.length * 12 + 30
 
-    // RISK ASSESSMENT & OPPORTUNITIES - Sophisticated analysis
-    if (insights.riskAssessment) {
-      addSectionHeader('Risk Assessment & Strategic Opportunities', 16, prioritasBlue)
-      
-      if (insights.riskAssessment.highRisk && insights.riskAssessment.highRisk.length > 0) {
-        // Risk areas with subtle warning styling
-        doc.setFillColor(pearl[0], pearl[1], pearl[2])
-        doc.roundedRect(marginL, yPos, contentW, 25, 2, 2, 'F')
-        doc.setFillColor(185, 28, 28)
-        doc.rect(marginL, yPos, 1.5, 25, 'F')
-        
-        doc.setFontSize(12)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(185, 28, 28)
-        doc.text('Risk Considerations', marginL + 15, yPos + 16)
-        yPos += 35
-        
-        insights.riskAssessment.highRisk.forEach((risk: string) => {
-          addBulletPoint(risk, 8, [185, 28, 28])
-        })
-        yPos += 12
+    // PROJECT OVERVIEW TABLE - Template Style
+    const overviewData = [
+      {
+        label: 'PROJECT NAME',
+        content: project?.name || 'Strategic Analysis Project'
+      },
+      {
+        label: 'TODAY - where we are now', 
+        content: `Currently analyzing ${ideaCount} strategic initiatives to understand current state and opportunities.`
+      },
+      {
+        label: 'VISION - where we should go and why',
+        content: insights.executiveSummary || 'Strategic analysis to identify key opportunities and priorities for future development.'
+      },
+      {
+        label: 'MISSION - who we are, how we work, where we work, and what makes us unique',
+        content: `Comprehensive strategic analysis leveraging ${filesWithContent.length > 0 ? `${filesWithContent.length} supporting documents and ` : ''}data-driven insights to guide decision-making.`
+      },
+      {
+        label: 'CORE VALUES - guiding principles of our work and how we operate',
+        content: 'Excellence, Innovation, Data-driven decisions, Strategic thinking, Collaborative approach'
       }
-      
-      if (insights.riskAssessment.opportunities && insights.riskAssessment.opportunities.length > 0) {
-        // Opportunities with elegant positive styling
-        doc.setFillColor(pearl[0], pearl[1], pearl[2])
-        doc.roundedRect(marginL, yPos, contentW, 25, 2, 2, 'F')
-        doc.setFillColor(22, 163, 74)
-        doc.rect(marginL, yPos, 1.5, 25, 'F')
-        
-        doc.setFontSize(12)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(22, 163, 74)
-        doc.text('Strategic Opportunities', marginL + 15, yPos + 16)
-        yPos += 35
-        
-        insights.riskAssessment.opportunities.forEach((opp: string) => {
-          addBulletPoint(opp, 8, [22, 163, 74])
-        })
-        yPos += 15
-      }
-    }
+    ]
 
-    // IMPLEMENTATION ROADMAP - Elegant timeline presentation
+    createTemplateTable(overviewData, 'PROJECT OVERVIEW - ABOUT US')
+
+    // GOALS SECTION - Template Style
+    const goalsData = [
+      {
+        label: 'OBSTACLES - what could prevent us from realizing our vision',
+        content: insights.riskAssessment?.highRisk?.join(' • ') || 'Risk assessment to be completed during detailed analysis phase.'
+      },
+      {
+        label: 'LONG-TERM GOALS - what we will do to realize our vision', 
+        content: insights.priorityRecommendations?.longTerm?.join(' • ') || 'Long-term strategic initiatives to be defined.'
+      },
+      {
+        label: 'SHORT-TERM GOALS - what will be our next steps', 
+        content: insights.priorityRecommendations?.shortTerm?.join(' • ') || 'Short-term action items to be identified.'
+      },
+      {
+        label: 'MEASUREMENTS OF SUCCESS - what benchmarks will be used as indicators of success',
+        content: insights.nextSteps?.join(' • ') || 'Success metrics and KPIs to be established during implementation planning.'
+      }
+    ]
+
+    createTemplateTable(goalsData, 'GOALS')
+
+    // STRATEGY SECTION - Template Style
+    const strategyData = [
+      {
+        label: 'RESOURCE ASSESSMENT - infrastructure required to realize vision',
+        content: insights.resourceAllocation?.strategic || 'Comprehensive evaluation of financial, human, and physical resources to support strategic initiatives.'
+      },
+      {
+        label: 'IMPLEMENTATION - plan what will be done along with completion deadlines', 
+        content: insights.suggestedRoadmap?.map((phase: any) => `${phase.phase}: ${phase.duration}`).join(' • ') || 'Detailed implementation timeline with phases and milestones.'
+      },
+      {
+        label: 'DISSEMINATION - how the plan will be announced / assigned and to whom',
+        content: 'Communicating the strategic plan to all stakeholders through multiple channels, ensuring transparency and fostering a sense of shared purpose and commitment.'
+      },
+      {
+        label: 'PROGRESS ASSESSMENT PLAN - how we will oversee progress, monitor success, and implement revisions',
+        content: 'Establishing a robust framework for regularly reviewing and assessing the progress of strategic initiatives, including quarterly reviews and annual progress reports.'
+      }
+    ]
+
+    createTemplateTable(strategyData, 'STRATEGY')
+
+    // KEY INSIGHTS TABLE - Template Style  
+    const insightsData = insights.keyInsights?.map((item: any, index: number) => ({
+      label: `INSIGHT ${index + 1}`,
+      content: `${item.insight} - ${item.impact}`
+    })) || [
+      {
+        label: 'STRATEGIC ANALYSIS',
+        content: 'Comprehensive analysis of current initiatives and opportunities for strategic growth and development.'
+      }
+    ]
+
+    createTemplateTable(insightsData, 'KEY STRATEGIC INSIGHTS')
+
+    // IMPLEMENTATION TIMELINE - Template Style
     if (insights.suggestedRoadmap && insights.suggestedRoadmap.length > 0) {
-      addSectionHeader('Implementation Roadmap', 16, prioritasBlue)
-      
-      insights.suggestedRoadmap.forEach((phase: any, index: number) => {
-        pageBreak(60)
-        
-        // Sophisticated phase presentation
-        doc.setFillColor(pearl[0], pearl[1], pearl[2])
-        doc.roundedRect(marginL, yPos, contentW, 45, 2, 2, 'F')
-        
-        // Phase number with elegant circle
-        doc.setFillColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-        doc.circle(marginL + 20, yPos + 22, 12, 'F')
-        doc.setTextColor(cream[0], cream[1], cream[2])
-        doc.setFontSize(12)
-        doc.setFont('helvetica', 'bold')
-        doc.text(`${index + 1}`, marginL + 17, yPos + 26)
-        
-        // Clean phase title
-        const cleanPhase = (phase.phase || '')
-          .replace(/[\u201C\u201D]/g, '"')
-          .replace(/[\u2018\u2019]/g, "'")
-          
-        doc.setFontSize(13)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(charcoal[0], charcoal[1], charcoal[2])
-        doc.text(cleanPhase, marginL + 40, yPos + 20)
-        
-        doc.setFontSize(9)
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(steel[0], steel[1], steel[2])
-        doc.text(`Duration: ${phase.duration}`, marginL + 40, yPos + 33)
-        yPos += 55
-        
-        // Phase description with refined text handling
-        addText(phase.focus, 11, 'normal', slate)
-        
-        if (phase.ideas && phase.ideas.length > 0) {
-          addText('Key Initiatives:', 11, 'bold', charcoal)
-          phase.ideas.forEach((idea: string) => {
-            addBulletPoint(idea, 12, steel)
-          })
-        }
-        yPos += 12
-      })
-    }
+      const timelineData = insights.suggestedRoadmap.map((phase: any, index: number) => ({
+        label: `PHASE ${index + 1}: ${phase.phase?.toUpperCase() || 'IMPLEMENTATION PHASE'}`,
+        content: `Duration: ${phase.duration} | Focus: ${phase.focus} | Key Initiatives: ${phase.ideas?.join(', ') || 'To be defined'}`
+      }))
 
-    // NEXT STEPS - Clean, actionable presentation
-    if (insights.nextSteps && insights.nextSteps.length > 0) {
-      addSectionHeader('Immediate Next Steps', 16, prioritasBlue)
-      
-      insights.nextSteps.forEach((step: string, index: number) => {
-        pageBreak(30)
-        
-        // Clean step text first
-        const cleanStep = step
-          .replace(/[\u201C\u201D]/g, '"')
-          .replace(/[\u2018\u2019]/g, "'")
-          .replace(/\u2013/g, '-')
-          .replace(/\u2014/g, '--')
-        
-        // Elegant step container
-        doc.setFillColor(pearl[0], pearl[1], pearl[2])
-        doc.roundedRect(marginL, yPos, contentW, 25, 2, 2, 'F')
-        
-        // Refined step number
-        doc.setFillColor(prioritasBlue[0], prioritasBlue[1], prioritasBlue[2])
-        doc.circle(marginL + 15, yPos + 12, 8, 'F')
-        doc.setTextColor(cream[0], cream[1], cream[2])
-        doc.setFontSize(9)
-        doc.setFont('helvetica', 'bold')
-        doc.text(`${index + 1}`, marginL + 12, yPos + 15)
-        
-        // Step text with sophisticated typography
-        doc.setFontSize(11)
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(charcoal[0], charcoal[1], charcoal[2])
-        const stepLines = doc.splitTextToSize(cleanStep, contentW - 50)
-        doc.text(stepLines, marginL + 30, yPos + 15)
-        yPos += Math.max(25, stepLines.length * 12) + 8
-      })
-    }
-
-    // Add footer to final page
-    addFooter(doc.getNumberOfPages())
-
-    // Add footer to all pages
-    const totalPages = doc.getNumberOfPages()
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i)
-      addFooter(i)
+      createTemplateTable(timelineData, 'IMPLEMENTATION TIMELINE')
     }
 
     // Professional filename with proper character handling
