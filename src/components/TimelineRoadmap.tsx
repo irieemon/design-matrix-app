@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react'
-import { Users, Monitor, Smartphone, TrendingUp, Settings, ChevronLeft, ChevronRight, BarChart3, Grid3X3, Plus, Download, Database } from 'lucide-react'
+import React, { useState } from 'react'
+import { Users, Monitor, Smartphone, TrendingUp, Settings, BarChart3, Grid3X3, Plus, Download, Database } from 'lucide-react'
 import FeatureDetailModal from './FeatureDetailModal'
 import RoadmapExportModal from './RoadmapExportModal'
 import { sampleMarketingRoadmap, sampleSoftwareRoadmap, sampleEventRoadmap } from '../utils/sampleRoadmapData'
@@ -50,7 +50,6 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   onViewModeChange,
   projectType = 'software'
 }) => {
-  const [currentQuarter, setCurrentQuarter] = useState(0)
   const [selectedFeature, setSelectedFeature] = useState<RoadmapFeature | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
@@ -446,19 +445,6 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   }
 
   const months = generateMonths(12)
-  
-  // Group months into quarters
-  const quarters = useMemo(() => {
-    const quarterGroups = []
-    for (let i = 0; i < months.length; i += 3) {
-      quarterGroups.push({
-        index: i / 3,
-        name: `Q${Math.floor(i / 3) + 1}`,
-        months: months.slice(i, i + 3)
-      })
-    }
-    return quarterGroups
-  }, [months])
 
   // Get features for a specific team
   const getFeaturesForTeam = (teamId: string) => {
