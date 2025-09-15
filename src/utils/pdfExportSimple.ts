@@ -752,56 +752,63 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       }
     }
 
-    // Professional phase box creator
+    // Compact professional phase box creator
     const createPhaseBox = (phaseNum: number, title: string, duration: string, content: string, color: number[]) => {
-      pageBreak(80)
+      pageBreak(60)
       
-      const boxHeight = 35  // Reduced height
+      const boxHeight = 28  // More compact
       
-      // Main colored box
+      // Main colored box with rounded corners
       doc.setFillColor(color[0], color[1], color[2])
-      doc.roundedRect(marginL, yPos, contentW, boxHeight, 2, 2, 'F')
+      doc.roundedRect(marginL, yPos, contentW, boxHeight, 3, 3, 'F')
       
-      // Phase number circle - smaller and better positioned
+      // Phase number - use a square badge instead of circle
+      const badgeSize = 20
+      const badgeX = marginL + 8
+      const badgeY = yPos + 4
+      
       doc.setFillColor(white[0], white[1], white[2])
-      doc.circle(marginL + 18, yPos + 17.5, 8, 'F')
+      doc.roundedRect(badgeX, badgeY, badgeSize, badgeSize, 2, 2, 'F')
+      
+      // Phase number text
       doc.setTextColor(color[0], color[1], color[2])
-      doc.setFontSize(12)
+      doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
-      // Center the text in the circle - proper centering calculation
-      const circleX = marginL + 18
-      const circleY = yPos + 17.5
-      const textWidth = doc.getTextWidth(phaseNum.toString())
-      doc.text(phaseNum.toString(), circleX - (textWidth / 2), circleY + 4)
+      const numText = phaseNum.toString()
+      const numWidth = doc.getTextWidth(numText)
+      doc.text(numText, badgeX + (badgeSize - numWidth) / 2, badgeY + 14)
       
-      // Phase title - better positioning
+      // Phase title and duration on same line
       doc.setTextColor(white[0], white[1], white[2])
-      doc.setFontSize(12)
+      doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
-      doc.text(title, marginL + 30, yPos + 15)
+      doc.text(title, badgeX + badgeSize + 8, yPos + 12)
       
-      // Duration - smaller and better positioned
+      // Duration on same line, right aligned
       doc.setFontSize(9)
       doc.setFont('helvetica', 'normal')
-      doc.text(duration, marginL + 30, yPos + 26)
+      const durationWidth = doc.getTextWidth(duration)
+      doc.text(duration, marginL + contentW - durationWidth - 8, yPos + 22)
       
-      yPos += boxHeight + 8
+      yPos += boxHeight + 4
       
-      // Content description below box in a subtle gray box
-      doc.setFillColor(lightGray[0], lightGray[1], lightGray[2])
-      const contentLines = doc.splitTextToSize(content, contentW - 30)
-      const contentHeight = contentLines.length * 10 + 12
-      doc.rect(marginL, yPos, contentW, contentHeight, 'F')
-      
-      // Add subtle left border
-      doc.setFillColor(color[0], color[1], color[2])
-      doc.rect(marginL, yPos, 2, contentHeight, 'F')
-      
+      // Compact content description
       doc.setTextColor(darkText[0], darkText[1], darkText[2])
       doc.setFontSize(8)
       doc.setFont('helvetica', 'normal')
-      doc.text(contentLines, marginL + 8, yPos + 8)
-      yPos += contentHeight + 15
+      const contentLines = doc.splitTextToSize(content, contentW - 20)
+      
+      // Simple content area with left accent
+      doc.setFillColor(lightGray[0], lightGray[1], lightGray[2])
+      const contentHeight = contentLines.length * 9 + 8
+      doc.rect(marginL, yPos, contentW, contentHeight, 'F')
+      
+      // Colored left accent
+      doc.setFillColor(color[0], color[1], color[2])
+      doc.rect(marginL, yPos, 3, contentHeight, 'F')
+      
+      doc.text(contentLines, marginL + 8, yPos + 6)
+      yPos += contentHeight + 8
     }
 
     // Template-style table function
