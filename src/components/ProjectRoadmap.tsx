@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown, Download, BarChart3, Grid3X3 } from 'lucide-react'
+import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown, BarChart3, Grid3X3 } from 'lucide-react'
 import { Project, IdeaCard, ProjectRoadmap as ProjectRoadmapType } from '../types'
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
-import { exportRoadmapToPDF } from '../utils/pdfExportSimple'
 import { logger } from '../utils/logger'
 import TimelineRoadmap from './TimelineRoadmap'
 
@@ -157,11 +156,6 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     }
   }
 
-  const handleExportToPDF = () => {
-    if (roadmapData && currentProject && roadmapData.roadmapAnalysis && roadmapData.executionStrategy) {
-      exportRoadmapToPDF(roadmapData as ProjectRoadmapType['roadmap_data'], (ideas || []).length, currentProject)
-    }
-  }
 
   const togglePhaseExpansion = (phaseIndex: number) => {
     logger.debug('🔄 Toggling phase expansion for index:', phaseIndex)
@@ -473,15 +467,6 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            {roadmapData && (
-              <button
-                onClick={handleExportToPDF}
-                className="flex items-center space-x-2 bg-slate-600 text-white px-4 py-3 rounded-xl hover:bg-slate-700 transition-colors"
-              >
-                <Download className="w-5 h-5" />
-                <span>Export PDF</span>
-              </button>
-            )}
             <button
               onClick={generateRoadmap}
               disabled={isLoading}
