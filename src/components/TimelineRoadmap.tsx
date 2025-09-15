@@ -557,8 +557,8 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
 
   // Calculate feature position and width
   const getFeaturePosition = (feature: RoadmapFeature) => {
-    const monthWidth = 100 / 6 // 6 months visible at once
-    const left = (feature.startMonth % 6) * monthWidth
+    const monthWidth = 100 / 12 // 12 months visible at once
+    const left = feature.startMonth * monthWidth
     const width = feature.duration * monthWidth
     
     return {
@@ -567,13 +567,8 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
     }
   }
 
-  // Get visible months for current quarter view
-  const getVisibleMonths = () => {
-    const start = currentQuarter * 6
-    return months.slice(start, start + 6)
-  }
-
-  const visibleMonths = getVisibleMonths()
+  // Get all visible months
+  const visibleMonths = months
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full" data-roadmap-export>
@@ -634,58 +629,10 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                 </button>
               </div>
             )}
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-slate-700 rounded-full"></div>
-                <span className="text-xs text-slate-300">Q1</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-slate-500 rounded-full"></div>
-                <span className="text-xs text-slate-300">Q2</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Timeline Navigation */}
-      <div className="bg-slate-50 border-b border-gray-200 px-6 py-3">
-        <div className="flex items-center justify-between">
-          <button 
-            onClick={() => setCurrentQuarter(Math.max(0, currentQuarter - 1))}
-            disabled={currentQuarter === 0}
-            className="flex items-center space-x-2 px-3 py-1 rounded-md bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span className="text-sm">Previous</span>
-          </button>
-          
-          <div className="flex items-center space-x-4">
-            {quarters.map((quarter) => (
-              <button
-                key={quarter.index}
-                onClick={() => setCurrentQuarter(quarter.index)}
-                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                  currentQuarter === quarter.index 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-300'
-                }`}
-              >
-                {quarter.name}
-              </button>
-            ))}
-          </div>
-          
-          <button 
-            onClick={() => setCurrentQuarter(Math.min(quarters.length - 1, currentQuarter + 1))}
-            disabled={currentQuarter >= quarters.length - 1}
-            className="flex items-center space-x-2 px-3 py-1 rounded-md bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span className="text-sm">Next</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
 
       {/* Timeline Header */}
       <div className="bg-white border-b-2 border-gray-200">
@@ -744,8 +691,8 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                 onDrop={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect()
                   const relativeX = e.clientX - rect.left
-                  const monthWidth = rect.width / 6
-                  const targetMonth = Math.floor(relativeX / monthWidth) + currentQuarter * 6
+                  const monthWidth = rect.width / 12
+                  const targetMonth = Math.floor(relativeX / monthWidth)
                   handleDrop(e, team.id, targetMonth)
                 }}
               >
@@ -762,37 +709,19 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                     const featureRows = calculateFeatureRows(teamFeatures)
                     return teamFeatures.map((feature) => {
                       const styles = getFeatureStyles(feature.priority, feature.status)
-                      const featureStart = feature.startMonth
-                      const featureEnd = feature.startMonth + feature.duration - 1
-                      const viewStart = currentQuarter * 6
-                      const viewEnd = viewStart + 5
-                      
-                      // Show if feature overlaps with current view
-                      const isVisible = featureEnd >= viewStart && featureStart <= viewEnd
-                      const adjustedStartMonth = Math.max(0, feature.startMonth - currentQuarter * 6)
-                      const position = getFeaturePosition({
-                        ...feature,
-                        startMonth: adjustedStartMonth
-                      })
-                      
-                      // Show partially visible tasks with different styling
-                      const isPartiallyVisible = !isVisible && (featureStart <= viewEnd + 6 && featureEnd >= viewStart - 6)
-                      
-                      if (!isVisible && !isPartiallyVisible) return null
+                      const position = getFeaturePosition(feature)
                       
                       return (
                         <div
                           key={feature.id}
                           draggable
                           onDragStart={(e) => handleDragStart(e, feature)}
-                          className={`group absolute h-8 rounded-lg border-2 ${styles.bgColor} ${styles.textColor} ${styles.borderColor} flex items-center shadow-sm hover:shadow-md transition-all cursor-move hover:scale-105 hover:z-10 ${
-                            isPartiallyVisible ? 'opacity-50 border-dashed' : ''
-                          } ${draggedFeature?.id === feature.id ? 'opacity-50' : ''} ${isResizing === feature.id ? 'ring-2 ring-blue-400 scale-105' : ''}`}
+                          className={`group absolute h-8 rounded-lg border-2 ${styles.bgColor} ${styles.textColor} ${styles.borderColor} flex items-center shadow-sm hover:shadow-md transition-all cursor-move hover:scale-105 hover:z-10 ${draggedFeature?.id === feature.id ? 'opacity-50' : ''} ${isResizing === feature.id ? 'ring-2 ring-blue-400 scale-105' : ''}`}
                           style={{
                             ...position,
                             top: `${(featureRows[feature.id] || 0) * 36 + 16}px`
                           }}
-                          title={`${isPartiallyVisible ? '[Hidden] ' : ''}Drag to move, resize handles on hover: ${feature.title}`}
+                          title={`Drag to move, resize handles on hover: ${feature.title}`}
                         >
                           {/* Left resize handle */}
                           <div
@@ -810,7 +739,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                             }}
                           >
                             <span className="text-xs font-semibold">
-                              {isPartiallyVisible ? '••• ' : ''}{feature.title}
+                              {feature.title}
                             </span>
                           </div>
                           
