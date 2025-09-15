@@ -754,21 +754,26 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       if (title) {
         // Blue header bar for section
         doc.setFillColor(darkBlue[0], darkBlue[1], darkBlue[2])
-        doc.rect(marginL, yPos, contentW, 25, 'F')
+        doc.rect(marginL, yPos, contentW, 20, 'F')
         
         doc.setTextColor(white[0], white[1], white[2])
-        doc.setFontSize(14)
+        doc.setFontSize(12)
         doc.setFont('helvetica', 'bold')
-        doc.text(title.toUpperCase(), marginL + 10, yPos + 17)
-        yPos += 30
+        doc.text(title.toUpperCase(), marginL + 8, yPos + 13)
+        yPos += 25
       }
       
       // Calculate table dimensions
-      const rowHeight = 25
-      const labelWidth = contentW * 0.25
-      const contentColWidth = contentW * 0.75
+      const labelWidth = contentW * 0.3  // Wider label column like template
+      const contentColWidth = contentW * 0.7
       
       data.forEach((row, index) => {
+        // Calculate dynamic row height based on content
+        const labelLines = doc.splitTextToSize(row.label, labelWidth - 10)
+        const contentLines = doc.splitTextToSize(row.content, contentColWidth - 15)
+        const maxLines = Math.max(labelLines.length, contentLines.length)
+        const rowHeight = Math.max(20, maxLines * 10 + 10)  // Dynamic height
+        
         pageBreak(rowHeight + 5)
         
         // Alternating row colors like template
@@ -777,27 +782,26 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
         doc.rect(marginL, yPos, contentW, rowHeight, 'F')
         
         // Table borders
-        doc.setDrawColor(200, 200, 200)
-        doc.setLineWidth(0.5)
+        doc.setDrawColor(180, 180, 180)
+        doc.setLineWidth(0.3)
         doc.rect(marginL, yPos, labelWidth, rowHeight, 'S')
         doc.rect(marginL + labelWidth, yPos, contentColWidth, rowHeight, 'S')
         
-        // Label column (left)
+        // Label column (left) - better positioning
         doc.setTextColor(darkText[0], darkText[1], darkText[2])
-        doc.setFontSize(9)
+        doc.setFontSize(8)
         doc.setFont('helvetica', 'bold')
-        const labelLines = doc.splitTextToSize(row.label, labelWidth - 10)
-        doc.text(labelLines, marginL + 8, yPos + 12)
+        doc.text(labelLines, marginL + 5, yPos + 8)
         
-        // Content column (right)
+        // Content column (right) - better positioning
+        doc.setFontSize(8)
         doc.setFont('helvetica', 'normal')
-        const contentLines = doc.splitTextToSize(row.content, contentColWidth - 15)
-        doc.text(contentLines, marginL + labelWidth + 8, yPos + 12)
+        doc.text(contentLines, marginL + labelWidth + 5, yPos + 8)
         
         yPos += rowHeight
       })
       
-      yPos += 15
+      yPos += 10
     }
 
 
@@ -805,27 +809,27 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
     // DOCUMENT TITLE PAGE - University Template Style
     
     // Main title 
-    doc.setFontSize(20)
+    doc.setFontSize(16)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(darkBlue[0], darkBlue[1], darkBlue[2])
     const mainTitle = project?.name?.toUpperCase() || 'PROJECT STRATEGIC PLAN'
     doc.text(mainTitle, marginL, yPos)
-    yPos += 15
+    yPos += 12
     
     // Subtitle
-    doc.setFontSize(12)
+    doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
     doc.text('STRATEGIC INSIGHTS REPORT TEMPLATE', marginL, yPos)
-    yPos += 20
+    yPos += 15
     
     // Description
-    doc.setFontSize(10)
+    doc.setFontSize(8)
     doc.setTextColor(darkText[0], darkText[1], darkText[2])
     const description = project?.description || 
       `This strategic plan serves as a roadmap for ${project?.name || 'this project'}'s journey towards achieving its vision and mission, addressing contemporary challenges, and seizing opportunities for growth and impact.`
     const descLines = doc.splitTextToSize(description, contentW)
     doc.text(descLines, marginL, yPos)
-    yPos += descLines.length * 12 + 30
+    yPos += descLines.length * 8 + 20
 
     // PROJECT OVERVIEW TABLE - Template Style
     const overviewData = [
