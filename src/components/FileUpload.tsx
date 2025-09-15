@@ -5,9 +5,11 @@ import { logger } from '../utils/logger'
 import * as pdfjsLib from 'pdfjs-dist'
 
 // Configure PDF.js to work without workers at all
-// Disable worker completely for browser compatibility
+// Use empty string instead of false for better compatibility
 if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = false
+  pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+  // Also try to disable worker creation entirely
+  pdfjsLib.GlobalWorkerOptions.workerPort = null
 }
 
 interface FileUploadProps {
@@ -97,15 +99,30 @@ const FileUpload: React.FC<FileUploadProps> = ({
       logger.debug('🔄 Starting PDF text extraction for:', file.name)
       const arrayBuffer = await file.arrayBuffer()
       
-      // Ensure worker is disabled completely
-      pdfjsLib.GlobalWorkerOptions.workerSrc = false
+      // Multiple attempts to configure PDF.js without workers
+      try {
+        // Method 1: Set empty string and null port
+        pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+        pdfjsLib.GlobalWorkerOptions.workerPort = null
+      } catch (e) {
+        logger.debug('⚠️ Worker config method 1 failed:', e)
+      }
+      
+      try {
+        // Method 2: Use data URL
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'data:application/javascript;base64,'
+      } catch (e) {
+        logger.debug('⚠️ Worker config method 2 failed:', e)
+      }
       
       // Configure PDF.js for maximum compatibility - disable workers entirely
       const pdf = await pdfjsLib.getDocument({
         data: arrayBuffer,
         useWorkerFetch: false,
         isEvalSupported: false,
-        useSystemFonts: false
+        useSystemFonts: false,
+        verbosity: 0, // Suppress PDF.js warnings
+        disableWorker: true // Additional worker disable flag
       }).promise
       
       let fullText = ''
