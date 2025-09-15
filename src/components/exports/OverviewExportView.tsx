@@ -1,5 +1,5 @@
 import React from 'react'
-import { Calendar, Flag, CheckCircle } from 'lucide-react'
+import { Calendar, Flag, CheckCircle, Users, Target, AlertTriangle } from 'lucide-react'
 
 interface RoadmapFeature {
   id: string
@@ -46,6 +46,18 @@ const OverviewExportView: React.FC<OverviewExportViewProps> = ({
 
   const teams = [...new Set(features.map(f => f.team))].sort()
   
+  const getFeatureTimeline = (feature: RoadmapFeature) => {
+    const start = new Date(startDate)
+    start.setMonth(start.getMonth() + feature.startMonth)
+    const end = new Date(start)
+    end.setMonth(end.getMonth() + feature.duration)
+    
+    return {
+      start: start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      end: end.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    }
+  }
+
   const getTeamColor = (team: string) => {
     const colors = {
       'web': 'bg-orange-100 border-orange-300',
@@ -58,14 +70,6 @@ const OverviewExportView: React.FC<OverviewExportViewProps> = ({
     return colors[team.toLowerCase() as keyof typeof colors] || 'bg-gray-100 border-gray-300'
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return '#dc2626'
-      case 'medium': return '#d97706'
-      case 'low': return '#2563eb'
-      default: return '#6b7280'
-    }
-  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -167,114 +171,254 @@ const OverviewExportView: React.FC<OverviewExportViewProps> = ({
         </div>
       </div>
 
-      {/* Features Summary */}
-      <div className="grid grid-cols-2 gap-8">
-        <div>
+      {/* Page Break for Details */}
+      <div style={{ pageBreakBefore: 'always', marginTop: '40px' }}>
+        {/* Executive Summary */}
+        <div className="mb-8">
           <h2 className="text-2xl font-semibold mb-4 flex items-center">
             <Flag className="w-6 h-6 mr-2" />
-            Features by Priority
+            Executive Summary
           </h2>
-          <div className="space-y-2">
-            {['high', 'medium', 'low'].map(priority => {
-              const priorityFeatures = features.filter(f => f.priority === priority)
-              return (
-                <div key={priority} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                  <div className="flex items-center">
-                    <div style={{ 
-                      width: '16px', 
-                      height: '16px', 
-                      borderRadius: '50%', 
-                      marginRight: '12px',
-                      backgroundColor: getPriorityColor(priority)
-                    }}></div>
-                    <span className="font-medium capitalize">{priority} Priority</span>
-                  </div>
-                  <span className="text-gray-600 font-medium">{priorityFeatures.length}</span>
+          <div className="grid grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Project Overview</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="font-medium">Total Features:</span>
+                  <span>{features.length}</span>
                 </div>
-              )
-            })}
-          </div>
-
-          <h3 className="text-lg font-semibold mt-6 mb-3">Team Distribution</h3>
-          <div className="space-y-2">
-            {teams.map(team => {
-              const teamFeatures = features.filter(f => f.team === team)
-              return (
-                <div key={team} className={`p-3 border rounded-lg ${getTeamColor(team)}`}>
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{team}</span>
-                    <span className="text-gray-700">{teamFeatures.length} features</span>
-                  </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Active Teams:</span>
+                  <span>{teams.length}</span>
                 </div>
-              )
-            })}
-          </div>
-        </div>
-
-        <div>
-          <h2 className="text-2xl font-semibold mb-4 flex items-center">
-            <CheckCircle className="w-6 h-6 mr-2" />
-            Progress Overview
-          </h2>
-          <div className="space-y-2">
-            {['completed', 'in-progress', 'planned'].map(status => {
-              const statusFeatures = features.filter(f => f.status === status)
-              const percentage = Math.round((statusFeatures.length / features.length) * 100)
-              return (
-                <div key={status} className="p-3 border border-gray-200 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium capitalize">{status.replace('-', ' ')}</span>
-                    <span className="text-gray-600">{statusFeatures.length} ({percentage}%)</span>
-                  </div>
-                  <div style={{ 
-                    width: '100%', 
-                    backgroundColor: '#e5e7eb', 
-                    borderRadius: '9999px', 
-                    height: '8px' 
-                  }}>
-                    <div 
-                      style={{ 
-                        height: '8px', 
-                        borderRadius: '9999px',
-                        width: `${percentage}%`,
-                        backgroundColor: status === 'completed' ? '#10b981' :
-                                       status === 'in-progress' ? '#3b82f6' : '#9ca3af'
-                      }}
-                    ></div>
-                  </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Project Duration:</span>
+                  <span>{totalMonths} months</span>
                 </div>
-              )
-            })}
-          </div>
-
-          <h3 className="text-lg font-semibold mt-6 mb-3">Key Metrics</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-700">{totalMonths}</div>
-              <div className="text-sm text-blue-600">Total Months</div>
-            </div>
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-700">{features.length}</div>
-              <div className="text-sm text-green-600">Total Features</div>
-            </div>
-            <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg text-center">
-              <div className="text-2xl font-bold text-purple-700">{teams.length}</div>
-              <div className="text-sm text-purple-600">Active Teams</div>
-            </div>
-            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg text-center">
-              <div className="text-2xl font-bold text-orange-700">
-                {Math.round(features.reduce((sum, f) => sum + f.duration, 0) / features.length)}
+                <div className="flex justify-between">
+                  <span className="font-medium">Avg Feature Duration:</span>
+                  <span>{Math.round(features.reduce((sum, f) => sum + f.duration, 0) / features.length)} months</span>
+                </div>
               </div>
-              <div className="text-sm text-orange-600">Avg Duration</div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Status Distribution</h3>
+              {['completed', 'in-progress', 'planned'].map(status => {
+                const statusFeatures = features.filter(f => f.status === status)
+                const percentage = Math.round((statusFeatures.length / features.length) * 100)
+                return (
+                  <div key={status} className="flex justify-between items-center mb-2 text-sm">
+                    <span className="font-medium capitalize">{status.replace('-', ' ')}:</span>
+                    <span>{statusFeatures.length} ({percentage}%)</span>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
       </div>
 
+      {/* Detailed Features Section */}
+      <div style={{ pageBreakBefore: 'always', marginTop: '40px' }}>
+        <h2 className="text-2xl font-semibold mb-6 flex items-center">
+          <Target className="w-6 h-6 mr-2" />
+          Detailed Feature Breakdown
+        </h2>
+        
+        <div className="space-y-8">
+          {features.map((feature) => {
+            const timeline = getFeatureTimeline(feature)
+            
+            return (
+              <div key={feature.id} className="border border-gray-200 rounded-lg p-6 bg-gray-50" style={{ pageBreakInside: 'avoid' }}>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{feature.title}</h3>
+                    <div className="flex items-center space-x-3 mb-2">
+                      <span style={{ 
+                        padding: '4px 12px', 
+                        borderRadius: '16px', 
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        backgroundColor: feature.priority === 'high' ? '#fef2f2' : 
+                                       feature.priority === 'medium' ? '#fffbeb' : '#eff6ff',
+                        color: feature.priority === 'high' ? '#991b1b' : 
+                               feature.priority === 'medium' ? '#92400e' : '#1e40af',
+                        border: feature.priority === 'high' ? '1px solid #fecaca' : 
+                                feature.priority === 'medium' ? '1px solid #fed7aa' : '1px solid #dbeafe'
+                      }}>
+                        {feature.priority} priority
+                      </span>
+                      <span style={{ 
+                        padding: '4px 12px', 
+                        borderRadius: '16px', 
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        backgroundColor: feature.status === 'completed' ? '#f0fdf4' : 
+                                       feature.status === 'in-progress' ? '#eff6ff' : '#f9fafb',
+                        color: feature.status === 'completed' ? '#166534' : 
+                               feature.status === 'in-progress' ? '#1e40af' : '#374151',
+                        border: feature.status === 'completed' ? '1px solid #bbf7d0' : 
+                                feature.status === 'in-progress' ? '1px solid #dbeafe' : '1px solid #e5e7eb'
+                      }}>
+                        {feature.status}
+                      </span>
+                      <span style={{ 
+                        padding: '4px 12px', 
+                        borderRadius: '16px', 
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        backgroundColor: '#f3f4f6',
+                        color: '#374151',
+                        border: '1px solid #d1d5db'
+                      }}>
+                        {feature.team} team
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right text-sm text-gray-600">
+                    <div className="flex items-center mb-1">
+                      <Calendar className="w-4 h-4 mr-1" />
+                      <span>{timeline.start}</span>
+                    </div>
+                    <div className="text-gray-500">to {timeline.end}</div>
+                    <div className="text-gray-500">{feature.duration} month{feature.duration !== 1 ? 's' : ''}</div>
+                  </div>
+                </div>
+
+                {feature.description && (
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
+                    <p className="text-gray-700 leading-relaxed">{feature.description}</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* User Stories */}
+                  {feature.userStories && feature.userStories.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+                        <Users className="w-4 h-4 mr-1" />
+                        User Stories ({feature.userStories.length})
+                      </h4>
+                      <ul className="space-y-1">
+                        {feature.userStories.map((story, index) => (
+                          <li key={index} className="text-sm text-gray-700 flex items-start">
+                            <span style={{ 
+                              width: '20px', 
+                              height: '20px', 
+                              backgroundColor: '#dcfce7', 
+                              color: '#166534', 
+                              borderRadius: '50%', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center', 
+                              fontSize: '10px', 
+                              fontWeight: 'bold', 
+                              marginRight: '8px', 
+                              marginTop: '2px', 
+                              flexShrink: 0 
+                            }}>
+                              {index + 1}
+                            </span>
+                            <span>{story}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Deliverables */}
+                  {feature.deliverables && feature.deliverables.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Key Deliverables ({feature.deliverables.length})
+                      </h4>
+                      <ul className="space-y-1">
+                        {feature.deliverables.map((deliverable, index) => (
+                          <li key={index} className="text-sm text-gray-700 flex items-center">
+                            <CheckCircle className="w-4 h-4 text-blue-600 mr-2 flex-shrink-0" />
+                            <span>{deliverable}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Success Criteria */}
+                  {feature.successCriteria && feature.successCriteria.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+                        <Target className="w-4 h-4 mr-1" />
+                        Success Criteria
+                      </h4>
+                      <ul className="space-y-1">
+                        {feature.successCriteria.map((criteria, index) => (
+                          <li key={index} className="text-sm text-gray-700 flex items-start">
+                            <Target className="w-4 h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                            <span>{criteria}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Risks */}
+                  {feature.risks && feature.risks.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+                        <AlertTriangle className="w-4 h-4 mr-1" />
+                        Risk Factors
+                      </h4>
+                      <ul className="space-y-1">
+                        {feature.risks.map((risk, index) => (
+                          <li key={index} className="text-sm text-gray-700 flex items-start">
+                            <AlertTriangle className="w-4 h-4 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
+                            <span>{risk}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* Related Ideas */}
+                {feature.relatedIdeas && feature.relatedIdeas.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center">
+                      <Flag className="w-4 h-4 mr-1" />
+                      Related Ideas
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {feature.relatedIdeas.map((idea, index) => (
+                        <span
+                          key={index}
+                          style={{
+                            padding: '4px 8px',
+                            backgroundColor: '#eef2ff',
+                            color: '#3730a3',
+                            borderRadius: '16px',
+                            fontSize: '12px',
+                            border: '1px solid #c7d2fe'
+                          }}
+                        >
+                          {idea}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Footer */}
       <div className="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
-        <p>This roadmap overview was generated on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</p>
-        <p className="mt-1">Project Type: {projectType} • Export Format: Landscape Overview</p>
+        <p>This comprehensive roadmap was generated on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</p>
+        <p className="mt-1">Project Type: {projectType} • Export Format: Comprehensive Overview</p>
       </div>
     </div>
   )
