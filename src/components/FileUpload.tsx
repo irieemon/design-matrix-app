@@ -4,8 +4,8 @@ import { ProjectFile, User, Project, FileType } from '../types'
 import { logger } from '../utils/logger'
 import * as pdfjsLib from 'pdfjs-dist'
 
-// Set PDF.js worker - use Mozilla's CDN which has better CORS support
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://mozilla.github.io/pdf.js/build/pdf.worker.min.js`
+// Configure PDF.js to work without external worker dependencies
+// We'll handle worker setup in the extraction function
 
 interface FileUploadProps {
   currentProject: Project
@@ -91,42 +91,51 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
   const extractTextFromPDF = async (file: File): Promise<string> => {
     try {
+      logger.debug('🔄 Starting PDF text extraction for:', file.name)
       const arrayBuffer = await file.arrayBuffer()
       
-      // Try with worker first, fall back to fake worker if needed
-      let pdf
-      try {
-        pdf = await pdfjsLib.getDocument({ 
-          data: arrayBuffer,
-          useWorkerFetch: false,
-          isEvalSupported: false,
-          useSystemFonts: true
-        }).promise
-      } catch (workerError) {
-        logger.warn('PDF worker failed, trying without worker:', workerError)
-        // Disable worker and try again
-        pdfjsLib.GlobalWorkerOptions.workerSrc = ''
-        pdf = await pdfjsLib.getDocument({ 
-          data: arrayBuffer,
-          useWorkerFetch: false,
-          isEvalSupported: false
-        }).promise
-      }
+      // Disable worker completely for reliable operation
+      pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+      
+      // Configure PDF.js for maximum compatibility
+      const pdf = await pdfjsLib.getDocument({ 
+        data: arrayBuffer,
+        useWorkerFetch: false,
+        isEvalSupported: false,
+        useSystemFonts: true,
+        verbosity: 0 // Reduce console spam
+      }).promise
       
       let fullText = ''
       
       // Extract text from all pages (limit to first 10 pages for performance)
       const maxPages = Math.min(pdf.numPages, 10)
+      logger.debug(`📄 Extracting text from ${maxPages} pages of PDF`)
+      
       for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
-        const page = await pdf.getPage(pageNum)
-        const textContent = await page.getTextContent()
-        const pageText = textContent.items.map((item: any) => item.str).join(' ')
-        fullText += pageText + '\n'
+        try {
+          const page = await pdf.getPage(pageNum)
+          const textContent = await page.getTextContent()
+          const pageText = textContent.items.map((item: any) => item.str).join(' ')
+          fullText += pageText + '\n'
+          logger.debug(`✅ Extracted page ${pageNum}: ${pageText.length} characters`)
+        } catch (pageError) {
+          logger.warn(`⚠️ Could not extract text from page ${pageNum}:`, pageError)
+          continue
+        }
       }
       
-      return fullText.trim()
+      const extractedText = fullText.trim()
+      if (extractedText) {
+        logger.debug(`🎉 Successfully extracted ${extractedText.length} characters from PDF`)
+        return extractedText
+      } else {
+        logger.warn('📄 PDF processed but no text content found')
+        return `[PDF document: ${file.name} - PDF contains no extractable text, but file uploaded successfully for AI reference]`
+      }
+      
     } catch (error) {
-      logger.warn('Could not extract text from PDF:', error)
+      logger.warn('❌ Could not extract text from PDF:', error)
       return `[PDF document: ${file.name} - PDF text extraction not available, but file uploaded successfully for AI reference]`
     }
   }
