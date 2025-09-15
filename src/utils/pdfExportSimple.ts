@@ -918,52 +918,6 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       yPos += lines.length * 15 + 8
     }
 
-    // Professional information boxes matching template style
-    const addInfoBox = (title: string, content: string, headerColor: number[] = prioritasBlue) => {
-      if (!content || content.trim().length === 0) return
-      
-      pageBreak(100)
-      
-      // Clean content
-      const cleanContent = content
-        .replace(/[\u201C\u201D]/g, '"')
-        .replace(/[\u2018\u2019]/g, "'")
-        .replace(/\u2013/g, '-')
-        .replace(/\u2014/g, '--')
-        .replace(/\u2026/g, '...')
-      
-      const lines = doc.splitTextToSize(cleanContent, contentW - 30)
-      const contentHeight = Math.max(50, lines.length * 14 + 20)
-      const headerHeight = 25
-      const totalHeight = headerHeight + contentHeight
-      
-      // Blue header box
-      doc.setFillColor(headerColor[0], headerColor[1], headerColor[2])
-      doc.rect(marginL, yPos, contentW, headerHeight, 'F')
-      
-      // White content box
-      doc.setFillColor(255, 255, 255)
-      doc.rect(marginL, yPos + headerHeight, contentW, contentHeight, 'F')
-      
-      // Box border
-      doc.setDrawColor(200, 200, 200)
-      doc.setLineWidth(1)
-      doc.rect(marginL, yPos, contentW, totalHeight, 'S')
-      
-      // Title in white text
-      doc.setFontSize(12)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(255, 255, 255)
-      doc.text(title, marginL + 15, yPos + 17)
-      
-      // Content in black text
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(charcoal[0], charcoal[1], charcoal[2])
-      doc.text(lines, marginL + 15, yPos + headerHeight + 15)
-      
-      yPos += totalHeight + 20
-    }
 
     // Subtle priority indicators with refined styling
     const addPriorityBadge = (text: string, priority: 'immediate' | 'short' | 'long') => {
