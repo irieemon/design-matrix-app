@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
 import { Map, Calendar, Users, Clock, AlertTriangle, CheckCircle, Lightbulb, ArrowRight, Sparkles, Loader, History, ChevronDown, Download, BarChart3, Grid3X3 } from 'lucide-react'
 import { Project, IdeaCard, ProjectRoadmap as ProjectRoadmapType } from '../types'
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 import { logger } from '../utils/logger'
 import TimelineRoadmap from './TimelineRoadmap'
-import RoadmapExportModal from './RoadmapExportModal'
+
+// Lazy load the RoadmapExportModal to reduce bundle size
+const RoadmapExportModal = lazy(() => import('./RoadmapExportModal'))
 
 interface ProjectRoadmapProps {
   currentUser: string
@@ -390,7 +392,19 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     return features
   }
 
-  const timelineFeatures = convertToTimelineFeatures()
+  const timelineFeatures = useMemo(() => {
+    return convertToTimelineFeatures()
+  }, [roadmapData, currentProject?.project_type])
+
+  // Memoize phases array to prevent unnecessary recalculations
+  const roadmapPhases = useMemo(() => {
+    return roadmapData?.roadmapAnalysis?.phases || roadmapData?.phases || []
+  }, [roadmapData])
+
+  // Memoize key milestones to prevent unnecessary recalculations
+  const keyMilestones = useMemo(() => {
+    return roadmapData?.executionStrategy?.keyMilestones || []
+  }, [roadmapData])
 
   // Handle feature changes and save them back to roadmap data
   const handleFeaturesChange = async (updatedFeatures: any[]) => {
@@ -589,10 +603,10 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
             <div className="p-6">
               {/* Phases */}
               <div className="space-y-6">
-                {(roadmapData.roadmapAnalysis?.phases || roadmapData.phases || []).map((phase, phaseIndex) => (
+                {roadmapPhases.map((phase, phaseIndex) => (
                   <div key={phaseIndex} className="relative">
                     {/* Phase Timeline Line */}
-                    {phaseIndex < (roadmapData.roadmapAnalysis?.phases || roadmapData.phases || []).length - 1 && (
+                    {phaseIndex < roadmapPhases.length - 1 && (
                       <div className="absolute left-6 top-16 bottom-0 w-0.5 bg-slate-200"></div>
                     )}
                     
@@ -770,7 +784,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
                     <span>Key Milestones</span>
                   </h3>
                   <div className="space-y-3">
-                    {(roadmapData.executionStrategy?.keyMilestones || []).map((milestone, index) => (
+                    {keyMilestones.map((milestone, index) => (
                       <div key={index} className="flex items-start space-x-3">
                         <div className="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                           <span className="text-purple-600 text-xs font-bold">{index + 1}</span>
@@ -857,16 +871,27 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         </div>
       )}
 
-      {/* Export Modal */}
-      <RoadmapExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        features={timelineFeatures}
-        title={currentProject?.name || 'PROJECT ROADMAP'}
-        subtitle={`${timelineFeatures.length} Features • ${roadmapData?.roadmapAnalysis?.totalDuration || '6 months'}`}
-        startDate={new Date()}
-        projectType={currentProject?.project_type || 'software'}
-      />
+      {/* Export Modal - Lazy loaded only when needed */}
+      {isExportModalOpen && (
+        <Suspense fallback={
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 flex items-center space-x-3">
+              <Loader className="w-5 h-5 animate-spin text-purple-600" />
+              <span className="text-slate-700">Loading export tools...</span>
+            </div>
+          </div>
+        }>
+          <RoadmapExportModal
+            isOpen={isExportModalOpen}
+            onClose={() => setIsExportModalOpen(false)}
+            features={timelineFeatures}
+            title={currentProject?.name || 'PROJECT ROADMAP'}
+            subtitle={`${timelineFeatures.length} Features • ${roadmapData?.roadmapAnalysis?.totalDuration || '6 months'}`}
+            startDate={new Date()}
+            projectType={currentProject?.project_type || 'software'}
+          />
+        </Suspense>
+      )}
     </div>
   )
 }

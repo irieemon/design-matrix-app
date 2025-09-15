@@ -1,8 +1,10 @@
-import React, { useState } from 'react'
-import { Users, Monitor, Smartphone, TrendingUp, Settings, BarChart3, Grid3X3, Plus, Download, Database } from 'lucide-react'
+import React, { useState, lazy, Suspense } from 'react'
+import { Users, Monitor, Smartphone, TrendingUp, Settings, BarChart3, Grid3X3, Plus, Download, Database, Loader } from 'lucide-react'
 import FeatureDetailModal from './FeatureDetailModal'
-import RoadmapExportModal from './RoadmapExportModal'
 import { sampleMarketingRoadmap, sampleSoftwareRoadmap, sampleEventRoadmap } from '../utils/sampleRoadmapData'
+
+// Lazy load the RoadmapExportModal to reduce bundle size
+const RoadmapExportModal = lazy(() => import('./RoadmapExportModal'))
 
 interface RoadmapFeature {
   id: string
@@ -795,16 +797,27 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
         projectType={projectType}
       />
 
-      {/* Export Modal */}
-      <RoadmapExportModal 
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        features={features}
-        title={title}
-        subtitle={subtitle}
-        startDate={startDate}
-        projectType={projectType}
-      />
+      {/* Export Modal - Lazy loaded only when needed */}
+      {isExportModalOpen && (
+        <Suspense fallback={
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 flex items-center space-x-3">
+              <Loader className="w-5 h-5 animate-spin text-purple-600" />
+              <span className="text-slate-700">Loading export tools...</span>
+            </div>
+          </div>
+        }>
+          <RoadmapExportModal 
+            isOpen={isExportModalOpen}
+            onClose={() => setIsExportModalOpen(false)}
+            features={features}
+            title={title}
+            subtitle={subtitle}
+            startDate={startDate}
+            projectType={projectType}
+          />
+        </Suspense>
+      )}
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { IdeaCard } from '../types'
 import { supabase } from './supabase'
 import { logger } from '../utils/logger'
 import { FileService } from './fileService'
+import { aiCache, AICache } from './aiCache'
 
 interface AIIdeaResponse {
   content: string
@@ -62,102 +63,136 @@ class SecureAIService {
   async generateIdea(title: string, projectContext?: { name?: string, description?: string, type?: string }): Promise<AIIdeaResponse> {
     logger.debug(`🧠 Generating idea for: "${title}" using secure server-side proxy`)
     
-    try {
-      // Call our secure serverless endpoint
-      const headers = await this.getAuthHeaders()
-      const response = await fetch(`${this.baseUrl}/api/ai/generate-ideas`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          title,
-          description: projectContext?.description || '',
-          projectType: projectContext?.type || 'General'
+    // Generate cache key from parameters
+    const cacheKey = AICache.generateKey('generateIdea', {
+      title,
+      projectContext: projectContext || {}
+    })
+    
+    return aiCache.getOrSet(cacheKey, async () => {
+      try {
+        // Call our secure serverless endpoint
+        const headers = await this.getAuthHeaders()
+        const response = await fetch(`${this.baseUrl}/api/ai/generate-ideas`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            title,
+            description: projectContext?.description || '',
+            projectType: projectContext?.type || 'General'
+          })
         })
-      })
 
-      if (!response.ok) {
-        if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait a moment before trying again.')
+        if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('Rate limit exceeded. Please wait a moment before trying again.')
+          }
+          throw new Error(`Server error: ${response.status}`)
         }
-        throw new Error(`Server error: ${response.status}`)
-      }
 
-      const data = await response.json()
-      
-      if (data.ideas && data.ideas.length > 0) {
-        // Return the first idea in the expected format
-        const idea = data.ideas[0]
-        return {
-          content: idea.title,
-          details: idea.description,
-          priority: this.mapPriorityLevel(idea.impact, idea.effort)
+        const data = await response.json()
+        
+        if (data.ideas && data.ideas.length > 0) {
+          // Return the first idea in the expected format
+          const idea = data.ideas[0]
+          return {
+            content: idea.title,
+            details: idea.description,
+            priority: this.mapPriorityLevel(idea.impact, idea.effort)
+          }
+        } else {
+          // Fallback to mock if no ideas generated
+          return this.generateMockIdea(title, projectContext)
         }
-      } else {
-        // Fallback to mock if no ideas generated
+      } catch (error) {
+        logger.error('Error generating idea:', error)
+        // Return mock idea for non-critical errors
         return this.generateMockIdea(title, projectContext)
       }
-
-    } catch (error) {
-      logger.warn('🚫 AI generation failed, using mock:', error)
-      return this.generateMockIdea(title, projectContext)
-    }
+    }, 10 * 60 * 1000) // 10 minute cache for ideas
   }
 
   async generateMultipleIdeas(title: string, description: string, projectType: string = 'General', count: number = 8, tolerance: number = 50): Promise<IdeaCard[]> {
     logger.debug(`🧠 Generating ${count} ideas for project: "${title}" with ${tolerance}% tolerance`)
     
-    try {
-      const headers = await this.getAuthHeaders()
-      const response = await fetch(`${this.baseUrl}/api/ai/generate-ideas`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          title,
-          description,
-          projectType,
-          count,
-          tolerance
+    // Generate cache key from parameters
+    const cacheKey = AICache.generateKey('generateMultipleIdeas', {
+      title,
+      description,
+      projectType,
+      count,
+      tolerance
+    })
+    
+    return aiCache.getOrSet(cacheKey, async () => {
+      try {
+        const headers = await this.getAuthHeaders()
+        const response = await fetch(`${this.baseUrl}/api/ai/generate-ideas`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            title,
+            description,
+            projectType,
+            count,
+            tolerance
+          })
         })
-      })
 
-      if (!response.ok) {
-        if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please wait a moment before trying again.')
+        if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('Rate limit exceeded. Please wait a moment before trying again.')
+          }
+          throw new Error(`Server error: ${response.status}`)
         }
-        throw new Error(`Server error: ${response.status}`)
-      }
 
-      const data = await response.json()
-      
-      if (data.ideas && data.ideas.length > 0) {
-        return (data.ideas || []).map((idea: any, index: number) => ({
-          id: `ai-${Date.now()}-${index}`,
-          content: idea.title,
-          details: idea.description,
-          x: this.getPositionFromQuadrant(this.mapToQuadrant(idea.effort, idea.impact)).x,
-          y: this.getPositionFromQuadrant(this.mapToQuadrant(idea.effort, idea.impact)).y,
-          priority: this.mapPriorityLevel(idea.impact, idea.effort),
-          created_by: 'ai-assistant',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }))
-      } else {
+        const data = await response.json()
+        
+        if (data.ideas && data.ideas.length > 0) {
+          return (data.ideas || []).map((idea: any, index: number) => ({
+            id: `ai-${Date.now()}-${index}`,
+            content: idea.title,
+            details: idea.description,
+            x: this.getPositionFromQuadrant(this.mapToQuadrant(idea.effort, idea.impact)).x,
+            y: this.getPositionFromQuadrant(this.mapToQuadrant(idea.effort, idea.impact)).y,
+            priority: this.mapPriorityLevel(idea.impact, idea.effort),
+            created_by: 'ai-assistant',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }))
+        } else {
+          return this.generateMockIdeas(title, description, projectType, count)
+        }
+
+      } catch (error) {
+        logger.warn('🚫 AI generation failed, using mock:', error)
         return this.generateMockIdeas(title, description, projectType, count)
       }
-
-    } catch (error) {
-      logger.warn('🚫 AI generation failed, using mock:', error)
-      return this.generateMockIdeas(title, description, projectType, count)
-    }
+    }, 15 * 60 * 1000) // 15 minute cache for multiple ideas
   }
 
   async generateInsights(ideas: IdeaCard[], projectName?: string, projectType?: string, projectId?: string, currentProject?: any): Promise<any> {
     logger.debug('🔍 Generating insights for', (ideas || []).length, 'ideas')
     
-    // Get additional context if project ID is provided
-    let roadmapContext = null
-    let documentContext = null
-    let projectContext = null
+    // Create a simplified cache key from core parameters (excluding timestamps and large data)
+    const ideaSignature = (ideas || []).map(idea => ({
+      content: idea.content,
+      x: Math.round(idea.x / 10) * 10, // Round to reduce cache misses from minor position changes
+      y: Math.round(idea.y / 10) * 10
+    }))
+    
+    const cacheKey = AICache.generateKey('generateInsights', {
+      ideas: ideaSignature,
+      projectName: projectName || 'Project',
+      projectType: projectType || 'General',
+      projectId: projectId || 'none'
+    })
+    
+    return aiCache.getOrSet(cacheKey, async () => {
+      // Get additional context if project ID is provided
+      let roadmapContext = null
+      let documentContext = null
+      let projectContext = null
     
     // Extract project context for intent analysis
     if (currentProject) {
@@ -324,11 +359,26 @@ class SecureAIService {
       // Don't fall back to mock data in production - let the error propagate
       throw new Error(`Failed to generate insights: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your API configuration and try again.`)
     }
+    }, 20 * 60 * 1000) // 20 minute cache for insights (longer due to context complexity)
   }
 
   async generateRoadmap(ideas: IdeaCard[], projectName: string, projectType?: string): Promise<any> {
     logger.debug('🗺️ Generating roadmap for project:', projectName)
     
+    // Create cache key from core parameters
+    const ideaSignature = (ideas || []).map(idea => ({
+      content: idea.content,
+      x: Math.round(idea.x / 10) * 10,
+      y: Math.round(idea.y / 10) * 10
+    }))
+    
+    const cacheKey = AICache.generateKey('generateRoadmap', {
+      ideas: ideaSignature,
+      projectName: projectName || 'Project',
+      projectType: projectType || 'General'
+    })
+    
+    return aiCache.getOrSet(cacheKey, async () => {
     try {
       const headers = await this.getAuthHeaders()
       const response = await fetch(`${this.baseUrl}/api/ai/generate-roadmap-v2`, {
@@ -386,6 +436,7 @@ class SecureAIService {
       })
       return this.generateMockRoadmap(projectName, projectType)
     }
+    }, 25 * 60 * 1000) // 25 minute cache for roadmaps (longest TTL due to complexity)
   }
 
   // Legacy method for backward compatibility - now uses secure endpoints

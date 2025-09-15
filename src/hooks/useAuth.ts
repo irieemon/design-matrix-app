@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { DatabaseService } from '../lib/database'
 import { User, AuthUser, Project } from '../types'
@@ -145,7 +145,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     }
   }
 
-  const handleAuthSuccess = async (authUser: any) => {
+  const handleAuthSuccess = useCallback(async (authUser: any) => {
     logger.debug('🎉 Authentication successful:', authUser.email, 'ID:', authUser.id)
     // For demo users, directly call handleAuthUser since they won't go through Supabase
     if (authUser.isDemoUser || authUser.id?.startsWith('00000000-0000-0000-0000-00000000000')) {
@@ -158,9 +158,9 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       }
     }
     // For real Supabase users, the auth state listener will handle it
-  }
+  }, [])
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       logger.debug('🚪 Logging out...')
       await supabase.auth.signOut()
@@ -176,7 +176,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       // Don't set page to matrix on logout - preserve URL sharing
       logger.debug('📍 Not setting page to matrix on logout to preserve URL sharing')
     }
-  }
+  }, [setCurrentProject, setIdeas])
 
   // Initialize Supabase auth and handle session changes
   useEffect(() => {
