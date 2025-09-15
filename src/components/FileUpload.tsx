@@ -4,11 +4,10 @@ import { ProjectFile, User, Project, FileType } from '../types'
 import { logger } from '../utils/logger'
 import * as pdfjsLib from 'pdfjs-dist'
 
-// Configure PDF.js 2.x worker (much simpler than 5.x)
-// For version 2.x, we can use a simple CDN URL or disable workers entirely
+// Configure PDF.js 2.x worker using CDN (standard approach for 2.x)
 if (typeof window !== 'undefined') {
-  // PDF.js 2.x allows empty string to disable workers
-  pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+  // Use CDN worker for PDF.js 2.16.105 - this is the standard approach
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`
 }
 
 interface FileUploadProps {
@@ -98,8 +97,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
       logger.debug('🔄 Starting PDF text extraction for:', file.name)
       const arrayBuffer = await file.arrayBuffer()
       
-      // PDF.js 2.x configuration - much simpler
-      pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+      // Ensure PDF.js 2.x worker is configured properly
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`
       
       // Simple PDF.js 2.x document loading
       const pdf = await pdfjsLib.getDocument({
