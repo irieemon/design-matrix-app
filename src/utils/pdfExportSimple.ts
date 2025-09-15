@@ -762,27 +762,27 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       doc.setFillColor(color[0], color[1], color[2])
       doc.roundedRect(marginL, yPos, contentW, boxHeight, 3, 3, 'F')
       
-      // Phase number - use a square badge instead of circle
-      const badgeSize = 20
-      const badgeX = marginL + 8
-      const badgeY = yPos + 4
+      // Phase number - use a circle with proper sizing
+      const circleRadius = 12
+      const circleX = marginL + 15
+      const circleY = yPos + 14
       
       doc.setFillColor(white[0], white[1], white[2])
-      doc.roundedRect(badgeX, badgeY, badgeSize, badgeSize, 2, 2, 'F')
+      doc.circle(circleX, circleY, circleRadius, 'F')
       
-      // Phase number text
+      // Phase number text - properly centered
       doc.setTextColor(color[0], color[1], color[2])
-      doc.setFontSize(11)
+      doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
       const numText = phaseNum.toString()
       const numWidth = doc.getTextWidth(numText)
-      doc.text(numText, badgeX + (badgeSize - numWidth) / 2, badgeY + 14)
+      doc.text(numText, circleX - (numWidth / 2), circleY + 4)
       
       // Phase title and duration on same line
       doc.setTextColor(white[0], white[1], white[2])
-      doc.setFontSize(11)
+      doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
-      doc.text(title, badgeX + badgeSize + 8, yPos + 12)
+      doc.text(title, circleX + circleRadius + 8, yPos + 12)
       
       // Duration on same line, right aligned
       doc.setFontSize(9)
@@ -859,7 +859,7 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
         doc.setTextColor(darkText[0], darkText[1], darkText[2])
         doc.setFontSize(8)
         doc.setFont('helvetica', 'bold')
-        doc.text(labelLines, marginL + 8, yPos + 10)
+        doc.text(labelLines, marginL + 5, yPos + 10)
         
         // Content column (right)
         doc.setFontSize(8)
