@@ -60,10 +60,10 @@ const OverviewExportView: React.FC<OverviewExportViewProps> = ({
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-500'
-      case 'medium': return 'bg-yellow-500'
-      case 'low': return 'bg-blue-500'
-      default: return 'bg-gray-500'
+      case 'high': return '#dc2626'
+      case 'medium': return '#d97706'
+      case 'low': return '#2563eb'
+      default: return '#6b7280'
     }
   }
 
@@ -132,20 +132,31 @@ const OverviewExportView: React.FC<OverviewExportViewProps> = ({
                     return (
                       <div
                         key={feature.id}
-                        className="absolute top-1 rounded-md border-2 border-white shadow-sm flex items-center px-2 py-1"
                         style={{
+                          position: 'absolute',
                           left: `${leftPercent}%`,
                           width: `${widthPercent}%`,
+                          top: `${featureIndex * 18 + 4}px`,
+                          minHeight: '16px',
+                          fontSize: '10px',
                           backgroundColor: feature.priority === 'high' ? '#dc2626' : 
                                          feature.priority === 'medium' ? '#d97706' : '#2563eb',
                           color: 'white',
-                          top: `${featureIndex * 18 + 4}px`,
-                          minHeight: '16px',
-                          fontSize: '10px'
+                          borderRadius: '6px',
+                          border: '2px solid white',
+                          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '2px 8px'
                         }}
                       >
-                        <span className="mr-1">{getStatusIcon(feature.status)}</span>
-                        <span className="truncate font-medium">{feature.title}</span>
+                        <span style={{ marginRight: '4px' }}>{getStatusIcon(feature.status)}</span>
+                        <span style={{ 
+                          overflow: 'hidden', 
+                          textOverflow: 'ellipsis', 
+                          whiteSpace: 'nowrap',
+                          fontWeight: '500'
+                        }}>{feature.title}</span>
                       </div>
                     )
                   })}
@@ -169,7 +180,13 @@ const OverviewExportView: React.FC<OverviewExportViewProps> = ({
               return (
                 <div key={priority} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                   <div className="flex items-center">
-                    <div className={`w-4 h-4 rounded-full mr-3 ${getPriorityColor(priority)}`}></div>
+                    <div style={{ 
+                      width: '16px', 
+                      height: '16px', 
+                      borderRadius: '50%', 
+                      marginRight: '12px',
+                      backgroundColor: getPriorityColor(priority)
+                    }}></div>
                     <span className="font-medium capitalize">{priority} Priority</span>
                   </div>
                   <span className="text-gray-600 font-medium">{priorityFeatures.length}</span>
@@ -209,13 +226,20 @@ const OverviewExportView: React.FC<OverviewExportViewProps> = ({
                     <span className="font-medium capitalize">{status.replace('-', ' ')}</span>
                     <span className="text-gray-600">{statusFeatures.length} ({percentage}%)</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div style={{ 
+                    width: '100%', 
+                    backgroundColor: '#e5e7eb', 
+                    borderRadius: '9999px', 
+                    height: '8px' 
+                  }}>
                     <div 
-                      className={`h-2 rounded-full ${
-                        status === 'completed' ? 'bg-green-500' :
-                        status === 'in-progress' ? 'bg-blue-500' : 'bg-gray-400'
-                      }`}
-                      style={{ width: `${percentage}%` }}
+                      style={{ 
+                        height: '8px', 
+                        borderRadius: '9999px',
+                        width: `${percentage}%`,
+                        backgroundColor: status === 'completed' ? '#10b981' :
+                                       status === 'in-progress' ? '#3b82f6' : '#9ca3af'
+                      }}
                     ></div>
                   </div>
                 </div>

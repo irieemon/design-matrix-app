@@ -142,18 +142,25 @@ const TrackExportView: React.FC<TrackExportViewProps> = ({
               </div>
               <div className="flex-1 relative" style={{ height: '60px' }}>
                 <div
-                  className="absolute top-2 rounded-md shadow-sm flex items-center px-2 py-1 border-2 border-white"
                   style={{
+                    position: 'absolute',
+                    top: '8px',
                     left: `${(feature.startMonth / totalMonths) * 100}%`,
                     width: `${(feature.duration / totalMonths) * 100}%`,
                     backgroundColor: feature.priority === 'high' ? '#dc2626' : 
                                    feature.priority === 'medium' ? '#d97706' : '#2563eb',
                     color: 'white',
                     minHeight: '20px',
-                    fontSize: '11px'
+                    fontSize: '11px',
+                    borderRadius: '6px',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px 8px',
+                    border: '2px solid white'
                   }}
                 >
-                  <span className="font-medium">{feature.duration}m</span>
+                  <span style={{ fontWeight: '500' }}>{feature.duration}m</span>
                 </div>
               </div>
             </div>
