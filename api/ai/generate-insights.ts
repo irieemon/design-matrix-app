@@ -84,6 +84,7 @@ async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectN
     },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
+      seed: Math.floor(Math.random() * 1000000),
       messages: [
         {
           role: 'system',
@@ -154,6 +155,15 @@ This is a women's health platform in a $5.7B market growing 17.8% annually. Key 
 - Major regulatory requirements (HIPAA, privacy laws)
 - Opportunity in comprehensive health vs single-use tracking
 ` : ''}
+
+${getAntiRepetitionPrompt()}
+
+RESPONSE VARIETY REQUIREMENTS:
+- Each executiveSummary must use different industry data points and market angles  
+- keyInsights must focus on different strategic dimensions (financial, operational, competitive, technological)
+- Avoid using identical phrasing or statistics from previous analyses
+- priorityRecommendations should vary in focus area (customer, product, operations, market, technology)
+- Use different business model perspectives (B2B, B2C, marketplace, platform) as appropriate
 
 ===== PROJECT CONTEXT =====
 PROJECT: ${projectName}
@@ -268,6 +278,15 @@ This is a women's health platform in a $5.7B market growing 17.8% annually. Key 
 - Major regulatory requirements (HIPAA, privacy laws)
 - Opportunity in comprehensive health vs single-use tracking
 ` : ''}
+
+${getAntiRepetitionPrompt()}
+
+RESPONSE VARIETY REQUIREMENTS:
+- Each executiveSummary must use different industry data points and market angles  
+- keyInsights must focus on different strategic dimensions (financial, operational, competitive, technological)
+- Avoid using identical phrasing or statistics from previous analyses
+- priorityRecommendations should vary in focus area (customer, product, operations, market, technology)
+- Use different business model perspectives (B2B, B2C, marketplace, platform) as appropriate
 
 ===== PROJECT CONTEXT =====
 PROJECT: ${projectName}
@@ -403,8 +422,13 @@ Return ONLY a JSON object with this exact structure:
 
 // Dynamic prompt variation helpers to reduce repetitive AI responses
 function getRandomTemperature(): number {
-  const temperatures = [0.4, 0.5, 0.6, 0.7, 0.8]
+  const temperatures = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
   return temperatures[Math.floor(Math.random() * temperatures.length)]
+}
+
+// Generate unique session ID to prevent AI caching/repetition
+function generateUniqueSessionId(): string {
+  return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
 function getRandomAnalysisStyle(): string {
@@ -620,6 +644,24 @@ function getDocumentContextualPrompt(documentContext: any[]): string {
   ]
   
   return variations[Math.floor(Math.random() * variations.length)]
+}
+
+// Anti-repetition instructions
+function getAntiRepetitionPrompt(): string {
+  const sessionId = generateUniqueSessionId()
+  const prompts = [
+    `CRITICAL: This is analysis session ${sessionId}. Generate completely FRESH insights that avoid common consulting clichés. Do not mention "market opportunity", "competitive advantage", or "strategic positioning" unless absolutely essential. Focus on unexpected patterns and non-obvious insights.`,
+    
+    `UNIQUENESS REQUIRED: Session ${sessionId} demands original analysis. Avoid generic phrases like "leverage synergies", "optimize resources", or "drive growth". Instead, provide specific, actionable insights that feel personally crafted for this exact project.`,
+    
+    `FRESH PERSPECTIVE: Analysis session ${sessionId}. Break away from standard consulting language. Instead of "significant opportunity" say exactly what size/type. Instead of "enhance user engagement" explain the specific psychological or behavioral mechanism.`,
+    
+    `ORIGINALITY MANDATE: Session ${sessionId}. Your response must feel completely different from typical business analysis. Use concrete numbers, specific timelines, and unique angles. Avoid any phrase you might have used in previous analyses.`,
+    
+    `CREATIVITY BOOST: Session ${sessionId} requires unconventional strategic thinking. Challenge assumptions, identify contrarian opportunities, and provide insights that would surprise industry veterans. Think like a disruptor, not a consultant.`
+  ]
+  
+  return prompts[Math.floor(Math.random() * prompts.length)]
 }
 
 // Dynamic variations based on idea characteristics  
