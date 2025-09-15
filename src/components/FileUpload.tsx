@@ -4,8 +4,8 @@ import { ProjectFile, User, Project, FileType } from '../types'
 import { logger } from '../utils/logger'
 import * as pdfjsLib from 'pdfjs-dist'
 
-// Set PDF.js worker - use a more reliable CDN
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
+// Set PDF.js worker - use Mozilla's CDN which has better CORS support
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://mozilla.github.io/pdf.js/build/pdf.worker.min.js`
 
 interface FileUploadProps {
   currentProject: Project
@@ -92,7 +92,27 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const extractTextFromPDF = async (file: File): Promise<string> => {
     try {
       const arrayBuffer = await file.arrayBuffer()
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+      
+      // Try with worker first, fall back to fake worker if needed
+      let pdf
+      try {
+        pdf = await pdfjsLib.getDocument({ 
+          data: arrayBuffer,
+          useWorkerFetch: false,
+          isEvalSupported: false,
+          useSystemFonts: true
+        }).promise
+      } catch (workerError) {
+        logger.warn('PDF worker failed, trying without worker:', workerError)
+        // Disable worker and try again
+        pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+        pdf = await pdfjsLib.getDocument({ 
+          data: arrayBuffer,
+          useWorkerFetch: false,
+          isEvalSupported: false
+        }).promise
+      }
+      
       let fullText = ''
       
       // Extract text from all pages (limit to first 10 pages for performance)
@@ -107,7 +127,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       return fullText.trim()
     } catch (error) {
       logger.warn('Could not extract text from PDF:', error)
-      return ''
+      return `[PDF document: ${file.name} - PDF text extraction not available, but file uploaded successfully for AI reference]`
     }
   }
 
