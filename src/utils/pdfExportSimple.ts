@@ -938,7 +938,7 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
         .replace(/\u2026/g, '...')
       
       const lines = doc.splitTextToSize(cleanContent, contentW - 40)
-      const boxHeight = Math.max(55, lines.length * 13 + 35)
+      const boxHeight = Math.max(65, lines.length * 14 + 45)
       
       // Subtle background with elegant border
       doc.setFillColor(bgColor[0], bgColor[1], bgColor[2])
