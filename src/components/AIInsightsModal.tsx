@@ -193,7 +193,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
 
   const handleDownloadPDF = () => {
     if (insights) {
-      exportInsightsToPDF(insights, (ideas || []).length, currentProject)
+      exportInsightsToPDF(insights, (ideas || []).length, currentProject, filesWithContent)
     }
   }
 
