@@ -752,63 +752,59 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       }
     }
 
-    // Compact professional phase box creator
+    // Professional phase block inspired by strategic plan templates
     const createPhaseBox = (phaseNum: number, title: string, duration: string, content: string, color: number[]) => {
-      pageBreak(60)
+      pageBreak(50)
       
-      const boxHeight = 28  // More compact
+      // Clean, professional phase header block
+      const headerHeight = 24
       
-      // Main colored box with rounded corners
+      // Main header block - simple rectangle with clean typography
       doc.setFillColor(color[0], color[1], color[2])
-      doc.roundedRect(marginL, yPos, contentW, boxHeight, 3, 3, 'F')
+      doc.rect(marginL, yPos, contentW, headerHeight, 'F')
       
-      // Phase number - use a circle with proper sizing
-      const circleRadius = 12
-      const circleX = marginL + 15
-      const circleY = yPos + 14
-      
-      doc.setFillColor(white[0], white[1], white[2])
-      doc.circle(circleX, circleY, circleRadius, 'F')
-      
-      // Phase number text - properly centered
-      doc.setTextColor(color[0], color[1], color[2])
-      doc.setFontSize(12)
-      doc.setFont('helvetica', 'bold')
-      const numText = phaseNum.toString()
-      const numWidth = doc.getTextWidth(numText)
-      doc.text(numText, circleX - (numWidth / 2), circleY + 4)
-      
-      // Phase title and duration on same line
+      // Phase number as simple text - no circle/badge
       doc.setTextColor(white[0], white[1], white[2])
-      doc.setFontSize(12)
+      doc.setFontSize(14)
       doc.setFont('helvetica', 'bold')
-      doc.text(title, circleX + circleRadius + 8, yPos + 12)
+      doc.text(`${phaseNum}.`, marginL + 10, yPos + 16)
       
-      // Duration on same line, right aligned
-      doc.setFontSize(9)
+      // Phase title - clean and prominent
+      doc.setFontSize(13)
+      doc.setFont('helvetica', 'bold')
+      doc.text(title.toUpperCase(), marginL + 30, yPos + 16)
+      
+      // Duration - right aligned
+      doc.setFontSize(11)
       doc.setFont('helvetica', 'normal')
       const durationWidth = doc.getTextWidth(duration)
-      doc.text(duration, marginL + contentW - durationWidth - 8, yPos + 22)
+      doc.text(duration, marginL + contentW - durationWidth - 10, yPos + 16)
       
-      yPos += boxHeight + 4
+      yPos += headerHeight + 3
       
-      // Compact content description
+      // Content area - clean white background with subtle border
       doc.setTextColor(darkText[0], darkText[1], darkText[2])
-      doc.setFontSize(8)
+      doc.setFontSize(9)
       doc.setFont('helvetica', 'normal')
       const contentLines = doc.splitTextToSize(content, contentW - 20)
       
-      // Simple content area with left accent
-      doc.setFillColor(lightGray[0], lightGray[1], lightGray[2])
-      const contentHeight = contentLines.length * 9 + 8
+      // White content area with subtle border
+      const contentHeight = Math.max(contentLines.length * 11 + 12, 24)
+      doc.setFillColor(white[0], white[1], white[2])
       doc.rect(marginL, yPos, contentW, contentHeight, 'F')
       
-      // Colored left accent
-      doc.setFillColor(color[0], color[1], color[2])
-      doc.rect(marginL, yPos, 3, contentHeight, 'F')
+      // Subtle border
+      doc.setDrawColor(220, 220, 220)
+      doc.setLineWidth(0.5)
+      doc.rect(marginL, yPos, contentW, contentHeight, 'S')
       
-      doc.text(contentLines, marginL + 8, yPos + 6)
-      yPos += contentHeight + 8
+      // Left accent bar - matching phase color
+      doc.setFillColor(color[0], color[1], color[2])
+      doc.rect(marginL, yPos, 4, contentHeight, 'F')
+      
+      // Content text
+      doc.text(contentLines, marginL + 12, yPos + 12)
+      yPos += contentHeight + 12
     }
 
     // Template-style table function
