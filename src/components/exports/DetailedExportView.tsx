@@ -41,6 +41,7 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
   startDate = new Date(),
   projectType = 'software'
 }) => {
+  console.log('🏁 DetailedExportView component started with:', { featuresLength: features.length, title, projectType })
   // Generate contextual team lanes based on project type and features
   const getContextualTeamLanes = (): TeamLane[] => {
     const type = projectType.toLowerCase()
@@ -110,6 +111,23 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
 
   const teamLanes = getContextualTeamLanes()
 
+  // Debug logging
+  console.log('🔧 DetailedExportView Debug:', {
+    featuresCount: features.length,
+    teamLanesCount: teamLanes.length,
+    projectType,
+    teamLanes: teamLanes.map(t => ({ id: t.id, name: t.name })),
+    features: features.map(f => ({ 
+      id: f.id, 
+      title: f.title, 
+      team: f.team, 
+      startMonth: f.startMonth, 
+      duration: f.duration,
+      allFields: Object.keys(f) 
+    })),
+    firstFeatureAllFields: Object.keys(features[0] || {})
+  })
+
   // Generate months starting from startDate
   const generateMonths = (count: number) => {
     const months = []
@@ -163,51 +181,64 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
     return rows
   }
 
-  // Get color classes based on priority and status
+  // Get color classes based on priority and status - with fallbacks for AI-generated features
   const getFeatureStyles = (priority: string, status: string) => {
-    let bgColor = 'bg-gray-200'
-    let textColor = 'text-gray-700'
-    let borderColor = 'border-gray-300'
+    // Default to visible colors that will always work
+    let bgColor = 'bg-blue-500'
+    let textColor = 'text-white'
+    let borderColor = 'border-blue-600'
 
-    if (status === 'completed') {
-      bgColor = 'bg-gray-400'
+    // Safe priority/status handling with fallbacks
+    const safePriority = priority || 'medium'
+    const safeStatus = status || 'planned'
+
+    if (safeStatus === 'completed') {
+      bgColor = 'bg-green-500'
       textColor = 'text-white'
-      borderColor = 'border-gray-500'
-    } else if (status === 'in-progress') {
-      switch (priority) {
+      borderColor = 'border-green-600'
+    } else if (safeStatus === 'in-progress') {
+      switch (safePriority) {
         case 'high':
           bgColor = 'bg-red-500'
           textColor = 'text-white'
           borderColor = 'border-red-600'
           break
         case 'medium':
-          bgColor = 'bg-yellow-400'
-          textColor = 'text-gray-900'
-          borderColor = 'border-yellow-500'
+          bgColor = 'bg-orange-500'
+          textColor = 'text-white'
+          borderColor = 'border-orange-600'
+          break
+        case 'low':
+          bgColor = 'bg-blue-500'
+          textColor = 'text-white'
+          borderColor = 'border-blue-600'
+          break
+        default:
+          bgColor = 'bg-purple-500'
+          textColor = 'text-white'
+          borderColor = 'border-purple-600'
+      }
+    } else { // planned or unknown
+      switch (safePriority) {
+        case 'high':
+          bgColor = 'bg-red-400'
+          textColor = 'text-white'
+          borderColor = 'border-red-500'
+          break
+        case 'medium':
+          bgColor = 'bg-yellow-500'
+          textColor = 'text-white'
+          borderColor = 'border-yellow-600'
           break
         case 'low':
           bgColor = 'bg-blue-400'
           textColor = 'text-white'
           borderColor = 'border-blue-500'
           break
-      }
-    } else { // planned
-      switch (priority) {
-        case 'high':
-          bgColor = 'bg-red-200'
-          textColor = 'text-red-800'
-          borderColor = 'border-red-300'
-          break
-        case 'medium':
-          bgColor = 'bg-yellow-200'
-          textColor = 'text-yellow-800'
-          borderColor = 'border-yellow-300'
-          break
-        case 'low':
-          bgColor = 'bg-blue-200'
-          textColor = 'text-blue-800'
-          borderColor = 'border-blue-300'
-          break
+        default:
+          bgColor = 'bg-gray-500'
+          textColor = 'text-white'
+          borderColor = 'border-gray-600'
       }
     }
 
@@ -260,6 +291,13 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
           const maxRows = Math.max(1, ...Object.values(featureRows), 0) + 1
           const laneHeight = Math.max(140, maxRows * 40 + 40)
           
+          console.log(`🔍 Team ${team.id} (${team.name}):`, {
+            teamFeatures: teamFeatures.map(f => ({ id: f.id, title: f.title, startMonth: f.startMonth, duration: f.duration })),
+            featureRows,
+            maxRows,
+            laneHeight
+          })
+          
           return (
             <div key={team.id} className="flex" style={{ minHeight: `${laneHeight}px` }}>
               <div className={`w-48 ${team.bgColor} border-r-2 border-gray-200 flex items-center px-4`}>
@@ -285,10 +323,21 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
                 {/* Features */}
                 <div className="relative h-full px-2 pt-2">
                   {teamFeatures.map((feature) => {
-                    const styles = getFeatureStyles(feature.priority, feature.status)
+                    const styles = getFeatureStyles(feature.priority || 'medium', feature.status || 'planned')
                     const monthWidth = 100 / 12
                     const left = feature.startMonth * monthWidth
                     const width = feature.duration * monthWidth
+                    
+                    console.log(`📍 Rendering feature ${feature.id} (${feature.title}):`, {
+                      startMonth: feature.startMonth,
+                      duration: feature.duration,
+                      left: `${left}%`,
+                      width: `${Math.min(width, 100 - left)}%`,
+                      top: `${(featureRows[feature.id] || 0) * 36 + 16}px`,
+                      priority: feature.priority,
+                      status: feature.status,
+                      styles
+                    })
                     
                     return (
                       <div

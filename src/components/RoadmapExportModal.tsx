@@ -62,6 +62,9 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
       // Check if we have any features to export
       console.log('🚀 Starting export with features count:', features.length)
       console.log('🚀 Features data:', features)
+      console.log('🚀 First feature sample:', features[0])
+      console.log('🚀 Project type:', projectType)
+      console.log('🚀 Export mode:', exportMode)
       
       if (features.length === 0) {
         alert('No roadmap features found to export. Please click "Load Sample Data" first to populate the roadmap, then try exporting again.')
