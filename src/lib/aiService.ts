@@ -352,7 +352,22 @@ class SecureAIService {
         'projected annual growth rate of 17.8%',
         'north american market leads with a 38% share',
         'behavioral economics to reduce the typical 70% user churn',
-        'competitive edge against major players like flo, clue, and natural cycles'
+        'competitive edge against major players like flo, clue, and natural cycles',
+        '$500,000',
+        '$500k',
+        'invest $500',
+        'investment of $500',
+        'developing proprietary analytics capabilities',
+        'join long-term competitive advantages through data',
+        'shs summer marketing campaign',
+        'untapped social channels',
+        'under-utilized social platforms',
+        'micro-influencers and behavioral-based segments',
+        'quick wins strategy',
+        'strategic initiatives',
+        'immediate insights',
+        'hyper-personalized content engine',
+        'influencer collaboration platform'
       ]
       
       const hasTemplateContent = templateIndicators.some(indicator => insightsText.includes(indicator))
@@ -493,7 +508,7 @@ class SecureAIService {
     const primaryTheme = keyThemes[0] || 'growth'
     
     return {
-      executiveSummary: `Strategic analysis of ${ideaCount} initiatives for ${projectName} reveals focused opportunities in ${mainFocus}${specificFocus.length > 1 ? ` and ${specificFocus[1]}` : ''}. Key ideas like "${topIdeas[0]?.content || 'core features'}" and "${topIdeas[1]?.content || 'user experience'}" position ${projectName} for ${primaryTheme} in the ${marketContext}${hasFiles ? `, supported by ${documentContext.length} uploaded documents` : ''}.`,
+      executiveSummary: `Analysis of ${ideaCount} ideas for ${projectName} shows specific opportunities in ${mainFocus}${specificFocus.length > 1 ? ` and ${specificFocus[1]}` : ''}. Based on your actual project ideas like "${topIdeas[0]?.content || 'core features'}" and "${topIdeas[1]?.content || 'user experience'}", this ${industry} project focuses on practical ${primaryTheme} implementation${hasFiles ? ` with ${documentContext.length} supporting documents providing additional context` : ''}.`,
       
       keyInsights: [
         {
@@ -574,9 +589,9 @@ class SecureAIService {
       
       resourceAllocation: {
         quickWins: hasFiles 
-          ? `Deploy 30% of resources to document-validated ${focus} quick wins and ${industry} validation initiatives.`
-          : `Deploy 30% of resources to high-velocity ${industry} validation and ${focus} improvement initiatives.`,
-        strategic: `Invest 70% of capital in scalable ${focus} infrastructure, strategic partnerships, and competitive differentiation within ${industry} sector.`
+          ? `Focus initial efforts on implementing "${topIdeas[0]?.content || 'priority features'}" using insights from uploaded documentation.`
+          : `Prioritize immediate implementation of "${topIdeas[0]?.content || 'core features'}" and "${topIdeas[1]?.content || 'key functionality'}" for early ${primaryTheme}.`,
+        strategic: `Build sustainable ${focus} around successful features like "${topIdeas[0]?.content || 'main functionality'}", focusing on ${industry} best practices and user needs.`
       },
       
       futureEnhancements: hasFiles 
