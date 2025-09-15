@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { RoadmapExporter } from '../utils/roadmapExport'
 import OverviewExportView from './exports/OverviewExportView'
 import TrackExportView from './exports/TrackExportView'
+import DetailedExportView from './exports/DetailedExportView'
 
 interface RoadmapFeature {
   id: string
@@ -59,113 +60,121 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
     
     try {
       // Check if we have any features to export
+      console.log('🚀 Starting export with features count:', features.length)
+      console.log('🚀 Features data:', features)
+      
       if (features.length === 0) {
-        alert('No roadmap features found to export. Please add some features first.')
+        alert('No roadmap features found to export. Please click "Load Sample Data" first to populate the roadmap, then try exporting again.')
         return
       }
 
-      if (exportMode === 'detailed') {
-        // For detailed mode, capture the current roadmap view
-        // Try timeline content first, then fall back to full roadmap
-        let roadmapElement = document.querySelector('[data-timeline-content]') as HTMLElement
-        if (!roadmapElement) {
-          roadmapElement = document.querySelector('[data-roadmap-export]') as HTMLElement
-        }
-        
-        if (roadmapElement) {
-          console.log('Exporting detailed view from element:', roadmapElement.className)
-          await RoadmapExporter.exportDetailed(roadmapElement, title, exportFormat)
-        } else {
-          throw new Error('Roadmap element not found for export')
-        }
+      // For all modes, use off-screen rendering for consistency and reliability
+      console.log('📦 Creating off-screen container for export...')
+      
+      const container = document.createElement('div')
+      container.style.position = 'fixed'
+      container.style.left = '-9999px'  // Hidden off-screen
+      container.style.top = '0'
+      container.style.width = '1400px'
+      container.style.height = '1000px'
+      container.style.backgroundColor = 'white'
+      container.style.zIndex = '-1'
+      container.style.overflow = 'hidden'
+      document.body.appendChild(container)
+      
+      let exportComponent: React.ReactElement
+      let exportMethodName = ''
+      
+      if (exportMode === 'overview') {
+        exportComponent = (
+          <OverviewExportView
+            features={features}
+            title={title}
+            subtitle={subtitle}
+            startDate={startDate}
+            projectType={projectType}
+          />
+        )
+        exportMethodName = 'exportOverview'
+      } else if (exportMode === 'detailed') {
+        exportComponent = (
+          <DetailedExportView
+            features={features}
+            title={title}
+            subtitle={subtitle}
+            startDate={startDate}
+            projectType={projectType}
+          />
+        )
+        exportMethodName = 'exportDetailed'
+      } else if (exportMode === 'track' && selectedTeam) {
+        exportComponent = (
+          <TrackExportView
+            features={features}
+            teamName={selectedTeam}
+            title={title}
+            subtitle={subtitle}
+            startDate={startDate}
+            projectType={projectType}
+          />
+        )
+        exportMethodName = 'exportTrack'
       } else {
-        // For overview and track modes, we'll render the export view in a hidden div
-        const container = document.createElement('div')
-        container.style.position = 'fixed'
-        container.style.left = '-9999px'  // Hidden off-screen
-        container.style.top = '0'
-        container.style.width = '1400px'
-        container.style.height = '1000px'
-        container.style.backgroundColor = 'white'
-        container.style.zIndex = '-1'
-        container.style.overflow = 'hidden'
-        document.body.appendChild(container)
-        
-        let exportComponent: React.ReactElement
-        
-        if (exportMode === 'overview') {
-          exportComponent = (
-            <OverviewExportView
-              features={features}
-              title={title}
-              subtitle={subtitle}
-              startDate={startDate}
-              projectType={projectType}
-            />
-          )
-        } else if (exportMode === 'track' && selectedTeam) {
-          exportComponent = (
-            <TrackExportView
-              features={features}
-              teamName={selectedTeam}
-              title={title}
-              subtitle={subtitle}
-              startDate={startDate}
-              projectType={projectType}
-            />
-          )
-        } else {
-          throw new Error('Invalid export mode or missing team selection')
-        }
-        
-        // Use React to render the export view
-        const { createRoot } = await import('react-dom/client')
-        const root = createRoot(container)
-        
-        // Render and wait for it to complete
-        await new Promise<void>((resolve, reject) => {
-          try {
-            console.log('Rendering export component...')
-            root.render(exportComponent)
-            
-            // Wait longer for styles to load and render
-            setTimeout(() => {
-              console.log('Checking rendered content...')
-              console.log('Container children count:', container.children.length)
-              console.log('Container innerHTML length:', container.innerHTML.length)
-              
-              // Ensure the content is actually rendered
-              if (container.children.length > 0 && container.innerHTML.length > 100) {
-                console.log('Content successfully rendered')
-                resolve()
-              } else {
-                console.error('Content not properly rendered')
-                reject(new Error(`Content not rendered - children: ${container.children.length}, innerHTML: ${container.innerHTML.length}`))
-              }
-            }, 2000)  // Increased wait time
-          } catch (error) {
-            console.error('Error during render:', error)
-            reject(error)
-          }
-        })
-        
-        const exportElement = container.firstElementChild as HTMLElement
-        
-        if (!exportElement) {
-          throw new Error('Export element not found')
-        }
-        
-        // Export the rendered element
-        if (exportMode === 'overview') {
-          await RoadmapExporter.exportOverview(exportElement, title, exportFormat)
-        } else if (exportMode === 'track' && selectedTeam) {
-          await RoadmapExporter.exportTrack(exportElement, selectedTeam, title, exportFormat)
-        }
-        
-        // Cleanup
-        root.unmount()
-        document.body.removeChild(container)
+        throw new Error('Invalid export mode or missing team selection')
       }
+      
+      console.log(`🎨 Rendering ${exportMode} export component...`)
+      
+      // Use React to render the export view
+      const { createRoot } = await import('react-dom/client')
+      const root = createRoot(container)
+      
+      // Render and wait for it to complete
+      await new Promise<void>((resolve, reject) => {
+        try {
+          root.render(exportComponent)
+          
+          // Wait for styles to load and render
+          setTimeout(() => {
+            console.log('✅ Checking rendered content...')
+            console.log('📊 Container children count:', container.children.length)
+            console.log('📄 Container innerHTML length:', container.innerHTML.length)
+            
+            if (container.children.length > 0 && container.innerHTML.length > 100) {
+              console.log('🎉 Content successfully rendered')
+              resolve()
+            } else {
+              console.error('❌ Content not properly rendered')
+              reject(new Error(`Content not rendered - children: ${container.children.length}, innerHTML: ${container.innerHTML.length}`))
+            }
+          }, 2000)  // Wait for rendering
+        } catch (error) {
+          console.error('❌ Error during render:', error)
+          reject(error)
+        }
+      })
+      
+      const exportElement = container.firstElementChild as HTMLElement
+      
+      if (!exportElement) {
+        throw new Error('Export element not found')
+      }
+      
+      console.log(`📤 Exporting using ${exportMethodName}...`)
+      
+      // Export the rendered element using the appropriate method
+      if (exportMode === 'overview') {
+        await RoadmapExporter.exportOverview(exportElement, title, exportFormat)
+      } else if (exportMode === 'detailed') {
+        await RoadmapExporter.exportDetailed(exportElement, title, exportFormat)
+      } else if (exportMode === 'track' && selectedTeam) {
+        await RoadmapExporter.exportTrack(exportElement, selectedTeam, title, exportFormat)
+      }
+      
+      // Cleanup
+      console.log('🧹 Cleaning up...')
+      root.unmount()
+      document.body.removeChild(container)
       
     } catch (error) {
       console.error('Export failed:', error)

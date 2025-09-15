@@ -415,6 +415,17 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   }
 
   const teamLanes = getContextualTeamLanes()
+  
+  // Debug logging
+  React.useEffect(() => {
+    console.log('🏗️ TimelineRoadmap render:', {
+      featuresCount: features.length,
+      teamLanesCount: teamLanes.length,
+      projectType,
+      teamLanes: teamLanes.map(t => ({ id: t.id, name: t.name })),
+      features: features.map(f => ({ id: f.id, title: f.title, team: f.team }))
+    })
+  }, [features, teamLanes, projectType])
 
   // Generate months starting from startDate
   const generateMonths = (count: number) => {
