@@ -79,7 +79,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
     }
     
     try {
-      const projectFilesData = localStorage.getItem('projectFiles')
+      const projectFilesData = localStorage.getItem('project-files')
       logger.debug('📁 Raw projectFiles from localStorage:', projectFilesData ? 'found' : 'not found')
       
       if (projectFilesData) {
