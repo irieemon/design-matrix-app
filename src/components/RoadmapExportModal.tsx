@@ -55,28 +55,33 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
   if (!isOpen) return null
 
   const handleExport = async () => {
-    if (!exportRef.current) return
-
     setIsExporting(true)
     
     try {
-      // Create the export view based on mode
-      let exportElement: HTMLElement | null = null
-      
-      if (exportMode === 'overview') {
-        // Create overview export element
+      if (exportMode === 'detailed') {
+        // For detailed mode, capture the current roadmap view
+        const roadmapElement = document.querySelector('[data-roadmap-export]') as HTMLElement
+        if (roadmapElement) {
+          await RoadmapExporter.exportDetailed(roadmapElement, title, exportFormat)
+        }
+      } else {
+        // For overview and track modes, we'll render the export view in a hidden div
         const container = document.createElement('div')
-        container.style.position = 'absolute'
-        container.style.left = '-9999px'
-        container.style.top = '0'
+        container.style.position = 'fixed'
+        container.style.left = '50px'  // Temporarily visible for debugging
+        container.style.top = '50px'
+        container.style.width = '1400px'
+        container.style.height = '1000px'
+        container.style.backgroundColor = 'white'
+        container.style.zIndex = '9999'
+        container.style.border = '2px solid red'  // Debug border
+        container.style.overflow = 'hidden'
         document.body.appendChild(container)
         
-        // Use React to render the export view
-        const { createRoot } = await import('react-dom/client')
-        const root = createRoot(container)
+        let exportComponent: React.ReactElement
         
-        await new Promise<void>((resolve) => {
-          root.render(
+        if (exportMode === 'overview') {
+          exportComponent = (
             <OverviewExportView
               features={features}
               title={title}
@@ -85,33 +90,8 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
               projectType={projectType}
             />
           )
-          // Wait for render
-          setTimeout(resolve, 500)
-        })
-        
-        exportElement = container.firstElementChild as HTMLElement
-        
-        if (exportElement) {
-          await RoadmapExporter.exportOverview(exportElement, title, exportFormat)
-        }
-        
-        // Cleanup
-        root.unmount()
-        document.body.removeChild(container)
-        
-      } else if (exportMode === 'track' && selectedTeam) {
-        // Create track export element
-        const container = document.createElement('div')
-        container.style.position = 'absolute'
-        container.style.left = '-9999px'
-        container.style.top = '0'
-        document.body.appendChild(container)
-        
-        const { createRoot } = await import('react-dom/client')
-        const root = createRoot(container)
-        
-        await new Promise<void>((resolve) => {
-          root.render(
+        } else if (exportMode === 'track' && selectedTeam) {
+          exportComponent = (
             <TrackExportView
               features={features}
               teamName={selectedTeam}
@@ -121,29 +101,62 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
               projectType={projectType}
             />
           )
-          setTimeout(resolve, 500)
+        } else {
+          throw new Error('Invalid export mode or missing team selection')
+        }
+        
+        // Use React to render the export view
+        const { createRoot } = await import('react-dom/client')
+        const root = createRoot(container)
+        
+        // Render and wait for it to complete
+        await new Promise<void>((resolve, reject) => {
+          try {
+            console.log('Rendering export component...')
+            root.render(exportComponent)
+            
+            // Wait longer for styles to load and render
+            setTimeout(() => {
+              console.log('Checking rendered content...')
+              console.log('Container children count:', container.children.length)
+              console.log('Container innerHTML length:', container.innerHTML.length)
+              
+              // Ensure the content is actually rendered
+              if (container.children.length > 0 && container.innerHTML.length > 100) {
+                console.log('Content successfully rendered')
+                resolve()
+              } else {
+                console.error('Content not properly rendered')
+                reject(new Error(`Content not rendered - children: ${container.children.length}, innerHTML: ${container.innerHTML.length}`))
+              }
+            }, 2000)  // Increased wait time
+          } catch (error) {
+            console.error('Error during render:', error)
+            reject(error)
+          }
         })
         
-        exportElement = container.firstElementChild as HTMLElement
+        const exportElement = container.firstElementChild as HTMLElement
         
-        if (exportElement) {
+        if (!exportElement) {
+          throw new Error('Export element not found')
+        }
+        
+        // Export the rendered element
+        if (exportMode === 'overview') {
+          await RoadmapExporter.exportOverview(exportElement, title, exportFormat)
+        } else if (exportMode === 'track' && selectedTeam) {
           await RoadmapExporter.exportTrack(exportElement, selectedTeam, title, exportFormat)
         }
         
+        // Cleanup
         root.unmount()
         document.body.removeChild(container)
-        
-      } else if (exportMode === 'detailed') {
-        // For detailed mode, capture the current roadmap view
-        const roadmapElement = document.querySelector('[data-roadmap-export]') as HTMLElement
-        if (roadmapElement) {
-          await RoadmapExporter.exportDetailed(roadmapElement, title, exportFormat)
-        }
       }
       
     } catch (error) {
       console.error('Export failed:', error)
-      alert('Export failed. Please try again.')
+      alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`)
     } finally {
       setIsExporting(false)
     }

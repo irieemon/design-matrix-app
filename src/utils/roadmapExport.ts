@@ -45,8 +45,17 @@ export class RoadmapExporter {
       backgroundColor: '#ffffff',
       allowTaint: true,
       foreignObjectRendering: true,
+      logging: false,
+      removeContainer: true,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: element.scrollWidth || 1400,
+      windowHeight: element.scrollHeight || 1000,
       ...options
     }
+
+    // Wait a bit for any lazy-loaded content
+    await new Promise(resolve => setTimeout(resolve, 100))
 
     return html2canvas(element, defaultOptions)
   }
@@ -94,6 +103,14 @@ export class RoadmapExporter {
     options: ExportOptions
   ): Promise<void> {
     try {
+      console.log('Starting export with options:', options)
+      console.log('Element dimensions:', {
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+        scrollWidth: element.scrollWidth,
+        scrollHeight: element.scrollHeight
+      })
+
       // Show loading state
       const loadingOverlay = document.createElement('div')
       loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
@@ -106,24 +123,35 @@ export class RoadmapExporter {
       document.body.appendChild(loadingOverlay)
 
       // Wait a bit for the loading overlay to render
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise(resolve => setTimeout(resolve, 200))
 
+      console.log('Capturing element...')
+      
       // Capture the element
       const canvas = await this.captureElement(element, {
-        scale: options.mode === 'detailed' ? 3 : 2,
-        width: element.scrollWidth,
-        height: element.scrollHeight
+        scale: options.mode === 'detailed' ? 2 : 2,
+        width: Math.max(element.offsetWidth, element.scrollWidth, 1400),
+        height: Math.max(element.offsetHeight, element.scrollHeight, 1000)
+      })
+
+      console.log('Canvas created:', {
+        width: canvas.width,
+        height: canvas.height
       })
 
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
       const filename = `roadmap-${options.mode}-${timestamp}`
 
       if (options.format === 'pdf') {
+        console.log('Creating PDF...')
         const pdf = this.createPDF(canvas, options)
         pdf.save(`${filename}.pdf`)
       } else {
+        console.log('Creating PNG...')
         this.downloadCanvas(canvas, filename, options.format)
       }
+
+      console.log('Export completed successfully')
 
       // Remove loading overlay
       document.body.removeChild(loadingOverlay)
@@ -137,7 +165,8 @@ export class RoadmapExporter {
       }
       
       // Show error message
-      alert('Export failed. Please try again.')
+      alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`)
+      throw error
     }
   }
 
