@@ -96,6 +96,8 @@ Avoid generic business templates. Instead, provide thoughtful analysis that some
 
 Write conversationally and insightfully, like you're advising a founder or product team who knows their domain well.
 
+IMPORTANT: Respond ONLY with valid JSON. Do not include any explanatory text before or after the JSON.
+
 Provide your analysis as a JSON object with these sections:
 {
   "executiveSummary": "Your strategic overview of what you see in this project",
@@ -188,8 +190,26 @@ What insights jump out at you? What should we be prioritizing or watching out fo
       cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '')
     }
     
+    console.log('Attempting to parse cleaned content:', cleanContent.substring(0, 300) + '...')
     const parsed = JSON.parse(cleanContent)
     console.log('OpenAI parsed response keys:', Object.keys(parsed))
+    
+    // Validate the response has the expected structure
+    if (!parsed.executiveSummary || !parsed.keyInsights) {
+      console.warn('OpenAI response missing expected fields, attempting to fix...')
+      // Return a basic structure if parsing succeeded but fields are missing
+      return {
+        executiveSummary: parsed.executiveSummary || 'Strategic analysis pending review.',
+        keyInsights: parsed.keyInsights || [{ insight: 'Analysis in progress', impact: 'Detailed insights will be provided.' }],
+        priorityRecommendations: parsed.priorityRecommendations || { immediate: [], shortTerm: [], longTerm: [] },
+        riskAssessment: parsed.riskAssessment || { highRisk: [], opportunities: [] },
+        suggestedRoadmap: parsed.suggestedRoadmap || [],
+        resourceAllocation: parsed.resourceAllocation || { quickWins: '', strategic: '' },
+        futureEnhancements: parsed.futureEnhancements || [],
+        nextSteps: parsed.nextSteps || []
+      }
+    }
+    
     return parsed
   } catch (parseError) {
     console.error('Failed to parse OpenAI response:', parseError)
