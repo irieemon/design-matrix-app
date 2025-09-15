@@ -341,21 +341,46 @@ class SecureAIService {
         responseSize: JSON.stringify(insights).length
       })
       
-      // Check if API returned inappropriate hardcoded content
+      // Check if API returned generic template content that doesn't match project context
       const insightsText = JSON.stringify(insights).toLowerCase()
-      const inappropriateKeywords = ['women', 'menstrual', 'flo', 'clue', 'churn rate', 'behavioral interventions']
-      const hasInappropriateContent = inappropriateKeywords.some(keyword => insightsText.includes(keyword))
+      const projectText = `${requestPayload.projectName} ${requestPayload.projectType}`.toLowerCase()
+      
+      // Check for specific hardcoded template indicators that suggest inappropriate content
+      const templateIndicators = [
+        'within the $5.7 billion women\'s health app market',
+        'focusing on untapped areas beyond the oversaturated menstrual tracking segment',
+        'projected annual growth rate of 17.8%',
+        'north american market leads with a 38% share',
+        'behavioral economics to reduce the typical 70% user churn',
+        'competitive edge against major players like flo, clue, and natural cycles'
+      ]
+      
+      const hasTemplateContent = templateIndicators.some(indicator => insightsText.includes(indicator))
+      
+      // Also check if content is about women's health but project isn't
+      const isWomensHealthContent = insightsText.includes('women\'s health') || 
+                                   insightsText.includes('menstrual') || 
+                                   insightsText.includes('behavioral interventions to reduce churn')
+      const isWomensHealthProject = projectText.includes('women') || 
+                                   projectText.includes('health') || 
+                                   projectText.includes('menstrual') ||
+                                   projectText.includes('female')
+      
+      const hasInappropriateContent = hasTemplateContent || (isWomensHealthContent && !isWomensHealthProject)
       
       if (hasInappropriateContent) {
-        logger.error('❌ AI API returned inappropriate hardcoded content (women\'s health instead of project-specific insights)')
-        logger.warn('🔧 Using project-specific mock insights instead of inappropriate API response')
-        logger.warn('🐛 SERVER BUG: AI API is returning hardcoded women\'s health content instead of generating insights for:', {
+        logger.error('❌ AI API returned hardcoded template content that doesn\'t match project context')
+        logger.warn('🔧 Using project-specific insights instead of generic template response')
+        logger.warn('🐛 SERVER BUG: AI API is returning template content instead of generating insights for:', {
           projectName: requestPayload.projectName,
           projectType: requestPayload.projectType,
-          inappropriateKeywords: inappropriateKeywords.filter(keyword => insightsText.includes(keyword))
+          isWomensHealthContent,
+          isWomensHealthProject,
+          hasTemplateContent,
+          detectedTemplates: templateIndicators.filter(indicator => insightsText.includes(indicator))
         })
         
-        // Return project-specific mock insights instead of inappropriate content
+        // Return project-specific mock insights instead of template content
         return this.generateProjectSpecificMockInsights(ideas, requestPayload.projectName, requestPayload.projectType, documentContext || [])
       }
 
