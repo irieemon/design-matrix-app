@@ -39,29 +39,76 @@ export class RoadmapExporter {
     width?: number
     height?: number
   } = {}): Promise<HTMLCanvasElement> {
+    console.log('Capturing element with computed styles...')
+    
+    // Get computed styles to ensure visibility
+    const computedStyle = window.getComputedStyle(element)
+    console.log('Element visibility:', computedStyle.visibility)
+    console.log('Element display:', computedStyle.display)
+    console.log('Element opacity:', computedStyle.opacity)
+    
     const defaultOptions = {
       scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff',
       allowTaint: true,
-      foreignObjectRendering: true,
-      logging: false,
-      removeContainer: true,
+      foreignObjectRendering: false, // Try without this first
+      logging: true, // Enable for debugging
+      removeContainer: false,
       scrollX: 0,
       scrollY: 0,
-      windowWidth: element.scrollWidth || 1400,
-      windowHeight: element.scrollHeight || 1000,
+      x: 0,
+      y: 0,
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+      ignoreElements: (element: Element) => {
+        // Ignore certain problematic elements
+        return element.classList.contains('fixed') || 
+               element.classList.contains('absolute') ||
+               element.tagName === 'IFRAME'
+      },
       ...options
     }
 
+    console.log('html2canvas options:', defaultOptions)
+
     // Wait a bit for any lazy-loaded content
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 300))
 
     return html2canvas(element, defaultOptions)
   }
 
   private static createPDF(canvas: HTMLCanvasElement, options: ExportOptions): jsPDF {
+    console.log('Creating PDF from canvas...')
+    
+    // Check if canvas has content by creating a temporary test
+    const context = canvas.getContext('2d')
+    const imageData = context?.getImageData(0, 0, canvas.width, canvas.height)
+    const data = imageData?.data
+    
+    // Check if canvas is blank (all pixels are transparent or white)
+    let hasContent = false
+    if (data) {
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i]
+        const g = data[i + 1]
+        const b = data[i + 2]
+        const a = data[i + 3]
+        
+        // If we find any non-white, non-transparent pixel
+        if (a > 0 && (r !== 255 || g !== 255 || b !== 255)) {
+          hasContent = true
+          break
+        }
+      }
+    }
+    
+    console.log('Canvas has visible content:', hasContent)
+    
     const imgData = canvas.toDataURL('image/png')
+    console.log('Image data URL length:', imgData.length)
+    console.log('Image data URL preview:', imgData.substring(0, 100))
+    
     const pdf = new jsPDF({
       orientation: options.landscape ? 'landscape' : 'portrait',
       unit: 'mm',
@@ -85,6 +132,7 @@ export class RoadmapExporter {
     const x = (pdfWidth - imgWidth) / 2
     const y = (pdfHeight - imgHeight) / 2
 
+    console.log('Adding image to PDF:', { x, y, imgWidth, imgHeight })
     pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight)
     return pdf
   }
@@ -142,6 +190,10 @@ export class RoadmapExporter {
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
       const filename = `roadmap-${options.mode}-${timestamp}`
 
+      // Always save PNG for debugging
+      console.log('Saving debug PNG...')
+      this.downloadCanvas(canvas, `${filename}-debug`, 'png')
+      
       if (options.format === 'pdf') {
         console.log('Creating PDF...')
         const pdf = this.createPDF(canvas, options)
