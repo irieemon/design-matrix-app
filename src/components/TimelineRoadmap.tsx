@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react'
-import { Users, Monitor, Smartphone, TrendingUp, Settings, ChevronLeft, ChevronRight, BarChart3, Grid3X3, Plus, Download } from 'lucide-react'
+import { Users, Monitor, Smartphone, TrendingUp, Settings, ChevronLeft, ChevronRight, BarChart3, Grid3X3, Plus, Download, Database } from 'lucide-react'
 import FeatureDetailModal from './FeatureDetailModal'
 import RoadmapExportModal from './RoadmapExportModal'
+import { sampleMarketingRoadmap, sampleSoftwareRoadmap, sampleEventRoadmap } from '../utils/sampleRoadmapData'
 
 interface RoadmapFeature {
   id: string
@@ -110,6 +111,30 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   const handleCreateFeature = () => {
     setSelectedFeature(null) // Create mode with no selected feature
     setIsModalOpen(true)
+  }
+
+  const handleLoadSampleData = () => {
+    let sampleData: RoadmapFeature[]
+    
+    // Choose sample data based on project type
+    switch (projectType) {
+      case 'marketing':
+        sampleData = sampleMarketingRoadmap
+        break
+      case 'software':
+        sampleData = sampleSoftwareRoadmap
+        break
+      case 'event':
+        sampleData = sampleEventRoadmap
+        break
+      default:
+        sampleData = sampleMarketingRoadmap // Default to marketing for current case
+    }
+    
+    setFeatures(sampleData)
+    if (onFeaturesChange) {
+      onFeaturesChange(sampleData)
+    }
   }
 
   // Drag and drop handlers
@@ -550,6 +575,15 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
               <Plus className="w-4 h-4" />
               <span>Add Feature</span>
             </button>
+            {features.length === 0 && (
+              <button
+                onClick={handleLoadSampleData}
+                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white transition-colors"
+              >
+                <Database className="w-4 h-4" />
+                <span>Load Sample Data</span>
+              </button>
+            )}
             <button
               onClick={() => setIsExportModalOpen(true)}
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
