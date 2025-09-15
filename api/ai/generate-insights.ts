@@ -83,7 +83,7 @@ async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectN
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       seed: Math.floor(Math.random() * 1000000),
       messages: [
         {
@@ -158,13 +158,16 @@ This is a women's health platform in a $5.7B market growing 17.8% annually. Key 
 
 ${getConsultancyGradePrompt()}
 
-TIER-1 CONSULTING STANDARDS:
-- Apply specific frameworks: Porter's 5 Forces, BCG Growth-Share Matrix, McKinsey 7S, Value Chain Analysis, Blue Ocean Strategy, Jobs-to-be-Done
-- Provide CONCRETE NUMBERS: specific market sizes ($X billion), growth rates (X% CAGR), customer acquisition costs ($X), lifetime values ($X), conversion rates (X%)
-- Include PRECISE TIMELINES: "Q2 2024 launch", "18-month payback period", "6-week implementation"
-- Deliver ACTIONABLE INSIGHTS: specific experiments to run, exact metrics to track, detailed resource requirements
-- Reference REAL MARKET DATA: cite specific competitor revenues, market share percentages, industry benchmarks
-- Quantify BUSINESS IMPACT: "increase retention by 23%", "reduce churn to 8%", "improve LTV/CAC from 3:1 to 8:1"
+CRITICAL ANALYSIS REQUIREMENTS:
+- MANDATORY: Reference specific content, data points, and insights from uploaded documents by name and page/section
+- NO GENERIC STATEMENTS: Replace any generic consulting phrases with specific, quantified insights
+- REAL DATA ONLY: Use actual market research, competitor financials, and industry benchmarks - no made-up statistics
+- DOCUMENT INTEGRATION: Extract and build upon specific methodologies, frameworks, or data found in uploaded files
+- CONCRETE NUMBERS: Provide specific market sizes ($X billion), growth rates (X% CAGR), CAC ($X), LTV ($X), conversion rates (X%)
+- PRECISE TIMELINES: Include exact dates, quarters, and implementation windows
+- NAMED COMPETITORS: Reference actual companies with real market share data and revenue figures
+- QUANTIFIED IMPACT: Specify exact percentage improvements, dollar amounts, and measurable outcomes
+- ACTIONABLE RECOMMENDATIONS: Include specific experiments, tests, metrics to track, and resource requirements (FTEs, budget, timeline)
 
 ===== PROJECT CONTEXT =====
 PROJECT: ${projectName}
@@ -214,26 +217,34 @@ CRITICAL INSTRUCTIONS:
 - Avoid generic business advice - everything should be tailored to this project
 - Think like a ${projectType} expert who deeply understands this specific venture
 
+MANDATORY DOCUMENT INTEGRATION:
+You have access to uploaded project documents. You MUST:
+- Quote specific sections, data points, and insights from the uploaded documents by name
+- Build analysis directly on the methodologies, frameworks, and research found in the files
+- Reference specific statistics, market data, and competitive intelligence from the documents
+- Use the document content as the foundation for all strategic recommendations
+- If documents contain industry reports, regulations, or research data, integrate these directly into your analysis
+
 EXECUTIVE INSIGHT REQUIREMENTS:
 Each section must demonstrate investment-grade analysis:
 
-EXECUTIVE SUMMARY: Include specific market size ($X billion), competitive dynamics with named players, concrete financial projections, and a clear investment thesis with risk-adjusted returns.
+EXECUTIVE SUMMARY: Reference specific content from uploaded documents, include actual market size data, competitive dynamics with named players, concrete financial projections, and investment thesis based on document insights.
 
-KEY INSIGHTS: Apply frameworks like Porter's 5 Forces, BCG Matrix, or Blue Ocean. Each insight must include:
-- Specific data points and metrics
-- Quantified business impact 
-- Competitive intelligence with named competitors
-- Clear causal relationships and underlying drivers
+KEY INSIGHTS: Build directly on frameworks and data found in uploaded documents. Each insight must include:
+- Specific quotes and data points from the documents
+- Quantified business impact derived from document analysis
+- Competitive intelligence sourced from uploaded materials
+- Clear connections between document content and strategic implications
 
-PRIORITY RECOMMENDATIONS: Structure as consulting project phases with:
-- Specific deliverables and success metrics
-- Resource requirements (FTEs, budget, timeline)
-- Risk mitigation strategies
-- ROI projections and payback periods
+PRIORITY RECOMMENDATIONS: Structure as consulting project phases that directly implement insights from uploaded documents:
+- Specific deliverables based on document methodologies
+- Resource requirements informed by document best practices
+- Implementation strategies derived from document recommendations
+- Success metrics aligned with document benchmarks
 
-RISK ASSESSMENT: Quantify probability and impact using scenario analysis. Include specific mitigation strategies with costs and timelines.
+RISK ASSESSMENT: Ground risk analysis in specific challenges, regulations, or market dynamics identified in the uploaded documents.
 
-Think like a $10M strategy engagement delivering board-ready recommendations that will drive actual business decisions.`
+Think like a $10M strategy engagement that has thoroughly analyzed all client-provided materials and is delivering recommendations based on deep document review.`
         }
       ],
       temperature: getRandomTemperature(),
@@ -301,13 +312,16 @@ This is a women's health platform in a $5.7B market growing 17.8% annually. Key 
 
 ${getConsultancyGradePrompt()}
 
-TIER-1 CONSULTING STANDARDS:
-- Apply specific frameworks: Porter's 5 Forces, BCG Growth-Share Matrix, McKinsey 7S, Value Chain Analysis, Blue Ocean Strategy, Jobs-to-be-Done
-- Provide CONCRETE NUMBERS: specific market sizes ($X billion), growth rates (X% CAGR), customer acquisition costs ($X), lifetime values ($X), conversion rates (X%)
-- Include PRECISE TIMELINES: "Q2 2024 launch", "18-month payback period", "6-week implementation"
-- Deliver ACTIONABLE INSIGHTS: specific experiments to run, exact metrics to track, detailed resource requirements
-- Reference REAL MARKET DATA: cite specific competitor revenues, market share percentages, industry benchmarks
-- Quantify BUSINESS IMPACT: "increase retention by 23%", "reduce churn to 8%", "improve LTV/CAC from 3:1 to 8:1"
+CRITICAL ANALYSIS REQUIREMENTS:
+- MANDATORY: Reference specific content, data points, and insights from uploaded documents by name and page/section
+- NO GENERIC STATEMENTS: Replace any generic consulting phrases with specific, quantified insights
+- REAL DATA ONLY: Use actual market research, competitor financials, and industry benchmarks - no made-up statistics
+- DOCUMENT INTEGRATION: Extract and build upon specific methodologies, frameworks, or data found in uploaded files
+- CONCRETE NUMBERS: Provide specific market sizes ($X billion), growth rates (X% CAGR), CAC ($X), LTV ($X), conversion rates (X%)
+- PRECISE TIMELINES: Include exact dates, quarters, and implementation windows
+- NAMED COMPETITORS: Reference actual companies with real market share data and revenue figures
+- QUANTIFIED IMPACT: Specify exact percentage improvements, dollar amounts, and measurable outcomes
+- ACTIONABLE RECOMMENDATIONS: Include specific experiments, tests, metrics to track, and resource requirements (FTEs, budget, timeline)
 
 ===== PROJECT CONTEXT =====
 PROJECT: ${projectName}
@@ -360,26 +374,34 @@ CRITICAL INSTRUCTIONS:
 - Think like a ${projectType} expert who deeply understands this specific venture
 - Each insight should feel personally crafted for this specific project and idea set
 
+MANDATORY DOCUMENT INTEGRATION:
+You have access to uploaded project documents. You MUST:
+- Quote specific sections, data points, and insights from the uploaded documents by name
+- Build analysis directly on the methodologies, frameworks, and research found in the files
+- Reference specific statistics, market data, and competitive intelligence from the documents
+- Use the document content as the foundation for all strategic recommendations
+- If documents contain industry reports, regulations, or research data, integrate these directly into your analysis
+
 EXECUTIVE INSIGHT REQUIREMENTS:
 Each section must demonstrate investment-grade analysis:
 
-EXECUTIVE SUMMARY: Include specific market size ($X billion), competitive dynamics with named players, concrete financial projections, and a clear investment thesis with risk-adjusted returns.
+EXECUTIVE SUMMARY: Reference specific content from uploaded documents, include actual market size data, competitive dynamics with named players, concrete financial projections, and investment thesis based on document insights.
 
-KEY INSIGHTS: Apply frameworks like Porter's 5 Forces, BCG Matrix, or Blue Ocean. Each insight must include:
-- Specific data points and metrics
-- Quantified business impact 
-- Competitive intelligence with named competitors
-- Clear causal relationships and underlying drivers
+KEY INSIGHTS: Build directly on frameworks and data found in uploaded documents. Each insight must include:
+- Specific quotes and data points from the documents
+- Quantified business impact derived from document analysis
+- Competitive intelligence sourced from uploaded materials
+- Clear connections between document content and strategic implications
 
-PRIORITY RECOMMENDATIONS: Structure as consulting project phases with:
-- Specific deliverables and success metrics
-- Resource requirements (FTEs, budget, timeline)
-- Risk mitigation strategies
-- ROI projections and payback periods
+PRIORITY RECOMMENDATIONS: Structure as consulting project phases that directly implement insights from uploaded documents:
+- Specific deliverables based on document methodologies
+- Resource requirements informed by document best practices
+- Implementation strategies derived from document recommendations
+- Success metrics aligned with document benchmarks
 
-RISK ASSESSMENT: Quantify probability and impact using scenario analysis. Include specific mitigation strategies with costs and timelines.
+RISK ASSESSMENT: Ground risk analysis in specific challenges, regulations, or market dynamics identified in the uploaded documents.
 
-Think like a $10M strategy engagement delivering board-ready recommendations that will drive actual business decisions.
+Think like a $10M strategy engagement that has thoroughly analyzed all client-provided materials and is delivering recommendations based on deep document review.
 
 Return ONLY a JSON object with this exact structure:
 {
