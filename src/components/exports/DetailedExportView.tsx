@@ -342,16 +342,37 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
                     return (
                       <div
                         key={feature.id}
-                        className={`absolute h-8 rounded-lg border-2 ${styles.bgColor} ${styles.textColor} ${styles.borderColor} flex items-center shadow-sm`}
                         style={{
+                          position: 'absolute',
                           left: `${left}%`,
                           width: `${Math.min(width, 100 - left)}%`,
-                          top: `${(featureRows[feature.id] || 0) * 36 + 16}px`
+                          top: `${(featureRows[feature.id] || 0) * 36 + 16}px`,
+                          height: '32px',
+                          backgroundColor: feature.priority === 'high' ? '#dc2626' : 
+                                         feature.priority === 'medium' ? '#f59e0b' : 
+                                         feature.priority === 'low' ? '#2563eb' : '#6b7280',
+                          color: 'white',
+                          borderRadius: '8px',
+                          border: '2px solid rgba(255,255,255,0.3)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          paddingLeft: '12px',
+                          paddingRight: '12px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                          overflow: 'hidden'
                         }}
                       >
-                        <div className="flex-1 px-3 py-1 truncate">
-                          <span className="text-xs font-semibold">{feature.title}</span>
-                        </div>
+                        <span style={{ 
+                          overflow: 'hidden', 
+                          textOverflow: 'ellipsis', 
+                          whiteSpace: 'nowrap',
+                          color: 'white',
+                          fontWeight: '600'
+                        }}>
+                          {feature.title}
+                        </span>
                       </div>
                     )
                   })}
