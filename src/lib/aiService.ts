@@ -209,19 +209,20 @@ class SecureAIService {
             console.log('🎯 AI SERVICE: Document context loaded:', {
               fileCount: documentContext.length,
               fileNames: documentContext.map(doc => doc.name),
-              totalContent: documentContext.reduce((sum, doc) => sum + doc.content.length, 0)
+              totalContent: documentContext.reduce((sum, doc) => sum + (doc.content?.length || 0), 0)
             })
             
             // Log detailed file analysis information
             if (documentContext.length > 0) {
-              const totalContentLength = documentContext.reduce((sum: number, doc: any) => sum + doc.content.length, 0)
+              const totalContentLength = documentContext.reduce((sum: number, doc: any) => sum + (doc.content?.length || 0), 0)
               logger.debug('📊 Total document content length:', totalContentLength, 'characters')
               
               // Log each file being processed
               documentContext.forEach((doc: any, index: number) => {
-                const preview = doc.content.substring(0, 100).replace(/\n/g, ' ')
-                logger.debug(`📄 File ${index + 1}: ${doc.name} (${doc.type}) - ${doc.content.length} chars`)
-                logger.debug(`📝 Content preview: "${preview}${doc.content.length > 100 ? '...' : ''}"`)
+                const content = doc.content || ''
+                const preview = content.substring(0, 100).replace(/\n/g, ' ')
+                logger.debug(`📄 File ${index + 1}: ${doc.name} (${doc.type}) - ${content.length} chars`)
+                logger.debug(`📝 Content preview: "${preview}${content.length > 100 ? '...' : ''}"`)
               })
             } else {
               logger.debug('📭 No document context found - no files with extractable content')
@@ -266,7 +267,7 @@ class SecureAIService {
         logger.debug('📄 Document context being sent to AI:', {
           fileCount: documentContext.length,
           fileNames: documentContext.map((doc: any) => doc.name),
-          totalContentLength: documentContext.reduce((sum: number, doc: any) => sum + doc.content.length, 0)
+          totalContentLength: documentContext.reduce((sum: number, doc: any) => sum + (doc.content?.length || 0), 0)
         })
       }
       
@@ -613,7 +614,7 @@ class SecureAIService {
       logger.warn(`🎯 File count: ${fileCount}`)
       logger.warn(`🎯 File types: ${fileTypes}`)
       documentContext.forEach((doc: any, index: number) => {
-        logger.warn(`🎯 File ${index + 1}: ${doc.name} - ${doc.content.length} characters`)
+        logger.warn(`🎯 File ${index + 1}: ${doc.name} - ${doc.content?.length || 0} characters`)
       })
     } else {
       logger.warn('🎯 MOCK INSIGHTS: No files detected - using generic insights')
