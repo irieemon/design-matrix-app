@@ -156,14 +156,15 @@ This is a women's health platform in a $5.7B market growing 17.8% annually. Key 
 - Opportunity in comprehensive health vs single-use tracking
 ` : ''}
 
-${getAntiRepetitionPrompt()}
+${getConsultancyGradePrompt()}
 
-RESPONSE VARIETY REQUIREMENTS:
-- Each executiveSummary must use different industry data points and market angles  
-- keyInsights must focus on different strategic dimensions (financial, operational, competitive, technological)
-- Avoid using identical phrasing or statistics from previous analyses
-- priorityRecommendations should vary in focus area (customer, product, operations, market, technology)
-- Use different business model perspectives (B2B, B2C, marketplace, platform) as appropriate
+TIER-1 CONSULTING STANDARDS:
+- Apply specific frameworks: Porter's 5 Forces, BCG Growth-Share Matrix, McKinsey 7S, Value Chain Analysis, Blue Ocean Strategy, Jobs-to-be-Done
+- Provide CONCRETE NUMBERS: specific market sizes ($X billion), growth rates (X% CAGR), customer acquisition costs ($X), lifetime values ($X), conversion rates (X%)
+- Include PRECISE TIMELINES: "Q2 2024 launch", "18-month payback period", "6-week implementation"
+- Deliver ACTIONABLE INSIGHTS: specific experiments to run, exact metrics to track, detailed resource requirements
+- Reference REAL MARKET DATA: cite specific competitor revenues, market share percentages, industry benchmarks
+- Quantify BUSINESS IMPACT: "increase retention by 23%", "reduce churn to 8%", "improve LTV/CAC from 3:1 to 8:1"
 
 ===== PROJECT CONTEXT =====
 PROJECT: ${projectName}
@@ -213,11 +214,30 @@ CRITICAL INSTRUCTIONS:
 - Avoid generic business advice - everything should be tailored to this project
 - Think like a ${projectType} expert who deeply understands this specific venture
 
-Think like a board advisor providing strategic guidance for maximum impact and success in the ${projectType} domain.`
+EXECUTIVE INSIGHT REQUIREMENTS:
+Each section must demonstrate investment-grade analysis:
+
+EXECUTIVE SUMMARY: Include specific market size ($X billion), competitive dynamics with named players, concrete financial projections, and a clear investment thesis with risk-adjusted returns.
+
+KEY INSIGHTS: Apply frameworks like Porter's 5 Forces, BCG Matrix, or Blue Ocean. Each insight must include:
+- Specific data points and metrics
+- Quantified business impact 
+- Competitive intelligence with named competitors
+- Clear causal relationships and underlying drivers
+
+PRIORITY RECOMMENDATIONS: Structure as consulting project phases with:
+- Specific deliverables and success metrics
+- Resource requirements (FTEs, budget, timeline)
+- Risk mitigation strategies
+- ROI projections and payback periods
+
+RISK ASSESSMENT: Quantify probability and impact using scenario analysis. Include specific mitigation strategies with costs and timelines.
+
+Think like a $10M strategy engagement delivering board-ready recommendations that will drive actual business decisions.`
         }
       ],
       temperature: getRandomTemperature(),
-      max_tokens: 3500,
+      max_tokens: 4000,
     }),
   })
   
@@ -263,7 +283,7 @@ async function generateInsightsWithAnthropic(apiKey: string, ideas: any[], proje
     },
     body: JSON.stringify({
       model: 'claude-3-haiku-20240307',
-      max_tokens: 3500,
+      max_tokens: 4000,
       messages: [
         {
           role: 'user',
@@ -279,14 +299,15 @@ This is a women's health platform in a $5.7B market growing 17.8% annually. Key 
 - Opportunity in comprehensive health vs single-use tracking
 ` : ''}
 
-${getAntiRepetitionPrompt()}
+${getConsultancyGradePrompt()}
 
-RESPONSE VARIETY REQUIREMENTS:
-- Each executiveSummary must use different industry data points and market angles  
-- keyInsights must focus on different strategic dimensions (financial, operational, competitive, technological)
-- Avoid using identical phrasing or statistics from previous analyses
-- priorityRecommendations should vary in focus area (customer, product, operations, market, technology)
-- Use different business model perspectives (B2B, B2C, marketplace, platform) as appropriate
+TIER-1 CONSULTING STANDARDS:
+- Apply specific frameworks: Porter's 5 Forces, BCG Growth-Share Matrix, McKinsey 7S, Value Chain Analysis, Blue Ocean Strategy, Jobs-to-be-Done
+- Provide CONCRETE NUMBERS: specific market sizes ($X billion), growth rates (X% CAGR), customer acquisition costs ($X), lifetime values ($X), conversion rates (X%)
+- Include PRECISE TIMELINES: "Q2 2024 launch", "18-month payback period", "6-week implementation"
+- Deliver ACTIONABLE INSIGHTS: specific experiments to run, exact metrics to track, detailed resource requirements
+- Reference REAL MARKET DATA: cite specific competitor revenues, market share percentages, industry benchmarks
+- Quantify BUSINESS IMPACT: "increase retention by 23%", "reduce churn to 8%", "improve LTV/CAC from 3:1 to 8:1"
 
 ===== PROJECT CONTEXT =====
 PROJECT: ${projectName}
@@ -339,7 +360,26 @@ CRITICAL INSTRUCTIONS:
 - Think like a ${projectType} expert who deeply understands this specific venture
 - Each insight should feel personally crafted for this specific project and idea set
 
-EXAMPLE: Instead of "User features show strong potential", write "Your 'Referral Program for Users' idea sits in the quick-wins quadrant and could generate 30-40% user growth within 60 days based on similar B2B referral programs."
+EXECUTIVE INSIGHT REQUIREMENTS:
+Each section must demonstrate investment-grade analysis:
+
+EXECUTIVE SUMMARY: Include specific market size ($X billion), competitive dynamics with named players, concrete financial projections, and a clear investment thesis with risk-adjusted returns.
+
+KEY INSIGHTS: Apply frameworks like Porter's 5 Forces, BCG Matrix, or Blue Ocean. Each insight must include:
+- Specific data points and metrics
+- Quantified business impact 
+- Competitive intelligence with named competitors
+- Clear causal relationships and underlying drivers
+
+PRIORITY RECOMMENDATIONS: Structure as consulting project phases with:
+- Specific deliverables and success metrics
+- Resource requirements (FTEs, budget, timeline)
+- Risk mitigation strategies
+- ROI projections and payback periods
+
+RISK ASSESSMENT: Quantify probability and impact using scenario analysis. Include specific mitigation strategies with costs and timelines.
+
+Think like a $10M strategy engagement delivering board-ready recommendations that will drive actual business decisions.
 
 Return ONLY a JSON object with this exact structure:
 {
@@ -646,19 +686,19 @@ function getDocumentContextualPrompt(documentContext: any[]): string {
   return variations[Math.floor(Math.random() * variations.length)]
 }
 
-// Anti-repetition instructions
-function getAntiRepetitionPrompt(): string {
+// High-quality consultancy analysis instructions
+function getConsultancyGradePrompt(): string {
   const sessionId = generateUniqueSessionId()
   const prompts = [
-    `CRITICAL: This is analysis session ${sessionId}. Generate completely FRESH insights that avoid common consulting clichés. Do not mention "market opportunity", "competitive advantage", or "strategic positioning" unless absolutely essential. Focus on unexpected patterns and non-obvious insights.`,
+    `TIER-1 CONSULTING ANALYSIS (Session ${sessionId}): You are McKinsey & Company conducting a $2M strategic assessment. Provide specific, data-driven insights with concrete financial projections, detailed market sizing, competitive moats analysis, and implementation roadmaps with precise timelines and resource requirements. Include specific KPIs, conversion metrics, and ROI calculations.`,
     
-    `UNIQUENESS REQUIRED: Session ${sessionId} demands original analysis. Avoid generic phrases like "leverage synergies", "optimize resources", or "drive growth". Instead, provide specific, actionable insights that feel personally crafted for this exact project.`,
+    `BAIN CAPITAL DILIGENCE (Session ${sessionId}): Conduct investment-grade analysis as if evaluating a $50M acquisition. Provide detailed market dynamics, competitive positioning matrix, financial projections with specific revenue/cost models, operational optimization opportunities, and strategic value creation levers. Include specific risk-adjusted returns and implementation complexity assessments.`,
     
-    `FRESH PERSPECTIVE: Analysis session ${sessionId}. Break away from standard consulting language. Instead of "significant opportunity" say exactly what size/type. Instead of "enhance user engagement" explain the specific psychological or behavioral mechanism.`,
+    `BCG GAMMA INSIGHTS (Session ${sessionId}): Apply advanced analytics perspective combining market research, behavioral economics, and operational excellence. Provide counterintuitive insights backed by data, specific psychological drivers, technological differentiation opportunities, and quantified business impact. Include precise customer acquisition costs, lifetime value calculations, and unit economics.`,
     
-    `ORIGINALITY MANDATE: Session ${sessionId}. Your response must feel completely different from typical business analysis. Use concrete numbers, specific timelines, and unique angles. Avoid any phrase you might have used in previous analyses.`,
+    `DELOITTE STRATEGY ASSESSMENT (Session ${sessionId}): Deliver comprehensive strategic review with detailed industry analysis, competitive intelligence, operational transformation opportunities, and digital enablement strategy. Provide specific implementation timelines, resource allocation models, change management requirements, and measurable success criteria.`,
     
-    `CREATIVITY BOOST: Session ${sessionId} requires unconventional strategic thinking. Challenge assumptions, identify contrarian opportunities, and provide insights that would surprise industry veterans. Think like a disruptor, not a consultant.`
+    `PwC TRANSFORMATION ANALYSIS (Session ${sessionId}): Focus on operational excellence, process optimization, and scalability frameworks. Provide detailed efficiency gains, cost reduction opportunities, technology modernization roadmap, and organizational capabilities assessment. Include specific productivity metrics, automation potential, and investment priorities.`
   ]
   
   return prompts[Math.floor(Math.random() * prompts.length)]
