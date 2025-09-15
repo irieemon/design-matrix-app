@@ -754,42 +754,50 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
 
     // Professional phase box creator
     const createPhaseBox = (phaseNum: number, title: string, duration: string, content: string, color: number[]) => {
-      pageBreak(60)
+      pageBreak(80)
       
-      const boxHeight = 50
+      const boxHeight = 35  // Reduced height
       
       // Main colored box
       doc.setFillColor(color[0], color[1], color[2])
-      doc.roundedRect(marginL, yPos, contentW, boxHeight, 3, 3, 'F')
+      doc.roundedRect(marginL, yPos, contentW, boxHeight, 2, 2, 'F')
       
-      // Phase number circle
+      // Phase number circle - smaller and better positioned
       doc.setFillColor(white[0], white[1], white[2])
-      doc.circle(marginL + 20, yPos + 25, 12, 'F')
+      doc.circle(marginL + 18, yPos + 17.5, 8, 'F')
       doc.setTextColor(color[0], color[1], color[2])
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'bold')
-      doc.text(phaseNum.toString(), marginL + 17, yPos + 29)
-      
-      // Phase title
-      doc.setTextColor(white[0], white[1], white[2])
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'bold')
-      doc.text(title, marginL + 40, yPos + 20)
-      
-      // Duration
       doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.text(duration, marginL + 40, yPos + 35)
+      doc.setFont('helvetica', 'bold')
+      doc.text(phaseNum.toString(), marginL + 16, yPos + 20)
       
-      yPos += boxHeight + 10
+      // Phase title - better positioning
+      doc.setTextColor(white[0], white[1], white[2])
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'bold')
+      doc.text(title, marginL + 30, yPos + 15)
       
-      // Content description below box
-      doc.setTextColor(darkText[0], darkText[1], darkText[2])
+      // Duration - smaller and better positioned
       doc.setFontSize(9)
       doc.setFont('helvetica', 'normal')
-      const contentLines = doc.splitTextToSize(content, contentW - 20)
-      doc.text(contentLines, marginL + 10, yPos)
-      yPos += contentLines.length * 11 + 15
+      doc.text(duration, marginL + 30, yPos + 26)
+      
+      yPos += boxHeight + 8
+      
+      // Content description below box in a subtle gray box
+      doc.setFillColor(lightGray[0], lightGray[1], lightGray[2])
+      const contentLines = doc.splitTextToSize(content, contentW - 30)
+      const contentHeight = contentLines.length * 10 + 12
+      doc.rect(marginL, yPos, contentW, contentHeight, 'F')
+      
+      // Add subtle left border
+      doc.setFillColor(color[0], color[1], color[2])
+      doc.rect(marginL, yPos, 2, contentHeight, 'F')
+      
+      doc.setTextColor(darkText[0], darkText[1], darkText[2])
+      doc.setFontSize(8)
+      doc.setFont('helvetica', 'normal')
+      doc.text(contentLines, marginL + 8, yPos + 8)
+      yPos += contentHeight + 15
     }
 
     // Template-style table function
