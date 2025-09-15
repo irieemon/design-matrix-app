@@ -168,8 +168,17 @@ const FileUpload: React.FC<FileUploadProps> = ({
       const uploadedFiles: ProjectFile[] = []
 
       for (const file of validFiles) {
+        logger.debug(`🔄 Processing file: ${file.name} (${file.type})`)
+        
         // Read content preview for text files
         const contentPreview = await readFileContent(file)
+        
+        if (contentPreview) {
+          logger.debug(`✅ Extracted ${contentPreview.length} characters from ${file.name}`)
+          logger.debug(`📝 Content preview: "${contentPreview.substring(0, 100).replace(/\n/g, ' ')}${contentPreview.length > 100 ? '...' : ''}"`)
+        } else {
+          logger.debug(`ℹ️ No text content extracted from ${file.name} (${file.type})`)
+        }
         
         // Convert file to base64 for storage
         const base64Data = await fileToBase64(file)

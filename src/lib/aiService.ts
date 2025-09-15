@@ -208,10 +208,19 @@ class SecureAIService {
               logger.debug('📁 Found document context:', documentContext.length, 'files with content')
               logger.debug('📄 File types being analyzed:', fileTypes)
               
-              // Log a sample of content being sent to AI (for debugging)
+              // Log detailed file analysis information
               if (documentContext.length > 0) {
                 const totalContentLength = documentContext.reduce((sum: number, doc: any) => sum + doc.content.length, 0)
                 logger.debug('📊 Total document content length:', totalContentLength, 'characters')
+                
+                // Log each file being processed
+                documentContext.forEach((doc: any, index: number) => {
+                  const preview = doc.content.substring(0, 100).replace(/\n/g, ' ')
+                  logger.debug(`📄 File ${index + 1}: ${doc.name} (${doc.type}) - ${doc.content.length} chars`)
+                  logger.debug(`📝 Content preview: "${preview}${doc.content.length > 100 ? '...' : ''}"`)
+                })
+              } else {
+                logger.debug('📭 No document context found - no files with extractable content')
               }
             }
           }
@@ -563,6 +572,17 @@ class SecureAIService {
     const fileCount = hasFiles ? documentContext.length : 0
     
     logger.debug('📁 Generating mock insights with file context:', fileCount, 'files of types:', fileTypes)
+    
+    if (hasFiles) {
+      logger.warn('🎯 MOCK INSIGHTS: Files detected and being processed!')
+      logger.warn(`🎯 File count: ${fileCount}`)
+      logger.warn(`🎯 File types: ${fileTypes}`)
+      documentContext.forEach((doc: any, index: number) => {
+        logger.warn(`🎯 File ${index + 1}: ${doc.name} - ${doc.content.length} characters`)
+      })
+    } else {
+      logger.warn('🎯 MOCK INSIGHTS: No files detected - using generic insights')
+    }
     
     return {
       executiveSummary: `Strategic analysis of ${(ideas || []).length} initiatives reveals significant market opportunity${hasFiles ? ` informed by ${fileCount} uploaded documents (${fileTypes})` : ''}. Analysis shows strong potential for rapid growth and market capture based on current initiative portfolio${hasFiles ? ' and supporting documentation context' : ''}.`,
