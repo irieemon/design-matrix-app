@@ -190,9 +190,6 @@ export class RoadmapExporter {
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
       const filename = `roadmap-${options.mode}-${timestamp}`
 
-      // Always save PNG for debugging
-      console.log('Saving debug PNG...')
-      this.downloadCanvas(canvas, `${filename}-debug`, 'png')
       
       if (options.format === 'pdf') {
         console.log('Creating PDF...')
