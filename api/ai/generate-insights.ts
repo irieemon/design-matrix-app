@@ -217,34 +217,43 @@ CRITICAL INSTRUCTIONS:
 - Avoid generic business advice - everything should be tailored to this project
 - Think like a ${projectType} expert who deeply understands this specific venture
 
-MANDATORY DOCUMENT INTEGRATION:
-You have access to uploaded project documents. You MUST:
-- Quote specific sections, data points, and insights from the uploaded documents by name
-- Build analysis directly on the methodologies, frameworks, and research found in the files
-- Reference specific statistics, market data, and competitive intelligence from the documents
-- Use the document content as the foundation for all strategic recommendations
-- If documents contain industry reports, regulations, or research data, integrate these directly into your analysis
+BREAKTHROUGH INSIGHT METHODOLOGY:
+Apply these advanced analytical lenses to generate non-obvious strategic insights:
 
-EXECUTIVE INSIGHT REQUIREMENTS:
-Each section must demonstrate investment-grade analysis:
+SECOND-ORDER THINKING: Don't just identify what's happening - explain WHY it's happening and what it implies for the future. If users have hygiene concerns, what does this reveal about broader health anxieties, trust in institutions, or emerging lifestyle patterns? What secondary and tertiary effects will these trends create?
 
-EXECUTIVE SUMMARY: Reference specific content from uploaded documents, include actual market size data, competitive dynamics with named players, concrete financial projections, and investment thesis based on document insights.
+CONTRARIAN ANALYSIS: Challenge obvious assumptions. If everyone is focused on X, what opportunities exist in Y and Z? What would a contrarian investor see that consensus misses? Where are incumbents overserving sophisticated users while underserving mainstream needs?
 
-KEY INSIGHTS: Build directly on frameworks and data found in uploaded documents. Each insight must include:
-- Specific quotes and data points from the documents
-- Quantified business impact derived from document analysis
-- Competitive intelligence sourced from uploaded materials
-- Clear connections between document content and strategic implications
+SYSTEMS THINKING: Identify reinforcing loops, network effects, and flywheel mechanisms. How do different elements of the business model compound each other? What creates exponential rather than linear growth? Where are the highest-leverage intervention points?
 
-PRIORITY RECOMMENDATIONS: Structure as consulting project phases that directly implement insights from uploaded documents:
-- Specific deliverables based on document methodologies
-- Resource requirements informed by document best practices
-- Implementation strategies derived from document recommendations
-- Success metrics aligned with document benchmarks
+BEHAVIORAL ECONOMICS: Analyze the psychological drivers, cognitive biases, and decision-making heuristics that affect adoption. What mental models do users have? What triggers habit formation? How can behavioral interventions create unfair competitive advantages?
 
-RISK ASSESSMENT: Ground risk analysis in specific challenges, regulations, or market dynamics identified in the uploaded documents.
+DOCUMENT INTEGRATION REQUIREMENTS:
+- Quote specific sections from uploaded documents and build insights from that content
+- Reference methodologies, frameworks, and data points found in the files
+- Connect document insights to broader strategic implications and market opportunities
+- Use document content to ground all recommendations in real research and best practices
 
-Think like a $10M strategy engagement that has thoroughly analyzed all client-provided materials and is delivering recommendations based on deep document review.`
+STRATEGIC DEPTH REQUIREMENTS:
+Each insight must demonstrate sophisticated thinking:
+
+EXECUTIVE SUMMARY: Identify 2-3 non-obvious strategic opportunities that emerge from document analysis and market positioning. Include specific leverage points for competitive advantage and quantified growth potential.
+
+KEY INSIGHTS: Provide breakthrough observations that combine document insights with advanced strategic frameworks. Focus on:
+- Hidden patterns and inflection points others would miss
+- Psychological and behavioral drivers of adoption
+- Systemic advantages and defensive moats
+- Non-linear scaling opportunities and network effects
+
+PRIORITY RECOMMENDATIONS: Structure as venture capital-style value creation plan with:
+- Specific hypotheses to test and experiments to run
+- Behavioral interventions and growth hacking opportunities  
+- Operational leverage points and margin expansion strategies
+- Technology enablers and platform dynamics
+
+RISK ASSESSMENT: Apply venture capital risk framework - identify the 2-3 risks that could kill the business and the specific de-risking strategies with timelines and success metrics.
+
+Think like a senior partner who has seen patterns across hundreds of companies and can identify the subtle factors that separate category winners from also-rans.`
         }
       ],
       temperature: getRandomTemperature(),
@@ -374,34 +383,43 @@ CRITICAL INSTRUCTIONS:
 - Think like a ${projectType} expert who deeply understands this specific venture
 - Each insight should feel personally crafted for this specific project and idea set
 
-MANDATORY DOCUMENT INTEGRATION:
-You have access to uploaded project documents. You MUST:
-- Quote specific sections, data points, and insights from the uploaded documents by name
-- Build analysis directly on the methodologies, frameworks, and research found in the files
-- Reference specific statistics, market data, and competitive intelligence from the documents
-- Use the document content as the foundation for all strategic recommendations
-- If documents contain industry reports, regulations, or research data, integrate these directly into your analysis
+BREAKTHROUGH INSIGHT METHODOLOGY:
+Apply these advanced analytical lenses to generate non-obvious strategic insights:
 
-EXECUTIVE INSIGHT REQUIREMENTS:
-Each section must demonstrate investment-grade analysis:
+SECOND-ORDER THINKING: Don't just identify what's happening - explain WHY it's happening and what it implies for the future. If users have hygiene concerns, what does this reveal about broader health anxieties, trust in institutions, or emerging lifestyle patterns? What secondary and tertiary effects will these trends create?
 
-EXECUTIVE SUMMARY: Reference specific content from uploaded documents, include actual market size data, competitive dynamics with named players, concrete financial projections, and investment thesis based on document insights.
+CONTRARIAN ANALYSIS: Challenge obvious assumptions. If everyone is focused on X, what opportunities exist in Y and Z? What would a contrarian investor see that consensus misses? Where are incumbents overserving sophisticated users while underserving mainstream needs?
 
-KEY INSIGHTS: Build directly on frameworks and data found in uploaded documents. Each insight must include:
-- Specific quotes and data points from the documents
-- Quantified business impact derived from document analysis
-- Competitive intelligence sourced from uploaded materials
-- Clear connections between document content and strategic implications
+SYSTEMS THINKING: Identify reinforcing loops, network effects, and flywheel mechanisms. How do different elements of the business model compound each other? What creates exponential rather than linear growth? Where are the highest-leverage intervention points?
 
-PRIORITY RECOMMENDATIONS: Structure as consulting project phases that directly implement insights from uploaded documents:
-- Specific deliverables based on document methodologies
-- Resource requirements informed by document best practices
-- Implementation strategies derived from document recommendations
-- Success metrics aligned with document benchmarks
+BEHAVIORAL ECONOMICS: Analyze the psychological drivers, cognitive biases, and decision-making heuristics that affect adoption. What mental models do users have? What triggers habit formation? How can behavioral interventions create unfair competitive advantages?
 
-RISK ASSESSMENT: Ground risk analysis in specific challenges, regulations, or market dynamics identified in the uploaded documents.
+DOCUMENT INTEGRATION REQUIREMENTS:
+- Quote specific sections from uploaded documents and build insights from that content
+- Reference methodologies, frameworks, and data points found in the files
+- Connect document insights to broader strategic implications and market opportunities
+- Use document content to ground all recommendations in real research and best practices
 
-Think like a $10M strategy engagement that has thoroughly analyzed all client-provided materials and is delivering recommendations based on deep document review.
+STRATEGIC DEPTH REQUIREMENTS:
+Each insight must demonstrate sophisticated thinking:
+
+EXECUTIVE SUMMARY: Identify 2-3 non-obvious strategic opportunities that emerge from document analysis and market positioning. Include specific leverage points for competitive advantage and quantified growth potential.
+
+KEY INSIGHTS: Provide breakthrough observations that combine document insights with advanced strategic frameworks. Focus on:
+- Hidden patterns and inflection points others would miss
+- Psychological and behavioral drivers of adoption
+- Systemic advantages and defensive moats
+- Non-linear scaling opportunities and network effects
+
+PRIORITY RECOMMENDATIONS: Structure as venture capital-style value creation plan with:
+- Specific hypotheses to test and experiments to run
+- Behavioral interventions and growth hacking opportunities  
+- Operational leverage points and margin expansion strategies
+- Technology enablers and platform dynamics
+
+RISK ASSESSMENT: Apply venture capital risk framework - identify the 2-3 risks that could kill the business and the specific de-risking strategies with timelines and success metrics.
+
+Think like a senior partner who has seen patterns across hundreds of companies and can identify the subtle factors that separate category winners from also-rans.
 
 Return ONLY a JSON object with this exact structure:
 {
@@ -708,19 +726,19 @@ function getDocumentContextualPrompt(documentContext: any[]): string {
   return variations[Math.floor(Math.random() * variations.length)]
 }
 
-// High-quality consultancy analysis instructions
+// GPT-4o optimized strategic insight prompts
 function getConsultancyGradePrompt(): string {
   const sessionId = generateUniqueSessionId()
   const prompts = [
-    `TIER-1 CONSULTING ANALYSIS (Session ${sessionId}): You are McKinsey & Company conducting a $2M strategic assessment. Provide specific, data-driven insights with concrete financial projections, detailed market sizing, competitive moats analysis, and implementation roadmaps with precise timelines and resource requirements. Include specific KPIs, conversion metrics, and ROI calculations.`,
+    `STRATEGIC INSIGHT MASTERY (Session ${sessionId}): You are the senior partner at McKinsey leading a transformational strategy engagement. Go beyond obvious observations to identify hidden inflection points, non-linear growth opportunities, and systemic advantages that others miss. Apply second-order thinking: what do the obvious patterns reveal about deeper market dynamics? What would a contrarian investor see that consensus misses? Provide breakthrough insights that challenge conventional wisdom while being grounded in rigorous analysis.`,
     
-    `BAIN CAPITAL DILIGENCE (Session ${sessionId}): Conduct investment-grade analysis as if evaluating a $50M acquisition. Provide detailed market dynamics, competitive positioning matrix, financial projections with specific revenue/cost models, operational optimization opportunities, and strategic value creation levers. Include specific risk-adjusted returns and implementation complexity assessments.`,
+    `VENTURE CAPITAL DUE DILIGENCE (Session ${sessionId}): Analyze this as Sequoia Capital evaluating a Series B investment. Think like someone who has seen hundreds of companies succeed and fail. Identify the specific psychological triggers that drive user behavior, the defensive moats that create lasting competitive advantage, and the operational leverage points that enable exponential scaling. What makes this a potential category-defining company versus just another incremental improvement?`,
     
-    `BCG GAMMA INSIGHTS (Session ${sessionId}): Apply advanced analytics perspective combining market research, behavioral economics, and operational excellence. Provide counterintuitive insights backed by data, specific psychological drivers, technological differentiation opportunities, and quantified business impact. Include precise customer acquisition costs, lifetime value calculations, and unit economics.`,
+    `BCG GAMMA BEHAVIORAL ECONOMICS (Session ${sessionId}): Apply advanced behavioral economics and systems thinking. Identify cognitive biases affecting market adoption, network effects and viral coefficients, psychological switching costs, and habit formation mechanics. What behavioral interventions could dramatically improve unit economics? How do psychological principles create unfair competitive advantages? Think like a behavioral scientist meets strategy consultant.`,
     
-    `DELOITTE STRATEGY ASSESSMENT (Session ${sessionId}): Deliver comprehensive strategic review with detailed industry analysis, competitive intelligence, operational transformation opportunities, and digital enablement strategy. Provide specific implementation timelines, resource allocation models, change management requirements, and measurable success criteria.`,
+    `BAIN PRIVATE EQUITY TRANSFORMATION (Session ${sessionId}): Analyze with the lens of a PE firm seeking 3-5x returns through operational transformation. Identify specific value creation levers, operational inefficiencies to exploit, market positioning gaps to capture, and strategic capabilities to build. What operational changes would drive disproportionate margin expansion? How can technology create step-function improvements in productivity?`,
     
-    `PwC TRANSFORMATION ANALYSIS (Session ${sessionId}): Focus on operational excellence, process optimization, and scalability frameworks. Provide detailed efficiency gains, cost reduction opportunities, technology modernization roadmap, and organizational capabilities assessment. Include specific productivity metrics, automation potential, and investment priorities.`
+    `INNOVATION CATALYST ANALYSIS (Session ${sessionId}): Think like Clayton Christensen analyzing disruptive innovation potential. Identify jobs-to-be-done that are underserved, market gaps where incumbents are overserving/underserving, and technological convergence points that enable new business models. What would make this solution 10x better than alternatives? How could this become the dominant platform in its category?`
   ]
   
   return prompts[Math.floor(Math.random() * prompts.length)]
