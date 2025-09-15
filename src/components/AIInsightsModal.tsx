@@ -73,13 +73,27 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
   }, [ideas, selectedInsightId])
 
   const loadProjectFiles = () => {
-    if (!currentProject?.id) return
+    if (!currentProject?.id) {
+      logger.debug('📁 No current project ID, skipping file load')
+      return
+    }
     
     try {
       const projectFilesData = localStorage.getItem('projectFiles')
+      logger.debug('📁 Raw projectFiles from localStorage:', projectFilesData ? 'found' : 'not found')
+      
       if (projectFilesData) {
         const allFiles = JSON.parse(projectFilesData)
         const files = allFiles[currentProject.id] || []
+        logger.debug('📁 Files for project', currentProject.id, ':', files.length, 'total')
+        
+        // Log each file to see what we have
+        files.forEach((file: ProjectFile, index: number) => {
+          logger.debug(`📄 File ${index + 1}: ${file.original_name} (${file.file_type}) - content_preview: ${file.content_preview ? 'YES' : 'NO'}`)
+          if (file.content_preview) {
+            logger.debug(`📝 Content preview length: ${file.content_preview.length} characters`)
+          }
+        })
         
         // Filter files that have content available for AI analysis
         const filesWithExtractedContent = files.filter((file: ProjectFile) => 
@@ -87,7 +101,18 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
         )
         setFilesWithContent(filesWithExtractedContent)
         
-        logger.debug('📁 Loaded project files:', files.length, 'total,', filesWithExtractedContent.length, 'with content')
+        logger.debug('📁 FINAL RESULT: Loaded project files:', files.length, 'total,', filesWithExtractedContent.length, 'with content')
+        
+        if (filesWithExtractedContent.length > 0) {
+          logger.debug('✅ FILES WITH CONTENT FOUND - should show in UI!')
+          filesWithExtractedContent.forEach((file: ProjectFile, index: number) => {
+            logger.debug(`✅ File ${index + 1} with content: ${file.original_name}`)
+          })
+        } else {
+          logger.warn('❌ NO FILES WITH CONTENT FOUND - file references will not show')
+        }
+      } else {
+        logger.debug('📁 No projectFiles data in localStorage')
       }
     } catch (error) {
       logger.warn('Could not load project files:', error)
