@@ -42,6 +42,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
   const [projectName, setProjectName] = useState('')
   const [projectDescription, setProjectDescription] = useState('')
   const [selectedProjectType, setSelectedProjectType] = useState<ProjectType | 'auto'>('auto')
+  const [selectedIndustry, setSelectedIndustry] = useState<string | 'auto'>('auto')
   const [analysis, setAnalysis] = useState<ProjectAnalysis | null>(null)
   const [questionAnswers, setQuestionAnswers] = useState<Record<number, string>>({})
   const [isLoading, setIsLoading] = useState(false)
@@ -234,10 +235,13 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
       // Analyze project context
       const contextAnalysis = analyzeProjectContext(projectName, projectDescription)
       
-      // Generate ideas with appropriate project type
+      // Use manual selections if provided
       const effectiveProjectType = selectedProjectType === 'auto' 
         ? contextAnalysis.recommendedProjectType 
         : selectedProjectType
+      const effectiveIndustry = selectedIndustry === 'auto'
+        ? contextAnalysis.industry
+        : selectedIndustry
         
       const result = await aiService.generateProjectIdeas(
         projectName, 
@@ -251,7 +255,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         needsClarification: contextAnalysis.needsClarification,
         clarifyingQuestions: contextAnalysis.clarifyingQuestions,
         projectAnalysis: {
-          industry: contextAnalysis.industry,
+          industry: effectiveIndustry,
           scope: 'Standard',
           timeline: contextAnalysis.timeline,
           primaryGoals: contextAnalysis.primaryGoals,
@@ -297,6 +301,9 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
       const effectiveProjectType = selectedProjectType === 'auto' 
         ? contextAnalysis.recommendedProjectType 
         : selectedProjectType
+      const effectiveIndustry = selectedIndustry === 'auto'
+        ? contextAnalysis.industry
+        : selectedIndustry
         
       const result = await aiService.generateProjectIdeas(
         projectName,
@@ -310,7 +317,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         needsClarification: false,
         clarifyingQuestions: [],
         projectAnalysis: {
-          industry: contextAnalysis.industry,
+          industry: effectiveIndustry,
           scope: 'Enhanced',
           timeline: contextAnalysis.timeline,
           primaryGoals: contextAnalysis.primaryGoals,
@@ -427,27 +434,57 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">
-          Project Type
-        </label>
-        <select
-          value={selectedProjectType}
-          onChange={(e) => setSelectedProjectType(e.target.value as ProjectType | 'auto')}
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-        >
-          <option value="auto">🤖 Let AI recommend the best type</option>
-          <option value="software">💻 Software Development</option>
-          <option value="product_development">🛠️ Product Development</option>
-          <option value="business_plan">📊 Business Plan</option>
-          <option value="marketing">📢 Marketing Campaign</option>
-          <option value="operations">⚙️ Operations Improvement</option>
-          <option value="research">🔬 Research & Development</option>
-          <option value="other">❓ Other</option>
-        </select>
-        <p className="text-xs text-slate-500 mt-1">
-          This helps generate more relevant roadmaps and user stories
-        </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Project Type
+          </label>
+          <select
+            value={selectedProjectType}
+            onChange={(e) => setSelectedProjectType(e.target.value as ProjectType | 'auto')}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          >
+            <option value="auto">🤖 Let AI recommend</option>
+            <option value="software">💻 Software Development</option>
+            <option value="product_development">🛠️ Product Development</option>
+            <option value="business_plan">📊 Business Plan</option>
+            <option value="marketing">📢 Marketing Campaign</option>
+            <option value="operations">⚙️ Operations Improvement</option>
+            <option value="research">🔬 Research & Development</option>
+            <option value="other">❓ Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">
+            Industry
+          </label>
+          <select
+            value={selectedIndustry}
+            onChange={(e) => setSelectedIndustry(e.target.value)}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          >
+            <option value="auto">🤖 Let AI recommend</option>
+            <option value="Healthcare">🏥 Healthcare</option>
+            <option value="Technology">💻 Technology</option>
+            <option value="Finance">💰 Finance</option>
+            <option value="Education">🎓 Education</option>
+            <option value="Retail">🛍️ Retail & E-commerce</option>
+            <option value="Real Estate">🏠 Real Estate</option>
+            <option value="Food & Hospitality">🍽️ Food & Hospitality</option>
+            <option value="Non-profit">❤️ Non-profit</option>
+            <option value="Manufacturing">🏭 Manufacturing</option>
+            <option value="Construction">🔨 Construction</option>
+            <option value="Transportation">🚚 Transportation</option>
+            <option value="Media & Entertainment">🎬 Media & Entertainment</option>
+            <option value="Professional Services">💼 Professional Services</option>
+            <option value="General">📋 General</option>
+          </select>
+        </div>
+      </div>
+      
+      <div className="text-xs text-slate-500 -mt-2">
+        <p>This helps generate more relevant roadmaps, user stories, and industry-specific recommendations</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -597,6 +634,9 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
               <div>
                 <span className="text-slate-500">Industry:</span>
                 <span className="ml-2 font-medium">{analysis.projectAnalysis.industry}</span>
+                {selectedIndustry !== 'auto' && (
+                  <span className="ml-1 text-green-600 text-xs">✓ Manual</span>
+                )}
               </div>
               <div>
                 <span className="text-slate-500">Timeline:</span>
@@ -616,6 +656,30 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
                 {analysis.projectAnalysis.projectTypeReasoning && (
                   <p className="text-blue-700 text-xs">{analysis.projectAnalysis.projectTypeReasoning}</p>
                 )}
+              </div>
+            )}
+
+            {/* Show manual project type selection */}
+            {selectedProjectType !== 'auto' && (
+              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <span className="text-green-700 text-sm font-medium">✓ Selected Project Type:</span>
+                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
+                    {selectedProjectType}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Show manual industry selection */}
+            {selectedIndustry !== 'auto' && (
+              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <span className="text-green-700 text-sm font-medium">✓ Selected Industry:</span>
+                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
+                    {selectedIndustry}
+                  </span>
+                </div>
               </div>
             )}
             
