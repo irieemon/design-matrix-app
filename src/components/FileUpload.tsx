@@ -2,6 +2,10 @@ import { useState, useRef } from 'react'
 import { Upload, X, FileText, AlertCircle } from 'lucide-react'
 import { ProjectFile, User, Project, FileType } from '../types'
 import { logger } from '../utils/logger'
+import * as pdfjsLib from 'pdfjs-dist'
+
+// Set PDF.js worker - use a more reliable CDN
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
 
 interface FileUploadProps {
   currentProject: Project
@@ -85,16 +89,52 @@ const FileUpload: React.FC<FileUploadProps> = ({
     return true
   }
 
-  const readFileContent = async (file: File): Promise<string | undefined> => {
-    // Only extract content from text-based files
-    if (file.type === 'text/plain' || file.type === 'text/markdown') {
-      try {
-        return await file.text()
-      } catch (error) {
-        logger.warn('Could not read file content:', error)
-        return undefined
+  const extractTextFromPDF = async (file: File): Promise<string> => {
+    try {
+      const arrayBuffer = await file.arrayBuffer()
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+      let fullText = ''
+      
+      // Extract text from all pages (limit to first 10 pages for performance)
+      const maxPages = Math.min(pdf.numPages, 10)
+      for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+        const page = await pdf.getPage(pageNum)
+        const textContent = await page.getTextContent()
+        const pageText = textContent.items.map((item: any) => item.str).join(' ')
+        fullText += pageText + '\n'
       }
+      
+      return fullText.trim()
+    } catch (error) {
+      logger.warn('Could not extract text from PDF:', error)
+      return ''
     }
+  }
+
+  const readFileContent = async (file: File): Promise<string | undefined> => {
+    try {
+      // Extract content from text-based files
+      if (file.type === 'text/plain' || file.type === 'text/markdown') {
+        return await file.text()
+      }
+      
+      // Extract text from PDF files
+      if (file.type === 'application/pdf') {
+        const pdfText = await extractTextFromPDF(file)
+        return pdfText || undefined
+      }
+      
+      // For Word documents, we can't easily extract text in the browser
+      // But we can provide a helpful message
+      if (file.type === 'application/msword' || 
+          file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        return `[Word document: ${file.name} - Content will be available to AI but cannot be previewed in browser]`
+      }
+      
+    } catch (error) {
+      logger.warn('Could not read file content:', error)
+    }
+    
     return undefined
   }
 
@@ -267,7 +307,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
             <h4 className="text-sm font-medium text-blue-900 mb-1">How it helps</h4>
             <p className="text-sm text-blue-700">
               Upload documents, images, and references that provide context for your project. 
-              The AI will use this content to generate more relevant and informed ideas and insights.
+              Text content from PDFs, documents, and text files will be automatically extracted and analyzed by the AI 
+              to generate more relevant and informed ideas and insights.
             </p>
           </div>
         </div>

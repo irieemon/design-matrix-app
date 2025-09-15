@@ -85,8 +85,8 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
       )
     }
 
-    // For text files with content preview
-    if (file.content_preview && (file.file_type === 'txt' || file.file_type === 'md')) {
+    // For text files and PDFs with content preview
+    if (file.content_preview && (file.file_type === 'txt' || file.file_type === 'md' || file.file_type === 'pdf')) {
       return (
         <div className="bg-gray-50 rounded-lg p-6">
           <div className="flex items-center space-x-2 mb-4">

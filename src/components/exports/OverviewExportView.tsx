@@ -83,7 +83,7 @@ const OverviewExportView: React.FC<OverviewExportViewProps> = ({
   return (
     <div className="bg-white font-sans">
       {/* PAGE 1: Timeline Overview */}
-      <div style={{ width: '1400px', minHeight: '1000px', padding: '40px', pageBreakAfter: 'always' }}>
+      <div id="overview-page-1" className="export-page" style={{ width: '1400px', minHeight: '1000px', padding: '40px', pageBreakAfter: 'always' }}>
         {/* Header */}
         <div className="text-center mb-8 border-b border-gray-200 pb-6">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">{title}</h1>
@@ -175,7 +175,7 @@ const OverviewExportView: React.FC<OverviewExportViewProps> = ({
       </div>
 
       {/* PAGE 2: Executive Summary */}
-      <div style={{ width: '1400px', minHeight: '1000px', padding: '40px', pageBreakAfter: 'always' }}>
+      <div id="overview-page-2" className="export-page" style={{ width: '1400px', minHeight: '1000px', padding: '40px', pageBreakAfter: 'always' }}>
         {/* Page Header */}
         <div className="text-center mb-8 border-b border-gray-200 pb-6">
           <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
@@ -273,7 +273,7 @@ const OverviewExportView: React.FC<OverviewExportViewProps> = ({
       </div>
 
       {/* PAGE 3+: Detailed Features Section */}
-      <div style={{ width: '1400px', padding: '40px' }}>
+      <div id="overview-page-3" className="export-page" style={{ width: '1400px', padding: '40px' }}>
         {/* Page Header */}
         <div className="text-center mb-8 border-b border-gray-200 pb-6">
           <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
@@ -290,9 +290,13 @@ const OverviewExportView: React.FC<OverviewExportViewProps> = ({
             const timeline = getFeatureTimeline(feature)
             
             return (
-              <div key={feature.id}>
-                {/* Add page break before each feature except the first */}
-                {index > 0 && <div style={{ pageBreakBefore: 'always' }}></div>}
+              <div key={feature.id} className={index === 0 ? "feature-page-start" : "feature-page export-page"} style={index > 0 ? { width: '1400px', padding: '40px', pageBreakBefore: 'always' } : {}}>
+                {index > 0 && (
+                  <div className="text-center mb-8 border-b border-gray-200 pb-6">
+                    <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+                    <p className="text-lg text-gray-600 mt-2">Feature Details (continued)</p>
+                  </div>
+                )}
                 
                 <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
                   <div className="flex justify-between items-start mb-4">

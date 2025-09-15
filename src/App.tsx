@@ -7,12 +7,21 @@ import AppLayout from './components/layout/AppLayout'
 import PageRouter from './components/layout/PageRouter'
 import { useAuth } from './hooks/useAuth'
 import { useIdeas } from './hooks/useIdeas'
+import { useBrowserHistory } from './hooks/useBrowserHistory'
 import { logger } from './utils/logger'
+import { DatabaseService } from './lib/database'
 
 function App() {
   const [currentPage, setCurrentPage] = useState<string>('matrix')
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
   const [showAdminPortal, setShowAdminPortal] = useState(false)
+  
+  // Debug wrapper for page changes
+  const handlePageChange = (newPage: string) => {
+    console.log('🔄 App: Page change requested:', currentPage, '->', newPage)
+    console.trace('Page change call stack')
+    setCurrentPage(newPage)
+  }
   
   // Modal and drag state
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -25,7 +34,7 @@ function App() {
 
   const { currentUser, isLoading, handleAuthSuccess, handleLogout, setCurrentUser } = useAuth({
     setCurrentProject,
-    setCurrentPage
+    setCurrentPage: handlePageChange
   })
 
   // Centralized ideas management
@@ -35,6 +44,34 @@ function App() {
     setShowAddModal,
     setShowAIModal,
     setEditingIdea
+  })
+
+  // Project restoration from URL
+  const handleProjectRestore = async (projectId: string) => {
+    try {
+      logger.debug('🔄 App: Restoring project from URL:', projectId)
+      const project = await DatabaseService.getProjectById(projectId)
+      if (project) {
+        logger.debug('✅ App: Project restored successfully:', project.name)
+        console.log('🎯 App: Setting currentProject to:', project)
+        setCurrentProject(project)
+      } else {
+        logger.warn('⚠️ App: Project not found or no access:', projectId)
+        console.log('❌ App: Project restoration failed for:', projectId)
+        // Don't clear current project if restoration fails - user might not have access
+      }
+    } catch (error) {
+      logger.error('❌ App: Error restoring project:', error)
+      console.log('💥 App: Project restoration error:', error)
+    }
+  }
+
+  // Browser history integration with improved safeguards
+  const { isRestoringProject } = useBrowserHistory({
+    currentPage,
+    onPageChange: handlePageChange,
+    currentProject,
+    onProjectRestore: handleProjectRestore
   })
   
 
@@ -96,7 +133,7 @@ function App() {
       currentUser={currentUser}
       currentProject={currentProject}
       currentPage={currentPage}
-      onPageChange={setCurrentPage}
+      onPageChange={handlePageChange}
       onLogout={handleLogout}
       onAdminAccess={() => setShowAdminPortal(true)}
       activeId={activeId}
@@ -119,7 +156,7 @@ function App() {
         currentUser={currentUser}
         currentProject={currentProject}
         onProjectSelect={handleProjectSelect}
-        onPageChange={setCurrentPage}
+        onPageChange={handlePageChange}
         onLogout={handleLogout}
         onUserUpdate={handleUserUpdate}
         onDataUpdated={handleDataUpdated}
@@ -127,6 +164,7 @@ function App() {
         onShowAIModal={() => setShowAIModal(true)}
         ideas={ideas}
         setIdeas={setIdeas}
+        isRestoringProject={isRestoringProject}
       />
     </AppLayout>
   )

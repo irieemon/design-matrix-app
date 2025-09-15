@@ -146,12 +146,126 @@ export class RoadmapExporter {
     }
   }
 
+  static async exportMultiPagePDF(
+    element: HTMLElement,
+    options: ExportOptions
+  ): Promise<void> {
+    try {
+      console.log('Starting multi-page PDF export with options:', options)
+
+      // Show loading state
+      const loadingOverlay = document.createElement('div')
+      loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
+      loadingOverlay.innerHTML = `
+        <div class="bg-white rounded-lg p-6 text-center">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p class="text-gray-700">Generating Multi-Page PDF...</p>
+        </div>
+      `
+      document.body.appendChild(loadingOverlay)
+
+      // Wait for loading overlay to render
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      // Find page sections in the element
+      const pageContainers = element.querySelectorAll('.export-page, #overview-page-1, #overview-page-2, #overview-page-3')
+      console.log('Found page containers:', pageContainers.length)
+
+      if (pageContainers.length === 0) {
+        // Fallback to single page export
+        return this.exportRoadmapElement(element, options)
+      }
+
+      // Create PDF document
+      const pdf = new jsPDF({
+        orientation: options.landscape ? 'landscape' : 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      })
+
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = pdf.internal.pageSize.getHeight()
+
+      // Process each page container
+      for (let i = 0; i < pageContainers.length; i++) {
+        const pageContainer = pageContainers[i] as HTMLElement
+        console.log(`Processing page ${i + 1}/${pageContainers.length}`)
+
+        // Capture this page section
+        const canvas = await this.captureElement(pageContainer, {
+          scale: 2,
+          width: 1400,
+          height: 1000,
+          backgroundColor: '#ffffff'
+        })
+
+        console.log(`Page ${i + 1} canvas:`, {
+          width: canvas.width,
+          height: canvas.height
+        })
+
+        const imgData = canvas.toDataURL('image/png')
+        const canvasAspectRatio = canvas.height / canvas.width
+        
+        let imgWidth = pdfWidth
+        let imgHeight = pdfWidth * canvasAspectRatio
+
+        // If image is too tall, scale it down
+        if (imgHeight > pdfHeight) {
+          imgHeight = pdfHeight
+          imgWidth = pdfHeight / canvasAspectRatio
+        }
+
+        // Center the image
+        const x = (pdfWidth - imgWidth) / 2
+        const y = (pdfHeight - imgHeight) / 2
+
+        // Add page if not the first one
+        if (i > 0) {
+          pdf.addPage()
+        }
+
+        // Add image to PDF
+        console.log(`Adding page ${i + 1} to PDF:`, { x, y, imgWidth, imgHeight })
+        pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight)
+      }
+
+      // Save the PDF
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+      const filename = `roadmap-${options.mode}-${timestamp}.pdf`
+      pdf.save(filename)
+
+      console.log('Multi-page PDF export completed successfully')
+
+      // Remove loading overlay
+      document.body.removeChild(loadingOverlay)
+    } catch (error) {
+      console.error('Multi-page PDF export failed:', error)
+      
+      // Remove loading overlay if it exists
+      const overlay = document.querySelector('.fixed.inset-0.bg-black')
+      if (overlay) {
+        document.body.removeChild(overlay)
+      }
+      
+      // Show error message
+      alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`)
+      throw error
+    }
+  }
+
   static async exportRoadmapElement(
     element: HTMLElement,
     options: ExportOptions
   ): Promise<void> {
     try {
       console.log('Starting export with options:', options)
+
+      // Check if this is a multi-page overview export
+      if (options.mode === 'overview' && options.format === 'pdf') {
+        return this.exportMultiPagePDF(element, options)
+      }
+
       console.log('Element dimensions:', {
         width: element.offsetWidth,
         height: element.offsetHeight,

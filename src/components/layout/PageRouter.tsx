@@ -33,6 +33,7 @@ interface PageRouterProps {
   deleteIdea?: (ideaId: string) => Promise<void>
   updateIdea?: (updatedIdea: IdeaCard) => Promise<void>
   toggleCollapse?: (ideaId: string, collapsed?: boolean) => Promise<void>
+  isRestoringProject?: boolean
 }
 
 const PageRouter: React.FC<PageRouterProps> = ({
@@ -55,11 +56,14 @@ const PageRouter: React.FC<PageRouterProps> = ({
   onSetShowAIModal,
   deleteIdea,
   updateIdea: _updateIdea,
-  toggleCollapse
+  toggleCollapse,
+  isRestoringProject = false
 }) => {
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
 
   const renderPageContent = () => {
+    console.log('🎭 PageRouter: Rendering page:', currentPage, 'with project:', currentProject?.name, 'isRestoring:', isRestoringProject)
+    
     switch (currentPage) {
       case 'matrix':
       case 'home':
@@ -84,6 +88,16 @@ const PageRouter: React.FC<PageRouterProps> = ({
       
       case 'data':
         if (!currentProject) {
+          if (isRestoringProject) {
+            return (
+              <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-slate-600">Loading project...</p>
+                </div>
+              </div>
+            )
+          }
           onPageChange('projects')
           return null
         }
@@ -99,6 +113,16 @@ const PageRouter: React.FC<PageRouterProps> = ({
       
       case 'reports':
         if (!currentProject) {
+          if (isRestoringProject) {
+            return (
+              <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-slate-600">Loading project...</p>
+                </div>
+              </div>
+            )
+          }
           onPageChange('projects')
           return null
         }
@@ -132,10 +156,24 @@ const PageRouter: React.FC<PageRouterProps> = ({
         )
       
       case 'roadmap':
+        console.log('🗺️ PageRouter: Roadmap case - currentProject:', !!currentProject, 'isRestoring:', isRestoringProject, 'projectName:', currentProject?.name)
         if (!currentProject) {
+          if (isRestoringProject) {
+            console.log('🔄 PageRouter: Showing loading state for roadmap')
+            return (
+              <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-slate-600">Loading project...</p>
+                </div>
+              </div>
+            )
+          }
+          console.log('⚠️ PageRouter: No project and not restoring - redirecting to projects')
           onPageChange('projects')
           return null
         }
+        console.log('✅ PageRouter: Rendering roadmap for project:', currentProject.name)
         return (
           <div className="bg-slate-50 min-h-screen">
             <ProjectRoadmap 
@@ -148,6 +186,16 @@ const PageRouter: React.FC<PageRouterProps> = ({
       
       case 'files':
         if (!currentProject || !currentUser) {
+          if (isRestoringProject) {
+            return (
+              <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-slate-600">Loading project...</p>
+                </div>
+              </div>
+            )
+          }
           onPageChange('projects')
           return null
         }
@@ -165,6 +213,16 @@ const PageRouter: React.FC<PageRouterProps> = ({
       
       case 'collaboration':
         if (!currentProject || !currentUser) {
+          if (isRestoringProject) {
+            return (
+              <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-slate-600">Loading project...</p>
+                </div>
+              </div>
+            )
+          }
           onPageChange('projects')
           return null
         }

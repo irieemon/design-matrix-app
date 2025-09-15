@@ -26,7 +26,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  const { onProjectsCheck, setCurrentProject, setIdeas, setCurrentPage } = options
+  const { onProjectsCheck, setCurrentProject, setIdeas } = options
 
   // Check if user has projects and redirect to appropriate page
   const checkUserProjectsAndRedirect = async (userId: string, isDemoUser = false) => {
@@ -38,10 +38,9 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     try {
       logger.debug('📋 Checking if user has existing projects...')
       
-      // For demo users, skip database calls and default to matrix page
+      // For demo users, skip database calls and preserve current page
       if (isDemoUser || userId?.startsWith('00000000-0000-0000-0000-00000000000')) {
-        logger.debug('🎭 Demo user detected, skipping database check and defaulting to matrix page')
-        setCurrentPage?.('matrix')
+        logger.debug('🎭 Demo user detected, skipping database check and preserving current page for URL sharing')
         return
       }
       
@@ -59,16 +58,19 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       logger.debug('📋 Found', userProjects.length, 'projects for user')
       
       if (userProjects.length > 0) {
-        logger.debug('🎯 User has existing projects, redirecting to projects page')
-        setCurrentPage?.('projects')
+        logger.debug('🎯 User has existing projects, but not redirecting during URL sharing')
+        // Don't auto-redirect to projects page - this interferes with URL sharing
+        // The user should stay on whatever page they're trying to access
+        logger.debug('📍 Skipping auto-redirect to preserve URL sharing functionality')
       } else {
-        logger.debug('📝 No existing projects found, staying on matrix/create page')
-        setCurrentPage?.('matrix')
+        logger.debug('📝 No existing projects found, but not overriding current page for URL sharing')
+        // Don't set page to matrix - this interferes with URL sharing
+        // The user should stay on whatever page they're trying to access
       }
     } catch (error) {
       logger.error('❌ Error checking user projects:', error)
-      // If project check fails, default to matrix page
-      setCurrentPage?.('matrix')
+      // Don't override page even on error - preserve URL sharing
+      logger.debug('📍 Not setting page to matrix on error to preserve URL sharing')
     }
   }
 
@@ -135,7 +137,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         const isDemoUser = authUser.isDemoUser || authUser.id?.startsWith('00000000-0000-0000-0000-00000000000')
         await checkUserProjectsAndRedirect(authUser.id, isDemoUser)
       } else {
-        setCurrentPage?.('matrix')
+        logger.debug('📍 Not setting page to matrix - preserving current page for URL sharing')
       }
     } finally {
       logger.debug('🔓 Setting loading to false')
@@ -171,7 +173,8 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       setCurrentProject?.(null)
       setIdeas?.([])
       localStorage.removeItem('prioritasUser')
-      setCurrentPage?.('matrix')
+      // Don't set page to matrix on logout - preserve URL sharing
+      logger.debug('📍 Not setting page to matrix on logout to preserve URL sharing')
     }
   }
 
