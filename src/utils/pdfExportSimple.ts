@@ -743,12 +743,12 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
 
 export const exportInsightsToPDF = (insights: any, ideaCount: number, project: Project | null = null, filesWithContent: any[] = []) => {
   try {
-    const doc = new jsPDF('portrait', 'pt', 'a4')
-    let yPos = 60
+    const doc = new jsPDF('portrait', 'mm', 'a4')  // Switch to mm for better control
+    let yPos = 25
     const pageH = doc.internal.pageSize.height
     const pageW = doc.internal.pageSize.width
-    const marginL = 50
-    const marginR = 50
+    const marginL = 20
+    const marginR = 20
     const contentW = pageW - marginL - marginR
     
     // Modern color palette inspired by premium business reports
@@ -765,49 +765,47 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
 
     // Enhanced page break function with proper margins
     const pageBreak = (space: number) => {
-      if (yPos + space > pageH - 100) {
+      if (yPos + space > pageH - 40) {
         doc.addPage()
-        yPos = 60
+        yPos = 25
       }
     }
 
     // Modern gradient header
     const createGradientHeader = (title: string, subtitle?: string) => {
-      pageBreak(120)
+      pageBreak(35)
       
-      // Gradient background using multiple rectangles for effect
-      const gradientHeight = 80
-      for (let i = 0; i < gradientHeight; i++) {
-        const alpha = 1 - (i / gradientHeight * 0.3)
-        const r = primary[0] + (accent[0] - primary[0]) * (i / gradientHeight)
-        const g = primary[1] + (accent[1] - primary[1]) * (i / gradientHeight)
-        const b = primary[2] + (accent[2] - primary[2]) * (i / gradientHeight)
-        doc.setFillColor(r * alpha, g * alpha, b * alpha)
-        doc.rect(marginL - 20, yPos + i, contentW + 40, 1, 'F')
-      }
+      // Simplified gradient background
+      const gradientHeight = 25
+      doc.setFillColor(primary[0], primary[1], primary[2])
+      doc.rect(marginL - 5, yPos, contentW + 10, gradientHeight, 'F')
       
       // Main title
       doc.setTextColor(white[0], white[1], white[2])
-      doc.setFontSize(28)
+      doc.setFontSize(18)
       doc.setFont('helvetica', 'bold')
-      const titleLines = doc.splitTextToSize(title, contentW - 60)
-      doc.text(titleLines, marginL + 30, yPos + 35)
+      const titleLines = doc.splitTextToSize(title, contentW - 10)
+      doc.text(titleLines, marginL + 5, yPos + 15)
+      
+      yPos += gradientHeight + 5
       
       // Subtitle
       if (subtitle) {
-        doc.setFontSize(14)
+        doc.setTextColor(gray700[0], gray700[1], gray700[2])
+        doc.setFontSize(12)
         doc.setFont('helvetica', 'normal')
-        doc.text(subtitle, marginL + 30, yPos + 60)
+        doc.text(subtitle, marginL, yPos + 5)
+        yPos += 15
       }
       
-      yPos += gradientHeight + 30
+      yPos += 10
     }
 
-    // Modern insight card with visual hierarchy
+    // Simplified insight card
     const createInsightCard = (_icon: string, title: string, content: string, impact: 'high' | 'medium' | 'low', index: number) => {
-      pageBreak(100)
+      pageBreak(30)
       
-      const cardHeight = 80
+      const cardHeight = 25
       const colors = {
         high: danger,
         medium: warning,
@@ -815,103 +813,101 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       }
       const impactColor = colors[impact]
       
-      // Card shadow effect
-      doc.setFillColor(0, 0, 0, 0.1)
-      doc.rect(marginL + 2, yPos + 2, contentW, cardHeight, 'F')
-      
       // Main card background
-      doc.setFillColor(white[0], white[1], white[2])
+      doc.setFillColor(gray100[0], gray100[1], gray100[2])
       doc.rect(marginL, yPos, contentW, cardHeight, 'F')
       
       // Left accent stripe
       doc.setFillColor(impactColor[0], impactColor[1], impactColor[2])
-      doc.rect(marginL, yPos, 6, cardHeight, 'F')
+      doc.rect(marginL, yPos, 3, cardHeight, 'F')
       
       // Card border
-      doc.setDrawColor(gray100[0], gray100[1], gray100[2])
-      doc.setLineWidth(1)
+      doc.setDrawColor(gray600[0], gray600[1], gray600[2])
+      doc.setLineWidth(0.5)
       doc.rect(marginL, yPos, contentW, cardHeight, 'S')
       
       // Insight number badge
-      const badgeSize = 24
       doc.setFillColor(impactColor[0], impactColor[1], impactColor[2])
-      doc.circle(marginL + 30, yPos + 25, badgeSize / 2, 'F')
+      doc.circle(marginL + 10, yPos + 12, 6, 'F')
       doc.setTextColor(white[0], white[1], white[2])
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'bold')
-      doc.text(index.toString(), marginL + 26, yPos + 30)
-      
-      // Title
-      doc.setTextColor(gray900[0], gray900[1], gray900[2])
-      doc.setFontSize(16)
-      doc.setFont('helvetica', 'bold')
-      doc.text(title, marginL + 60, yPos + 25)
-      
-      // Impact label
-      doc.setTextColor(impactColor[0], impactColor[1], impactColor[2])
       doc.setFontSize(10)
       doc.setFont('helvetica', 'bold')
-      doc.text(`${impact.toUpperCase()} IMPACT`, marginL + 60, yPos + 40)
+      doc.text(index.toString(), marginL + 7, yPos + 15)
+      
+      // Title and impact
+      doc.setTextColor(gray900[0], gray900[1], gray900[2])
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'bold')
+      doc.text(`${title} (${impact.toUpperCase()} IMPACT)`, marginL + 20, yPos + 15)
+      
+      yPos += cardHeight + 5
       
       // Content
       doc.setTextColor(gray700[0], gray700[1], gray700[2])
-      doc.setFontSize(11)
+      doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
-      const contentLines = doc.splitTextToSize(content, contentW - 80)
-      doc.text(contentLines.slice(0, 2), marginL + 60, yPos + 55) // Limit to 2 lines
+      const contentLines = doc.splitTextToSize(content, contentW - 10)
+      doc.text(contentLines.slice(0, 3), marginL + 5, yPos + 5) // Limit to 3 lines
       
-      yPos += cardHeight + 20
+      yPos += Math.min(contentLines.length, 3) * 4 + 10
     }
 
-    // Executive summary panel
+    // Simplified executive panel
     const createExecutivePanel = (title: string, content: string, stats: Array<{label: string, value: string, color?: number[]}>) => {
-      pageBreak(140)
+      pageBreak(50)
+      
+      const panelHeight = 40
       
       // Panel background
       doc.setFillColor(gray100[0], gray100[1], gray100[2])
-      doc.rect(marginL, yPos, contentW, 120, 'F')
+      doc.rect(marginL, yPos, contentW, panelHeight, 'F')
       
       // Panel border
       doc.setDrawColor(gray600[0], gray600[1], gray600[2])
-      doc.setLineWidth(2)
-      doc.rect(marginL, yPos, contentW, 120, 'S')
+      doc.setLineWidth(1)
+      doc.rect(marginL, yPos, contentW, panelHeight, 'S')
       
       // Title bar
       doc.setFillColor(gray900[0], gray900[1], gray900[2])
-      doc.rect(marginL, yPos, contentW, 30, 'F')
+      doc.rect(marginL, yPos, contentW, 12, 'F')
       doc.setTextColor(white[0], white[1], white[2])
-      doc.setFontSize(16)
+      doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
-      doc.text(title, marginL + 20, yPos + 20)
+      doc.text(title, marginL + 5, yPos + 9)
+      
+      yPos += 15
       
       // Content area
       doc.setTextColor(gray700[0], gray700[1], gray700[2])
-      doc.setFontSize(11)
+      doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
-      const contentLines = doc.splitTextToSize(content, contentW - 40)
-      doc.text(contentLines, marginL + 20, yPos + 50)
+      const contentLines = doc.splitTextToSize(content, contentW - 10)
+      doc.text(contentLines.slice(0, 2), marginL + 5, yPos + 5) // Limit to 2 lines
       
-      // Stats section
+      yPos += 20
+      
+      // Stats section in a horizontal row
       if (stats.length > 0) {
-        const statWidth = (contentW - 40) / stats.length
+        const statWidth = contentW / stats.length
         stats.forEach((stat, index) => {
-          const statX = marginL + 20 + (index * statWidth)
+          const statX = marginL + (index * statWidth)
           
-          // Stat value
-          doc.setTextColor((stat.color || primary)[0], (stat.color || primary)[1], (stat.color || primary)[2])
-          doc.setFontSize(18)
-          doc.setFont('helvetica', 'bold')
-          doc.text(stat.value, statX, yPos + 85)
-          
-          // Stat label
+          // Stat value and label on same line
           doc.setTextColor(gray600[0], gray600[1], gray600[2])
           doc.setFontSize(9)
           doc.setFont('helvetica', 'normal')
-          doc.text(stat.label, statX, yPos + 100)
+          doc.text(`${stat.label}: `, statX, yPos + 5)
+          
+          doc.setTextColor((stat.color || primary)[0], (stat.color || primary)[1], (stat.color || primary)[2])
+          doc.setFontSize(10)
+          doc.setFont('helvetica', 'bold')
+          const labelWidth = doc.getTextWidth(`${stat.label}: `)
+          doc.text(stat.value, statX + labelWidth, yPos + 5)
         })
+        yPos += 15
       }
       
-      yPos += 140
+      yPos += 10
     }
 
     // MODERN COVER PAGE
@@ -948,7 +944,7 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
     
     // New page for content
     doc.addPage()
-    yPos = 60
+    yPos = 25
 
     // EXECUTIVE SUMMARY SECTION
     createGradientHeader('Executive Summary', 'Strategic Overview & Key Findings')
@@ -1089,32 +1085,18 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       )
     }
     
-    // MODERN FOOTER WITH BRANDING
-    pageBreak(80)
-    yPos = pageH - 80
+    // SIMPLE FOOTER
+    yPos = pageH - 20
     
-    // Footer gradient
-    const footerHeight = 60
-    for (let i = 0; i < footerHeight; i++) {
-      const alpha = 0.8 - (i / footerHeight * 0.3)
-      doc.setFillColor(primary[0] * alpha, primary[1] * alpha, primary[2] * alpha)
-      doc.rect(0, yPos + i, pageW, 1, 'F')
-    }
-    
-    // Footer content
-    doc.setTextColor(white[0], white[1], white[2])
-    doc.setFontSize(16)
-    doc.setFont('helvetica', 'bold')
-    doc.text('Prioritas AI', marginL, yPos + 25)
-    
-    doc.setFontSize(10)
+    doc.setTextColor(gray600[0], gray600[1], gray600[2])
+    doc.setFontSize(8)
     doc.setFont('helvetica', 'normal')
-    doc.text('Strategic Intelligence & Analytics Platform', marginL, yPos + 40)
+    doc.text('Prioritas AI Strategic Insights Report', marginL, yPos)
     
     // Document info (right aligned)
-    const docInfo = `Generated: ${new Date().toLocaleDateString()} | Confidential Report`
+    const docInfo = `Generated: ${new Date().toLocaleDateString()}`
     const infoWidth = doc.getTextWidth(docInfo)
-    doc.text(docInfo, pageW - marginR - infoWidth, yPos + 40)
+    doc.text(docInfo, pageW - marginR - infoWidth, yPos)
     
     // Professional filename
     const timestamp = new Date().toISOString().split('T')[0]
