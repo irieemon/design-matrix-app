@@ -198,9 +198,14 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
     }
   }
 
-  const handleDownloadProfessionalPDF = () => {
+  const handleDownloadProfessionalPDF = async () => {
     if (insights) {
-      exportInsightsToPDFProfessional(insights, (ideas || []).length, currentProject, filesWithContent)
+      try {
+        await exportInsightsToPDFProfessional(insights, (ideas || []).length, currentProject, filesWithContent)
+      } catch (error) {
+        console.error('Professional PDF export failed:', error)
+        alert('Professional PDF export failed. Please try again.')
+      }
     }
   }
 

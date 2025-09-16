@@ -1,10 +1,38 @@
 import jsPDF from 'jspdf'
-import pdfMake from 'pdfmake/build/pdfmake'
-import pdfFonts from 'pdfmake/build/vfs_fonts'
 import { Project, RoadmapData } from '../types'
 
-// Configure pdfMake with fonts
-;(pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs
+// Dynamic import for pdfMake to avoid issues
+let pdfMake: any = null
+let isPdfMakeLoaded = false
+
+const loadPdfMake = async () => {
+  if (isPdfMakeLoaded) return pdfMake
+  
+  try {
+    const pdfMakeModule = await import('pdfmake/build/pdfmake')
+    const pdfFontsModule = await import('pdfmake/build/vfs_fonts')
+    
+    pdfMake = pdfMakeModule.default || pdfMakeModule
+    const pdfFonts = pdfFontsModule.default || pdfFontsModule
+    
+    // Configure fonts with proper type handling
+    const fonts = pdfFonts as any
+    if (fonts && fonts.pdfMake && fonts.pdfMake.vfs) {
+      pdfMake.vfs = fonts.pdfMake.vfs
+    } else if (fonts && fonts.vfs) {
+      pdfMake.vfs = fonts.vfs
+    } else {
+      // Fallback - try direct assignment
+      pdfMake.vfs = fonts
+    }
+    
+    isPdfMakeLoaded = true
+    return pdfMake
+  } catch (error) {
+    console.error('Failed to load pdfMake:', error)
+    throw new Error('Failed to load PDF generation library')
+  }
+}
 
 export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, project: Project | null = null) => {
   try {
@@ -1132,8 +1160,10 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
 }
 
 // NEW PROFESSIONAL PDF EXPORT USING PDFMAKE (2024 STANDARDS)
-export const exportInsightsToPDFProfessional = (insights: any, ideaCount: number, project: Project | null = null, filesWithContent: any[] = []) => {
+export const exportInsightsToPDFProfessional = async (insights: any, ideaCount: number, project: Project | null = null, filesWithContent: any[] = []) => {
   try {
+    // Load pdfMake dynamically
+    const pdfMakeInstance = await loadPdfMake()
     // Professional brand colors (2024 standards)
     const brandColors = {
       primary: '#4f46e5',      // Modern indigo
@@ -1506,7 +1536,7 @@ export const exportInsightsToPDFProfessional = (insights: any, ideaCount: number
     const projectPrefix = cleanProjectName ? `${cleanProjectName}_` : ''
     const fileName = `${projectPrefix}Strategic_Insights_Professional_${timestamp}.pdf`
     
-    pdfMake.createPdf(documentDefinition).download(fileName)
+    pdfMakeInstance.createPdf(documentDefinition).download(fileName)
 
   } catch (error) {
     console.error('Professional PDF export failed:', error)
