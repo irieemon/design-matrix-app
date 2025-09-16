@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Download, Sparkles, History, Clock } from 'lucide-react'
+import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Sparkles, History, Clock } from 'lucide-react'
 import { IdeaCard, Project, ProjectInsights as ProjectInsightsType, User } from '../../types'
-import { exportToCSV } from '../../utils/csvUtils'
 import { DatabaseService } from '../../lib/database'
 import AIInsightsModal from '../AIInsightsModal'
 import { logger } from '../../utils/logger'
@@ -67,9 +66,6 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
     }
   }
 
-  const handleExportReport = () => {
-    exportToCSV(ideas)
-  }
 
   const handleInsightSaved = (_insightId: string) => {
     logger.debug('📊 Insight saved, reloading history...')
@@ -359,12 +355,12 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
         </div>
       )}
 
-      {/* Export Actions */}
+      {/* AI Insights */}
       <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">Export Reports</h3>
-            <p className="text-sm text-slate-600">Download detailed analytics and reports</p>
+            <h3 className="text-lg font-semibold text-slate-900 mb-1">AI Insights</h3>
+            <p className="text-sm text-slate-600">Generate strategic analysis and recommendations</p>
           </div>
           <div className="flex space-x-3">
             <button 
@@ -377,14 +373,6 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
             >
               <Sparkles className="w-4 h-4" />
               <span className="font-medium">Generate AI Insights</span>
-            </button>
-            <button 
-              onClick={handleExportReport}
-              disabled={ideas.length === 0}
-              className="flex items-center space-x-2 bg-slate-900 text-white px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Download className="w-4 h-4" />
-              <span className="font-medium">Export Report</span>
             </button>
           </div>
         </div>
