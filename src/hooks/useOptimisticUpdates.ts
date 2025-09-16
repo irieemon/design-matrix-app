@@ -30,6 +30,9 @@ export const useOptimisticUpdates = (
 
   // Sync optimistic data with base data when it changes
   useEffect(() => {
+    console.log('🔄 useOptimisticUpdates: baseData changed, syncing optimisticData...')
+    console.log('🔄 useOptimisticUpdates: baseData length:', baseData?.length || 0)
+    console.log('🔄 useOptimisticUpdates: baseData details:', baseData)
     setOptimisticData(baseData)
   }, [baseData])
 
@@ -337,6 +340,10 @@ export const useOptimisticUpdates = (
       pendingUpdates: Array.from(pendingUpdates.values())
     }
   }, [optimisticData, pendingUpdates])
+
+  // Debug logging for return value
+  console.log('🎯 useOptimisticUpdates: Returning optimisticData with length:', optimisticData?.length || 0)
+  console.log('🎯 useOptimisticUpdates: optimisticData details:', optimisticData)
 
   return {
     optimisticData,
