@@ -38,6 +38,12 @@ class SecureAIService {
       security: 'API keys protected on server',
       origin: typeof window !== 'undefined' ? window.location.origin : 'server-side'
     })
+    
+    // Clear stale cache entries on initialization
+    if (typeof window !== 'undefined') {
+      logger.debug('🗑️ Clearing AI cache for fresh session')
+      aiCache.clear()
+    }
   }
 
   private async getAuthHeaders(): Promise<HeadersInit> {
@@ -63,10 +69,11 @@ class SecureAIService {
   async generateIdea(title: string, projectContext?: { name?: string, description?: string, type?: string }): Promise<AIIdeaResponse> {
     logger.debug(`🧠 Generating idea for: "${title}" using secure server-side proxy`)
     
-    // Generate cache key from parameters
+    // Generate cache key from parameters with timestamp to ensure fresh results
     const cacheKey = AICache.generateKey('generateIdea', {
-      title,
-      projectContext: projectContext || {}
+      title: title.trim().toLowerCase(), // Normalize title for consistent caching
+      projectContext: projectContext || {},
+      timestamp: Math.floor(Date.now() / (5 * 60 * 1000)) // 5-minute cache buckets
     })
     
     return aiCache.getOrSet(cacheKey, async () => {
@@ -780,28 +787,92 @@ class SecureAIService {
 
   // Mock implementations for fallback when server-side AI is unavailable
   private generateMockIdea(title: string, projectContext?: { name?: string, description?: string, type?: string }): AIIdeaResponse {
-    const mockResponses = [
-      {
-        content: `Enhanced ${title}`,
-        details: `Implement an improved version of ${title} with modern best practices and user-centered design principles.`,
-        priority: 'high' as const
-      },
-      {
-        content: `Automated ${title}`,
-        details: `Create an automated solution for ${title} to reduce manual effort and increase efficiency.`,
-        priority: 'moderate' as const
-      },
-      {
-        content: `${title} Analytics`,
-        details: `Add comprehensive analytics and reporting capabilities to ${title} for better insights.`,
-        priority: 'strategic' as const
-      }
-    ]
+    // Generate unique timestamp to prevent cache collisions
+    const timestamp = Date.now()
+    logger.debug(`🎯 Generating mock idea for: "${title}" at ${timestamp}`)
+    
+    // Analyze the input to provide contextually relevant suggestions
+    const titleLower = title.toLowerCase()
+    let category = 'general'
+    let suggestions = []
+    
+    // Smart categorization based on input keywords
+    if (titleLower.includes('security') || titleLower.includes('control panel')) {
+      category = 'security'
+      suggestions = [
+        {
+          content: `Security Control Dashboard`,
+          details: `Comprehensive security management dashboard for ${title} with real-time monitoring, access controls, and threat detection capabilities.`,
+          priority: 'high' as const
+        },
+        {
+          content: `Automated Security Panel`,
+          details: `Automated security control system for ${title} with intelligent threat response and user access management.`,
+          priority: 'strategic' as const
+        },
+        {
+          content: `Advanced Security Console`,
+          details: `Enterprise-grade security console featuring ${title} with audit trails, compliance reporting, and multi-factor authentication.`,
+          priority: 'innovation' as const
+        }
+      ]
+    } else if (titleLower.includes('user') || titleLower.includes('interface')) {
+      category = 'ui/ux'
+      suggestions = [
+        {
+          content: `Enhanced User Interface for ${title}`,
+          details: `Modern, intuitive user interface design for ${title} with improved accessibility and user experience.`,
+          priority: 'high' as const
+        },
+        {
+          content: `Interactive ${title} Dashboard`,
+          details: `Dynamic, responsive dashboard interface for ${title} with customizable widgets and real-time data visualization.`,
+          priority: 'moderate' as const
+        }
+      ]
+    } else if (titleLower.includes('data') || titleLower.includes('analytics')) {
+      category = 'analytics'
+      suggestions = [
+        {
+          content: `${title} Analytics Platform`,
+          details: `Comprehensive analytics solution for ${title} with advanced reporting, predictive insights, and data visualization.`,
+          priority: 'strategic' as const
+        },
+        {
+          content: `Real-time ${title} Monitoring`,
+          details: `Live monitoring and alerting system for ${title} with customizable dashboards and automated notifications.`,
+          priority: 'high' as const
+        }
+      ]
+    } else {
+      // Generic but contextually relevant suggestions
+      suggestions = [
+        {
+          content: `Enhanced ${title} System`,
+          details: `Improved implementation of ${title} with modern architecture, better performance, and enhanced user experience.`,
+          priority: 'high' as const
+        },
+        {
+          content: `Automated ${title} Process`,
+          details: `Streamlined automation for ${title} to reduce manual work and increase operational efficiency.`,
+          priority: 'moderate' as const
+        },
+        {
+          content: `${title} Management Platform`,
+          details: `Comprehensive management platform for ${title} with advanced controls, monitoring, and reporting capabilities.`,
+          priority: 'strategic' as const
+        }
+      ]
+    }
 
-    const randomResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)]
+    // Select a contextually appropriate suggestion
+    const selectedResponse = suggestions[Math.floor(Math.random() * suggestions.length)]
+    
+    logger.debug(`✨ Generated mock idea: "${selectedResponse.content}" (category: ${category})`)
+    
     return {
-      ...randomResponse,
-      details: `${randomResponse.details} ${projectContext?.description ? `Context: ${projectContext.description}` : ''}`
+      ...selectedResponse,
+      details: `${selectedResponse.details} ${projectContext?.description ? `Project context: ${projectContext.description}` : ''}`
     }
   }
 
