@@ -47,9 +47,6 @@ function App() {
     setEditingIdea
   })
 
-  // Debug logging for App level ideas
-  console.log('🚀 App: Ideas received from useIdeas hook:', ideas?.length || 0)
-  console.log('🚀 App: Ideas details:', ideas)
 
   // Project restoration from URL
   const handleProjectRestore = async (projectId: string) => {

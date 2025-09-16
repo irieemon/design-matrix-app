@@ -251,13 +251,9 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     }
   }, [currentUser, currentProject?.id])
 
-  // Debug logging for returned ideas - UPDATED TO FORCE RELOAD
-  console.log('🎯 useIdeas: Returning ideas with length:', ideas?.length || 0, '(using base ideas for debugging)')
-  console.log('🎯 useIdeas: ideas vs optimisticData comparison:', { ideas: ideas?.length || 0, optimisticData: optimisticData?.length || 0 })
-  console.log('🎯 useIdeas: Current project:', currentProject?.name, currentProject?.id)
 
   return {
-    ideas: ideas, // TEMP: Use base ideas directly to debug
+    ideas: optimisticData, // Use optimistic data for instant UI updates
     setIdeas,
     loadIdeas,
     addIdea,
