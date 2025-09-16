@@ -1,4 +1,4 @@
-import { useState, useEffect, useTransition, startTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Calendar, Users, Lightbulb, Download, Save, FileText } from 'lucide-react'
 import { IdeaCard, Project, ProjectFile } from '../types'
@@ -69,11 +69,8 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
   const [aiStage, setAiStage] = useState<'analyzing' | 'synthesizing' | 'optimizing' | 'finalizing' | 'complete'>('analyzing')
   const [processingSteps, setProcessingSteps] = useState<string[]>([])
   const [estimatedTime, setEstimatedTime] = useState<number>(0)
-  const [useWorker, setUseWorker] = useState(true)
-  const [workerRequestId, setWorkerRequestId] = useState<string | null>(null)
-  
   // Web Worker integration for premium performance
-  const { generateInsights: generateInsightsWorker, isWorkerAvailable, cancelRequest } = useAIWorker()
+  const { } = useAIWorker()
 
   useEffect(() => {
     // Load project files first

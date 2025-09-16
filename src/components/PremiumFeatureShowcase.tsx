@@ -101,7 +101,7 @@ const PremiumFeatureShowcase: React.FC<PremiumFeatureShowcaseProps> = ({ classNa
     }
 
     // Set up scroll animations
-    featuresRef.current.forEach((ref, index) => {
+    featuresRef.current.forEach((ref) => {
       if (ref) {
         animateOnScroll(ref, 'scaleIn', 0.2)
       }

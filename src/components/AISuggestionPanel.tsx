@@ -39,7 +39,7 @@ const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
     }
   }
 
-  const getSuggestionColors = (type: AISuggestion['type'], confidence: number) => {
+  const getSuggestionColors = (type: AISuggestion['type']) => {
     const baseColors = {
       completion: 'bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100',
       enhancement: 'bg-purple-50 border-purple-200 text-purple-800 hover:bg-purple-100',
@@ -145,7 +145,7 @@ const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
                   <div
                     key={suggestion.id}
                     className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
-                      getSuggestionColors(suggestion.type, suggestion.confidence)
+                      getSuggestionColors(suggestion.type)
                     }`}
                     onClick={() => onApplySuggestion(suggestion)}
                   >

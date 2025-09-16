@@ -33,7 +33,6 @@ interface UseAISuggestionsOptions {
 
 export const useAISuggestions = (options: UseAISuggestionsOptions = {}) => {
   const {
-    project,
     existingIdeas = [],
     debounceMs = 300,
     maxSuggestions = 5,

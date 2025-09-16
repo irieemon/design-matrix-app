@@ -86,7 +86,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
           return createdIdeaResponse.data
         } else {
           logger.error('❌ Failed to create idea in database:', createdIdeaResponse.error)
-          throw new Error(createdIdeaResponse.error || 'Failed to create idea')
+          throw new Error(typeof createdIdeaResponse.error === 'string' ? createdIdeaResponse.error : 'Failed to create idea')
         }
       }
     )

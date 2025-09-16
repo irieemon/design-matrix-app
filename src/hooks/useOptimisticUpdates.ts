@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import React, { useState, useCallback, useRef } from 'react'
 import { IdeaCard } from '../types'
 
 // Optimistic update types
@@ -19,7 +19,7 @@ interface UseOptimisticUpdatesOptions {
 
 export const useOptimisticUpdates = (
   baseData: IdeaCard[],
-  setBaseData: (data: IdeaCard[]) => void,
+  setBaseData: React.Dispatch<React.SetStateAction<IdeaCard[]>>,
   options: UseOptimisticUpdatesOptions = {}
 ) => {
   const [pendingUpdates, setPendingUpdates] = useState<Map<string, OptimisticUpdate>>(new Map())
@@ -89,21 +89,21 @@ export const useOptimisticUpdates = (
 
     // Update base data with server response
     if (serverData) {
-      setBaseData(prevData => {
+      setBaseData((prevData: IdeaCard[]): IdeaCard[] => {
         switch (update.type) {
           case 'create':
             return [...prevData, serverData]
           
           case 'update':
-            return prevData.map(item => 
+            return prevData.map((item: IdeaCard) => 
               item.id === serverData.id ? serverData : item
             )
           
           case 'delete':
-            return prevData.filter(item => item.id !== update.optimisticData.id)
+            return prevData.filter((item: IdeaCard) => item.id !== update.optimisticData.id)
           
           case 'move':
-            return prevData.map(item => 
+            return prevData.map((item: IdeaCard) => 
               item.id === serverData.id ? 
               { ...item, x: serverData.x, y: serverData.y } : 
               item
