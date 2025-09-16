@@ -5,7 +5,7 @@ import { IdeaCard, Project, ProjectFile } from '../types'
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 import { FileService } from '../lib/fileService'
-import { exportInsightsToPDF } from '../utils/pdfExportSimple'
+import { exportInsightsToPDF, exportInsightsToPDFProfessional } from '../utils/pdfExportSimple'
 import { logger } from '../utils/logger'
 
 interface AIInsightsModalProps {
@@ -195,6 +195,12 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
   const handleDownloadPDF = () => {
     if (insights) {
       exportInsightsToPDF(insights, (ideas || []).length, currentProject, filesWithContent)
+    }
+  }
+
+  const handleDownloadProfessionalPDF = () => {
+    if (insights) {
+      exportInsightsToPDFProfessional(insights, (ideas || []).length, currentProject, filesWithContent)
     }
   }
 
@@ -512,13 +518,23 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
                 </button>
               )}
               {insights && (
-                <button
-                  onClick={handleDownloadPDF}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download PDF</span>
-                </button>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleDownloadProfessionalPDF}
+                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-colors font-medium"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Professional PDF</span>
+                    <span className="text-xs bg-white/20 px-2 py-0.5 rounded">NEW</span>
+                  </button>
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="flex items-center space-x-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>Legacy PDF</span>
+                  </button>
+                </div>
               )}
               <button
                 onClick={onClose}
