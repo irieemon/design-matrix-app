@@ -53,19 +53,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 async function generateRoadmapWithOpenAI(apiKey: string, projectName: string, projectType: string, ideas: any[]) {
   
-  // Define contextual team structures based on project type
+  // Define flexible approach context based on project type
   const getProjectTypeContext = (projectType: string) => {
     const type = projectType.toLowerCase()
     
-    if (type.includes('software') || type.includes('app') || type.includes('platform') || type.includes('system')) {
+    if (type.includes('operations') || type.includes('improvement') || type.includes('optimization') || type.includes('process')) {
       return {
-        teams: [
-          'PLATFORM/INFRASTRUCTURE: Backend APIs, databases, authentication, security, DevOps, system architecture, data models, cloud infrastructure',
-          'FRONTEND/WEB: Frontend applications, web interfaces, user dashboards, responsive design, web-based features',
+        approach: 'strategic_themes',
+        focusAreas: [
+          'Current State Assessment: Understanding existing processes, identifying pain points, and establishing baseline metrics',
+          'Strategic Planning: Defining improvement objectives, prioritizing initiatives, and creating implementation roadmap',
+          'Implementation: Executing process changes, training teams, and managing organizational transition',
+          'Measurement & Optimization: Tracking improvements, gathering feedback, and continuous refinement'
+        ],
+        coreThemes: [
+          'Process assessment and mapping',
+          'Stakeholder alignment and change management', 
+          'Implementation planning and execution',
+          'Performance measurement and continuous improvement'
+        ]
+      }
+    } else if (type.includes('software') || type.includes('app') || type.includes('platform') || type.includes('system')) {
+      return {
+        approach: 'technical_implementation',
+        focusAreas: [
+          'PLATFORM/INFRASTRUCTURE: Backend APIs, databases, authentication, security, DevOps, system architecture',
+          'FRONTEND/WEB: Frontend applications, web interfaces, user dashboards, responsive design',
           'MOBILE: Mobile applications, native features, app store deployment (if applicable)',
           'QA/TESTING: Testing frameworks, quality assurance, performance testing, automated testing'
         ],
-        mandatoryEpics: [
+        coreThemes: [
           'Backend API architecture and development',
           'Database design and implementation',
           'Authentication and security systems',
@@ -74,77 +91,34 @@ async function generateRoadmapWithOpenAI(apiKey: string, projectName: string, pr
       }
     } else if (type.includes('marketing') || type.includes('campaign') || type.includes('brand')) {
       return {
-        teams: [
+        approach: 'marketing_strategy',
+        focusAreas: [
           'CREATIVE: Content creation, design assets, brand materials, visual identity',
           'DIGITAL MARKETING: Social media, online advertising, email campaigns, SEO/SEM',
           'ANALYTICS: Performance tracking, data analysis, reporting, ROI measurement',
-          'OPERATIONS: Campaign management, vendor coordination, budget management, timeline execution'
+          'OPERATIONS: Campaign management, vendor coordination, budget management'
         ],
-        mandatoryEpics: [
+        coreThemes: [
           'Creative asset development and brand guidelines',
           'Digital marketing strategy and channel setup',
           'Analytics and measurement framework',
           'Campaign operations and workflow management'
         ]
       }
-    } else if (type.includes('event') || type.includes('conference') || type.includes('meeting')) {
-      return {
-        teams: [
-          'PLANNING: Event logistics, venue management, timeline coordination, vendor selection',
-          'MARKETING: Promotion strategy, attendee acquisition, communications, brand presence',
-          'OPERATIONS: Registration systems, on-site coordination, technical setup, staff management',
-          'EXPERIENCE: Content curation, speaker management, attendee engagement, networking facilitation'
-        ],
-        mandatoryEpics: [
-          'Event planning and logistics coordination',
-          'Marketing and attendee acquisition strategy',
-          'Registration and operational systems',
-          'Content and experience design'
-        ]
-      }
-    } else if (type.includes('research') || type.includes('study') || type.includes('analysis')) {
-      return {
-        teams: [
-          'RESEARCH: Data collection, survey design, interview protocols, literature review',
-          'ANALYSIS: Data processing, statistical analysis, pattern identification, insights generation',
-          'DOCUMENTATION: Report writing, visualization, presentation development, publication',
-          'STAKEHOLDER: Stakeholder communication, findings dissemination, recommendation implementation'
-        ],
-        mandatoryEpics: [
-          'Research methodology and data collection framework',
-          'Data analysis and insights generation',
-          'Documentation and reporting systems',
-          'Stakeholder engagement and communication plan'
-        ]
-      }
-    } else if (type.includes('business') || type.includes('strategy') || type.includes('consulting')) {
-      return {
-        teams: [
-          'STRATEGY: Business analysis, market research, competitive analysis, strategic planning',
-          'OPERATIONS: Process optimization, workflow design, resource allocation, implementation',
-          'STAKEHOLDER: Client management, communication, change management, training',
-          'MEASUREMENT: KPI definition, performance tracking, ROI analysis, reporting'
-        ],
-        mandatoryEpics: [
-          'Strategic analysis and planning framework',
-          'Operational process design and optimization',
-          'Stakeholder engagement and change management',
-          'Performance measurement and tracking systems'
-        ]
-      }
     } else {
-      // Generic project structure
+      // Generic strategic approach
       return {
-        teams: [
-          'PLANNING: Project planning, resource allocation, timeline management, risk assessment',
+        approach: 'strategic_themes',
+        focusAreas: [
+          'PLANNING: Strategic planning, resource allocation, timeline management, risk assessment',
           'EXECUTION: Implementation, deliverable creation, quality control, milestone tracking',
-          'COORDINATION: Team management, communication, stakeholder alignment, vendor management',
+          'COORDINATION: Stakeholder management, communication, change management, team alignment',
           'EVALUATION: Performance measurement, outcome assessment, feedback collection, reporting'
         ],
-        mandatoryEpics: [
-          'Project planning and framework establishment',
+        coreThemes: [
+          'Strategic planning and framework establishment',
           'Implementation strategy and execution plan',
-          'Coordination and communication systems',
+          'Stakeholder coordination and communication systems',
           'Evaluation and measurement framework'
         ]
       }
@@ -166,12 +140,14 @@ async function generateRoadmapWithOpenAI(apiKey: string, projectName: string, pr
           role: 'system',
           content: `${getRoadmapPersona(projectType)}
 
-CRITICAL REQUIREMENTS - YOU MUST FOLLOW THESE:
-1. Generate epics for the contextual team structure based on project type: ${projectContext.teams.join(', ')}
-2. Each team should have 2-4 epics appropriate to their domain and the project type
-3. MANDATORY CORE EPICS for this project type (include variations of these): ${projectContext.mandatoryEpics.join(', ')}
-4. Use terminology and keywords specific to the project type domain
-5. Each epic must be specific, actionable, and relevant to the project type
+CRITICAL REQUIREMENTS - ADAPT YOUR APPROACH:
+1. Project Approach: ${projectContext.approach}
+2. Generate themes/epics aligned with these focus areas: ${projectContext.focusAreas.join(' | ')}
+3. Core themes to incorporate (adapt to project context): ${projectContext.coreThemes.join(', ')}
+4. Use terminology and language appropriate for ${projectType} projects
+5. Balance strategic planning with practical implementation steps
+6. For operations/improvement projects: Focus on assessments, process design, change management, and measurement rather than technical implementation
+7. For technical projects: Include appropriate technical detail and development workflows
 
 CLARIFYING QUESTIONS TO CONSIDER:
 ${getRoadmapClarifyingQuestions(projectType).map(q => `- ${q}`).join('\n')}
@@ -220,39 +196,38 @@ Return a JSON object with this EXACT structure matching the RoadmapData interfac
         },
         {
           role: 'user',
-          content: `Generate a comprehensive roadmap for this ${projectType} project. YOU MUST create epics for all team areas relevant to this project type.
+          content: `Generate a comprehensive roadmap for this ${projectType} project. Adapt your approach based on the project type and context.
 
 Project: ${projectName}
 Type: ${projectType}
 Ideas to incorporate: ${ideas.map(idea => `- ${idea.title}: ${idea.description}`).join('\n')}
 
-MANDATORY TEAM DISTRIBUTION (create epics for these areas):
-${projectContext.teams.map(team => `- ${team}`).join('\n')}
+PROJECT FOCUS AREAS (align epics with these themes):
+${projectContext.focusAreas.map(area => `- ${area}`).join('\n')}
 
-CORE REQUIRED EPICS for this project type (must include variations of these):
-${projectContext.mandatoryEpics.map(epic => `- "${epic}"`).join('\n')}
+CORE THEMES to incorporate (adapt to project context):
+${projectContext.coreThemes.map(theme => `- ${theme}`).join('\n')}
 
-IMPORTANT: 
-- Use terminology and keywords specific to ${projectType} projects
-- Each epic should be relevant to the project type and team domain
-- Ensure deliverables are appropriate for ${projectType} projects
-- Focus on outcomes and value specific to this project type
+APPROACH GUIDANCE:
+- For Operations/Improvement projects: Focus on strategic initiatives, process improvements, stakeholder engagement, and measurable outcomes rather than technical implementation details
+- For Technical projects: Include appropriate technical depth and development workflows
+- For Other projects: Balance strategic planning with practical execution steps
 
-Requirements for comprehensive roadmap:
-1. Generate 3-5 logical phases (Foundation, Development, Enhancement, Testing, Launch)
-2. Each phase should have 2-4 epics with different priorities (high/medium/low)
-3. Each epic should have 3-5 detailed user stories in "As a [user], I want [goal] so that [benefit]" format
-4. Each epic should have 2-4 specific technical deliverables (APIs, databases, UI components, etc.)
+ROADMAP REQUIREMENTS:
+1. Generate 3-5 logical phases appropriate for the project type (e.g., Assessment → Planning → Implementation → Optimization)
+2. Each phase should have 2-4 themes/epics with different priorities (high/medium/low)
+3. Each epic should have 3-5 outcomes or objectives (use "As a [stakeholder], I want [outcome] so that [benefit]" format when appropriate, but adapt language to project type)
+4. Each epic should have 2-4 key deliverables appropriate for the project type (processes, assessments, systems, etc.)
 5. Include 2-3 realistic risks per phase with specific mitigation strategies
 6. Provide 2-3 measurable success criteria per phase (KPIs, metrics, benchmarks)
-7. Create 4-6 key milestones with specific week timelines and detailed descriptions
-8. Team recommendations should specify exact roles: Product Owner, Tech Lead, Frontend Dev, Backend Dev, QA, DevOps
+7. Create 4-6 key milestones with specific timelines and detailed descriptions
+8. Team recommendations should specify roles appropriate for the project type
 9. Include complexity ratings (high/medium/low) for each epic
-10. Relate epics back to original ideas by title
+10. Relate epics back to original ideas by title when relevant
 11. Ensure totalDuration covers all phases realistically
-12. All content should be detailed enough for enterprise-level documentation
+12. Content should be professional and actionable for the specific project domain
 
-Generate a roadmap that will create a beautiful, comprehensive PDF report with professional depth.`
+Generate a roadmap that creates a comprehensive, domain-appropriate plan.`
         }
       ],
       temperature: 0.3,
@@ -286,6 +261,14 @@ Generate a roadmap that will create a beautiful, comprehensive PDF report with p
 function getRoadmapPersona(projectType: string): string {
   const type = projectType.toLowerCase()
   
+  if (type.includes('operations') || type.includes('improvement') || type.includes('optimization') || type.includes('process')) {
+    return `You are a Senior Operations Strategy Consultant with 15+ years at leading consulting firms like McKinsey, Deloitte, and Accenture. You specialize in operational excellence, process improvement, and organizational transformation with proven success across multiple industries.
+
+EXPERTISE AREAS: Process Optimization, Change Management, Stakeholder Alignment, Performance Measurement, Operational Strategy, Lean/Six Sigma, Digital Transformation, Organizational Design
+
+APPROACH: Think strategically about operations improvement. Focus on current state assessment, stakeholder buy-in, sustainable change, and measurable business impact. Avoid overly technical solutions - emphasize people, process, and performance. Consider change management, training needs, and cultural factors.`
+  }
+  
   if (type.includes('software') || type.includes('app') || type.includes('platform') || type.includes('system')) {
     return `You are a Senior Software Engineering Manager with 12+ years at companies like Microsoft, Atlassian, and Spotify. You have deep expertise in technical roadmap planning, agile development, architecture decisions, and scaling engineering teams from MVP to enterprise-scale products.
 
@@ -300,22 +283,6 @@ APPROACH: Think like a Silicon Valley engineering leader. Focus on technical fea
 EXPERTISE AREAS: Campaign Strategy, Brand Management, Performance Marketing, Content Strategy, Customer Segmentation, Marketing Automation, Analytics & Attribution, Creative Development
 
 APPROACH: Think like a data-driven marketing executive. Focus on audience insights, channel optimization, brand consistency, and measurable business outcomes. Consider the entire customer journey, lifecycle marketing, and long-term brand value.`
-  }
-  
-  if (type.includes('event') || type.includes('conference') || type.includes('meeting')) {
-    return `You are a Director of Events with 10+ years producing major conferences like CES, SXSW, and corporate summits for Fortune 500 companies. You excel at event strategy, experience design, logistics coordination, and delivering measurable ROI from events.
-
-EXPERTISE AREAS: Event Strategy, Experience Design, Logistics Management, Vendor Coordination, Sponsorship Strategy, Technology Integration, Budget Management, Risk Management
-
-APPROACH: Think like a strategic event producer. Focus on attendee experience, operational excellence, stakeholder satisfaction, and measurable outcomes. Consider every touchpoint from registration to post-event follow-up.`
-  }
-  
-  if (type.includes('research') || type.includes('study') || type.includes('analysis')) {
-    return `You are a Principal Research Manager with PhD-level expertise and 12+ years leading research initiatives at institutions like Stanford Research Institute, McKinsey Global Institute, and Google Research. You excel at research design, methodology, and translating insights into actionable strategies.
-
-EXPERTISE AREAS: Research Methodology, Data Collection, Statistical Analysis, Literature Review, Study Design, Data Visualization, Report Writing, Knowledge Translation
-
-APPROACH: Think like a senior research leader. Focus on methodological rigor, research quality, stakeholder communication, and practical applications. Consider both theoretical frameworks and real-world implementation.`
   }
   
   if (type.includes('business') || type.includes('strategy') || type.includes('consulting')) {
@@ -335,6 +302,19 @@ APPROACH: Think like an experienced program leader. Focus on clear objectives, e
 
 function getRoadmapClarifyingQuestions(projectType: string): string[] {
   const type = projectType.toLowerCase()
+  
+  if (type.includes('operations') || type.includes('improvement') || type.includes('optimization') || type.includes('process')) {
+    return [
+      "What are the specific operational pain points and inefficiencies?",
+      "Who are the key stakeholders and what are their priorities?",
+      "What current processes need to be assessed and potentially redesigned?",
+      "How will we measure success and track improvements?",
+      "What resistance to change should we anticipate and how will we address it?",
+      "What resources and budget are available for implementation?",
+      "What training and change management support will teams need?",
+      "How will we ensure sustainability of improvements over time?"
+    ]
+  }
   
   if (type.includes('software') || type.includes('app') || type.includes('platform') || type.includes('system')) {
     return [
@@ -415,6 +395,10 @@ function getRoadmapClarifyingQuestions(projectType: string): string[] {
 
 function getRoadmapIndustryInsights(projectType: string): string {
   const type = projectType.toLowerCase()
+  
+  if (type.includes('operations') || type.includes('improvement') || type.includes('optimization') || type.includes('process')) {
+    return `Operations improvement roadmaps succeed through stakeholder engagement, data-driven assessment, and sustainable change management. Focus on current state analysis, process redesign, pilot implementations, and phased rollouts. Prioritize quick wins, change management, training programs, and measurement systems. Avoid over-engineering solutions - emphasize practical improvements with clear business value.`
+  }
   
   if (type.includes('software') || type.includes('app') || type.includes('platform') || type.includes('system')) {
     return `Software roadmaps succeed through user-centric development, technical excellence, and iterative delivery. Focus on MVP validation, scalable architecture, continuous deployment, and data-driven product decisions. Prioritize platform stability, security, and user experience while maintaining development velocity.`
