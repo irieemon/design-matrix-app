@@ -5,6 +5,7 @@ import { RoadmapExporter } from '../utils/roadmapExport'
 import OverviewExportView from './exports/OverviewExportView'
 import TrackExportView from './exports/TrackExportView'
 import DetailedExportView from './exports/DetailedExportView'
+import { useToast } from '../contexts/ToastContext'
 
 interface RoadmapFeature {
   id: string
@@ -50,6 +51,7 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
   const [selectedTeam, setSelectedTeam] = useState<string>('')
   const [isExporting, setIsExporting] = useState(false)
   const exportRef = useRef<HTMLDivElement>(null)
+  const { showError, showWarning } = useToast()
 
   const teams = [...new Set(features.map(f => f.team))].sort()
 
@@ -67,7 +69,7 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
       console.log('🚀 Export mode:', exportMode)
       
       if (features.length === 0) {
-        alert('No roadmap features found to export. Please click "Load Sample Data" first to populate the roadmap, then try exporting again.')
+        showWarning('No roadmap features found to export. Please click "Load Sample Data" first to populate the roadmap, then try exporting again.')
         return
       }
 
@@ -181,7 +183,7 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
       
     } catch (error) {
       console.error('Export failed:', error)
-      alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`)
+      showError(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`)
     } finally {
       setIsExporting(false)
     }

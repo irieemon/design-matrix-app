@@ -3,6 +3,7 @@ import { FileText, Image, File, Download, Trash2, Eye, Calendar, User, FileIcon 
 import { ProjectFile, FileType } from '../types'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import { logger } from '../utils/logger'
+import { useToast } from '../contexts/ToastContext'
 
 interface FileManagerProps {
   files: ProjectFile[]
@@ -11,6 +12,7 @@ interface FileManagerProps {
 }
 
 const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFile }) => {
+  const { showError, showWarning } = useToast()
   const [selectedFiles, setSelectedFiles] = useState<string[]>([])
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean
@@ -22,7 +24,7 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
   const downloadFile = (file: ProjectFile) => {
     if (!file.file_data) {
       logger.warn('No file data available for download:', file.original_name)
-      alert(`Cannot download "${file.original_name}". File data is not available. Please re-upload the file to enable downloads.`)
+      showWarning(`Cannot download "${file.original_name}". File data is not available. Please re-upload the file to enable downloads.`)
       return
     }
 
@@ -53,7 +55,7 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
       window.URL.revokeObjectURL(url)
     } catch (error) {
       logger.error('Error downloading file:', error)
-      alert('Failed to download file. Please try again.')
+      showError('Failed to download file. Please try again.')
     }
   }
 

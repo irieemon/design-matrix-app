@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, Edit3, Trash2 } from 'lucide-react'
 import { IdeaCard, User } from '../types'
 import { DatabaseService } from '../lib/database'
+import { useToast } from '../contexts/ToastContext'
 
 interface EditIdeaModalProps {
   idea: IdeaCard
@@ -12,6 +13,7 @@ interface EditIdeaModalProps {
 }
 
 const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClose, onUpdate, onDelete }) => {
+  const { showWarning } = useToast()
   const [content, setContent] = useState(idea.content)
   const [details, setDetails] = useState(idea.details || '')
   const [x] = useState(idea.x)
@@ -31,7 +33,7 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
       
       if (!locked) {
         // Show a message that someone else is editing
-        alert(`This idea is currently being edited by ${idea.editing_by || 'another user'}. Please try again later.`)
+        showWarning(`This idea is currently being edited by ${idea.editing_by || 'another user'}. Please try again later.`)
         onClose()
       }
     }

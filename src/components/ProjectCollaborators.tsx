@@ -50,6 +50,7 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [removeConfirm, setRemoveConfirm] = useState<{ collaborator: Collaborator; show: boolean }>({ collaborator: null as any, show: false })
 
   const canManageCollaborators = ['owner', 'admin'].includes(currentUserRole)
   const canInvite = canManageCollaborators
@@ -127,12 +128,18 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
     }
   }
 
-  const handleRemoveCollaborator = async (collaboratorId: string, userId: string) => {
-    if (!confirm('Are you sure you want to remove this collaborator?')) return
+  const handleRemoveCollaborator = async (collaborator: Collaborator) => {
+    setRemoveConfirm({ collaborator, show: true })
+    setActionMenuOpen(null)
+  }
 
-    setUpdating(collaboratorId)
+  const confirmRemoveCollaborator = async () => {
+    const { collaborator } = removeConfirm
+    if (!collaborator) return
+
+    setUpdating(collaborator.id)
     try {
-      const success = await DatabaseService.removeProjectCollaborator(projectId, userId)
+      const success = await DatabaseService.removeProjectCollaborator(projectId, collaborator.user_id)
       if (success) {
         await loadCollaborators()
       }
@@ -140,7 +147,7 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
       logger.error('Error removing collaborator:', error)
     } finally {
       setUpdating(null)
-      setActionMenuOpen(null)
+      setRemoveConfirm({ collaborator: null as any, show: false })
     }
   }
 
@@ -302,7 +309,7 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
                           })}
                           <div className="border-t border-gray-100 mt-1 pt-1">
                             <button
-                              onClick={() => handleRemoveCollaborator(collaborator.id, collaborator.user_id)}
+                              onClick={() => handleRemoveCollaborator(collaborator)}
                               className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-red-50 text-red-600 transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -337,6 +344,45 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
         onInvite={handleInvite}
         projectName={projectName}
       />
+
+      {/* Remove Collaborator Confirmation Modal */}
+      {removeConfirm.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Remove Team Member</h3>
+                  <p className="text-sm text-gray-600">This action cannot be undone</p>
+                </div>
+              </div>
+              
+              <p className="text-gray-700 mb-6">
+                Are you sure you want to remove <strong>{getUserDisplayName(removeConfirm.collaborator)}</strong> from this project? 
+                They will lose access to all project data and be notified of this change.
+              </p>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setRemoveConfirm({ collaborator: null as any, show: false })}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmRemoveCollaborator}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Remove Access
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

@@ -1,6 +1,7 @@
 import { X, FileText, Image, Download } from 'lucide-react'
 import { ProjectFile } from '../types'
 import { logger } from '../utils/logger'
+import { useToast } from '../contexts/ToastContext'
 
 interface FileViewerProps {
   file: ProjectFile | null
@@ -9,12 +10,14 @@ interface FileViewerProps {
 }
 
 const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
+  const { showError, showWarning } = useToast()
+  
   if (!isOpen || !file) return null
 
   const downloadFile = (file: ProjectFile) => {
     if (!file.file_data) {
       logger.warn('No file data available for download:', file.original_name)
-      alert(`Cannot download "${file.original_name}". File data is not available. Please re-upload the file to enable downloads.`)
+      showWarning(`Cannot download "${file.original_name}". File data is not available. Please re-upload the file to enable downloads.`)
       return
     }
 
@@ -45,7 +48,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
       window.URL.revokeObjectURL(url)
     } catch (error) {
       logger.error('Error downloading file:', error)
-      alert('Failed to download file. Please try again.')
+      showError('Failed to download file. Please try again.')
     }
   }
 
