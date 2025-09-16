@@ -408,13 +408,60 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
 
   // Handle feature changes and save them back to roadmap data
   const handleFeaturesChange = async (updatedFeatures: any[]) => {
-    if (!roadmapData || !currentProject || !selectedRoadmapId) return
+    if (!currentProject) return
     
     try {
-      // Convert features back to roadmap phases
-      const updatedRoadmapData = { ...roadmapData }
+      // Create or update roadmap data
+      let updatedRoadmapData = roadmapData ? { ...roadmapData } : {
+        roadmapAnalysis: {
+          totalDuration: '6 months',
+          phases: []
+        },
+        executionStrategy: {
+          methodology: 'Agile',
+          sprintLength: '2 weeks',
+          teamRecommendations: 'Cross-functional team structure recommended for optimal collaboration.',
+          keyMilestones: []
+        }
+      }
+
+      // Create phases from features if they don't exist
+      if (!updatedRoadmapData.roadmapAnalysis) {
+        updatedRoadmapData.roadmapAnalysis = {
+          totalDuration: '6 months',
+          phases: []
+        }
+      }
+
+      // Convert features to epics and organize into phases
+      const newFeatures = updatedFeatures.filter(f => !f.id.includes('-')) // New features have different ID format
+      if (newFeatures.length > 0) {
+        // Create a new phase for manually added features
+        const newPhase = {
+          phase: 'Manual Features',
+          duration: '2-4 months',
+          description: 'Features added manually to the roadmap',
+          epics: newFeatures.map(feature => ({
+            title: feature.title,
+            description: feature.description || '',
+            userStories: feature.userStories || [],
+            deliverables: feature.deliverables || [],
+            priority: feature.priority,
+            complexity: feature.complexity || 'medium',
+            relatedIdeas: feature.relatedIdeas || [],
+            startMonth: feature.startMonth,
+            duration: feature.duration,
+            status: feature.status,
+            team: feature.team
+          })),
+          risks: [],
+          successCriteria: []
+        }
+        updatedRoadmapData.roadmapAnalysis.phases.push(newPhase)
+      }
+
+      // Update existing features if they match phase-epic format
       if (updatedRoadmapData.roadmapAnalysis?.phases) {
-        // Update the roadmap data with the new feature information
         updatedRoadmapData.roadmapAnalysis.phases.forEach((phase, phaseIndex) => {
           phase.epics?.forEach((epic, epicIndex) => {
             const featureId = `${phaseIndex}-${epicIndex}`
@@ -438,7 +485,22 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       }
       
       // Save the updated roadmap data to the database
-      await DatabaseService.updateProjectRoadmap(selectedRoadmapId, updatedRoadmapData)
+      if (selectedRoadmapId) {
+        await DatabaseService.updateProjectRoadmap(selectedRoadmapId, updatedRoadmapData)
+      } else {
+        // Create new roadmap if none exists
+        const savedRoadmapId = await DatabaseService.saveProjectRoadmap(
+          currentProject.id,
+          updatedRoadmapData,
+          currentUser,
+          updatedFeatures.length
+        )
+        if (savedRoadmapId) {
+          setSelectedRoadmapId(savedRoadmapId)
+          await loadRoadmapHistory()
+        }
+      }
+      
       setRoadmapData(updatedRoadmapData)
       
       logger.debug('✅ Roadmap changes saved to database')
@@ -549,7 +611,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           )}
 
           {/* Timeline View */}
-          {viewMode === 'timeline' && timelineFeatures.length > 0 && (
+          {viewMode === 'timeline' && (
             <TimelineRoadmap 
               features={timelineFeatures}
               title={currentProject?.name || 'PROJECT ROADMAP'}
