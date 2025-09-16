@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Calendar, Users, Lightbulb, Download, Save, FileText } from 'lucide-react'
 import { IdeaCard, Project, ProjectFile } from '../types'
 import { aiService } from '../lib/aiService'
@@ -197,7 +198,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
@@ -529,7 +530,8 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
