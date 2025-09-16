@@ -408,7 +408,11 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
 
   // Handle feature changes and save them back to roadmap data
   const handleFeaturesChange = async (updatedFeatures: any[]) => {
-    if (!currentProject) return
+    console.log('🚀 ProjectRoadmap: handleFeaturesChange called with:', updatedFeatures)
+    if (!currentProject) {
+      console.log('❌ No current project, returning early')
+      return
+    }
     
     try {
       // Create or update roadmap data

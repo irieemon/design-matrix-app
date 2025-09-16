@@ -93,10 +93,21 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
   const timeline = getFeatureTimeline()
 
   const handleSave = () => {
+    console.log('💾 FeatureDetailModal: handleSave called')
+    console.log('📝 Edited feature:', editedFeature)
+    console.log('🎯 Mode:', mode)
+    
     if (editedFeature && (editedFeature.title.trim() !== '')) {
+      console.log('✅ Feature is valid, calling onSave')
       onSave(editedFeature)
       setEditMode(false)
       onClose()
+    } else {
+      console.log('❌ Feature is invalid:', {
+        editedFeature: !!editedFeature,
+        title: editedFeature?.title,
+        titleTrimmed: editedFeature?.title?.trim()
+      })
     }
   }
 

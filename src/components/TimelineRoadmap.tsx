@@ -78,6 +78,8 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   }
 
   const handleSaveFeature = (updatedFeature: RoadmapFeature) => {
+    console.log('🎯 TimelineRoadmap: handleSaveFeature called with:', updatedFeature)
+    
     let updatedFeatures: RoadmapFeature[]
     
     // Check if this is a new feature (temp id) or existing
@@ -87,16 +89,21 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
         ...updatedFeature,
         id: `feature-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       }
+      console.log('✨ Creating new feature:', newFeature)
       updatedFeatures = [...features, newFeature]
     } else {
       // Update existing feature
+      console.log('📝 Updating existing feature:', updatedFeature.id)
       updatedFeatures = features.map(f => 
         f.id === updatedFeature.id ? updatedFeature : f
       )
     }
     
+    console.log('📋 Updated features array:', updatedFeatures)
     setFeatures(updatedFeatures)
+    
     if (onFeaturesChange) {
+      console.log('🔄 Calling onFeaturesChange with updated features')
       onFeaturesChange(updatedFeatures)
     }
   }
