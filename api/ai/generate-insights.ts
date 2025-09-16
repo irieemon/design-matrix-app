@@ -25,6 +25,8 @@ function checkRateLimit(ip: string): boolean {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  console.log('🚀 AI Insights API called at:', new Date().toISOString())
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -36,14 +38,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   
   try {
+    console.log('📥 Request body keys:', Object.keys(req.body))
     const { ideas, projectName, projectType, roadmapContext, documentContext, projectContext } = req.body
     
+    console.log('🔍 Parsed request:', {
+      ideasCount: ideas?.length || 0,
+      projectName,
+      projectType,
+      hasRoadmapContext: !!roadmapContext,
+      documentCount: documentContext?.length || 0,
+      hasProjectContext: !!projectContext
+    })
+    
     if (!ideas || !Array.isArray(ideas)) {
+      console.error('❌ Ideas validation failed:', { ideas: typeof ideas, isArray: Array.isArray(ideas) })
       return res.status(400).json({ error: 'Ideas array is required' })
     }
     
     const openaiKey = process.env.OPENAI_API_KEY
     const anthropicKey = process.env.ANTHROPIC_API_KEY
+    
+    console.log('🔑 API Keys check:', { 
+      hasOpenAI: !!openaiKey, 
+      hasAnthropic: !!anthropicKey,
+      openaiLength: openaiKey?.length || 0
+    })
     
     if (!openaiKey && !anthropicKey) {
       return res.status(500).json({ error: 'No AI service configured. Please set OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable.' })
