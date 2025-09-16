@@ -424,6 +424,12 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
 
   const teamLanes = getContextualTeamLanes()
   
+  // Debug: Log all features and their teams
+  React.useEffect(() => {
+    console.log('🎯 All features:', features.map(f => ({ id: f.id, title: f.title, team: f.team })))
+    console.log('🏢 Available teams:', teamLanes.map(t => ({ id: t.id, name: t.name })))
+  }, [features, teamLanes])
+  
 
   // Calculate smart timeline duration based on features
   const calculateTimelineDuration = () => {
@@ -467,7 +473,12 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
 
   // Get features for a specific team
   const getFeaturesForTeam = (teamId: string) => {
-    return features.filter(feature => feature.team === teamId)
+    const teamFeatures = features.filter(feature => feature.team === teamId)
+    console.log(`🏷️ Team ${teamId}: found ${teamFeatures.length} features`)
+    if (teamFeatures.length > 0) {
+      console.log(`   Features:`, teamFeatures.map(f => ({ id: f.id, title: f.title, team: f.team })))
+    }
+    return teamFeatures
   }
 
   // Calculate non-overlapping row positions for features
