@@ -143,7 +143,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     })
   }, [ideas])
 
-  // Load ideas when current project changes (only for demo users or when clearing)
+  // Load ideas when current project changes
   useEffect(() => {
     logger.debug('🔄 Project changed effect triggered. Current project:', currentProject?.name, currentProject?.id)
     
@@ -151,13 +151,13 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     const isDemoUser = currentUser?.id?.startsWith('00000000-0000-0000-0000-00000000000')
     
     if (currentProject) {
-      // Only load directly for demo users (no real-time subscription)
       if (isDemoUser) {
         logger.debug('📂 Demo user: loading ideas for:', currentProject.name, currentProject.id)
         loadIdeas(currentProject.id)
       } else {
-        logger.debug('📂 Real user: clearing ideas, letting subscription handle loading for:', currentProject.name, currentProject.id)
-        setIdeas([]) // Clear immediately, subscription will populate
+        logger.debug('📂 Real user: loading ideas initially for:', currentProject.name, currentProject.id)
+        // Load ideas immediately for real users too, subscription will handle updates
+        loadIdeas(currentProject.id)
       }
     } else {
       // Always clear ideas when no project is selected
