@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import PrioritasLogo from './components/PrioritasLogo'
 import { Project, User, IdeaCard } from './types'
 import AdminPortal from './components/admin/AdminPortal'
@@ -129,44 +130,47 @@ function App() {
   }
 
   return (
-    <AppLayout
-      currentUser={currentUser}
-      currentProject={currentProject}
-      currentPage={currentPage}
-      onPageChange={handlePageChange}
-      onLogout={handleLogout}
-      onAdminAccess={() => setShowAdminPortal(true)}
-      activeId={activeId}
-      editingIdea={editingIdea}
-      showAddModal={showAddModal}
-      showAIModal={showAIModal}
-      onSetActiveId={setActiveId}
-      onSetEditingIdea={setEditingIdea}
-      onSetShowAddModal={setShowAddModal}
-      onSetShowAIModal={setShowAIModal}
-      ideas={ideas}
-      addIdea={addIdea}
-      updateIdea={updateIdea}
-      deleteIdea={deleteIdea}
-      toggleCollapse={_toggleCollapse}
-      handleDragEnd={handleDragEnd}
-    >
-      <PageRouter
-        currentPage={currentPage}
+    <>
+      <AppLayout
         currentUser={currentUser}
         currentProject={currentProject}
-        onProjectSelect={handleProjectSelect}
+        currentPage={currentPage}
         onPageChange={handlePageChange}
         onLogout={handleLogout}
-        onUserUpdate={handleUserUpdate}
-        onDataUpdated={handleDataUpdated}
-        onShowAddModal={() => setShowAddModal(true)}
-        onShowAIModal={() => setShowAIModal(true)}
+        onAdminAccess={() => setShowAdminPortal(true)}
+        activeId={activeId}
+        editingIdea={editingIdea}
+        showAddModal={showAddModal}
+        showAIModal={showAIModal}
+        onSetActiveId={setActiveId}
+        onSetEditingIdea={setEditingIdea}
+        onSetShowAddModal={setShowAddModal}
+        onSetShowAIModal={setShowAIModal}
         ideas={ideas}
-        setIdeas={setIdeas}
-        isRestoringProject={isRestoringProject}
-      />
-    </AppLayout>
+        addIdea={addIdea}
+        updateIdea={updateIdea}
+        deleteIdea={deleteIdea}
+        toggleCollapse={_toggleCollapse}
+        handleDragEnd={handleDragEnd}
+      >
+        <PageRouter
+          currentPage={currentPage}
+          currentUser={currentUser}
+          currentProject={currentProject}
+          onProjectSelect={handleProjectSelect}
+          onPageChange={handlePageChange}
+          onLogout={handleLogout}
+          onUserUpdate={handleUserUpdate}
+          onDataUpdated={handleDataUpdated}
+          onShowAddModal={() => setShowAddModal(true)}
+          onShowAIModal={() => setShowAIModal(true)}
+          ideas={ideas}
+          setIdeas={setIdeas}
+          isRestoringProject={isRestoringProject}
+        />
+      </AppLayout>
+      <Analytics />
+    </>
   )
 }
 
