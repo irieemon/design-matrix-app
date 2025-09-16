@@ -50,16 +50,20 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
 
   const loadIdeas = useCallback(async (projectId?: string) => {
     if (projectId) {
+      console.log('🔄 useIdeas: Loading ideas for project:', projectId)
       logger.debug('📂 Loading ideas for project:', projectId)
       // Clear ideas immediately to prevent flash of old ideas
       setIdeas([])
       const ideas = await DatabaseService.getProjectIdeas(projectId)
+      console.log('📋 useIdeas: Raw ideas returned from database:', ideas)
       logger.debug('📋 Raw ideas returned from database:', ideas)
       setIdeas(ideas)
+      console.log('✅ useIdeas: Set', ideas.length, 'ideas for project', projectId)
       logger.debug('✅ Loaded', ideas.length, 'ideas for project', projectId)
       logger.debug('📋 Ideas details:', (ideas || []).map(i => ({ id: i.id, content: i.content, project_id: i.project_id })))
     } else {
       // If no project is selected, show no ideas
+      console.log('📂 useIdeas: No project selected, clearing ideas')
       logger.debug('📂 No project selected, clearing ideas')
       setIdeas([])
     }
@@ -201,16 +205,21 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
 
   // Load ideas when current project changes
   useEffect(() => {
+    console.log('🔄 useIdeas: Project changed effect triggered. Current project:', currentProject?.name, currentProject?.id)
+    console.log('🔄 useIdeas: Current user:', currentUser?.email, currentUser?.id)
     logger.debug('🔄 Project changed effect triggered. Current project:', currentProject?.name, currentProject?.id)
     
     // Check if this is a demo user
     const isDemoUser = currentUser?.id?.startsWith('00000000-0000-0000-0000-00000000000')
+    console.log('🎭 useIdeas: Is demo user:', isDemoUser)
     
     if (currentProject) {
       if (isDemoUser) {
+        console.log('📂 useIdeas: Demo user: loading ideas for:', currentProject.name, currentProject.id)
         logger.debug('📂 Demo user: loading ideas for:', currentProject.name, currentProject.id)
         loadIdeas(currentProject.id)
       } else {
+        console.log('📂 useIdeas: Real user: loading ideas initially for:', currentProject.name, currentProject.id)
         logger.debug('📂 Real user: loading ideas initially for:', currentProject.name, currentProject.id)
         // Load ideas immediately for real users too, subscription will handle updates
         loadIdeas(currentProject.id)

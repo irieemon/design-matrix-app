@@ -43,6 +43,10 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
 }) => {
 
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
+  
+  // Debug logging for ideas
+  console.log('🎯 MatrixPage: Received ideas:', ideas?.length || 0, 'for project:', currentProject?.name)
+  console.log('🎯 MatrixPage: Ideas details:', ideas)
 
   return (
     <div className="bg-slate-50 min-h-screen">
