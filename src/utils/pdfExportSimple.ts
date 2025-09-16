@@ -771,41 +771,43 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       }
     }
 
-    // Modern gradient header
+    // Modern gradient header with proper sizing
     const createGradientHeader = (title: string, subtitle?: string) => {
-      pageBreak(35)
+      pageBreak(40)
       
       // Simplified gradient background
-      const gradientHeight = 25
+      const gradientHeight = 18
       doc.setFillColor(primary[0], primary[1], primary[2])
-      doc.rect(marginL - 5, yPos, contentW + 10, gradientHeight, 'F')
+      doc.rect(marginL - 3, yPos, contentW + 6, gradientHeight, 'F')
       
-      // Main title
+      // Main title with proper sizing
       doc.setTextColor(white[0], white[1], white[2])
-      doc.setFontSize(18)
+      doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
-      const titleLines = doc.splitTextToSize(title, contentW - 10)
-      doc.text(titleLines, marginL + 5, yPos + 15)
+      const availableWidth = contentW - 6
+      const titleLines = doc.splitTextToSize(title, availableWidth)
+      doc.text(titleLines, marginL + 3, yPos + 12)
       
-      yPos += gradientHeight + 5
+      yPos += gradientHeight + 3
       
-      // Subtitle
+      // Subtitle with proper sizing
       if (subtitle) {
         doc.setTextColor(gray700[0], gray700[1], gray700[2])
-        doc.setFontSize(12)
+        doc.setFontSize(9)
         doc.setFont('helvetica', 'normal')
-        doc.text(subtitle, marginL, yPos + 5)
-        yPos += 15
+        const subtitleLines = doc.splitTextToSize(subtitle, availableWidth)
+        doc.text(subtitleLines, marginL, yPos + 4)
+        yPos += subtitleLines.length * 3 + 5
       }
       
-      yPos += 10
+      yPos += 8
     }
 
-    // Simplified insight card
+    // Simplified insight card with better text sizing
     const createInsightCard = (_icon: string, title: string, content: string, impact: 'high' | 'medium' | 'low', index: number) => {
-      pageBreak(30)
+      pageBreak(35)
       
-      const cardHeight = 25
+      const cardHeight = 20
       const colors = {
         high: danger,
         medium: warning,
@@ -819,44 +821,48 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       
       // Left accent stripe
       doc.setFillColor(impactColor[0], impactColor[1], impactColor[2])
-      doc.rect(marginL, yPos, 3, cardHeight, 'F')
+      doc.rect(marginL, yPos, 2, cardHeight, 'F')
       
       // Card border
       doc.setDrawColor(gray600[0], gray600[1], gray600[2])
       doc.setLineWidth(0.5)
       doc.rect(marginL, yPos, contentW, cardHeight, 'S')
       
-      // Insight number badge
+      // Insight number badge (smaller)
       doc.setFillColor(impactColor[0], impactColor[1], impactColor[2])
-      doc.circle(marginL + 10, yPos + 12, 6, 'F')
+      doc.circle(marginL + 8, yPos + 10, 4, 'F')
       doc.setTextColor(white[0], white[1], white[2])
-      doc.setFontSize(10)
+      doc.setFontSize(8)
       doc.setFont('helvetica', 'bold')
-      doc.text(index.toString(), marginL + 7, yPos + 15)
+      doc.text(index.toString(), marginL + 6, yPos + 12)
       
-      // Title and impact
+      // Title and impact (smaller font)
       doc.setTextColor(gray900[0], gray900[1], gray900[2])
-      doc.setFontSize(12)
+      doc.setFontSize(9)
       doc.setFont('helvetica', 'bold')
-      doc.text(`${title} (${impact.toUpperCase()} IMPACT)`, marginL + 20, yPos + 15)
+      const titleText = `${title} (${impact.toUpperCase()} IMPACT)`
+      const availableTitleWidth = contentW - 18
+      const titleLines = doc.splitTextToSize(titleText, availableTitleWidth)
+      doc.text(titleLines[0], marginL + 15, yPos + 12) // Only first line in header
       
-      yPos += cardHeight + 5
+      yPos += cardHeight + 3
       
-      // Content
+      // Content with better text management
       doc.setTextColor(gray700[0], gray700[1], gray700[2])
-      doc.setFontSize(10)
+      doc.setFontSize(8)
       doc.setFont('helvetica', 'normal')
-      const contentLines = doc.splitTextToSize(content, contentW - 10)
-      doc.text(contentLines.slice(0, 3), marginL + 5, yPos + 5) // Limit to 3 lines
+      const availableContentWidth = contentW - 6
+      const contentLines = doc.splitTextToSize(content, availableContentWidth)
+      doc.text(contentLines.slice(0, 4), marginL + 3, yPos + 3) // Allow more lines but smaller font
       
-      yPos += Math.min(contentLines.length, 3) * 4 + 10
+      yPos += Math.min(contentLines.length, 4) * 3 + 8
     }
 
-    // Simplified executive panel
+    // Simplified executive panel with fixed text positioning
     const createExecutivePanel = (title: string, content: string, stats: Array<{label: string, value: string, color?: number[]}>) => {
-      pageBreak(50)
+      pageBreak(60)
       
-      const panelHeight = 40
+      const panelHeight = 50
       
       // Panel background
       doc.setFillColor(gray100[0], gray100[1], gray100[2])
@@ -869,45 +875,46 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       
       // Title bar
       doc.setFillColor(gray900[0], gray900[1], gray900[2])
-      doc.rect(marginL, yPos, contentW, 12, 'F')
+      doc.rect(marginL, yPos, contentW, 10, 'F')
       doc.setTextColor(white[0], white[1], white[2])
-      doc.setFontSize(12)
-      doc.setFont('helvetica', 'bold')
-      doc.text(title, marginL + 5, yPos + 9)
-      
-      yPos += 15
-      
-      // Content area
-      doc.setTextColor(gray700[0], gray700[1], gray700[2])
       doc.setFontSize(10)
+      doc.setFont('helvetica', 'bold')
+      doc.text(title, marginL + 3, yPos + 7)
+      
+      yPos += 12
+      
+      // Content area with proper text wrapping
+      doc.setTextColor(gray700[0], gray700[1], gray700[2])
+      doc.setFontSize(8)
       doc.setFont('helvetica', 'normal')
-      const contentLines = doc.splitTextToSize(content, contentW - 10)
-      doc.text(contentLines.slice(0, 2), marginL + 5, yPos + 5) // Limit to 2 lines
+      const availableContentWidth = contentW - 6 // More margin for readability
+      const contentLines = doc.splitTextToSize(content, availableContentWidth)
+      doc.text(contentLines.slice(0, 3), marginL + 3, yPos + 4) // Limit to 3 lines, better spacing
       
-      yPos += 20
+      yPos += Math.min(contentLines.length, 3) * 3 + 8
       
-      // Stats section in a horizontal row
+      // Stats section - vertical layout to prevent overlap
       if (stats.length > 0) {
-        const statWidth = contentW / stats.length
-        stats.forEach((stat, index) => {
-          const statX = marginL + (index * statWidth)
-          
-          // Stat value and label on same line
+        stats.forEach((stat, _index) => {
+          // Each stat on its own line to prevent overlapping
           doc.setTextColor(gray600[0], gray600[1], gray600[2])
-          doc.setFontSize(9)
+          doc.setFontSize(7)
           doc.setFont('helvetica', 'normal')
-          doc.text(`${stat.label}: `, statX, yPos + 5)
+          doc.text(`${stat.label}: `, marginL + 3, yPos + 3)
           
-          doc.setTextColor((stat.color || primary)[0], (stat.color || primary)[1], (stat.color || primary)[2])
-          doc.setFontSize(10)
-          doc.setFont('helvetica', 'bold')
+          // Position value right after label with proper spacing
           const labelWidth = doc.getTextWidth(`${stat.label}: `)
-          doc.text(stat.value, statX + labelWidth, yPos + 5)
+          doc.setTextColor((stat.color || primary)[0], (stat.color || primary)[1], (stat.color || primary)[2])
+          doc.setFontSize(8)
+          doc.setFont('helvetica', 'bold')
+          doc.text(stat.value, marginL + 3 + labelWidth, yPos + 3)
+          
+          yPos += 4 // Move to next line
         })
-        yPos += 15
+        yPos += 5
       }
       
-      yPos += 10
+      yPos += 5
     }
 
     // MODERN COVER PAGE
@@ -918,16 +925,16 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
       'Comprehensive Analysis & Recommendations'
     )
     
-    // Cover stats panel
+    // Cover stats panel - reduced to prevent overlap
     const coverStats = [
-      { label: 'Ideas Analyzed', value: ideaCount.toString(), color: primary },
-      { label: 'Documents Reviewed', value: filesWithContent.length.toString(), color: accent },
-      { label: 'Generated', value: new Date().toLocaleDateString(), color: success }
+      { label: 'Ideas', value: ideaCount.toString(), color: primary },
+      { label: 'Documents', value: filesWithContent.length.toString(), color: accent },
+      { label: 'Date', value: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), color: success }
     ]
     
     createExecutivePanel(
       'Analysis Overview', 
-      `This comprehensive strategic analysis examines ${ideaCount} strategic initiatives to provide actionable insights and recommendations for ${project?.name || 'your project'}. The analysis incorporates data-driven methodologies and best practices to deliver strategic value.`,
+      `Strategic analysis of ${ideaCount} initiatives providing actionable insights and recommendations for ${project?.name || 'your project'}.`,
       coverStats
     )
     
