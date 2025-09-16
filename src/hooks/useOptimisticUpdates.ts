@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { IdeaCard } from '../types'
 
 // Optimistic update types
@@ -27,6 +27,11 @@ export const useOptimisticUpdates = (
   const updateTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map())
 
   const { onSuccess, onError, onRevert } = options
+
+  // Sync optimistic data with base data when it changes
+  useEffect(() => {
+    setOptimisticData(baseData)
+  }, [baseData])
 
   // Apply optimistic update immediately to UI
   const applyOptimisticUpdate = useCallback((update: OptimisticUpdate) => {
