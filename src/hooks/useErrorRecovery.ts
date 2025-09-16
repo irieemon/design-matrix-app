@@ -172,4 +172,149 @@ export const useErrorRecovery = (options: ErrorRecoveryOptions = {}) => {
           retryable: classification.retryable,
           autoRetry: classification.autoRetry,
           userFriendlyMessage: generateUserFriendlyMessage(classification.type, error instanceof Error ? error.message : 'Unknown error')
-        }\n        \n        // Add error to state\n        setErrors(prev => [...prev, appError])\n        onError?.(appError)\n        \n        logger.error(`🚨 Error [${classification.type}/${classification.severity}]:`, {\n          message: appError.message,\n          attempt,\n          context,\n          retryable: classification.retryable\n        })\n        \n        // Determine if we should retry\n        if (classification.retryable && attempt < config.maxAttempts) {\n          const delay = calculateRetryDelay(attempt, config)\n          \n          logger.debug(`🔄 Retrying in ${delay}ms (attempt ${attempt}/${config.maxAttempts})`)\n          \n          if (classification.autoRetry) {\n            setIsRecovering(true)\n            \n            await new Promise(resolve => setTimeout(resolve, delay))\n            \n            onRecovery?.(appError, attempt)\n            return executeWithRetry(attempt + 1)\n          }\n        }\n        \n        // No more retries or not retryable\n        setIsRecovering(false)\n        onGiveUp?.(appError)\n        \n        throw appError\n      }\n    }\n    \n    return executeWithRetry(1)\n  }, [retryConfig, classifyError, generateUserFriendlyMessage, calculateRetryDelay, onError, onRecovery, onGiveUp])\n\n  // Manual retry for user-triggered retries\n  const retryOperation = useCallback(async <T>(\n    operation: () => Promise<T>,\n    errorId: string\n  ): Promise<T> => {\n    const error = errors.find(e => e.id === errorId)\n    if (!error) {\n      throw new Error('Error not found for retry')\n    }\n    \n    logger.debug('🔄 Manual retry triggered for error:', errorId)\n    \n    try {\n      setIsRecovering(true)\n      const result = await operation()\n      \n      // Remove error from state on successful retry\n      setErrors(prev => prev.filter(e => e.id !== errorId))\n      setIsRecovering(false)\n      \n      logger.debug('✅ Manual retry successful for error:', errorId)\n      return result\n    } catch (retryError) {\n      setIsRecovering(false)\n      \n      // Update error with new timestamp but keep same ID\n      const updatedError: AppError = {\n        ...error,\n        message: retryError instanceof Error ? retryError.message : 'Retry failed',\n        timestamp: Date.now()\n      }\n      \n      setErrors(prev => prev.map(e => e.id === errorId ? updatedError : e))\n      throw retryError\n    }\n  }, [errors])\n\n  // Dismiss error\n  const dismissError = useCallback((errorId: string) => {\n    setErrors(prev => prev.filter(e => e.id !== errorId))\n    \n    // Clear any pending retry timeout\n    const timeout = retryTimeouts.current.get(errorId)\n    if (timeout) {\n      clearTimeout(timeout)\n      retryTimeouts.current.delete(errorId)\n    }\n  }, [])\n\n  // Clear all errors\n  const clearAllErrors = useCallback(() => {\n    setErrors([])\n    \n    // Clear all pending timeouts\n    retryTimeouts.current.forEach(timeout => clearTimeout(timeout))\n    retryTimeouts.current.clear()\n    retryAttempts.current.clear()\n  }, [])\n\n  // Get errors by severity\n  const getErrorsBySeverity = useCallback((severity: ErrorSeverity) => {\n    return errors.filter(error => error.severity === severity)\n  }, [errors])\n\n  // Get errors by type\n  const getErrorsByType = useCallback((type: ErrorType) => {\n    return errors.filter(error => error.type === type)\n  }, [errors])\n\n  // Check if there are critical errors\n  const hasCriticalErrors = useCallback(() => {\n    return errors.some(error => error.severity === 'critical')\n  }, [errors])\n\n  // Auto-cleanup old errors\n  useEffect(() => {\n    const cleanup = setInterval(() => {\n      const cutoff = Date.now() - 5 * 60 * 1000 // 5 minutes\n      setErrors(prev => prev.filter(error => \n        error.severity === 'critical' || error.timestamp > cutoff\n      ))\n    }, 60000) // Run every minute\n\n    return () => clearInterval(cleanup)\n  }, [])\n\n  // Cleanup timeouts on unmount\n  useEffect(() => {\n    return () => {\n      retryTimeouts.current.forEach(timeout => clearTimeout(timeout))\n      retryTimeouts.current.clear()\n    }\n  }, [])\n\n  return {\n    errors,\n    isRecovering,\n    handleError,\n    retryOperation,\n    dismissError,\n    clearAllErrors,\n    getErrorsBySeverity,\n    getErrorsByType,\n    hasCriticalErrors\n  }\n}
+        }
+        
+        // Add error to state
+        setErrors(prev => [...prev, appError])
+        onError?.(appError)
+        
+        logger.error(`🚨 Error [${classification.type}/${classification.severity}]:`, {
+          message: appError.message,
+          attempt,
+          context,
+          retryable: classification.retryable
+        })
+        
+        // Determine if we should retry
+        if (classification.retryable && attempt < config.maxAttempts) {
+          const delay = calculateRetryDelay(attempt, config)
+          
+          logger.debug(`🔄 Retrying in ${delay}ms (attempt ${attempt}/${config.maxAttempts})`)
+          
+          if (classification.autoRetry) {
+            setIsRecovering(true)
+            
+            await new Promise(resolve => setTimeout(resolve, delay))
+            
+            onRecovery?.(appError, attempt)
+            return executeWithRetry(attempt + 1)
+          }
+        }
+        
+        // No more retries or not retryable
+        setIsRecovering(false)
+        onGiveUp?.(appError)
+        
+        throw appError
+      }
+    }
+    
+    return executeWithRetry(1)
+  }, [retryConfig, classifyError, generateUserFriendlyMessage, calculateRetryDelay, onError, onRecovery, onGiveUp])
+
+  // Manual retry for user-triggered retries
+  const retryOperation = useCallback(async <T>(
+    operation: () => Promise<T>,
+    errorId: string
+  ): Promise<T> => {
+    const error = errors.find(e => e.id === errorId)
+    if (!error) {
+      throw new Error('Error not found for retry')
+    }
+    
+    logger.debug('🔄 Manual retry triggered for error:', errorId)
+    
+    try {
+      setIsRecovering(true)
+      const result = await operation()
+      
+      // Remove error from state on successful retry
+      setErrors(prev => prev.filter(e => e.id !== errorId))
+      setIsRecovering(false)
+      
+      logger.debug('✅ Manual retry successful for error:', errorId)
+      return result
+    } catch (retryError) {
+      setIsRecovering(false)
+      
+      // Update error with new timestamp but keep same ID
+      const updatedError: AppError = {
+        ...error,
+        message: retryError instanceof Error ? retryError.message : 'Retry failed',
+        timestamp: Date.now()
+      }
+      
+      setErrors(prev => prev.map(e => e.id === errorId ? updatedError : e))
+      throw retryError
+    }
+  }, [errors])
+
+  // Dismiss error
+  const dismissError = useCallback((errorId: string) => {
+    setErrors(prev => prev.filter(e => e.id !== errorId))
+    
+    // Clear any pending retry timeout
+    const timeout = retryTimeouts.current.get(errorId)
+    if (timeout) {
+      clearTimeout(timeout)
+      retryTimeouts.current.delete(errorId)
+    }
+  }, [])
+
+  // Clear all errors
+  const clearAllErrors = useCallback(() => {
+    setErrors([])
+    
+    // Clear all pending timeouts
+    retryTimeouts.current.forEach(timeout => clearTimeout(timeout))
+    retryTimeouts.current.clear()
+    retryAttempts.current.clear()
+  }, [])
+
+  // Get errors by severity
+  const getErrorsBySeverity = useCallback((severity: ErrorSeverity) => {
+    return errors.filter(error => error.severity === severity)
+  }, [errors])
+
+  // Get errors by type
+  const getErrorsByType = useCallback((type: ErrorType) => {
+    return errors.filter(error => error.type === type)
+  }, [errors])
+
+  // Check if there are critical errors
+  const hasCriticalErrors = useCallback(() => {
+    return errors.some(error => error.severity === 'critical')
+  }, [errors])
+
+  // Auto-cleanup old errors
+  useEffect(() => {
+    const cleanup = setInterval(() => {
+      const cutoff = Date.now() - 5 * 60 * 1000 // 5 minutes
+      setErrors(prev => prev.filter(error => 
+        error.severity === 'critical' || error.timestamp > cutoff
+      ))
+    }, 60000) // Run every minute
+
+    return () => clearInterval(cleanup)
+  }, [])
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      retryTimeouts.current.forEach(timeout => clearTimeout(timeout))
+      retryTimeouts.current.clear()
+    }
+  }, [])
+
+  return {
+    errors,
+    isRecovering,
+    handleError,
+    retryOperation,
+    dismissError,
+    clearAllErrors,
+    getErrorsBySeverity,
+    getErrorsByType,
+    hasCriticalErrors
+  }
+}

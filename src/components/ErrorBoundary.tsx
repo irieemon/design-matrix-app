@@ -145,6 +145,112 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       const maxRetries = this.props.maxRetries || 3
 
       return (
-        <div className=\"min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4\">
-          <div className=\"max-w-md w-full bg-white rounded-2xl shadow-xl p-6 text-center\">
-            {/* Error Icon */}\n            <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${\n              severity === 'critical' ? 'bg-red-100' :\n              severity === 'high' ? 'bg-orange-100' :\n              'bg-yellow-100'\n            }`}>\n              <AlertTriangle className={`w-8 h-8 ${\n                severity === 'critical' ? 'text-red-600' :\n                severity === 'high' ? 'text-orange-600' :\n                'text-yellow-600'\n              }`} />\n            </div>\n\n            {/* Error Title */}\n            <h1 className=\"text-xl font-bold text-gray-900 mb-2\">\n              {severity === 'critical' ? 'Critical Error' :\n               severity === 'high' ? 'Application Error' :\n               'Something went wrong'}\n            </h1>\n\n            {/* Error Description */}\n            <p className=\"text-gray-600 mb-6\">\n              {severity === 'critical' \n                ? 'A critical error has occurred that prevents the application from functioning properly.'\n                : isRecoverable \n                ? 'A temporary error occurred. The application is attempting to recover automatically.'\n                : 'An unexpected error occurred. Please try refreshing the page or contact support if the problem persists.'}\n            </p>\n\n            {/* Retry Information */}\n            {isRecoverable && this.state.retryCount > 0 && (\n              <div className=\"bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4\">\n                <p className=\"text-sm text-blue-800\">\n                  Auto-retry attempt {this.state.retryCount}/{maxRetries}\n                </p>\n              </div>\n            )}\n\n            {/* Error Details (expandable) */}\n            <details className=\"text-left mb-6\">\n              <summary className=\"cursor-pointer text-sm text-gray-500 hover:text-gray-700 flex items-center justify-center space-x-1\">\n                <Bug className=\"w-4 h-4\" />\n                <span>Technical Details</span>\n              </summary>\n              <div className=\"mt-3 p-3 bg-gray-50 rounded border text-xs text-gray-600 font-mono\">\n                <div className=\"mb-2\">\n                  <strong>Error:</strong> {this.state.error?.name}\n                </div>\n                <div className=\"mb-2\">\n                  <strong>Message:</strong> {this.state.error?.message}\n                </div>\n                {this.state.error?.stack && (\n                  <div>\n                    <strong>Stack Trace:</strong>\n                    <pre className=\"mt-1 whitespace-pre-wrap text-xs\">\n                      {this.state.error.stack.split('\\n').slice(0, 5).join('\\n')}\n                    </pre>\n                  </div>\n                )}\n              </div>\n            </details>\n\n            {/* Action Buttons */}\n            <div className=\"space-y-3\">\n              {/* Retry Button */}\n              <button\n                onClick={this.handleManualRetry}\n                className=\"w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium\"\n              >\n                <RefreshCw className=\"w-4 h-4\" />\n                <span>Try Again</span>\n              </button>\n\n              {/* Secondary Actions */}\n              <div className=\"flex space-x-3\">\n                <button\n                  onClick={this.handleGoHome}\n                  className=\"flex-1 flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors\"\n                >\n                  <Home className=\"w-4 h-4\" />\n                  <span>Go Home</span>\n                </button>\n                \n                <button\n                  onClick={this.handleReload}\n                  className=\"flex-1 flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors\"\n                >\n                  <RefreshCw className=\"w-4 h-4\" />\n                  <span>Reload</span>\n                </button>\n              </div>\n            </div>\n\n            {/* Help Text */}\n            <p className=\"text-xs text-gray-500 mt-4\">\n              If this problem persists, please contact support with the technical details above.\n            </p>\n          </div>\n        </div>\n      )\n    }\n\n    return this.props.children\n  }\n}\n\nexport default ErrorBoundary"
+        <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-6 text-center">
+            {/* Error Icon */}
+            <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+              severity === 'critical' ? 'bg-red-100' :
+              severity === 'high' ? 'bg-orange-100' :
+              'bg-yellow-100'
+            }`}>
+              <AlertTriangle className={`w-8 h-8 ${
+                severity === 'critical' ? 'text-red-600' :
+                severity === 'high' ? 'text-orange-600' :
+                'text-yellow-600'
+              }`} />
+            </div>
+
+            {/* Error Title */}
+            <h1 className="text-xl font-bold text-gray-900 mb-2">
+              {severity === 'critical' ? 'Critical Error' :
+               severity === 'high' ? 'Application Error' :
+               'Something went wrong'}
+            </h1>
+
+            {/* Error Description */}
+            <p className="text-gray-600 mb-6">
+              {severity === 'critical' 
+                ? 'A critical error has occurred that prevents the application from functioning properly.'
+                : isRecoverable 
+                ? 'A temporary error occurred. The application is attempting to recover automatically.'
+                : 'An unexpected error occurred. Please try refreshing the page or contact support if the problem persists.'}
+            </p>
+
+            {/* Retry Information */}
+            {isRecoverable && this.state.retryCount > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  Auto-retry attempt {this.state.retryCount}/{maxRetries}
+                </p>
+              </div>
+            )}
+
+            {/* Error Details (expandable) */}
+            <details className="text-left mb-6">
+              <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 flex items-center justify-center space-x-1">
+                <Bug className="w-4 h-4" />
+                <span>Technical Details</span>
+              </summary>
+              <div className="mt-3 p-3 bg-gray-50 rounded border text-xs text-gray-600 font-mono">
+                <div className="mb-2">
+                  <strong>Error:</strong> {this.state.error?.name}
+                </div>
+                <div className="mb-2">
+                  <strong>Message:</strong> {this.state.error?.message}
+                </div>
+                {this.state.error?.stack && (
+                  <div>
+                    <strong>Stack Trace:</strong>
+                    <pre className="mt-1 whitespace-pre-wrap text-xs">
+                      {this.state.error.stack.split('\n').slice(0, 5).join('\n')}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </details>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              {/* Retry Button */}
+              <button
+                onClick={this.handleManualRetry}
+                className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Try Again</span>
+              </button>
+
+              {/* Secondary Actions */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={this.handleGoHome}
+                  className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Home className="w-4 h-4" />
+                  <span>Go Home</span>
+                </button>
+                
+                <button
+                  onClick={this.handleReload}
+                  className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Reload</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Help Text */}
+            <p className="text-xs text-gray-500 mt-4">
+              If this problem persists, please contact support with the technical details above.
+            </p>
+          </div>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
+
+export default ErrorBoundary

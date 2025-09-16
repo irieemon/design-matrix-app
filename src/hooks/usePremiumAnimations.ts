@@ -1,1 +1,361 @@
-import { useEffect, useRef, useCallback, useState } from 'react'\n\n// Animation configurations\nexport interface AnimationConfig {\n  duration?: number\n  easing?: string\n  delay?: number\n  iterations?: number\n  direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse'\n  fillMode?: 'none' | 'forwards' | 'backwards' | 'both'\n}\n\nexport interface SpringConfig {\n  tension?: number\n  friction?: number\n  mass?: number\n  velocity?: number\n}\n\nexport interface ParticleConfig {\n  count?: number\n  colors?: string[]\n  shapes?: ('circle' | 'square' | 'triangle')[]\n  duration?: number\n  spread?: number\n  origin?: { x: number; y: number }\n}\n\n// Predefined premium animations\nconst PREMIUM_ANIMATIONS = {\n  // Entrance animations\n  fadeInUp: {\n    keyframes: [\n      { opacity: 0, transform: 'translateY(20px)' },\n      { opacity: 1, transform: 'translateY(0)' }\n    ],\n    config: { duration: 600, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' }\n  },\n  \n  slideInRight: {\n    keyframes: [\n      { opacity: 0, transform: 'translateX(30px)' },\n      { opacity: 1, transform: 'translateX(0)' }\n    ],\n    config: { duration: 500, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' }\n  },\n  \n  scaleIn: {\n    keyframes: [\n      { opacity: 0, transform: 'scale(0.9)' },\n      { opacity: 1, transform: 'scale(1)' }\n    ],\n    config: { duration: 400, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }\n  },\n  \n  // Interaction animations\n  bounce: {\n    keyframes: [\n      { transform: 'scale(1)' },\n      { transform: 'scale(1.05)' },\n      { transform: 'scale(0.95)' },\n      { transform: 'scale(1)' }\n    ],\n    config: { duration: 600, easing: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' }\n  },\n  \n  pulse: {\n    keyframes: [\n      { transform: 'scale(1)', opacity: 1 },\n      { transform: 'scale(1.1)', opacity: 0.8 },\n      { transform: 'scale(1)', opacity: 1 }\n    ],\n    config: { duration: 1000, easing: 'ease-in-out', iterations: Infinity }\n  },\n  \n  shake: {\n    keyframes: [\n      { transform: 'translateX(0)' },\n      { transform: 'translateX(-5px)' },\n      { transform: 'translateX(5px)' },\n      { transform: 'translateX(-5px)' },\n      { transform: 'translateX(0)' }\n    ],\n    config: { duration: 500, easing: 'ease-in-out' }\n  },\n  \n  // Success animations\n  checkmark: {\n    keyframes: [\n      { opacity: 0, transform: 'scale(0) rotate(45deg)' },\n      { opacity: 1, transform: 'scale(1.2) rotate(45deg)' },\n      { opacity: 1, transform: 'scale(1) rotate(45deg)' }\n    ],\n    config: { duration: 600, easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)' }\n  },\n  \n  // Loading animations\n  shimmer: {\n    keyframes: [\n      { transform: 'translateX(-100%)' },\n      { transform: 'translateX(100%)' }\n    ],\n    config: { duration: 1500, easing: 'ease-in-out', iterations: Infinity }\n  },\n  \n  // Hover effects\n  liftUp: {\n    keyframes: [\n      { transform: 'translateY(0) scale(1)', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },\n      { transform: 'translateY(-2px) scale(1.02)', boxShadow: '0 8px 25px rgba(0,0,0,0.15)' }\n    ],\n    config: { duration: 200, easing: 'ease-out', fillMode: 'forwards' }\n  },\n  \n  // Attention seekers\n  wiggle: {\n    keyframes: [\n      { transform: 'rotate(0deg)' },\n      { transform: 'rotate(5deg)' },\n      { transform: 'rotate(-5deg)' },\n      { transform: 'rotate(0deg)' }\n    ],\n    config: { duration: 500, easing: 'ease-in-out' }\n  }\n}\n\nexport const usePremiumAnimations = () => {\n  const [isAnimationEnabled, setIsAnimationEnabled] = useState(true)\n  const animationRefs = useRef<Map<string, Animation>>(new Map())\n  const observerRef = useRef<IntersectionObserver | null>(null)\n\n  // Check user's animation preferences\n  useEffect(() => {\n    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches\n    setIsAnimationEnabled(!prefersReducedMotion)\n  }, [])\n\n  // Animate element with predefined animation\n  const animate = useCallback((element: HTMLElement, animationName: keyof typeof PREMIUM_ANIMATIONS, customConfig?: AnimationConfig) => {\n    if (!isAnimationEnabled || !element) return null\n\n    const animation = PREMIUM_ANIMATIONS[animationName]\n    if (!animation) {\n      console.warn(`Animation '${animationName}' not found`)\n      return null\n    }\n\n    const config = { ...animation.config, ...customConfig }\n    const webAnimation = element.animate(animation.keyframes, config)\n    \n    // Store animation reference\n    const animationId = `${animationName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`\n    animationRefs.current.set(animationId, webAnimation)\n\n    // Cleanup when animation finishes\n    webAnimation.addEventListener('finish', () => {\n      animationRefs.current.delete(animationId)\n    })\n\n    return webAnimation\n  }, [isAnimationEnabled])\n\n  // Custom keyframe animation\n  const animateCustom = useCallback((element: HTMLElement, keyframes: Keyframe[], config: AnimationConfig = {}) => {\n    if (!isAnimationEnabled || !element) return null\n\n    const defaultConfig = {\n      duration: 300,\n      easing: 'ease',\n      fillMode: 'both' as const\n    }\n\n    const webAnimation = element.animate(keyframes, { ...defaultConfig, ...config })\n    \n    const animationId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`\n    animationRefs.current.set(animationId, webAnimation)\n\n    webAnimation.addEventListener('finish', () => {\n      animationRefs.current.delete(animationId)\n    })\n\n    return webAnimation\n  }, [isAnimationEnabled])\n\n  // Spring-based animation (simplified)\n  const animateSpring = useCallback((element: HTMLElement, targetState: Partial<CSSStyleDeclaration>, springConfig: SpringConfig = {}) => {\n    if (!isAnimationEnabled || !element) return null\n\n    const { tension = 170, friction = 26, mass = 1 } = springConfig\n    \n    // Convert spring config to CSS transition\n    const dampingRatio = friction / (2 * Math.sqrt(mass * tension))\n    const naturalFrequency = Math.sqrt(tension / mass)\n    const duration = dampingRatio < 1 ? \n      (4 / (naturalFrequency * Math.sqrt(1 - dampingRatio * dampingRatio))) * 1000 :\n      (4 / naturalFrequency) * 1000\n\n    const easing = dampingRatio >= 1 ? 'ease-out' : 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'\n\n    // Apply styles with transition\n    element.style.transition = `all ${duration}ms ${easing}`\n    Object.assign(element.style, targetState)\n\n    // Reset transition after animation\n    setTimeout(() => {\n      element.style.transition = ''\n    }, duration)\n\n    return { duration, easing }\n  }, [isAnimationEnabled])\n\n  // Stagger animation for multiple elements\n  const staggerAnimation = useCallback((elements: HTMLElement[], animationName: keyof typeof PREMIUM_ANIMATIONS, staggerDelay = 100) => {\n    if (!isAnimationEnabled) return []\n\n    return elements.map((element, index) => {\n      return animate(element, animationName, { delay: index * staggerDelay })\n    }).filter(Boolean)\n  }, [animate, isAnimationEnabled])\n\n  // Parallax scroll effect\n  const createParallaxEffect = useCallback((element: HTMLElement, speed = 0.5) => {\n    if (!isAnimationEnabled) return () => {}\n\n    const handleScroll = () => {\n      const scrolled = window.pageYOffset\n      const rate = scrolled * -speed\n      element.style.transform = `translateY(${rate}px)`\n    }\n\n    window.addEventListener('scroll', handleScroll, { passive: true })\n    \n    return () => {\n      window.removeEventListener('scroll', handleScroll)\n    }\n  }, [isAnimationEnabled])\n\n  // Intersection observer animations\n  const animateOnScroll = useCallback((element: HTMLElement, animationName: keyof typeof PREMIUM_ANIMATIONS, threshold = 0.1) => {\n    if (!isAnimationEnabled) return () => {}\n\n    if (!observerRef.current) {\n      observerRef.current = new IntersectionObserver((entries) => {\n        entries.forEach((entry) => {\n          if (entry.isIntersecting) {\n            const animationName = entry.target.getAttribute('data-animation') as keyof typeof PREMIUM_ANIMATIONS\n            if (animationName) {\n              animate(entry.target as HTMLElement, animationName)\n            }\n          }\n        })\n      }, { threshold })\n    }\n\n    element.setAttribute('data-animation', animationName)\n    observerRef.current.observe(element)\n\n    return () => {\n      if (observerRef.current) {\n        observerRef.current.unobserve(element)\n      }\n    }\n  }, [animate, isAnimationEnabled])\n\n  // Particle burst effect\n  const createParticleBurst = useCallback((element: HTMLElement, config: ParticleConfig = {}) => {\n    if (!isAnimationEnabled) return\n\n    const {\n      count = 10,\n      colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'],\n      shapes = ['circle'],\n      duration = 1000,\n      spread = 100,\n      origin = { x: 0.5, y: 0.5 }\n    } = config\n\n    const rect = element.getBoundingClientRect()\n    const container = document.createElement('div')\n    container.style.cssText = `\n      position: fixed;\n      top: ${rect.top + rect.height * origin.y}px;\n      left: ${rect.left + rect.width * origin.x}px;\n      pointer-events: none;\n      z-index: 9999;\n    `\n    document.body.appendChild(container)\n\n    for (let i = 0; i < count; i++) {\n      const particle = document.createElement('div')\n      const color = colors[Math.floor(Math.random() * colors.length)]\n      const shape = shapes[Math.floor(Math.random() * shapes.length)]\n      const size = Math.random() * 8 + 4\n      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5\n      const velocity = Math.random() * spread + 50\n      const x = Math.cos(angle) * velocity\n      const y = Math.sin(angle) * velocity\n\n      particle.style.cssText = `\n        position: absolute;\n        width: ${size}px;\n        height: ${size}px;\n        background: ${color};\n        border-radius: ${shape === 'circle' ? '50%' : '0'};\n        transform: ${shape === 'triangle' ? 'rotate(45deg)' : 'none'};\n      `\n\n      container.appendChild(particle)\n\n      // Animate particle\n      particle.animate([\n        { \n          transform: `translate(0, 0) scale(1)`,\n          opacity: 1\n        },\n        { \n          transform: `translate(${x}px, ${y}px) scale(0)`,\n          opacity: 0\n        }\n      ], {\n        duration: duration + Math.random() * 500,\n        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'\n      })\n    }\n\n    // Cleanup\n    setTimeout(() => {\n      document.body.removeChild(container)\n    }, duration + 500)\n  }, [isAnimationEnabled])\n\n  // Cleanup all animations\n  const cleanup = useCallback(() => {\n    animationRefs.current.forEach(animation => {\n      animation.cancel()\n    })\n    animationRefs.current.clear()\n\n    if (observerRef.current) {\n      observerRef.current.disconnect()\n    }\n  }, [])\n\n  // Auto cleanup on unmount\n  useEffect(() => {\n    return cleanup\n  }, [cleanup])\n\n  return {\n    animate,\n    animateCustom,\n    animateSpring,\n    staggerAnimation,\n    createParallaxEffect,\n    animateOnScroll,\n    createParticleBurst,\n    cleanup,\n    isAnimationEnabled,\n    setIsAnimationEnabled\n  }\n}"
+import { useEffect, useRef, useCallback, useState } from 'react'
+
+// Animation configurations
+export interface AnimationConfig {
+  duration?: number
+  easing?: string
+  delay?: number
+  iterations?: number
+  direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse'
+  fillMode?: 'none' | 'forwards' | 'backwards' | 'both'
+}
+
+export interface SpringConfig {
+  tension?: number
+  friction?: number
+  mass?: number
+  velocity?: number
+}
+
+export interface ParticleConfig {
+  count?: number
+  colors?: string[]
+  shapes?: ('circle' | 'square' | 'triangle')[]
+  duration?: number
+  spread?: number
+  origin?: { x: number; y: number }
+}
+
+// Predefined premium animations
+const PREMIUM_ANIMATIONS = {
+  // Entrance animations
+  fadeInUp: {
+    keyframes: [
+      { opacity: 0, transform: 'translateY(20px)' },
+      { opacity: 1, transform: 'translateY(0)' }
+    ],
+    config: { duration: 600, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' }
+  },
+  
+  slideInRight: {
+    keyframes: [
+      { opacity: 0, transform: 'translateX(30px)' },
+      { opacity: 1, transform: 'translateX(0)' }
+    ],
+    config: { duration: 500, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' }
+  },
+  
+  scaleIn: {
+    keyframes: [
+      { opacity: 0, transform: 'scale(0.9)' },
+      { opacity: 1, transform: 'scale(1)' }
+    ],
+    config: { duration: 400, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }
+  },
+  
+  // Interaction animations
+  bounce: {
+    keyframes: [
+      { transform: 'scale(1)' },
+      { transform: 'scale(1.05)' },
+      { transform: 'scale(0.95)' },
+      { transform: 'scale(1)' }
+    ],
+    config: { duration: 600, easing: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' }
+  },
+  
+  pulse: {
+    keyframes: [
+      { transform: 'scale(1)', opacity: 1 },
+      { transform: 'scale(1.1)', opacity: 0.8 },
+      { transform: 'scale(1)', opacity: 1 }
+    ],
+    config: { duration: 1000, easing: 'ease-in-out', iterations: Infinity }
+  },
+  
+  shake: {
+    keyframes: [
+      { transform: 'translateX(0)' },
+      { transform: 'translateX(-5px)' },
+      { transform: 'translateX(5px)' },
+      { transform: 'translateX(-5px)' },
+      { transform: 'translateX(0)' }
+    ],
+    config: { duration: 500, easing: 'ease-in-out' }
+  },
+  
+  // Success animations
+  checkmark: {
+    keyframes: [
+      { opacity: 0, transform: 'scale(0) rotate(45deg)' },
+      { opacity: 1, transform: 'scale(1.2) rotate(45deg)' },
+      { opacity: 1, transform: 'scale(1) rotate(45deg)' }
+    ],
+    config: { duration: 600, easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)' }
+  },
+  
+  // Loading animations
+  shimmer: {
+    keyframes: [
+      { transform: 'translateX(-100%)' },
+      { transform: 'translateX(100%)' }
+    ],
+    config: { duration: 1500, easing: 'ease-in-out', iterations: Infinity }
+  },
+  
+  // Hover effects
+  liftUp: {
+    keyframes: [
+      { transform: 'translateY(0) scale(1)', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
+      { transform: 'translateY(-2px) scale(1.02)', boxShadow: '0 8px 25px rgba(0,0,0,0.15)' }
+    ],
+    config: { duration: 200, easing: 'ease-out', fillMode: 'forwards' }
+  },
+  
+  // Attention seekers
+  wiggle: {
+    keyframes: [
+      { transform: 'rotate(0deg)' },
+      { transform: 'rotate(5deg)' },
+      { transform: 'rotate(-5deg)' },
+      { transform: 'rotate(0deg)' }
+    ],
+    config: { duration: 500, easing: 'ease-in-out' }
+  }
+}
+
+export const usePremiumAnimations = () => {
+  const [isAnimationEnabled, setIsAnimationEnabled] = useState(true)
+  const animationRefs = useRef<Map<string, Animation>>(new Map())
+  const observerRef = useRef<IntersectionObserver | null>(null)
+
+  // Check user's animation preferences
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    setIsAnimationEnabled(!prefersReducedMotion)
+  }, [])
+
+  // Animate element with predefined animation
+  const animate = useCallback((element: HTMLElement, animationName: keyof typeof PREMIUM_ANIMATIONS, customConfig?: AnimationConfig) => {
+    if (!isAnimationEnabled || !element) return null
+
+    const animation = PREMIUM_ANIMATIONS[animationName]
+    if (!animation) {
+      console.warn(`Animation '${animationName}' not found`)
+      return null
+    }
+
+    const config = { ...animation.config, ...customConfig }
+    const webAnimation = element.animate(animation.keyframes, config)
+    
+    // Store animation reference
+    const animationId = `${animationName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    animationRefs.current.set(animationId, webAnimation)
+
+    // Cleanup when animation finishes
+    webAnimation.addEventListener('finish', () => {
+      animationRefs.current.delete(animationId)
+    })
+
+    return webAnimation
+  }, [isAnimationEnabled])
+
+  // Custom keyframe animation
+  const animateCustom = useCallback((element: HTMLElement, keyframes: Keyframe[], config: AnimationConfig = {}) => {
+    if (!isAnimationEnabled || !element) return null
+
+    const defaultConfig = {
+      duration: 300,
+      easing: 'ease',
+      fillMode: 'both' as const
+    }
+
+    const webAnimation = element.animate(keyframes, { ...defaultConfig, ...config })
+    
+    const animationId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    animationRefs.current.set(animationId, webAnimation)
+
+    webAnimation.addEventListener('finish', () => {
+      animationRefs.current.delete(animationId)
+    })
+
+    return webAnimation
+  }, [isAnimationEnabled])
+
+  // Spring-based animation (simplified)
+  const animateSpring = useCallback((element: HTMLElement, targetState: Partial<CSSStyleDeclaration>, springConfig: SpringConfig = {}) => {
+    if (!isAnimationEnabled || !element) return null
+
+    const { tension = 170, friction = 26, mass = 1 } = springConfig
+    
+    // Convert spring config to CSS transition
+    const dampingRatio = friction / (2 * Math.sqrt(mass * tension))
+    const naturalFrequency = Math.sqrt(tension / mass)
+    const duration = dampingRatio < 1 ? 
+      (4 / (naturalFrequency * Math.sqrt(1 - dampingRatio * dampingRatio))) * 1000 :
+      (4 / naturalFrequency) * 1000
+
+    const easing = dampingRatio >= 1 ? 'ease-out' : 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+
+    // Apply styles with transition
+    element.style.transition = `all ${duration}ms ${easing}`
+    Object.assign(element.style, targetState)
+
+    // Reset transition after animation
+    setTimeout(() => {
+      element.style.transition = ''
+    }, duration)
+
+    return { duration, easing }
+  }, [isAnimationEnabled])
+
+  // Stagger animation for multiple elements
+  const staggerAnimation = useCallback((elements: HTMLElement[], animationName: keyof typeof PREMIUM_ANIMATIONS, staggerDelay = 100) => {
+    if (!isAnimationEnabled) return []
+
+    return elements.map((element, index) => {
+      return animate(element, animationName, { delay: index * staggerDelay })
+    }).filter(Boolean)
+  }, [animate, isAnimationEnabled])
+
+  // Parallax scroll effect
+  const createParallaxEffect = useCallback((element: HTMLElement, speed = 0.5) => {
+    if (!isAnimationEnabled) return () => {}
+
+    const handleScroll = () => {
+      const scrolled = window.pageYOffset
+      const rate = scrolled * -speed
+      element.style.transform = `translateY(${rate}px)`
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [isAnimationEnabled])
+
+  // Intersection observer animations
+  const animateOnScroll = useCallback((element: HTMLElement, animationName: keyof typeof PREMIUM_ANIMATIONS, threshold = 0.1) => {
+    if (!isAnimationEnabled) return () => {}
+
+    if (!observerRef.current) {
+      observerRef.current = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const animationName = entry.target.getAttribute('data-animation') as keyof typeof PREMIUM_ANIMATIONS
+            if (animationName) {
+              animate(entry.target as HTMLElement, animationName)
+            }
+          }
+        })
+      }, { threshold })
+    }
+
+    element.setAttribute('data-animation', animationName)
+    observerRef.current.observe(element)
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.unobserve(element)
+      }
+    }
+  }, [animate, isAnimationEnabled])
+
+  // Particle burst effect
+  const createParticleBurst = useCallback((element: HTMLElement, config: ParticleConfig = {}) => {
+    if (!isAnimationEnabled) return
+
+    const {
+      count = 10,
+      colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'],
+      shapes = ['circle'],
+      duration = 1000,
+      spread = 100,
+      origin = { x: 0.5, y: 0.5 }
+    } = config
+
+    const rect = element.getBoundingClientRect()
+    const container = document.createElement('div')
+    container.style.cssText = `
+      position: fixed;
+      top: ${rect.top + rect.height * origin.y}px;
+      left: ${rect.left + rect.width * origin.x}px;
+      pointer-events: none;
+      z-index: 9999;
+    `
+    document.body.appendChild(container)
+
+    for (let i = 0; i < count; i++) {
+      const particle = document.createElement('div')
+      const color = colors[Math.floor(Math.random() * colors.length)]
+      const shape = shapes[Math.floor(Math.random() * shapes.length)]
+      const size = Math.random() * 8 + 4
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5
+      const velocity = Math.random() * spread + 50
+      const x = Math.cos(angle) * velocity
+      const y = Math.sin(angle) * velocity
+
+      particle.style.cssText = `
+        position: absolute;
+        width: ${size}px;
+        height: ${size}px;
+        background: ${color};
+        border-radius: ${shape === 'circle' ? '50%' : '0'};
+        transform: ${shape === 'triangle' ? 'rotate(45deg)' : 'none'};
+      `
+
+      container.appendChild(particle)
+
+      // Animate particle
+      particle.animate([
+        { 
+          transform: `translate(0, 0) scale(1)`,
+          opacity: 1
+        },
+        { 
+          transform: `translate(${x}px, ${y}px) scale(0)`,
+          opacity: 0
+        }
+      ], {
+        duration: duration + Math.random() * 500,
+        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+      })
+    }
+
+    // Cleanup
+    setTimeout(() => {
+      document.body.removeChild(container)
+    }, duration + 500)
+  }, [isAnimationEnabled])
+
+  // Cleanup all animations
+  const cleanup = useCallback(() => {
+    animationRefs.current.forEach(animation => {
+      animation.cancel()
+    })
+    animationRefs.current.clear()
+
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
+  }, [])
+
+  // Auto cleanup on unmount
+  useEffect(() => {
+    return cleanup
+  }, [cleanup])
+
+  return {
+    animate,
+    animateCustom,
+    animateSpring,
+    staggerAnimation,
+    createParallaxEffect,
+    animateOnScroll,
+    createParticleBurst,
+    cleanup,
+    isAnimationEnabled,
+    setIsAnimationEnabled
+  }
+}

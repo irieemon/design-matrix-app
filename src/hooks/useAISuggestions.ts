@@ -32,4 +32,312 @@ interface UseAISuggestionsOptions {
 }
 
 export const useAISuggestions = (options: UseAISuggestionsOptions = {}) => {
-  const {\n    project,\n    existingIdeas = [],\n    debounceMs = 300,\n    maxSuggestions = 5,\n    enableAutoCompletion = true,\n    enableSmartSuggestions = true\n  } = options\n\n  const [suggestions, setSuggestions] = useState<AISuggestion[]>([])\n  const [autoCompletions, setAutoCompletions] = useState<AutoCompletionSuggestion[]>([])\n  const [isLoading, setIsLoading] = useState(false)\n  const [currentInput, setCurrentInput] = useState('')\n  \n  const debounceTimeout = useRef<NodeJS.Timeout | null>(null)\n  const suggestionCache = useRef<Map<string, AISuggestion[]>>(new Map())\n  const completionCache = useRef<Map<string, AutoCompletionSuggestion[]>>(new Map())\n\n  // Common business/tech keywords and patterns\n  const businessKeywords = [\n    'user experience', 'customer journey', 'market research', 'competitive analysis',\n    'revenue optimization', 'cost reduction', 'process automation', 'digital transformation',\n    'data analytics', 'performance metrics', 'user engagement', 'conversion rate',\n    'scalability', 'security', 'compliance', 'integration', 'mobile optimization',\n    'accessibility', 'personalization', 'recommendation system', 'machine learning',\n    'artificial intelligence', 'cloud migration', 'API development', 'database optimization'\n  ]\n\n  const commonPatterns = [\n    { pattern: /improve\\s+(\\w+)/i, suggestions: ['user interface', 'performance', 'accessibility', 'security'] },\n    { pattern: /implement\\s+(\\w+)/i, suggestions: ['authentication', 'caching', 'monitoring', 'testing'] },\n    { pattern: /optimize\\s+(\\w+)/i, suggestions: ['database queries', 'load times', 'memory usage', 'bandwidth'] },\n    { pattern: /add\\s+(\\w+)/i, suggestions: ['new features', 'validation', 'error handling', 'logging'] },\n    { pattern: /create\\s+(\\w+)/i, suggestions: ['dashboard', 'report', 'workflow', 'component'] },\n    { pattern: /integrate\\s+(\\w+)/i, suggestions: ['third-party API', 'payment gateway', 'analytics', 'CRM'] }\n  ]\n\n  // Analyze input and generate contextual suggestions\n  const analyzeInput = useCallback((input: string): AISuggestion[] => {\n    const suggestions: AISuggestion[] = []\n    const inputLower = input.toLowerCase()\n    \n    // Pattern-based suggestions\n    commonPatterns.forEach(({ pattern, suggestions: patternSuggestions }) => {\n      const match = input.match(pattern)\n      if (match) {\n        patternSuggestions.forEach((suggestion, index) => {\n          suggestions.push({\n            id: `pattern_${Date.now()}_${index}`,\n            type: 'completion',\n            text: `${match[0]} ${suggestion}`,\n            confidence: 0.8 - (index * 0.1),\n            context: 'Pattern-based suggestion',\n            reasoning: `Detected pattern \"${pattern.source}\" and suggesting common continuations`,\n            actionable: true\n          })\n        })\n      }\n    })\n\n    // Keyword enhancement suggestions\n    businessKeywords.forEach((keyword, index) => {\n      if (keyword.toLowerCase().includes(inputLower) || inputLower.includes(keyword.toLowerCase())) {\n        const relevanceScore = inputLower.length / keyword.length\n        if (relevanceScore > 0.3) {\n          suggestions.push({\n            id: `keyword_${Date.now()}_${index}`,\n            type: 'enhancement',\n            text: `Consider focusing on ${keyword}`,\n            confidence: Math.min(0.9, relevanceScore),\n            context: 'Business domain expertise',\n            reasoning: `This relates to important business concept: ${keyword}`,\n            actionable: true,\n            metadata: { keyword }\n          })\n        }\n      }\n    })\n\n    // Related ideas from existing project\n    if (existingIdeas.length > 0) {\n      const relatedIdeas = existingIdeas.filter(idea => {\n        const ideaText = (idea.content || '').toLowerCase()\n        return inputLower.split(' ').some(word => \n          word.length > 3 && ideaText.includes(word)\n        )\n      }).slice(0, 3)\n\n      relatedIdeas.forEach((idea, index) => {\n        suggestions.push({\n          id: `related_${idea.id}_${Date.now()}`,\n          type: 'related',\n          text: `Similar to: \"${idea.content}\"`,\n          confidence: 0.7 - (index * 0.1),\n          context: 'Existing project ideas',\n          reasoning: 'Found similar idea in your current project',\n          actionable: true,\n          metadata: { relatedIdeaId: idea.id, priority: idea.priority }\n        })\n      })\n    }\n\n    // Priority suggestions based on input sentiment\n    const urgentWords = ['urgent', 'critical', 'asap', 'immediately', 'priority', 'important']\n    const hasUrgency = urgentWords.some(word => inputLower.includes(word))\n    \n    if (hasUrgency) {\n      suggestions.push({\n        id: `priority_${Date.now()}`,\n        type: 'priority',\n        text: 'Consider setting this as high priority',\n        confidence: 0.85,\n        context: 'Urgency detection',\n        reasoning: 'Detected urgency keywords in the input',\n        actionable: true,\n        metadata: { suggestedPriority: 5 }\n      })\n    }\n\n    return suggestions\n      .sort((a, b) => b.confidence - a.confidence)\n      .slice(0, maxSuggestions)\n  }, [existingIdeas, maxSuggestions])\n\n  // Generate auto-completion suggestions\n  const generateAutoCompletions = useCallback((input: string): AutoCompletionSuggestion[] => {\n    if (input.length < 3) return []\n    \n    const completions: AutoCompletionSuggestion[] = []\n    const inputLower = input.toLowerCase()\n    const words = input.split(' ')\n    const lastWord = words[words.length - 1]\n\n    // Business keyword completions\n    businessKeywords.forEach((keyword, index) => {\n      if (keyword.toLowerCase().startsWith(lastWord.toLowerCase()) && keyword.length > lastWord.length) {\n        const prefix = words.slice(0, -1).join(' ')\n        const completion = prefix ? `${prefix} ${keyword}` : keyword\n        \n        completions.push({\n          id: `completion_${index}`,\n          text: input,\n          completion,\n          score: 0.9 - (index * 0.01),\n          category: 'business'\n        })\n      }\n    })\n\n    // Common phrase completions\n    const commonPhrases = [\n      'user interface design',\n      'database performance optimization',\n      'mobile app development',\n      'customer feedback integration',\n      'payment processing system',\n      'data visualization dashboard',\n      'automated testing framework',\n      'security vulnerability assessment',\n      'third-party API integration',\n      'real-time notification system'\n    ]\n\n    commonPhrases.forEach((phrase, index) => {\n      if (phrase.toLowerCase().startsWith(inputLower) && phrase.length > input.length) {\n        completions.push({\n          id: `phrase_${index}`,\n          text: input,\n          completion: phrase,\n          score: 0.8 - (index * 0.02),\n          category: 'common'\n        })\n      }\n    })\n\n    // Project-specific completions based on existing ideas\n    existingIdeas.forEach((idea, index) => {\n      const ideaText = idea.content || ''\n      if (ideaText.toLowerCase().includes(inputLower) && ideaText.length > input.length) {\n        completions.push({\n          id: `project_${idea.id}`,\n          text: input,\n          completion: ideaText,\n          score: 0.7 - (index * 0.05),\n          category: 'project'\n        })\n      }\n    })\n\n    return completions\n      .sort((a, b) => b.score - a.score)\n      .slice(0, maxSuggestions)\n  }, [existingIdeas, maxSuggestions])\n\n  // Debounced suggestion generation\n  const getSuggestions = useCallback((input: string) => {\n    if (debounceTimeout.current) {\n      clearTimeout(debounceTimeout.current)\n    }\n\n    debounceTimeout.current = setTimeout(() => {\n      if (input.trim().length === 0) {\n        setSuggestions([])\n        setAutoCompletions([])\n        return\n      }\n\n      setIsLoading(true)\n      setCurrentInput(input)\n\n      try {\n        // Check cache first\n        const cacheKey = input.toLowerCase().trim()\n        \n        if (enableSmartSuggestions) {\n          const cachedSuggestions = suggestionCache.current.get(cacheKey)\n          if (cachedSuggestions) {\n            setSuggestions(cachedSuggestions)\n          } else {\n            const newSuggestions = analyzeInput(input)\n            suggestionCache.current.set(cacheKey, newSuggestions)\n            setSuggestions(newSuggestions)\n          }\n        }\n\n        if (enableAutoCompletion) {\n          const cachedCompletions = completionCache.current.get(cacheKey)\n          if (cachedCompletions) {\n            setAutoCompletions(cachedCompletions)\n          } else {\n            const newCompletions = generateAutoCompletions(input)\n            completionCache.current.set(cacheKey, newCompletions)\n            setAutoCompletions(newCompletions)\n          }\n        }\n\n        logger.debug('🤖 Generated AI suggestions:', {\n          input,\n          suggestions: suggestions.length,\n          completions: autoCompletions.length\n        })\n      } catch (error) {\n        logger.error('Error generating AI suggestions:', error)\n        setSuggestions([])\n        setAutoCompletions([])\n      } finally {\n        setIsLoading(false)\n      }\n    }, debounceMs)\n  }, [analyzeInput, generateAutoCompletions, debounceMs, enableSmartSuggestions, enableAutoCompletion, suggestions.length, autoCompletions.length])\n\n  // Apply suggestion\n  const applySuggestion = useCallback((suggestion: AISuggestion) => {\n    logger.debug('✨ Applied AI suggestion:', suggestion)\n    \n    // Could trigger analytics or learning here\n    return suggestion.text\n  }, [])\n\n  // Apply auto-completion\n  const applyCompletion = useCallback((completion: AutoCompletionSuggestion) => {\n    logger.debug('⚡ Applied auto-completion:', completion)\n    \n    return completion.completion\n  }, [])\n\n  // Clear suggestions\n  const clearSuggestions = useCallback(() => {\n    setSuggestions([])\n    setAutoCompletions([])\n    setCurrentInput('')\n    \n    if (debounceTimeout.current) {\n      clearTimeout(debounceTimeout.current)\n    }\n  }, [])\n\n  // Get suggestion stats\n  const getSuggestionStats = useCallback(() => {\n    return {\n      totalSuggestions: suggestions.length,\n      totalCompletions: autoCompletions.length,\n      highConfidenceSuggestions: suggestions.filter(s => s.confidence > 0.8).length,\n      cacheSize: suggestionCache.current.size + completionCache.current.size,\n      isLoading,\n      currentInput\n    }\n  }, [suggestions, autoCompletions, isLoading, currentInput])\n\n  // Cleanup on unmount\n  useEffect(() => {\n    return () => {\n      if (debounceTimeout.current) {\n        clearTimeout(debounceTimeout.current)\n      }\n    }\n  }, [])\n\n  return {\n    suggestions,\n    autoCompletions,\n    isLoading,\n    getSuggestions,\n    applySuggestion,\n    applyCompletion,\n    clearSuggestions,\n    getSuggestionStats\n  }\n}"
+  const {
+    project,
+    existingIdeas = [],
+    debounceMs = 300,
+    maxSuggestions = 5,
+    enableAutoCompletion = true,
+    enableSmartSuggestions = true
+  } = options
+
+  const [suggestions, setSuggestions] = useState<AISuggestion[]>([])
+  const [autoCompletions, setAutoCompletions] = useState<AutoCompletionSuggestion[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [currentInput, setCurrentInput] = useState('')
+  
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null)
+  const suggestionCache = useRef<Map<string, AISuggestion[]>>(new Map())
+  const completionCache = useRef<Map<string, AutoCompletionSuggestion[]>>(new Map())
+
+  // Common business/tech keywords and patterns
+  const businessKeywords = [
+    'user experience', 'customer journey', 'market research', 'competitive analysis',
+    'revenue optimization', 'cost reduction', 'process automation', 'digital transformation',
+    'data analytics', 'performance metrics', 'user engagement', 'conversion rate',
+    'scalability', 'security', 'compliance', 'integration', 'mobile optimization',
+    'accessibility', 'personalization', 'recommendation system', 'machine learning',
+    'artificial intelligence', 'cloud migration', 'API development', 'database optimization'
+  ]
+
+  const commonPatterns = [
+    { pattern: /improve\s+(\w+)/i, suggestions: ['user interface', 'performance', 'accessibility', 'security'] },
+    { pattern: /implement\s+(\w+)/i, suggestions: ['authentication', 'caching', 'monitoring', 'testing'] },
+    { pattern: /optimize\s+(\w+)/i, suggestions: ['database queries', 'load times', 'memory usage', 'bandwidth'] },
+    { pattern: /add\s+(\w+)/i, suggestions: ['new features', 'validation', 'error handling', 'logging'] },
+    { pattern: /create\s+(\w+)/i, suggestions: ['dashboard', 'report', 'workflow', 'component'] },
+    { pattern: /integrate\s+(\w+)/i, suggestions: ['third-party API', 'payment gateway', 'analytics', 'CRM'] }
+  ]
+
+  // Analyze input and generate contextual suggestions
+  const analyzeInput = useCallback((input: string): AISuggestion[] => {
+    const suggestions: AISuggestion[] = []
+    const inputLower = input.toLowerCase()
+    
+    // Pattern-based suggestions
+    commonPatterns.forEach(({ pattern, suggestions: patternSuggestions }) => {
+      const match = input.match(pattern)
+      if (match) {
+        patternSuggestions.forEach((suggestion, index) => {
+          suggestions.push({
+            id: `pattern_${Date.now()}_${index}`,
+            type: 'completion',
+            text: `${match[0]} ${suggestion}`,
+            confidence: 0.8 - (index * 0.1),
+            context: 'Pattern-based suggestion',
+            reasoning: `Detected pattern "${pattern.source}" and suggesting common continuations`,
+            actionable: true
+          })
+        })
+      }
+    })
+
+    // Keyword enhancement suggestions
+    businessKeywords.forEach((keyword, index) => {
+      if (keyword.toLowerCase().includes(inputLower) || inputLower.includes(keyword.toLowerCase())) {
+        const relevanceScore = inputLower.length / keyword.length
+        if (relevanceScore > 0.3) {
+          suggestions.push({
+            id: `keyword_${Date.now()}_${index}`,
+            type: 'enhancement',
+            text: `Consider focusing on ${keyword}`,
+            confidence: Math.min(0.9, relevanceScore),
+            context: 'Business domain expertise',
+            reasoning: `This relates to important business concept: ${keyword}`,
+            actionable: true,
+            metadata: { keyword }
+          })
+        }
+      }
+    })
+
+    // Related ideas from existing project
+    if (existingIdeas.length > 0) {
+      const relatedIdeas = existingIdeas.filter(idea => {
+        const ideaText = (idea.content || '').toLowerCase()
+        return inputLower.split(' ').some(word => 
+          word.length > 3 && ideaText.includes(word)
+        )
+      }).slice(0, 3)
+
+      relatedIdeas.forEach((idea, index) => {
+        suggestions.push({
+          id: `related_${idea.id}_${Date.now()}`,
+          type: 'related',
+          text: `Similar to: "${idea.content}"`,
+          confidence: 0.7 - (index * 0.1),
+          context: 'Existing project ideas',
+          reasoning: 'Found similar idea in your current project',
+          actionable: true,
+          metadata: { relatedIdeaId: idea.id, priority: idea.priority }
+        })
+      })
+    }
+
+    // Priority suggestions based on input sentiment
+    const urgentWords = ['urgent', 'critical', 'asap', 'immediately', 'priority', 'important']
+    const hasUrgency = urgentWords.some(word => inputLower.includes(word))
+    
+    if (hasUrgency) {
+      suggestions.push({
+        id: `priority_${Date.now()}`,
+        type: 'priority',
+        text: 'Consider setting this as high priority',
+        confidence: 0.85,
+        context: 'Urgency detection',
+        reasoning: 'Detected urgency keywords in the input',
+        actionable: true,
+        metadata: { suggestedPriority: 5 }
+      })
+    }
+
+    return suggestions
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, maxSuggestions)
+  }, [existingIdeas, maxSuggestions])
+
+  // Generate auto-completion suggestions
+  const generateAutoCompletions = useCallback((input: string): AutoCompletionSuggestion[] => {
+    if (input.length < 3) return []
+    
+    const completions: AutoCompletionSuggestion[] = []
+    const inputLower = input.toLowerCase()
+    const words = input.split(' ')
+    const lastWord = words[words.length - 1]
+
+    // Business keyword completions
+    businessKeywords.forEach((keyword, index) => {
+      if (keyword.toLowerCase().startsWith(lastWord.toLowerCase()) && keyword.length > lastWord.length) {
+        const prefix = words.slice(0, -1).join(' ')
+        const completion = prefix ? `${prefix} ${keyword}` : keyword
+        
+        completions.push({
+          id: `completion_${index}`,
+          text: input,
+          completion,
+          score: 0.9 - (index * 0.01),
+          category: 'business'
+        })
+      }
+    })
+
+    // Common phrase completions
+    const commonPhrases = [
+      'user interface design',
+      'database performance optimization',
+      'mobile app development',
+      'customer feedback integration',
+      'payment processing system',
+      'data visualization dashboard',
+      'automated testing framework',
+      'security vulnerability assessment',
+      'third-party API integration',
+      'real-time notification system'
+    ]
+
+    commonPhrases.forEach((phrase, index) => {
+      if (phrase.toLowerCase().startsWith(inputLower) && phrase.length > input.length) {
+        completions.push({
+          id: `phrase_${index}`,
+          text: input,
+          completion: phrase,
+          score: 0.8 - (index * 0.02),
+          category: 'common'
+        })
+      }
+    })
+
+    // Project-specific completions based on existing ideas
+    existingIdeas.forEach((idea, index) => {
+      const ideaText = idea.content || ''
+      if (ideaText.toLowerCase().includes(inputLower) && ideaText.length > input.length) {
+        completions.push({
+          id: `project_${idea.id}`,
+          text: input,
+          completion: ideaText,
+          score: 0.7 - (index * 0.05),
+          category: 'project'
+        })
+      }
+    })
+
+    return completions
+      .sort((a, b) => b.score - a.score)
+      .slice(0, maxSuggestions)
+  }, [existingIdeas, maxSuggestions])
+
+  // Debounced suggestion generation
+  const getSuggestions = useCallback((input: string) => {
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current)
+    }
+
+    debounceTimeout.current = setTimeout(() => {
+      if (input.trim().length === 0) {
+        setSuggestions([])
+        setAutoCompletions([])
+        return
+      }
+
+      setIsLoading(true)
+      setCurrentInput(input)
+
+      try {
+        // Check cache first
+        const cacheKey = input.toLowerCase().trim()
+        
+        if (enableSmartSuggestions) {
+          const cachedSuggestions = suggestionCache.current.get(cacheKey)
+          if (cachedSuggestions) {
+            setSuggestions(cachedSuggestions)
+          } else {
+            const newSuggestions = analyzeInput(input)
+            suggestionCache.current.set(cacheKey, newSuggestions)
+            setSuggestions(newSuggestions)
+          }
+        }
+
+        if (enableAutoCompletion) {
+          const cachedCompletions = completionCache.current.get(cacheKey)
+          if (cachedCompletions) {
+            setAutoCompletions(cachedCompletions)
+          } else {
+            const newCompletions = generateAutoCompletions(input)
+            completionCache.current.set(cacheKey, newCompletions)
+            setAutoCompletions(newCompletions)
+          }
+        }
+
+        logger.debug('🤖 Generated AI suggestions:', {
+          input,
+          suggestions: suggestions.length,
+          completions: autoCompletions.length
+        })
+      } catch (error) {
+        logger.error('Error generating AI suggestions:', error)
+        setSuggestions([])
+        setAutoCompletions([])
+      } finally {
+        setIsLoading(false)
+      }
+    }, debounceMs)
+  }, [analyzeInput, generateAutoCompletions, debounceMs, enableSmartSuggestions, enableAutoCompletion, suggestions.length, autoCompletions.length])
+
+  // Apply suggestion
+  const applySuggestion = useCallback((suggestion: AISuggestion) => {
+    logger.debug('✨ Applied AI suggestion:', suggestion)
+    
+    // Could trigger analytics or learning here
+    return suggestion.text
+  }, [])
+
+  // Apply auto-completion
+  const applyCompletion = useCallback((completion: AutoCompletionSuggestion) => {
+    logger.debug('⚡ Applied auto-completion:', completion)
+    
+    return completion.completion
+  }, [])
+
+  // Clear suggestions
+  const clearSuggestions = useCallback(() => {
+    setSuggestions([])
+    setAutoCompletions([])
+    setCurrentInput('')
+    
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current)
+    }
+  }, [])
+
+  // Get suggestion stats
+  const getSuggestionStats = useCallback(() => {
+    return {
+      totalSuggestions: suggestions.length,
+      totalCompletions: autoCompletions.length,
+      highConfidenceSuggestions: suggestions.filter(s => s.confidence > 0.8).length,
+      cacheSize: suggestionCache.current.size + completionCache.current.size,
+      isLoading,
+      currentInput
+    }
+  }, [suggestions, autoCompletions, isLoading, currentInput])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current)
+      }
+    }
+  }, [])
+
+  return {
+    suggestions,
+    autoCompletions,
+    isLoading,
+    getSuggestions,
+    applySuggestion,
+    applyCompletion,
+    clearSuggestions,
+    getSuggestionStats
+  }
+}
