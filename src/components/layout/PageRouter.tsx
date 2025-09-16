@@ -62,7 +62,6 @@ const PageRouter: React.FC<PageRouterProps> = ({
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
 
   const renderPageContent = () => {
-    console.log('🎭 PageRouter: Rendering page:', currentPage, 'with project:', currentProject?.name, 'isRestoring:', isRestoringProject)
     
     switch (currentPage) {
       case 'matrix':
@@ -156,10 +155,8 @@ const PageRouter: React.FC<PageRouterProps> = ({
         )
       
       case 'roadmap':
-        console.log('🗺️ PageRouter: Roadmap case - currentProject:', !!currentProject, 'isRestoring:', isRestoringProject, 'projectName:', currentProject?.name)
         if (!currentProject) {
           if (isRestoringProject) {
-            console.log('🔄 PageRouter: Showing loading state for roadmap')
             return (
               <div className="bg-slate-50 min-h-screen flex items-center justify-center">
                 <div className="text-center">
@@ -169,11 +166,9 @@ const PageRouter: React.FC<PageRouterProps> = ({
               </div>
             )
           }
-          console.log('⚠️ PageRouter: No project and not restoring - redirecting to projects')
           onPageChange('projects')
           return null
         }
-        console.log('✅ PageRouter: Rendering roadmap for project:', currentProject.name)
         return (
           <div className="bg-slate-50 min-h-screen">
             <ProjectRoadmap 
