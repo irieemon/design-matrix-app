@@ -743,324 +743,380 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
 
 export const exportInsightsToPDF = (insights: any, ideaCount: number, project: Project | null = null, filesWithContent: any[] = []) => {
   try {
-    const doc = new jsPDF()
-    let yPos = 40
+    const doc = new jsPDF('portrait', 'pt', 'a4')
+    let yPos = 60
     const pageH = doc.internal.pageSize.height
     const pageW = doc.internal.pageSize.width
-    const marginL = 20
-    const marginR = 20
+    const marginL = 50
+    const marginR = 50
     const contentW = pageW - marginL - marginR
     
-    // Professional color palette for information design
-    const darkBlue = [52, 116, 181]       // #3474b5 - Main blue
-    const orange = [245, 130, 32]         // #f58220 - Orange for phases
-    const green = [76, 175, 80]           // #4caf50 - Green for success
-    const red = [244, 67, 54]             // #f44336 - Red for urgent
-    const purple = [156, 39, 176]         // #9c27b0 - Purple for strategy
-    const teal = [0, 150, 136]            // #009688 - Teal for insights
-    const darkText = [51, 51, 51]         // Dark gray for text
-    const lightGray = [245, 245, 245]     // Light gray for backgrounds
+    // Modern color palette inspired by premium business reports
+    const primary = [79, 70, 229]         // #4f46e5 - Modern indigo
+    const accent = [14, 165, 233]         // #0ea5e9 - Sky blue
+    const success = [34, 197, 94]         // #22c55e - Emerald
+    const warning = [251, 146, 60]        // #fb923c - Orange
+    const danger = [239, 68, 68]          // #ef4444 - Red
+    const gray900 = [17, 24, 39]          // #111827 - Very dark gray
+    const gray700 = [55, 65, 81]          // #374151 - Dark gray
+    const gray600 = [75, 85, 99]          // #4b5563 - Medium gray
+    const gray100 = [243, 244, 246]       // #f3f4f6 - Light gray
     const white = [255, 255, 255]         // White
 
-    // Simple page break function
+    // Enhanced page break function with proper margins
     const pageBreak = (space: number) => {
-      if (yPos + space > pageH - 50) {
+      if (yPos + space > pageH - 100) {
         doc.addPage()
-        yPos = 40
+        yPos = 60
       }
     }
 
-    // Professional phase block inspired by strategic plan templates
-    const createPhaseBox = (phaseNum: number, title: string, duration: string, content: string, color: number[]) => {
-      pageBreak(50)
+    // Modern gradient header
+    const createGradientHeader = (title: string, subtitle?: string) => {
+      pageBreak(120)
       
-      // Clean, professional phase header block
-      const headerHeight = 24
+      // Gradient background using multiple rectangles for effect
+      const gradientHeight = 80
+      for (let i = 0; i < gradientHeight; i++) {
+        const alpha = 1 - (i / gradientHeight * 0.3)
+        const r = primary[0] + (accent[0] - primary[0]) * (i / gradientHeight)
+        const g = primary[1] + (accent[1] - primary[1]) * (i / gradientHeight)
+        const b = primary[2] + (accent[2] - primary[2]) * (i / gradientHeight)
+        doc.setFillColor(r * alpha, g * alpha, b * alpha)
+        doc.rect(marginL - 20, yPos + i, contentW + 40, 1, 'F')
+      }
       
-      // Main header block - simple rectangle with clean typography
-      doc.setFillColor(color[0], color[1], color[2])
-      doc.rect(marginL, yPos, contentW, headerHeight, 'F')
+      // Main title
+      doc.setTextColor(white[0], white[1], white[2])
+      doc.setFontSize(28)
+      doc.setFont('helvetica', 'bold')
+      const titleLines = doc.splitTextToSize(title, contentW - 60)
+      doc.text(titleLines, marginL + 30, yPos + 35)
       
-      // Phase number as simple text - no circle/badge
+      // Subtitle
+      if (subtitle) {
+        doc.setFontSize(14)
+        doc.setFont('helvetica', 'normal')
+        doc.text(subtitle, marginL + 30, yPos + 60)
+      }
+      
+      yPos += gradientHeight + 30
+    }
+
+    // Modern insight card with visual hierarchy
+    const createInsightCard = (_icon: string, title: string, content: string, impact: 'high' | 'medium' | 'low', index: number) => {
+      pageBreak(100)
+      
+      const cardHeight = 80
+      const colors = {
+        high: danger,
+        medium: warning,
+        low: success
+      }
+      const impactColor = colors[impact]
+      
+      // Card shadow effect
+      doc.setFillColor(0, 0, 0, 0.1)
+      doc.rect(marginL + 2, yPos + 2, contentW, cardHeight, 'F')
+      
+      // Main card background
+      doc.setFillColor(white[0], white[1], white[2])
+      doc.rect(marginL, yPos, contentW, cardHeight, 'F')
+      
+      // Left accent stripe
+      doc.setFillColor(impactColor[0], impactColor[1], impactColor[2])
+      doc.rect(marginL, yPos, 6, cardHeight, 'F')
+      
+      // Card border
+      doc.setDrawColor(gray100[0], gray100[1], gray100[2])
+      doc.setLineWidth(1)
+      doc.rect(marginL, yPos, contentW, cardHeight, 'S')
+      
+      // Insight number badge
+      const badgeSize = 24
+      doc.setFillColor(impactColor[0], impactColor[1], impactColor[2])
+      doc.circle(marginL + 30, yPos + 25, badgeSize / 2, 'F')
       doc.setTextColor(white[0], white[1], white[2])
       doc.setFontSize(14)
       doc.setFont('helvetica', 'bold')
-      doc.text(`${phaseNum}.`, marginL + 10, yPos + 16)
-      
-      // Phase title - clean and prominent
-      doc.setFontSize(13)
-      doc.setFont('helvetica', 'bold')
-      doc.text(title.toUpperCase(), marginL + 30, yPos + 16)
-      
-      // Duration - right aligned
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'normal')
-      const durationWidth = doc.getTextWidth(duration)
-      doc.text(duration, marginL + contentW - durationWidth - 10, yPos + 16)
-      
-      yPos += headerHeight + 3
-      
-      // Content area - clean white background with subtle border
-      doc.setTextColor(darkText[0], darkText[1], darkText[2])
-      doc.setFontSize(9)
-      doc.setFont('helvetica', 'normal')
-      const contentLines = doc.splitTextToSize(content, contentW - 20)
-      
-      // White content area with subtle border
-      const contentHeight = Math.max(contentLines.length * 11 + 12, 24)
-      doc.setFillColor(white[0], white[1], white[2])
-      doc.rect(marginL, yPos, contentW, contentHeight, 'F')
-      
-      // Subtle border
-      doc.setDrawColor(220, 220, 220)
-      doc.setLineWidth(0.5)
-      doc.rect(marginL, yPos, contentW, contentHeight, 'S')
-      
-      // Left accent bar - matching phase color
-      doc.setFillColor(color[0], color[1], color[2])
-      doc.rect(marginL, yPos, 4, contentHeight, 'F')
-      
-      // Content text
-      doc.text(contentLines, marginL + 12, yPos + 12)
-      yPos += contentHeight + 12
-    }
-
-    // Template-style table function
-    const createTemplateTable = (data: {label: string, content: string}[], title?: string, sectionColor: number[] = darkBlue) => {
-      pageBreak(100)
-      
-      if (title) {
-        // Colored header bar for section
-        doc.setFillColor(sectionColor[0], sectionColor[1], sectionColor[2])
-        doc.rect(marginL, yPos, contentW, 22, 'F')
-        
-        doc.setTextColor(white[0], white[1], white[2])
-        doc.setFontSize(12)
-        doc.setFont('helvetica', 'bold')
-        doc.text(title.toUpperCase(), marginL + 8, yPos + 14)
-        yPos += 27
-      }
-      
-      // Calculate table dimensions
-      const labelWidth = contentW * 0.3
-      const contentColWidth = contentW * 0.7
-      
-      data.forEach((row, index) => {
-        // Calculate dynamic row height based on content
-        const labelLines = doc.splitTextToSize(row.label, labelWidth - 10)
-        const contentLines = doc.splitTextToSize(row.content, contentColWidth - 15)
-        const maxLines = Math.max(labelLines.length, contentLines.length)
-        const rowHeight = Math.max(22, maxLines * 10 + 12)
-        
-        pageBreak(rowHeight + 5)
-        
-        // Alternating row colors
-        const isEven = index % 2 === 0
-        doc.setFillColor(isEven ? lightGray[0] : white[0], isEven ? lightGray[1] : white[1], isEven ? lightGray[2] : white[2])
-        doc.rect(marginL, yPos, contentW, rowHeight, 'F')
-        
-        // Colored left border accent
-        doc.setFillColor(sectionColor[0], sectionColor[1], sectionColor[2])
-        doc.rect(marginL, yPos, 3, rowHeight, 'F')
-        
-        // Table borders
-        doc.setDrawColor(200, 200, 200)
-        doc.setLineWidth(0.3)
-        doc.rect(marginL, yPos, labelWidth, rowHeight, 'S')
-        doc.rect(marginL + labelWidth, yPos, contentColWidth, rowHeight, 'S')
-        
-        // Label column (left)
-        doc.setTextColor(darkText[0], darkText[1], darkText[2])
-        doc.setFontSize(8)
-        doc.setFont('helvetica', 'bold')
-        doc.text(labelLines, marginL + 5, yPos + 10)
-        
-        // Content column (right)
-        doc.setFontSize(8)
-        doc.setFont('helvetica', 'normal')
-        doc.text(contentLines, marginL + labelWidth + 8, yPos + 10)
-        
-        yPos += rowHeight
-      })
-      
-      yPos += 15
-    }
-
-    // Eye-catching insight card
-    const createInsightCard = (title: string, content: string, color: number[]) => {
-      pageBreak(50)
-      
-      const cardHeight = 45
-      
-      // Card background
-      doc.setFillColor(lightGray[0], lightGray[1], lightGray[2])
-      doc.roundedRect(marginL, yPos, contentW, cardHeight, 2, 2, 'F')
-      
-      // Colored left accent bar
-      doc.setFillColor(color[0], color[1], color[2])
-      doc.rect(marginL, yPos, 5, cardHeight, 'F')
+      doc.text(index.toString(), marginL + 26, yPos + 30)
       
       // Title
-      doc.setTextColor(color[0], color[1], color[2])
+      doc.setTextColor(gray900[0], gray900[1], gray900[2])
+      doc.setFontSize(16)
+      doc.setFont('helvetica', 'bold')
+      doc.text(title, marginL + 60, yPos + 25)
+      
+      // Impact label
+      doc.setTextColor(impactColor[0], impactColor[1], impactColor[2])
       doc.setFontSize(10)
       doc.setFont('helvetica', 'bold')
-      doc.text(title, marginL + 15, yPos + 15)
+      doc.text(`${impact.toUpperCase()} IMPACT`, marginL + 60, yPos + 40)
       
       // Content
-      doc.setTextColor(darkText[0], darkText[1], darkText[2])
-      doc.setFontSize(8)
+      doc.setTextColor(gray700[0], gray700[1], gray700[2])
+      doc.setFontSize(11)
       doc.setFont('helvetica', 'normal')
-      const contentLines = doc.splitTextToSize(content, contentW - 25)
-      doc.text(contentLines, marginL + 15, yPos + 25)
+      const contentLines = doc.splitTextToSize(content, contentW - 80)
+      doc.text(contentLines.slice(0, 2), marginL + 60, yPos + 55) // Limit to 2 lines
       
-      yPos += cardHeight + 10
+      yPos += cardHeight + 20
     }
 
-
-
-    // DOCUMENT TITLE PAGE - University Template Style
-    
-    // Main title 
-    doc.setFontSize(16)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(darkBlue[0], darkBlue[1], darkBlue[2])
-    const mainTitle = project?.name?.toUpperCase() || 'PROJECT STRATEGIC PLAN'
-    doc.text(mainTitle, marginL, yPos)
-    yPos += 12
-    
-    // Subtitle
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'normal')
-    doc.text('STRATEGIC INSIGHTS REPORT TEMPLATE', marginL, yPos)
-    yPos += 15
-    
-    // Description
-    doc.setFontSize(8)
-    doc.setTextColor(darkText[0], darkText[1], darkText[2])
-    const description = project?.description || 
-      `This strategic plan serves as a roadmap for ${project?.name || 'this project'}'s journey towards achieving its vision and mission, addressing contemporary challenges, and seizing opportunities for growth and impact.`
-    const descLines = doc.splitTextToSize(description, contentW)
-    doc.text(descLines, marginL, yPos)
-    yPos += descLines.length * 8 + 20
-
-    // PROJECT OVERVIEW TABLE - Template Style
-    const overviewData = [
-      {
-        label: 'PROJECT NAME',
-        content: project?.name || 'Strategic Analysis Project'
-      },
-      {
-        label: 'TODAY - where we are now', 
-        content: `Currently analyzing ${ideaCount} strategic initiatives to understand current state and opportunities.`
-      },
-      {
-        label: 'VISION - where we should go and why',
-        content: insights.executiveSummary || 'Strategic analysis to identify key opportunities and priorities for future development.'
-      },
-      {
-        label: 'MISSION - who we are, how we work, where we work, and what makes us unique',
-        content: `Comprehensive strategic analysis leveraging ${filesWithContent.length > 0 ? `${filesWithContent.length} supporting documents and ` : ''}data-driven insights to guide decision-making.`
-      },
-      {
-        label: 'CORE VALUES - guiding principles of our work and how we operate',
-        content: 'Excellence, Innovation, Data-driven decisions, Strategic thinking, Collaborative approach'
-      }
-    ]
-
-    createTemplateTable(overviewData, 'PROJECT OVERVIEW - ABOUT US', darkBlue)
-
-    // KEY INSIGHTS - Eye-catching cards
-    if (insights.keyInsights && insights.keyInsights.length > 0) {
-      yPos += 10
-      // Section header
-      doc.setFillColor(teal[0], teal[1], teal[2])
-      doc.rect(marginL, yPos, contentW, 22, 'F')
+    // Executive summary panel
+    const createExecutivePanel = (title: string, content: string, stats: Array<{label: string, value: string, color?: number[]}>) => {
+      pageBreak(140)
+      
+      // Panel background
+      doc.setFillColor(gray100[0], gray100[1], gray100[2])
+      doc.rect(marginL, yPos, contentW, 120, 'F')
+      
+      // Panel border
+      doc.setDrawColor(gray600[0], gray600[1], gray600[2])
+      doc.setLineWidth(2)
+      doc.rect(marginL, yPos, contentW, 120, 'S')
+      
+      // Title bar
+      doc.setFillColor(gray900[0], gray900[1], gray900[2])
+      doc.rect(marginL, yPos, contentW, 30, 'F')
       doc.setTextColor(white[0], white[1], white[2])
-      doc.setFontSize(12)
+      doc.setFontSize(16)
       doc.setFont('helvetica', 'bold')
-      doc.text('KEY STRATEGIC INSIGHTS', marginL + 8, yPos + 14)
-      yPos += 32
+      doc.text(title, marginL + 20, yPos + 20)
+      
+      // Content area
+      doc.setTextColor(gray700[0], gray700[1], gray700[2])
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'normal')
+      const contentLines = doc.splitTextToSize(content, contentW - 40)
+      doc.text(contentLines, marginL + 20, yPos + 50)
+      
+      // Stats section
+      if (stats.length > 0) {
+        const statWidth = (contentW - 40) / stats.length
+        stats.forEach((stat, index) => {
+          const statX = marginL + 20 + (index * statWidth)
+          
+          // Stat value
+          doc.setTextColor((stat.color || primary)[0], (stat.color || primary)[1], (stat.color || primary)[2])
+          doc.setFontSize(18)
+          doc.setFont('helvetica', 'bold')
+          doc.text(stat.value, statX, yPos + 85)
+          
+          // Stat label
+          doc.setTextColor(gray600[0], gray600[1], gray600[2])
+          doc.setFontSize(9)
+          doc.setFont('helvetica', 'normal')
+          doc.text(stat.label, statX, yPos + 100)
+        })
+      }
+      
+      yPos += 140
+    }
+
+    // MODERN COVER PAGE
+    
+    // Hero gradient header
+    createGradientHeader(
+      project?.name || 'AI Strategic Insights Report',
+      'Comprehensive Analysis & Recommendations'
+    )
+    
+    // Cover stats panel
+    const coverStats = [
+      { label: 'Ideas Analyzed', value: ideaCount.toString(), color: primary },
+      { label: 'Documents Reviewed', value: filesWithContent.length.toString(), color: accent },
+      { label: 'Generated', value: new Date().toLocaleDateString(), color: success }
+    ]
+    
+    createExecutivePanel(
+      'Analysis Overview', 
+      `This comprehensive strategic analysis examines ${ideaCount} strategic initiatives to provide actionable insights and recommendations for ${project?.name || 'your project'}. The analysis incorporates data-driven methodologies and best practices to deliver strategic value.`,
+      coverStats
+    )
+    
+    // Project description if available
+    if (project?.description) {
+      pageBreak(60)
+      doc.setTextColor(gray700[0], gray700[1], gray700[2])
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'normal')
+      const descLines = doc.splitTextToSize(`Project Context: ${project.description}`, contentW)
+      doc.text(descLines, marginL, yPos)
+      yPos += descLines.length * 14 + 40
+    }
+    
+    // New page for content
+    doc.addPage()
+    yPos = 60
+
+    // EXECUTIVE SUMMARY SECTION
+    createGradientHeader('Executive Summary', 'Strategic Overview & Key Findings')
+    
+    const executiveSummary = insights.executiveSummary || 'Strategic analysis reveals key opportunities for optimization and growth. This comprehensive review identifies priority initiatives that will drive meaningful impact and sustainable value creation.'
+    
+    const summaryStats = [
+      { label: 'Priority Initiatives', value: (insights.priorityRecommendations?.immediate?.length || 0).toString(), color: danger },
+      { label: 'Strategic Opportunities', value: (insights.riskAssessment?.opportunities?.length || 0).toString(), color: success },
+      { label: 'Implementation Phases', value: (insights.suggestedRoadmap?.length || 0).toString(), color: accent }
+    ]
+    
+    createExecutivePanel('Strategic Assessment', executiveSummary, summaryStats)
+
+    // KEY STRATEGIC INSIGHTS
+    if (insights.keyInsights && insights.keyInsights.length > 0) {
+      createGradientHeader('Strategic Insights', 'Critical Findings & Recommendations')
       
       insights.keyInsights.forEach((item: any, index: number) => {
+        // Determine impact level for color coding
+        const impactLevel = item.impact?.toLowerCase().includes('high') ? 'high' : 
+                           item.impact?.toLowerCase().includes('low') ? 'low' : 'medium'
+        
         createInsightCard(
-          `INSIGHT ${index + 1}`,
-          `${item.insight} - ${item.impact}`,
-          teal
+          '💡',
+          item.insight || `Strategic Insight ${index + 1}`,
+          `${item.insight || 'Key finding identified through analysis.'} Impact: ${item.impact || 'Significant strategic implications for project success.'}`,
+          impactLevel,
+          index + 1
         )
       })
     }
 
-    // IMPLEMENTATION PHASES - Eye-catching phase boxes
+    // IMPLEMENTATION ROADMAP
     if (insights.suggestedRoadmap && insights.suggestedRoadmap.length > 0) {
-      yPos += 15
-      // Section header
-      doc.setFillColor(orange[0], orange[1], orange[2])
-      doc.rect(marginL, yPos, contentW, 22, 'F')
-      doc.setTextColor(white[0], white[1], white[2])
-      doc.setFontSize(12)
-      doc.setFont('helvetica', 'bold')
-      doc.text('IMPLEMENTATION PHASES', marginL + 8, yPos + 14)
-      yPos += 32
-      
-      const phaseColors = [orange, green, purple, red, teal]
+      createGradientHeader('Implementation Roadmap', 'Strategic Phases & Milestones')
       
       insights.suggestedRoadmap.forEach((phase: any, index: number) => {
-        const color = phaseColors[index % phaseColors.length]
-        createPhaseBox(
-          index + 1,
-          phase.phase || `Phase ${index + 1}`,
-          phase.duration || 'TBD',
-          `${phase.focus} | Key Initiatives: ${phase.ideas?.join(', ') || 'To be defined'}`,
-          color
+        const phaseContent = `Focus Area: ${phase.focus || 'Strategic implementation focus to be defined'}\n\nKey Initiatives: ${phase.ideas?.join(', ') || 'Implementation activities and deliverables to be defined during planning phase'}`
+        
+        createExecutivePanel(
+          `Phase ${index + 1}: ${phase.phase || `Implementation Phase ${index + 1}`}`,
+          phaseContent,
+          [
+            { label: 'Duration', value: phase.duration || 'TBD', color: accent },
+            { label: 'Priority', value: 'High', color: danger },
+            { label: 'Status', value: 'Planning', color: warning }
+          ]
         )
       })
     }
 
-    // GOALS SECTION - Template Style with green theme
-    const goalsData = [
-      {
-        label: 'OBSTACLES - what could prevent us from realizing our vision',
-        content: insights.riskAssessment?.highRisk?.join(' • ') || 'Risk assessment to be completed during detailed analysis phase.'
-      },
-      {
-        label: 'LONG-TERM GOALS - what we will do to realize our vision', 
-        content: insights.priorityRecommendations?.longTerm?.join(' • ') || 'Long-term strategic initiatives to be defined.'
-      },
-      {
-        label: 'SHORT-TERM GOALS - what will be our next steps', 
-        content: insights.priorityRecommendations?.shortTerm?.join(' • ') || 'Short-term action items to be identified.'
-      },
-      {
-        label: 'MEASUREMENTS OF SUCCESS - what benchmarks will be used as indicators of success',
-        content: insights.nextSteps?.join(' • ') || 'Success metrics and KPIs to be established during implementation planning.'
+    // PRIORITY RECOMMENDATIONS
+    if (insights.priorityRecommendations) {
+      createGradientHeader('Priority Recommendations', 'Immediate Actions & Strategic Initiatives')
+      
+      // Immediate actions
+      if (insights.priorityRecommendations.immediate?.length > 0) {
+        createExecutivePanel(
+          'Immediate Actions (0-30 days)',
+          insights.priorityRecommendations.immediate.join('\n• '),
+          [
+            { label: 'Items', value: insights.priorityRecommendations.immediate.length.toString(), color: danger },
+            { label: 'Timeline', value: '0-30 days', color: warning },
+            { label: 'Priority', value: 'Critical', color: danger }
+          ]
+        )
       }
-    ]
-
-    createTemplateTable(goalsData, 'GOALS', green)
-
-    // STRATEGY SECTION - Template Style with purple theme
-    const strategyData = [
-      {
-        label: 'RESOURCE ASSESSMENT - infrastructure required to realize vision',
-        content: insights.resourceAllocation?.strategic || 'Comprehensive evaluation of financial, human, and physical resources to support strategic initiatives.'
-      },
-      {
-        label: 'IMPLEMENTATION - plan what will be done along with completion deadlines', 
-        content: insights.suggestedRoadmap?.map((phase: any) => `${phase.phase}: ${phase.duration}`).join(' • ') || 'Detailed implementation timeline with phases and milestones.'
-      },
-      {
-        label: 'DISSEMINATION - how the plan will be announced / assigned and to whom',
-        content: 'Communicating the strategic plan to all stakeholders through multiple channels, ensuring transparency and fostering a sense of shared purpose and commitment.'
-      },
-      {
-        label: 'PROGRESS ASSESSMENT PLAN - how we will oversee progress, monitor success, and implement revisions',
-        content: 'Establishing a robust framework for regularly reviewing and assessing the progress of strategic initiatives, including quarterly reviews and annual progress reports.'
+      
+      // Short term initiatives
+      if (insights.priorityRecommendations.shortTerm?.length > 0) {
+        createExecutivePanel(
+          'Short-term Initiatives (1-6 months)',
+          insights.priorityRecommendations.shortTerm.join('\n• '),
+          [
+            { label: 'Items', value: insights.priorityRecommendations.shortTerm.length.toString(), color: warning },
+            { label: 'Timeline', value: '1-6 months', color: accent },
+            { label: 'Priority', value: 'High', color: warning }
+          ]
+        )
       }
-    ]
+      
+      // Long term goals
+      if (insights.priorityRecommendations.longTerm?.length > 0) {
+        createExecutivePanel(
+          'Long-term Goals (6+ months)',
+          insights.priorityRecommendations.longTerm.join('\n• '),
+          [
+            { label: 'Items', value: insights.priorityRecommendations.longTerm.length.toString(), color: success },
+            { label: 'Timeline', value: '6+ months', color: primary },
+            { label: 'Priority', value: 'Strategic', color: success }
+          ]
+        )
+      }
+    }
+    
+    // RISK ASSESSMENT & OPPORTUNITIES
+    if (insights.riskAssessment) {
+      createGradientHeader('Risk Assessment', 'Challenges & Opportunities Analysis')
+      
+      if (insights.riskAssessment.highRisk?.length > 0) {
+        createExecutivePanel(
+          'Risk Factors',
+          insights.riskAssessment.highRisk.join('\n• '),
+          [
+            { label: 'Risk Items', value: insights.riskAssessment.highRisk.length.toString(), color: danger },
+            { label: 'Severity', value: 'High', color: danger },
+            { label: 'Mitigation', value: 'Required', color: warning }
+          ]
+        )
+      }
+      
+      if (insights.riskAssessment.opportunities?.length > 0) {
+        createExecutivePanel(
+          'Strategic Opportunities',
+          insights.riskAssessment.opportunities.join('\n• '),
+          [
+            { label: 'Opportunities', value: insights.riskAssessment.opportunities.length.toString(), color: success },
+            { label: 'Potential', value: 'High', color: success },
+            { label: 'Action', value: 'Recommended', color: accent }
+          ]
+        )
+      }
+    }
 
-    createTemplateTable(strategyData, 'STRATEGY', purple)
-
-    // Professional filename with proper character handling
+    // NEXT STEPS & CONCLUSION
+    if (insights.nextSteps?.length > 0) {
+      createGradientHeader('Next Steps', 'Immediate Actions for Implementation')
+      
+      createExecutivePanel(
+        'Recommended Actions',
+        insights.nextSteps.join('\n• '),
+        [
+          { label: 'Action Items', value: insights.nextSteps.length.toString(), color: primary },
+          { label: 'Priority', value: 'Immediate', color: danger },
+          { label: 'Owner', value: 'Project Team', color: accent }
+        ]
+      )
+    }
+    
+    // MODERN FOOTER WITH BRANDING
+    pageBreak(80)
+    yPos = pageH - 80
+    
+    // Footer gradient
+    const footerHeight = 60
+    for (let i = 0; i < footerHeight; i++) {
+      const alpha = 0.8 - (i / footerHeight * 0.3)
+      doc.setFillColor(primary[0] * alpha, primary[1] * alpha, primary[2] * alpha)
+      doc.rect(0, yPos + i, pageW, 1, 'F')
+    }
+    
+    // Footer content
+    doc.setTextColor(white[0], white[1], white[2])
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Prioritas AI', marginL, yPos + 25)
+    
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Strategic Intelligence & Analytics Platform', marginL, yPos + 40)
+    
+    // Document info (right aligned)
+    const docInfo = `Generated: ${new Date().toLocaleDateString()} | Confidential Report`
+    const infoWidth = doc.getTextWidth(docInfo)
+    doc.text(docInfo, pageW - marginR - infoWidth, yPos + 40)
+    
+    // Professional filename
     const timestamp = new Date().toISOString().split('T')[0]
     let cleanProjectName = ''
     if (project && project.name) {
@@ -1069,10 +1125,10 @@ export const exportInsightsToPDF = (insights: any, ideaCount: number, project: P
         .replace(/[\u2018\u2019]/g, '')
         .replace(/[^a-zA-Z0-9\s]/g, '')
         .replace(/\s+/g, '_')
-        .substring(0, 30) // Limit length
+        .substring(0, 30)
     }
     const projectPrefix = cleanProjectName ? `${cleanProjectName}_` : ''
-    const fileName = `${projectPrefix}Prioritas_Strategic_Insights_${timestamp}.pdf`
+    const fileName = `${projectPrefix}AI_Strategic_Insights_${timestamp}.pdf`
     doc.save(fileName)
 
   } catch (error) {
