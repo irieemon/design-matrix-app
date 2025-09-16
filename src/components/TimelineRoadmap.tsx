@@ -184,7 +184,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
       const rect = (e.target as HTMLElement).closest('.timeline-container')?.getBoundingClientRect()
       if (!rect) return
 
-      const monthWidth = rect.width / 6
+      const monthWidth = rect.width / timelineDuration
       const relativeX = e.clientX - rect.left
       const newMonth = Math.floor(relativeX / monthWidth)
       
@@ -428,6 +428,24 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
     })
   }, [features, teamLanes, projectType])
 
+  // Calculate smart timeline duration based on features
+  const calculateTimelineDuration = () => {
+    if (features.length === 0) {
+      return 6 // Default to 6 months when no features
+    }
+    
+    // Find the latest end date among all features
+    const latestEndMonth = Math.max(
+      ...features.map(feature => feature.startMonth + feature.duration)
+    )
+    
+    // Add 2 months buffer as requested
+    const timelineLength = latestEndMonth + 2
+    
+    // Cap at 12 months maximum (1 year)
+    return Math.min(timelineLength, 12)
+  }
+
   // Generate months starting from startDate
   const generateMonths = (count: number) => {
     const months = []
@@ -446,7 +464,29 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
     return months
   }
 
-  const months = generateMonths(12)
+  const timelineDuration = calculateTimelineDuration()
+  const months = generateMonths(timelineDuration)
+  
+  // Debug logging for timeline calculations
+  React.useEffect(() => {
+    if (features.length > 0) {
+      const latestEndMonth = Math.max(
+        ...features.map(feature => feature.startMonth + feature.duration)
+      )
+      console.log('📅 Timeline calculation:', {
+        featuresCount: features.length,
+        latestEndMonth,
+        timelineDuration,
+        monthsGenerated: months.length,
+        features: features.map(f => ({ 
+          title: f.title, 
+          start: f.startMonth, 
+          duration: f.duration, 
+          end: f.startMonth + f.duration 
+        }))
+      })
+    }
+  }, [features, timelineDuration, months.length])
 
   // Get features for a specific team
   const getFeaturesForTeam = (teamId: string) => {
@@ -545,7 +585,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
 
   // Calculate feature position and width
   const getFeaturePosition = (feature: RoadmapFeature) => {
-    const monthWidth = 100 / 12 // 12 months visible at once
+    const monthWidth = 100 / timelineDuration // Use dynamic timeline duration
     const left = feature.startMonth * monthWidth
     const width = feature.duration * monthWidth
     
@@ -679,7 +719,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                 onDrop={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect()
                   const relativeX = e.clientX - rect.left
-                  const monthWidth = rect.width / 12
+                  const monthWidth = rect.width / timelineDuration
                   const targetMonth = Math.floor(relativeX / monthWidth)
                   handleDrop(e, team.id, targetMonth)
                 }}
