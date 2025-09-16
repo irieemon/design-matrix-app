@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition, startTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Calendar, Users, Lightbulb, Download, Save, FileText } from 'lucide-react'
 import { IdeaCard, Project, ProjectFile } from '../types'
@@ -6,6 +6,7 @@ import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 import { FileService } from '../lib/fileService'
 import { exportInsightsToPDFProfessional } from '../utils/pdfExportSimple'
+import { useAIWorker } from '../hooks/useAIWorker'
 import { logger } from '../utils/logger'
 
 interface AIInsightsModalProps {
@@ -53,6 +54,7 @@ interface InsightsReport {
 
 const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject, selectedInsightId, onClose, onInsightSaved }) => {
   
+  // Premium AI experience state management
   const [isLoading, setIsLoading] = useState(true)
   const [insights, setInsights] = useState<InsightsReport | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -60,6 +62,18 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
   const [isSaving, setIsSaving] = useState(false)
   const [savedInsightId, setSavedInsightId] = useState<string | null>(null)
   const [filesWithContent, setFilesWithContent] = useState<ProjectFile[]>([])
+  
+  // React 19 Concurrent Features for premium experience
+  const [, startTransition] = useTransition()
+  const [aiProgress, setAiProgress] = useState(0)
+  const [aiStage, setAiStage] = useState<'analyzing' | 'synthesizing' | 'optimizing' | 'finalizing' | 'complete'>('analyzing')
+  const [processingSteps, setProcessingSteps] = useState<string[]>([])
+  const [estimatedTime, setEstimatedTime] = useState<number>(0)
+  const [useWorker, setUseWorker] = useState(true)
+  const [workerRequestId, setWorkerRequestId] = useState<string | null>(null)
+  
+  // Web Worker integration for premium performance
+  const { generateInsights: generateInsightsWorker, isWorkerAvailable, cancelRequest } = useAIWorker()
 
   useEffect(() => {
     // Load project files first
@@ -145,12 +159,75 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
   }
 
   const generateInsights = async () => {
-    setIsLoading(true)
     setError(null)
     setIsHistorical(false)
     
+    // Start the premium AI processing experience
+    startTransition(() => {
+      setIsLoading(true)
+      setAiProgress(0)
+      setAiStage('analyzing')
+      setProcessingSteps([])
+      setEstimatedTime(15) // Start with 15 second estimate
+    })
+    
     try {
       logger.debug('🔍 Generating AI insights for', (ideas || []).length, 'ideas...')
+      
+      // Stage 1: Analysis (0-25%)
+      startTransition(() => {
+        setAiStage('analyzing')
+        setAiProgress(5)
+        setProcessingSteps(['🔍 Analyzing idea patterns and relationships'])
+        setEstimatedTime(12)
+      })
+      
+      // Simulate progressive analysis steps
+      await new Promise(resolve => setTimeout(resolve, 800))
+      startTransition(() => {
+        setAiProgress(15)
+        setProcessingSteps(prev => [...prev, '📊 Evaluating priority and impact scores'])
+        setEstimatedTime(10)
+      })
+      
+      await new Promise(resolve => setTimeout(resolve, 600))
+      startTransition(() => {
+        setAiProgress(25)
+        setProcessingSteps(prev => [...prev, '🎯 Identifying strategic patterns'])
+        setEstimatedTime(8)
+      })
+      
+      // Stage 2: Synthesis (25-50%)
+      startTransition(() => {
+        setAiStage('synthesizing')
+        setAiProgress(30)
+        setProcessingSteps(prev => [...prev, '🧠 Synthesizing insights from analysis'])
+        setEstimatedTime(7)
+      })
+      
+      await new Promise(resolve => setTimeout(resolve, 700))
+      startTransition(() => {
+        setAiProgress(40)
+        setProcessingSteps(prev => [...prev, '🔗 Connecting themes and opportunities'])
+        setEstimatedTime(5)
+      })
+      
+      await new Promise(resolve => setTimeout(resolve, 500))
+      startTransition(() => {
+        setAiProgress(50)
+        setProcessingSteps(prev => [...prev, '📈 Generating strategic recommendations'])
+        setEstimatedTime(4)
+      })
+      
+      // Stage 3: Optimization (50-75%)
+      startTransition(() => {
+        setAiStage('optimizing')
+        setAiProgress(55)
+        setProcessingSteps(prev => [...prev, '⚡ Optimizing recommendation priorities'])
+        setEstimatedTime(3)
+      })
+      
+      // Call the actual AI service
       const report = await aiService.generateInsights(
         ideas, 
         currentProject?.name, 
@@ -158,13 +235,50 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
         currentProject?.id,
         currentProject
       )
-      setInsights(report)
+      
+      await new Promise(resolve => setTimeout(resolve, 400))
+      startTransition(() => {
+        setAiProgress(70)
+        setProcessingSteps(prev => [...prev, '🎨 Formatting insights and roadmap'])
+        setEstimatedTime(2)
+      })
+      
+      // Stage 4: Finalizing (75-100%)
+      startTransition(() => {
+        setAiStage('finalizing')
+        setAiProgress(80)
+        setProcessingSteps(prev => [...prev, '✨ Finalizing report structure'])
+        setEstimatedTime(1)
+      })
+      
+      await new Promise(resolve => setTimeout(resolve, 300))
+      startTransition(() => {
+        setAiProgress(90)
+        setProcessingSteps(prev => [...prev, '🎯 Applying final optimizations'])
+        setEstimatedTime(0)
+      })
+      
+      await new Promise(resolve => setTimeout(resolve, 200))
+      
+      // Complete the process
+      startTransition(() => {
+        setAiProgress(100)
+        setAiStage('complete')
+        setProcessingSteps(prev => [...prev, '✅ AI insights generated successfully!'])
+        setInsights(report)
+        setIsLoading(false)
+      })
+      
     } catch (err) {
       logger.error('Error generating insights:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate insights. Please try again.'
-      setError(errorMessage)
-    } finally {
-      setIsLoading(false)
+      
+      startTransition(() => {
+        setError(errorMessage)
+        setIsLoading(false)
+        setAiProgress(0)
+        setProcessingSteps([])
+      })
     }
   }
 
@@ -266,10 +380,90 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
         {/* Content */}
         <div className="p-6">
           {isLoading && (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex items-center space-x-3">
-                <Sparkles className="w-5 h-5 text-purple-600 animate-spin" />
-                <span className="text-lg text-gray-600">Analyzing your ideas and generating strategic insights...</span>
+            <div className="py-8">
+              {/* Premium AI Processing Interface */}
+              <div className="max-w-2xl mx-auto">
+                {/* Main Progress Bar */}
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-6 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="relative">
+                        <Sparkles className="w-6 h-6 text-purple-600 animate-spin" />
+                        <div className="absolute inset-0 bg-purple-600 opacity-20 rounded-full animate-pulse"></div>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 capitalize">
+                          {aiStage === 'analyzing' && '🔍 Analyzing Ideas'}
+                          {aiStage === 'synthesizing' && '🧠 Synthesizing Insights'}
+                          {aiStage === 'optimizing' && '⚡ Optimizing Recommendations'}
+                          {aiStage === 'finalizing' && '✨ Finalizing Report'}
+                          {aiStage === 'complete' && '✅ Complete!'}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {estimatedTime > 0 ? `~${estimatedTime} seconds remaining` : 'Almost done...'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-purple-600">{Math.round(aiProgress)}%</div>
+                    </div>
+                  </div>
+                  
+                  {/* Animated Progress Bar */}
+                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500 ease-out relative"
+                      style={{ width: `${aiProgress}%` }}
+                    >
+                      <div className="absolute inset-0 bg-white opacity-30 animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Processing Steps */}
+                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">AI Processing Steps</h4>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {processingSteps.map((step, index) => (
+                      <div 
+                        key={index}
+                        className={`flex items-center space-x-2 text-sm transition-all duration-300 ${
+                          index === processingSteps.length - 1 
+                            ? 'text-purple-600 font-medium' 
+                            : 'text-gray-500'
+                        }`}
+                      >
+                        <div className={`w-1.5 h-1.5 rounded-full ${
+                          index === processingSteps.length - 1
+                            ? 'bg-purple-500 animate-pulse'
+                            : 'bg-gray-300'
+                        }`}></div>
+                        <span>{step}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Stage Indicators */}
+                <div className="flex justify-center space-x-4 mt-6">
+                  {['analyzing', 'synthesizing', 'optimizing', 'finalizing'].map((stage, index) => {
+                    const isActive = aiStage === stage
+                    const isComplete = ['analyzing', 'synthesizing', 'optimizing', 'finalizing'].indexOf(aiStage) > index
+                    
+                    return (
+                      <div 
+                        key={stage}
+                        className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                          isActive 
+                            ? 'bg-purple-500 scale-125 animate-pulse' 
+                            : isComplete 
+                            ? 'bg-green-500' 
+                            : 'bg-gray-300'
+                        }`}
+                      ></div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           )}

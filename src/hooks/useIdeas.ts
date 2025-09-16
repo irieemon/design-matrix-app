@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { DragEndEvent } from '@dnd-kit/core'
 import { IdeaCard, User, Project } from '../types'
 import { DatabaseService } from '../lib/database'
+import { useOptimisticUpdates } from './useOptimisticUpdates'
 import { logger } from '../utils/logger'
 
 interface UseIdeasReturn {
@@ -26,6 +27,25 @@ interface UseIdeasOptions {
 export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
   const [ideas, setIdeas] = useState<IdeaCard[]>([])
   const { currentUser, currentProject, setShowAddModal, setShowAIModal, setEditingIdea } = options
+  
+  // Premium optimistic updates for instant UI feedback
+  const {
+    optimisticData,
+    createIdeaOptimistic,
+    updateIdeaOptimistic,
+    deleteIdeaOptimistic,
+    moveIdeaOptimistic
+  } = useOptimisticUpdates(ideas, setIdeas, {
+    onSuccess: (id, result) => {
+      logger.debug('✅ Optimistic update confirmed:', id, result)
+    },
+    onError: (id, error) => {
+      logger.error('❌ Optimistic update failed, reverted:', id, error)
+    },
+    onRevert: (id, originalData) => {
+      logger.debug('🔄 Optimistic update reverted:', id, originalData)
+    }
+  })
   
 
   const loadIdeas = useCallback(async (projectId?: string) => {
@@ -54,48 +74,73 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
       project_id: currentProject?.id
     }
     
-    logger.debug('💾 Creating idea in database...', ideaWithUser)
+    logger.debug('💾 Creating idea with optimistic update...', ideaWithUser)
     
-    const createdIdeaResponse = await DatabaseService.createIdea(ideaWithUser)
-    
-    if (createdIdeaResponse.success && createdIdeaResponse.data) {
-      logger.debug('✅ Idea created successfully, adding to state:', createdIdeaResponse.data)
-      // Immediately add to local state for instant feedback
-      setIdeas(prev => [...prev, createdIdeaResponse.data!])
-    } else {
-      logger.error('❌ Failed to create idea in database:', createdIdeaResponse.error)
-    }
+    // Use optimistic update for instant UI feedback
+    createIdeaOptimistic(
+      ideaWithUser,
+      async () => {
+        const createdIdeaResponse = await DatabaseService.createIdea(ideaWithUser)
+        if (createdIdeaResponse.success && createdIdeaResponse.data) {
+          logger.debug('✅ Idea created successfully in database:', createdIdeaResponse.data)
+          return createdIdeaResponse.data
+        } else {
+          logger.error('❌ Failed to create idea in database:', createdIdeaResponse.error)
+          throw new Error(createdIdeaResponse.error || 'Failed to create idea')
+        }
+      }
+    )
     
     logger.debug('🔄 Closing modals...')
     setShowAddModal?.(false)
     setShowAIModal?.(false)
-  }, [currentUser, currentProject, setShowAddModal, setShowAIModal])
+  }, [currentUser, currentProject, setShowAddModal, setShowAIModal, createIdeaOptimistic])
 
   const updateIdea = useCallback(async (updatedIdea: IdeaCard) => {
-    const result = await DatabaseService.updateIdea(updatedIdea.id, {
-      content: updatedIdea.content,
-      details: updatedIdea.details,
-      x: updatedIdea.x,
-      y: updatedIdea.y,
-      priority: updatedIdea.priority
-    })
-    if (result) {
-      // Immediately update local state for instant feedback
-      setIdeas(prev => prev.map(i => 
-        i.id === updatedIdea.id ? result : i
-      ))
-    }
+    logger.debug('📝 Updating idea with optimistic update:', updatedIdea)
+    
+    // Use optimistic update for instant UI feedback
+    updateIdeaOptimistic(
+      updatedIdea,
+      async () => {
+        const result = await DatabaseService.updateIdea(updatedIdea.id, {
+          content: updatedIdea.content,
+          details: updatedIdea.details,
+          x: updatedIdea.x,
+          y: updatedIdea.y,
+          priority: updatedIdea.priority
+        })
+        if (result) {
+          logger.debug('✅ Idea updated successfully in database:', result)
+          return result
+        } else {
+          throw new Error('Failed to update idea')
+        }
+      }
+    )
+    
     setEditingIdea?.(null)
-  }, [setEditingIdea])
+  }, [setEditingIdea, updateIdeaOptimistic])
 
   const deleteIdea = useCallback(async (ideaId: string) => {
-    const success = await DatabaseService.deleteIdea(ideaId)
-    if (success) {
-      // Immediately remove from local state for instant feedback
-      setIdeas(prev => prev.filter(i => i.id !== ideaId))
-    }
+    logger.debug('🗑️ Deleting idea with optimistic update:', ideaId)
+    
+    // Use optimistic update for instant UI feedback
+    deleteIdeaOptimistic(
+      ideaId,
+      async () => {
+        const success = await DatabaseService.deleteIdea(ideaId)
+        if (success) {
+          logger.debug('✅ Idea deleted successfully from database:', ideaId)
+          return success
+        } else {
+          throw new Error('Failed to delete idea')
+        }
+      }
+    )
+    
     setEditingIdea?.(null)
-  }, [setEditingIdea])
+  }, [setEditingIdea, deleteIdeaOptimistic])
 
   const toggleCollapse = useCallback(async (ideaId: string, collapsed?: boolean) => {
     const idea = (ideas || []).find(i => i.id === ideaId)
@@ -121,7 +166,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     if (!delta || (delta.x === 0 && delta.y === 0)) return
 
     const ideaId = active.id as string
-    const idea = (ideas || []).find(i => i.id === ideaId)
+    const idea = optimisticData.find(i => i.id === ideaId)
     if (!idea) return
 
     // New position after drag
@@ -133,17 +178,26 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     const finalX = Math.max(-100, Math.min(1400, Math.round(newX))) // Allow wider range for X
     const finalY = Math.max(-50, Math.min(650, Math.round(newY)))   // Match matrix height (600px + padding)
 
-    // Immediately update local state for instant feedback
-    setIdeas(prev => prev.map(i => 
-      i.id === ideaId ? { ...i, x: finalX, y: finalY, updated_at: new Date().toISOString() } : i
-    ))
-
-    // Update position in database (in background)
-    await DatabaseService.updateIdea(ideaId, {
-      x: finalX,
-      y: finalY
-    })
-  }, [ideas])
+    logger.debug('🚚 Moving idea with optimistic update:', ideaId, { x: finalX, y: finalY })
+    
+    // Use optimistic update for instant drag feedback
+    moveIdeaOptimistic(
+      ideaId,
+      { x: finalX, y: finalY },
+      async () => {
+        const result = await DatabaseService.updateIdea(ideaId, {
+          x: finalX,
+          y: finalY
+        })
+        if (result) {
+          logger.debug('✅ Idea position updated successfully in database:', result)
+          return result
+        } else {
+          throw new Error('Failed to update idea position')
+        }
+      }
+    )
+  }, [optimisticData, moveIdeaOptimistic])
 
   // Load ideas when current project changes
   useEffect(() => {
@@ -189,7 +243,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
   }, [currentUser, currentProject?.id])
 
   return {
-    ideas,
+    ideas: optimisticData, // Use optimistic data for instant UI updates
     setIdeas,
     loadIdeas,
     addIdea,
