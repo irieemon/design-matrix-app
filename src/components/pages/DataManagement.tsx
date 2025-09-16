@@ -132,65 +132,69 @@ const DataManagement: React.FC<DataManagementProps> = ({ ideas, currentUser, onD
       {/* Import/Export Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Export Section */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm">
-          <div className="mb-6">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm flex flex-col h-full">
+          <div className="mb-6 flex-grow">
             <h3 className="text-lg font-semibold text-slate-900 mb-2">Export Data</h3>
             <p className="text-sm text-slate-600">Download all your ideas as a CSV file for backup or sharing</p>
           </div>
           
-          <button
-            onClick={handleExport}
-            disabled={(ideas || []).length === 0}
-            className="w-full flex items-center justify-center space-x-3 bg-emerald-600 text-white px-6 py-4 rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Download className="w-5 h-5" />
-            <span className="font-medium">Export to CSV</span>
-          </button>
-          
-          {(ideas || []).length === 0 && (
-            <p className="text-xs text-slate-500 mt-2 text-center">No ideas to export</p>
-          )}
+          <div className="mt-auto">
+            <button
+              onClick={handleExport}
+              disabled={(ideas || []).length === 0}
+              className="w-full flex items-center justify-center space-x-3 bg-emerald-600 text-white px-6 py-4 rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="w-5 h-5" />
+              <span className="font-medium">Export to CSV</span>
+            </button>
+            
+            {(ideas || []).length === 0 && (
+              <p className="text-xs text-slate-500 mt-2 text-center">No ideas to export</p>
+            )}
+          </div>
         </div>
 
         {/* Import Section */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm">
-          <div className="mb-6">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm flex flex-col h-full">
+          <div className="mb-6 flex-grow">
             <h3 className="text-lg font-semibold text-slate-900 mb-2">Import Data</h3>
             <p className="text-sm text-slate-600">Upload a CSV file to bulk-import ideas into your matrix</p>
           </div>
           
-          <button
-            onClick={handleImport}
-            disabled={importStatus === 'loading'}
-            className="w-full flex items-center justify-center space-x-3 bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-sm disabled:opacity-50"
-          >
-            {importStatus === 'loading' ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span className="font-medium">Importing...</span>
-              </>
-            ) : (
-              <>
-                <Upload className="w-5 h-5" />
-                <span className="font-medium">Import from CSV</span>
-              </>
+          <div className="mt-auto">
+            <button
+              onClick={handleImport}
+              disabled={importStatus === 'loading'}
+              className="w-full flex items-center justify-center space-x-3 bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-sm disabled:opacity-50"
+            >
+              {importStatus === 'loading' ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span className="font-medium">Importing...</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-5 h-5" />
+                  <span className="font-medium">Import from CSV</span>
+                </>
+              )}
+            </button>
+
+            {/* Import Status */}
+            {importStatus === 'success' && (
+              <div className="mt-4 flex items-center space-x-2 text-emerald-600 bg-emerald-50 px-4 py-3 rounded-lg">
+                <CheckCircle className="w-4 h-4" />
+                <span className="text-sm font-medium">{importMessage}</span>
+              </div>
             )}
-          </button>
 
-          {/* Import Status */}
-          {importStatus === 'success' && (
-            <div className="mt-4 flex items-center space-x-2 text-emerald-600 bg-emerald-50 px-4 py-3 rounded-lg">
-              <CheckCircle className="w-4 h-4" />
-              <span className="text-sm font-medium">{importMessage}</span>
-            </div>
-          )}
-
-          {importStatus === 'error' && (
-            <div className="mt-4 flex items-center space-x-2 text-red-600 bg-red-50 px-4 py-3 rounded-lg">
-              <AlertCircle className="w-4 h-4" />
-              <span className="text-sm font-medium">{importMessage}</span>
-            </div>
-          )}
+            {importStatus === 'error' && (
+              <div className="mt-4 flex items-center space-x-2 text-red-600 bg-red-50 px-4 py-3 rounded-lg">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-sm font-medium">{importMessage}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
