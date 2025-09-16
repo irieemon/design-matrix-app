@@ -145,7 +145,25 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
     return months
   }
 
-  const months = generateMonths(12)
+  // Smart timeline duration calculation (same as calendar view)
+  const calculateTimelineDuration = () => {
+    if (features.length === 0) {
+      return 6 // Default to 6 months when no features
+    }
+    
+    // Find the latest end date among all features
+    const latestEndMonth = Math.max(
+      ...features.map(feature => feature.startMonth + feature.duration)
+    )
+    
+    // Add 2 months buffer as requested
+    const timelineLength = latestEndMonth + 2
+    
+    // Cap at 12 months maximum (1 year)
+    return Math.min(timelineLength, 12)
+  }
+  
+  const months = generateMonths(calculateTimelineDuration())
 
   // Get features for a specific team
   const getFeaturesForTeam = (teamId: string) => {
@@ -271,7 +289,7 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
           </div>
           
           <div className="flex-1 flex">
-            {months.slice(0, 12).map((month) => (
+            {months.map((month) => (
               <div 
                 key={month.index}
                 className="flex-1 py-4 text-center border-r border-gray-200 font-semibold bg-gray-50 text-gray-700"
@@ -315,7 +333,7 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
               <div className="flex-1 relative py-4">
                 {/* Month grid lines */}
                 <div className="absolute inset-0 flex">
-                  {months.slice(0, 12).map((month) => (
+                  {months.map((month) => (
                     <div key={month.index} className="flex-1 border-r border-gray-100"></div>
                   ))}
                 </div>
@@ -324,7 +342,7 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
                 <div className="relative h-full px-2 pt-2">
                   {teamFeatures.map((feature) => {
                     const styles = getFeatureStyles(feature.priority || 'medium', feature.status || 'planned')
-                    const monthWidth = 100 / 12
+                    const monthWidth = 100 / months.length
                     const left = feature.startMonth * monthWidth
                     const width = feature.duration * monthWidth
                     

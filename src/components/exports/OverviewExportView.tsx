@@ -33,7 +33,25 @@ const OverviewExportView: React.FC<OverviewExportViewProps> = ({
   startDate = new Date(),
   projectType = 'software'
 }) => {
-  const totalMonths = Math.max(...features.map(f => f.startMonth + f.duration), 12)
+  // Smart timeline duration calculation (same as calendar view)
+  const calculateTimelineDuration = () => {
+    if (features.length === 0) {
+      return 6 // Default to 6 months when no features
+    }
+    
+    // Find the latest end date among all features
+    const latestEndMonth = Math.max(
+      ...features.map(feature => feature.startMonth + feature.duration)
+    )
+    
+    // Add 2 months buffer as requested
+    const timelineLength = latestEndMonth + 2
+    
+    // Cap at 12 months maximum (1 year)
+    return Math.min(timelineLength, 12)
+  }
+  
+  const totalMonths = calculateTimelineDuration()
   const months = Array.from({ length: totalMonths }, (_, i) => {
     const date = new Date(startDate)
     date.setMonth(date.getMonth() + i)

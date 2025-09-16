@@ -604,10 +604,28 @@ export const exportRoadmapToPDF = (roadmapData: RoadmapData, ideaCount: number, 
         { id: 'platform', name: 'Platform Team', color: [34, 197, 94] }  // Green
       ]
 
+      // Smart timeline duration calculation (same as calendar view)
+      const calculateTimelineDuration = () => {
+        if (timelineFeatures.length === 0) {
+          return 6 // Default to 6 months when no features
+        }
+        
+        // Find the latest end date among all features
+        const latestEndMonth = Math.max(
+          ...timelineFeatures.map(feature => feature.startMonth + feature.duration)
+        )
+        
+        // Add 2 months buffer as requested
+        const timelineLength = latestEndMonth + 2
+        
+        // Cap at 12 months maximum (1 year)
+        return Math.min(timelineLength, 12)
+      }
+
       // Calculate timeline dimensions
       const timelineStartX = marginL + 120 // Space for team labels
       const timelineWidth = contentW - 140
-      const maxMonths = Math.max(...timelineFeatures.map(f => f.startMonth + f.duration), 6)
+      const maxMonths = calculateTimelineDuration()
       const monthWidth = timelineWidth / maxMonths
       const teamHeight = 50
       const featureHeight = 16
