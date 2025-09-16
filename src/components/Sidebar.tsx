@@ -46,9 +46,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
     },
     {
       id: 'reports',
-      label: 'Reports & Analytics', 
+      label: 'Insights', 
       icon: BarChart3,
-      description: 'Insights & analysis'
+      description: 'AI-powered insights & analytics'
     },
     {
       id: 'collaboration',

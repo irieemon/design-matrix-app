@@ -113,10 +113,40 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
-      {/* Page Header */}
+      {/* Page Header with Prominent AI Insights Button */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Reports & Analytics</h1>
-        <p className="text-slate-600">Insights and trends from your Prioritas data</p>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">Insights</h1>
+            <p className="text-slate-600">AI-powered insights and analytics from your Prioritas data</p>
+          </div>
+          
+          {/* Prominent AI Insights Button */}
+          <button 
+            onClick={() => {
+              setSelectedInsightId(null) // Create new insight
+              setShowAIInsights(true)
+            }}
+            disabled={ideas.length === 0}
+            className="flex items-center space-x-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-4 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 group"
+          >
+            <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div className="text-left">
+              <div className="font-bold text-lg">Generate AI Insights</div>
+              <div className="text-sm text-purple-100 font-medium">Strategic analysis & recommendations</div>
+            </div>
+          </button>
+        </div>
+        
+        {ideas.length === 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+            <p className="text-amber-800 text-sm">
+              <strong>Add some ideas to your matrix first</strong> to generate AI insights and strategic recommendations.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Key Metrics Overview */}
@@ -355,28 +385,6 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
         </div>
       )}
 
-      {/* AI Insights */}
-      <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">AI Insights</h3>
-            <p className="text-sm text-slate-600">Generate strategic analysis and recommendations</p>
-          </div>
-          <div className="flex space-x-3">
-            <button 
-              onClick={() => {
-                setSelectedInsightId(null) // Create new insight
-                setShowAIInsights(true)
-              }}
-              disabled={ideas.length === 0}
-              className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span className="font-medium">Generate AI Insights</span>
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* AI Insights Modal */}
       {showAIInsights && (
