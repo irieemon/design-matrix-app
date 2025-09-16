@@ -417,16 +417,6 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
 
   const teamLanes = getContextualTeamLanes()
   
-  // Debug logging
-  React.useEffect(() => {
-    console.log('🏗️ TimelineRoadmap render:', {
-      featuresCount: features.length,
-      teamLanesCount: teamLanes.length,
-      projectType,
-      teamLanes: teamLanes.map(t => ({ id: t.id, name: t.name })),
-      features: features.map(f => ({ id: f.id, title: f.title, team: f.team }))
-    })
-  }, [features, teamLanes, projectType])
 
   // Calculate smart timeline duration based on features
   const calculateTimelineDuration = () => {
@@ -467,26 +457,6 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   const timelineDuration = calculateTimelineDuration()
   const months = generateMonths(timelineDuration)
   
-  // Debug logging for timeline calculations
-  React.useEffect(() => {
-    if (features.length > 0) {
-      const latestEndMonth = Math.max(
-        ...features.map(feature => feature.startMonth + feature.duration)
-      )
-      console.log('📅 Timeline calculation:', {
-        featuresCount: features.length,
-        latestEndMonth,
-        timelineDuration,
-        monthsGenerated: months.length,
-        features: features.map(f => ({ 
-          title: f.title, 
-          start: f.startMonth, 
-          duration: f.duration, 
-          end: f.startMonth + f.duration 
-        }))
-      })
-    }
-  }, [features, timelineDuration, months.length])
 
   // Get features for a specific team
   const getFeaturesForTeam = (teamId: string) => {
