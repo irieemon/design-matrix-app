@@ -25,19 +25,18 @@ function checkRateLimit(ip: string): boolean {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  console.log('🚀 AI Insights API called at:', new Date().toISOString())
-  
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
-  
-  const clientIP = req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown'
-  
-  if (!checkRateLimit(clientIP)) {
-    return res.status(429).json({ error: 'Rate limit exceeded. Please try again later.' })
-  }
-  
   try {
+    console.log('🚀 AI Insights API called at:', new Date().toISOString())
+    
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' })
+    }
+    
+    const clientIP = req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown'
+    
+    if (!checkRateLimit(clientIP)) {
+      return res.status(429).json({ error: 'Rate limit exceeded. Please try again later.' })
+    }
     console.log('📥 Request body keys:', Object.keys(req.body))
     const { ideas, projectName, projectType, roadmapContext, documentContext, projectContext } = req.body
     
@@ -88,9 +87,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ insights })
     
   } catch (error) {
-    console.error('Error generating insights:', error)
+    console.error('❌ FUNCTION ERROR:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      type: typeof error,
+      timestamp: new Date().toISOString()
+    })
+    
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-    return res.status(500).json({ error: `Failed to generate insights: ${errorMessage}` })
+    return res.status(500).json({ 
+      error: `Failed to generate insights: ${errorMessage}`,
+      timestamp: new Date().toISOString(),
+      functionId: 'generate-insights'
+    })
   }
 }
 
