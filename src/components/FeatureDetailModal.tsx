@@ -96,9 +96,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
     if (editedFeature && (editedFeature.title.trim() !== '')) {
       onSave(editedFeature)
       setEditMode(false)
-      if (mode !== 'create') {
-        onClose()
-      }
+      onClose()
     }
   }
 
