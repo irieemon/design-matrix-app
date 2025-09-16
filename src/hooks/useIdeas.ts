@@ -31,6 +31,8 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
   const loadIdeas = useCallback(async (projectId?: string) => {
     if (projectId) {
       logger.debug('📂 Loading ideas for project:', projectId)
+      // Clear ideas immediately to prevent flash of old ideas
+      setIdeas([])
       const ideas = await DatabaseService.getProjectIdeas(projectId)
       logger.debug('📋 Raw ideas returned from database:', ideas)
       setIdeas(ideas)
