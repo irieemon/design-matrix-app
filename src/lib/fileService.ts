@@ -128,6 +128,11 @@ export class FileService {
         updated_at: dbData.updated_at
       }
 
+      // Trigger AI analysis in the background (fire and forget)
+      this.triggerFileAnalysis(projectFile.id, projectId).catch(error => {
+        logger.warn('⚠️ Background file analysis failed:', error)
+      })
+
       return {
         success: true,
         file: projectFile
@@ -325,6 +330,38 @@ export class FileService {
       logger.debug('🧹 Cleaned up failed upload:', storagePath)
     } catch (error) {
       logger.warn('⚠️ Could not cleanup failed upload:', error)
+    }
+  }
+
+  /**
+   * Trigger AI analysis for a file (background process)
+   */
+  private static async triggerFileAnalysis(fileId: string, projectId: string): Promise<void> {
+    try {
+      logger.debug('🤖 Triggering AI analysis for file:', fileId)
+      
+      const response = await fetch('/api/ai/analyze-file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileId,
+          projectId
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(`Analysis API error: ${response.status} - ${errorData.error}`)
+      }
+
+      const result = await response.json()
+      logger.debug('✅ File analysis completed:', result.cached ? 'cached' : 'new')
+      
+    } catch (error) {
+      logger.error('❌ File analysis trigger failed:', error)
+      throw error
     }
   }
 

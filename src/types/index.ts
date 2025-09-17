@@ -310,6 +310,19 @@ export interface Quadrant {
 
 export type FileType = 'pdf' | 'doc' | 'docx' | 'txt' | 'md' | 'image' | 'other'
 
+export interface AIAnalysis {
+  summary: string
+  key_insights: string[]
+  extracted_text?: string
+  visual_description?: string
+  audio_transcript?: string
+  relevance_score: number
+  content_type: 'text' | 'image' | 'audio' | 'video' | 'mixed'
+  analysis_model: string
+  analysis_version: string
+  analyzed_at: string
+}
+
 export interface ProjectFile {
   id: string
   project_id: string
@@ -321,6 +334,8 @@ export interface ProjectFile {
   storage_path: string
   content_preview?: string // For text content that can be extracted
   file_data?: string // Base64 encoded file data for download
+  ai_analysis?: AIAnalysis // Cached AI analysis results
+  analysis_status?: 'pending' | 'analyzing' | 'completed' | 'failed' | 'skipped'
   uploaded_by: string
   created_at: string
   updated_at: string

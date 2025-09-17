@@ -122,10 +122,10 @@ async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectN
     })
   }
   
-  // Process multi-modal file content for enhanced AI analysis
-  console.log('🔄 OPENAI: Starting multi-modal file processing...')
-  const multiModalContent = await processMultiModalFiles(apiKey, documentContext, projectName, projectType)
-  console.log('✅ OPENAI: Multi-modal processing complete:', {
+  // Use cached AI analysis from pre-analyzed files
+  console.log('🔄 OPENAI: Using cached AI analysis from files...')
+  const multiModalContent = await processCachedFileAnalysis(documentContext)
+  console.log('✅ OPENAI: Cached analysis processing complete:', {
     hasVisualContent: multiModalContent.hasVisualContent,
     hasAudioContent: multiModalContent.hasAudioContent,
     textContentLength: multiModalContent.textContent?.length || 0,
@@ -671,6 +671,109 @@ async function getSignedImageUrl(filePath: string): Promise<string | null> {
   }
 }
 
+// Cached file analysis processor - uses pre-analyzed file results
+async function processCachedFileAnalysis(documentContext: any[] = []) {
+  console.log('📋 CACHED: Starting cached file analysis processing')
+  console.log('📁 CACHED: Input files count:', documentContext?.length || 0)
+  
+  if (!documentContext || documentContext.length === 0) {
+    console.log('⚠️ CACHED: No documents provided, returning empty result')
+    return {
+      hasVisualContent: false,
+      hasAudioContent: false,
+      textContent: '',
+      audioTranscripts: '',
+      imageDescriptions: '',
+      imageUrls: []
+    }
+  }
+
+  let textContent = ''
+  let audioTranscripts = ''
+  let imageDescriptions = ''
+  let imageUrls: string[] = []
+  let hasVisualContent = false
+  let hasAudioContent = false
+
+  for (const doc of documentContext) {
+    try {
+      console.log(`🔍 CACHED: Processing file ${doc.name}`)
+      
+      // Check if file has cached AI analysis
+      if (doc.ai_analysis && doc.analysis_status === 'completed') {
+        console.log('✅ CACHED: Using pre-analyzed results for', doc.name)
+        const analysis = doc.ai_analysis
+        
+        // Add summary and insights to text content
+        if (analysis.summary) {
+          textContent += `File Analysis - ${doc.name}:\n${analysis.summary}\n\n`
+        }
+        
+        if (analysis.key_insights && analysis.key_insights.length > 0) {
+          textContent += `Key Insights from ${doc.name}:\n${analysis.key_insights.map((insight: string) => `- ${insight}`).join('\n')}\n\n`
+        }
+        
+        // Add extracted content based on type
+        if (analysis.content_type === 'image' && analysis.visual_description) {
+          hasVisualContent = true
+          imageDescriptions += `Image "${doc.name}": ${analysis.visual_description}\n\n`
+          
+          // If we have extracted text from the image, add it
+          if (analysis.extracted_text) {
+            textContent += `Text extracted from image ${doc.name}: ${analysis.extracted_text}\n\n`
+          }
+        }
+        
+        if ((analysis.content_type === 'audio' || analysis.content_type === 'video') && analysis.audio_transcript) {
+          hasAudioContent = true
+          audioTranscripts += `Audio from ${doc.name}: ${analysis.audio_transcript}\n\n`
+        }
+        
+        if (analysis.content_type === 'text' && analysis.extracted_text) {
+          textContent += `Content from ${doc.name}: ${analysis.extracted_text}\n\n`
+        }
+        
+        console.log(`✅ CACHED: Processed analysis for ${doc.name} (${analysis.content_type})`)
+      } else {
+        // Fallback to existing content if no analysis available
+        console.log('⚠️ CACHED: No analysis available for', doc.name, 'using fallback content')
+        
+        if (doc.content) {
+          if (doc.type && doc.type.startsWith('image/')) {
+            hasVisualContent = true
+            imageDescriptions += `Image "${doc.name}": ${doc.content}\n\n`
+          } else {
+            textContent += `Content from ${doc.name}: ${doc.content}\n\n`
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.warn('⚠️ CACHED: Error processing file', doc.name, ':', error)
+      // Continue with other files
+    }
+  }
+
+  const result = {
+    hasVisualContent,
+    hasAudioContent,
+    textContent,
+    audioTranscripts,
+    imageDescriptions,
+    imageUrls
+  }
+  
+  console.log('📊 CACHED: Processing complete:', {
+    hasVisualContent: result.hasVisualContent,
+    hasAudioContent: result.hasAudioContent,
+    textLength: result.textContent.length,
+    audioLength: result.audioTranscripts.length,
+    imageDescLength: result.imageDescriptions.length,
+    imageUrls: result.imageUrls.length
+  })
+  
+  return result
+}
 
 // Dynamic prompt variation helpers to reduce repetitive AI responses
 function getRandomTemperature(): number {

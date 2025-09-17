@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, Image, File, Download, Trash2, Eye, Calendar, User, FileIcon, AlertTriangle, RefreshCw } from 'lucide-react'
+import { FileText, Image, File, Download, Trash2, Eye, Calendar, User, FileIcon, AlertTriangle, RefreshCw, Brain, CheckCircle, XCircle, Clock } from 'lucide-react'
 import { ProjectFile, FileType } from '../types'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import { logger } from '../utils/logger'
@@ -117,6 +117,45 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
         return <Image className={`${size} text-green-600`} />
       default:
         return <File className={`${size} text-gray-600`} />
+    }
+  }
+
+  const getAnalysisStatusBadge = (file: ProjectFile) => {
+    if (!file.analysis_status) {
+      return null
+    }
+
+    switch (file.analysis_status) {
+      case 'analyzing':
+        return (
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            <Brain className="w-3 h-3 mr-1 animate-pulse" />
+            AI Analyzing
+          </span>
+        )
+      case 'completed':
+        return (
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            AI Ready
+          </span>
+        )
+      case 'failed':
+        return (
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            <XCircle className="w-3 h-3 mr-1" />
+            AI Failed
+          </span>
+        )
+      case 'pending':
+        return (
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+            <Clock className="w-3 h-3 mr-1" />
+            AI Pending
+          </span>
+        )
+      default:
+        return null
     }
   }
 
@@ -296,6 +335,10 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
                   Preview: {file.content_preview.substring(0, 100)}...
                 </p>
               )}
+              {/* AI Analysis Status */}
+              <div className="mt-2">
+                {getAnalysisStatusBadge(file)}
+              </div>
             </div>
 
             {/* Actions */}
