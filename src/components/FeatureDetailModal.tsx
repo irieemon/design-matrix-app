@@ -221,13 +221,13 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-slate-200">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-slate-200">
         {/* Header */}
-        <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50 border-b border-slate-200 p-8">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl shadow-lg">
+        <div className="bg-white border-b border-slate-200 p-6">
+          <div className="flex items-start justify-between gap-6">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg shadow-sm">
                   {getTeamIcon(currentFeature.team)}
                 </div>
                 {editMode ? (
@@ -235,94 +235,94 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                     type="text"
                     value={currentFeature.title}
                     onChange={(e) => updateFeature({ title: e.target.value })}
-                    className="text-3xl font-bold bg-transparent border-0 border-b-2 border-slate-300 focus:border-blue-500 focus:outline-none text-slate-900 placeholder-slate-400 flex-1 pb-2"
+                    className="text-2xl font-bold bg-transparent border-0 border-b-2 border-slate-300 focus:border-blue-500 focus:outline-none text-slate-900 placeholder-slate-400 flex-1 pb-1 min-w-0"
                     placeholder="Feature title"
                   />
                 ) : (
-                  <h2 className="text-3xl font-bold text-slate-900 leading-tight">{currentFeature.title}</h2>
+                  <h2 className="text-2xl font-bold text-slate-900 leading-tight truncate">{currentFeature.title}</h2>
                 )}
               </div>
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 {editMode ? (
                   <>
                     <div className="relative">
                       <select
                         value={currentFeature.priority}
                         onChange={(e) => updateFeature({ priority: e.target.value as 'high' | 'medium' | 'low' })}
-                        className="appearance-none bg-white border-2 border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-sm font-medium text-slate-700 focus:border-blue-500 focus:outline-none shadow-sm cursor-pointer"
+                        className="appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 pr-8 text-sm font-medium text-slate-700 focus:border-blue-500 focus:outline-none focus:bg-white cursor-pointer min-w-[140px]"
                       >
                         <option value="high">High Priority</option>
                         <option value="medium">Medium Priority</option>
                         <option value="low">Low Priority</option>
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                     </div>
                     <div className="relative">
                       <select
                         value={currentFeature.status}
                         onChange={(e) => updateFeature({ status: e.target.value as 'planned' | 'in-progress' | 'completed' })}
-                        className="appearance-none bg-white border-2 border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-sm font-medium text-slate-700 focus:border-blue-500 focus:outline-none shadow-sm cursor-pointer"
+                        className="appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 pr-8 text-sm font-medium text-slate-700 focus:border-blue-500 focus:outline-none focus:bg-white cursor-pointer min-w-[120px]"
                       >
                         <option value="planned">Planned</option>
                         <option value="in-progress">In Progress</option>
                         <option value="completed">Completed</option>
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                     </div>
                     <div className="relative">
                       <select
                         value={currentFeature.team}
                         onChange={(e) => updateFeature({ team: e.target.value })}
-                        className="appearance-none bg-white border-2 border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-sm font-medium text-slate-700 focus:border-blue-500 focus:outline-none shadow-sm cursor-pointer"
+                        className="appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 pr-8 text-sm font-medium text-slate-700 focus:border-blue-500 focus:outline-none focus:bg-white cursor-pointer min-w-[140px]"
                       >
                         {availableTeams.map(team => (
                           <option key={team} value={team}>{getTeamDisplayName(team)}</option>
                         ))}
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                     </div>
                   </>
                 ) : (
                   <>
-                    <span className={`px-4 py-2 rounded-xl text-sm font-medium border-2 ${getPriorityColor(currentFeature.priority)}`}>
-                      <Flag className="w-4 h-4 inline mr-2" />
+                    <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${getPriorityColor(currentFeature.priority)}`}>
+                      <Flag className="w-3 h-3 inline mr-1.5" />
                       {currentFeature.priority} priority
                     </span>
-                    <span className={`px-4 py-2 rounded-xl text-sm font-medium border-2 ${getStatusColor(currentFeature.status)}`}>
-                      <Clock className="w-4 h-4 inline mr-2" />
+                    <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${getStatusColor(currentFeature.status)}`}>
+                      <Clock className="w-3 h-3 inline mr-1.5" />
                       {currentFeature.status}
                     </span>
-                    <span className={`px-4 py-2 rounded-xl text-sm font-medium border-2 ${getTeamColor(currentFeature.team)}`}>
-                      <Users className="w-4 h-4 inline mr-2" />
+                    <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${getTeamColor(currentFeature.team)}`}>
+                      <Users className="w-3 h-3 inline mr-1.5" />
                       {getTeamDisplayName(currentFeature.team)}
                     </span>
                   </>
                 )}
               </div>
             </div>
-            <div className="flex items-center space-x-3 ml-6">
+            <div className="flex items-start space-x-2 flex-shrink-0">
               {mode !== 'view' && (
                 <>
                   {editMode ? (
                     <>
                       <button
                         onClick={handleSave}
-                        className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
+                        className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium text-sm shadow-sm"
                       >
                         <Save className="w-4 h-4" />
                         <span>Save</span>
                       </button>
                       <button
                         onClick={handleCancel}
-                        className="flex items-center space-x-2 px-6 py-3 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all duration-200 font-medium"
+                        className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors font-medium text-sm"
                       >
-                        <span>Cancel</span>
+                        Cancel
                       </button>
                     </>
                   ) : (
                     <button
                       onClick={() => setEditMode(true)}
-                      className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
+                      className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm shadow-sm"
                     >
                       <Edit className="w-4 h-4" />
                       <span>Edit</span>
@@ -331,7 +331,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                   {onDelete && feature && mode !== 'create' && (
                     <button
                       onClick={handleDelete}
-                      className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
+                      className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium text-sm shadow-sm"
                     >
                       <Trash2 className="w-4 h-4" />
                       <span>Delete</span>
@@ -341,100 +341,100 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
               )}
               <button
                 onClick={onClose}
-                className="p-3 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors text-slate-600 hover:text-slate-800"
+                className="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-500 hover:text-slate-700"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-8 overflow-y-auto max-h-[calc(90vh-200px)]">
-          <div className="space-y-8">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-160px)]">
+          <div className="space-y-6">
             {/* Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200 shadow-sm">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="p-2 bg-blue-500 rounded-lg">
-                    <Calendar className="w-5 h-5 text-white" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                <div className="flex items-center space-x-2 mb-3">
+                  <div className="p-1.5 bg-blue-500 rounded-lg">
+                    <Calendar className="w-4 h-4 text-white" />
                   </div>
-                  <h3 className="font-semibold text-blue-900 text-lg">Timeline</h3>
+                  <h3 className="font-semibold text-blue-900">Timeline</h3>
                 </div>
                 {editMode ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div>
-                      <label className="block text-blue-900 text-sm font-medium mb-2">Start Month (offset)</label>
+                      <label className="block text-blue-900 text-xs font-medium mb-1">Start Month (offset)</label>
                       <input
                         type="number"
                         min="0"
                         max="36"
                         value={currentFeature.startMonth}
                         onChange={(e) => updateFeature({ startMonth: parseInt(e.target.value) || 0 })}
-                        className="w-full px-4 py-2.5 border-2 border-blue-200 rounded-xl text-blue-900 focus:border-blue-500 focus:outline-none"
+                        className="w-full px-3 py-2 border border-blue-200 rounded-lg text-blue-900 focus:border-blue-500 focus:outline-none text-sm bg-white"
                       />
                     </div>
                     <div>
-                      <label className="block text-blue-900 text-sm font-medium mb-2">Duration (months)</label>
+                      <label className="block text-blue-900 text-xs font-medium mb-1">Duration (months)</label>
                       <input
                         type="number"
                         min="1"
                         max="24"
                         value={currentFeature.duration}
                         onChange={(e) => updateFeature({ duration: parseInt(e.target.value) || 1 })}
-                        className="w-full px-4 py-2.5 border-2 border-blue-200 rounded-xl text-blue-900 focus:border-blue-500 focus:outline-none"
+                        className="w-full px-3 py-2 border border-blue-200 rounded-lg text-blue-900 focus:border-blue-500 focus:outline-none text-sm bg-white"
                       />
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <p className="text-blue-800 font-semibold text-lg">{timeline.start}</p>
+                  <div className="space-y-1">
+                    <p className="text-blue-800 font-medium">{timeline.start}</p>
                     <p className="text-blue-700 text-sm">to {timeline.end}</p>
-                    <p className="text-blue-600 text-sm bg-blue-200 px-3 py-1 rounded-full inline-block mt-2">
+                    <p className="text-blue-600 text-xs bg-blue-200 px-2 py-1 rounded inline-block mt-2">
                       {currentFeature.duration} month{currentFeature.duration !== 1 ? 's' : ''}
                     </p>
                   </div>
                 )}
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200 shadow-sm">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="p-2 bg-purple-500 rounded-lg">
-                    <Users className="w-5 h-5 text-white" />
+              <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                <div className="flex items-center space-x-2 mb-3">
+                  <div className="p-1.5 bg-purple-500 rounded-lg">
+                    <Users className="w-4 h-4 text-white" />
                   </div>
-                  <h3 className="font-semibold text-purple-900 text-lg">Team</h3>
+                  <h3 className="font-semibold text-purple-900">Team</h3>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-purple-800 font-semibold text-lg">{getTeamDisplayName(currentFeature.team)}</p>
-                  <p className="text-purple-600 text-sm bg-purple-200 px-3 py-1 rounded-full inline-block">Primary responsibility</p>
+                <div className="space-y-1">
+                  <p className="text-purple-800 font-medium">{getTeamDisplayName(currentFeature.team)}</p>
+                  <p className="text-purple-600 text-xs bg-purple-200 px-2 py-1 rounded inline-block">Primary responsibility</p>
                 </div>
               </div>
 
               {(currentFeature.complexity || editMode) && (
-                <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl p-6 border border-amber-200 shadow-sm">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="p-2 bg-amber-500 rounded-lg">
-                      <Zap className="w-5 h-5 text-white" />
+                <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <div className="p-1.5 bg-amber-500 rounded-lg">
+                      <Zap className="w-4 h-4 text-white" />
                     </div>
-                    <h3 className="font-semibold text-amber-900 text-lg">Complexity</h3>
+                    <h3 className="font-semibold text-amber-900">Complexity</h3>
                   </div>
                   {editMode ? (
                     <div className="relative">
                       <select
                         value={currentFeature.complexity || 'medium'}
                         onChange={(e) => updateFeature({ complexity: e.target.value })}
-                        className="appearance-none w-full px-4 py-2.5 border-2 border-amber-200 rounded-xl text-amber-900 focus:border-amber-500 focus:outline-none bg-white"
+                        className="appearance-none w-full px-3 py-2 border border-amber-200 rounded-lg text-amber-900 focus:border-amber-500 focus:outline-none bg-white text-sm"
                       >
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
                         <option value="high">High</option>
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-amber-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-amber-400 pointer-events-none" />
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <p className="text-amber-800 font-semibold text-lg capitalize">{currentFeature.complexity}</p>
-                      <p className="text-amber-600 text-sm bg-amber-200 px-3 py-1 rounded-full inline-block">Estimated effort</p>
+                    <div className="space-y-1">
+                      <p className="text-amber-800 font-medium capitalize">{currentFeature.complexity}</p>
+                      <p className="text-amber-600 text-xs bg-amber-200 px-2 py-1 rounded inline-block">Estimated effort</p>
                     </div>
                   )}
                 </div>
@@ -443,10 +443,10 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
 
             {/* Description */}
             {(currentFeature.description || editMode) && (
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-                <h3 className="font-semibold text-slate-900 mb-4 flex items-center space-x-3 text-lg">
-                  <div className="p-2 bg-slate-500 rounded-lg">
-                    <Target className="w-5 h-5 text-white" />
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                <h3 className="font-semibold text-slate-900 mb-3 flex items-center space-x-2">
+                  <div className="p-1.5 bg-slate-500 rounded-lg">
+                    <Target className="w-4 h-4 text-white" />
                   </div>
                   <span>Description</span>
                 </h3>
@@ -454,11 +454,11 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                   <textarea
                     value={currentFeature.description || ''}
                     onChange={(e) => updateFeature({ description: e.target.value })}
-                    className="w-full h-32 px-4 py-3 border-2 border-slate-200 rounded-xl text-slate-700 resize-none focus:border-blue-500 focus:outline-none"
+                    className="w-full h-24 px-3 py-2 border border-slate-200 rounded-lg text-slate-700 resize-none focus:border-blue-500 focus:outline-none bg-white text-sm"
                     placeholder="Enter feature description..."
                   />
                 ) : (
-                  <p className="text-slate-700 leading-relaxed text-base">{currentFeature.description}</p>
+                  <p className="text-slate-700 leading-relaxed text-sm">{currentFeature.description}</p>
                 )}
               </div>
             )}
@@ -759,17 +759,15 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-8 py-6 border-t border-slate-200">
+        <div className="bg-slate-50 px-6 py-4 border-t border-slate-200">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3 text-sm text-slate-600">
-              <div className="p-1.5 bg-slate-200 rounded-lg">
-                <Clock className="w-4 h-4" />
-              </div>
-              <span className="font-medium">ID: {currentFeature.id}</span>
+            <div className="flex items-center space-x-2 text-sm text-slate-600">
+              <Clock className="w-4 h-4" />
+              <span>ID: {currentFeature.id}</span>
             </div>
             <button
               onClick={onClose}
-              className="px-6 py-2.5 bg-slate-600 text-white rounded-xl hover:bg-slate-700 transition-colors font-medium shadow-sm"
+              className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors font-medium text-sm"
             >
               Close
             </button>
