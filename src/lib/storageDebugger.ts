@@ -65,7 +65,7 @@ export class StorageDebugger {
               if (error) {
                 logger.error('❌ Failed to create signed URL:', error)
               } else {
-                logger.debug('✅ Successfully created signed URL for:', file.name)
+                logger.debug('✅ Successfully created signed URL for:', file.name, 'URL length:', data?.signedUrl?.length || 0)
               }
             }
           } else {
@@ -117,7 +117,7 @@ export class StorageDebugger {
             error: error.message
           })
         } else {
-          logger.debug('✅ File accessible:', file.name)
+          logger.debug('✅ File accessible:', file.name, 'URL length:', data?.signedUrl?.length || 0)
         }
       }
       
