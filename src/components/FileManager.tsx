@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, Image, File, Download, Trash2, Eye, Calendar, User, FileIcon } from 'lucide-react'
+import { FileText, Image, File, Download, Trash2, Eye, Calendar, User, FileIcon, AlertTriangle, RefreshCw } from 'lucide-react'
 import { ProjectFile, FileType } from '../types'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import { logger } from '../utils/logger'
@@ -9,10 +9,12 @@ interface FileManagerProps {
   files: ProjectFile[]
   onDeleteFile: (fileId: string) => void
   onViewFile?: (file: ProjectFile) => void
+  currentProjectId: string
+  onFilesReset?: () => void
 }
 
-const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFile }) => {
-  const { showError, showWarning } = useToast()
+const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFile, currentProjectId, onFilesReset }) => {
+  const { showError, showWarning, showSuccess } = useToast()
   const [selectedFiles, setSelectedFiles] = useState<string[]>([])
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean
@@ -20,6 +22,7 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
     fileName?: string
     isMultiple?: boolean
   }>({ isOpen: false })
+  const [isResetting, setIsResetting] = useState(false)
 
   const downloadFile = (file: ProjectFile) => {
     if (!file.file_data) {
@@ -56,6 +59,47 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
     } catch (error) {
       logger.error('Error downloading file:', error)
       showError('Failed to download file. Please try again.')
+    }
+  }
+
+  const resetOrphanedFiles = async () => {
+    setIsResetting(true)
+    try {
+      logger.info('🔄 Resetting orphaned file records for project:', currentProjectId)
+      
+      const response = await fetch('/api/debug/reset-project-files', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          projectId: currentProjectId,
+          confirmReset: true
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to reset files: ${response.status}`)
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        showSuccess(`Reset complete! Deleted ${result.deletedFiles} orphaned file records. You can now re-upload your files.`)
+        logger.info('✅ File reset successful:', result)
+        
+        // Call the callback to refresh the file list
+        if (onFilesReset) {
+          onFilesReset()
+        }
+      } else {
+        throw new Error(result.error || 'Reset failed')
+      }
+    } catch (error) {
+      logger.error('❌ Error resetting files:', error)
+      showError(`Failed to reset files: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsResetting(false)
     }
   }
 
@@ -159,15 +203,30 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
             Uploaded Files ({files.length})
           </h3>
           {files.length > 0 && (
-            <label className="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={selectedFiles.length === files.length}
-                onChange={handleSelectAll}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span>Select all</span>
-            </label>
+            <>
+              <label className="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedFiles.length === files.length}
+                  onChange={handleSelectAll}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>Select all</span>
+              </label>
+              <button
+                onClick={resetOrphanedFiles}
+                disabled={isResetting}
+                className="flex items-center space-x-2 px-3 py-1.5 text-sm text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-orange-200"
+                title="Reset orphaned file records (files that exist in database but not in storage)"
+              >
+                {isResetting ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4" />
+                )}
+                <span>{isResetting ? 'Resetting...' : 'Reset Files'}</span>
+              </button>
+            </>
           )}
         </div>
         

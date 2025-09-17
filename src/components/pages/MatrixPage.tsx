@@ -42,7 +42,7 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
   toggleCollapse
 }) => {
 
-  const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
+  const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile, refreshProjectFiles } = useProjectFiles(currentProject)
   
   // Debug logging for ideas
   console.log('🎯 MatrixPage: Received ideas:', ideas?.length || 0, 'for project:', currentProject?.name)
@@ -149,6 +149,7 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
                 files={getCurrentProjectFiles()}
                 onFilesUploaded={handleFilesUploaded}
                 onDeleteFile={handleDeleteFile}
+                onFilesReset={refreshProjectFiles}
                 isEmbedded={true}
               />
             </div>

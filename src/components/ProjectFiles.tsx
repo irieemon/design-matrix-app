@@ -11,6 +11,7 @@ interface ProjectFilesProps {
   files: ProjectFile[]
   onFilesUploaded: (files: ProjectFile[]) => void
   onDeleteFile: (fileId: string) => void
+  onFilesReset?: () => void
   isEmbedded?: boolean
 }
 
@@ -19,6 +20,7 @@ const ProjectFiles: React.FC<ProjectFilesProps> = ({
   files,
   onFilesUploaded,
   onDeleteFile,
+  onFilesReset,
   isEmbedded = false
 }) => {
   const [activeTab, setActiveTab] = useState<'upload' | 'manage'>('upload')
@@ -107,6 +109,8 @@ const ProjectFiles: React.FC<ProjectFilesProps> = ({
             files={files}
             onDeleteFile={handleDeleteFile}
             onViewFile={handleViewFile}
+            currentProjectId={currentProject.id}
+            onFilesReset={onFilesReset}
           />
         )}
       </div>
