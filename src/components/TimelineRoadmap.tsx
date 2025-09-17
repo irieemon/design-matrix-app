@@ -1,5 +1,5 @@
 import React, { useState, lazy, Suspense } from 'react'
-import { Users, Monitor, Smartphone, TrendingUp, Settings, BarChart3, Plus, Download, Database, Loader } from 'lucide-react'
+import { Users, Monitor, Smartphone, TrendingUp, Settings, BarChart3, Plus, Database, Loader } from 'lucide-react'
 import FeatureDetailModal from './FeatureDetailModal'
 import { sampleMarketingRoadmap, sampleSoftwareRoadmap, sampleEventRoadmap } from '../utils/sampleRoadmapData'
 
