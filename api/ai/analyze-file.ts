@@ -141,7 +141,7 @@ async function analyzeFileContent(
 ) {
   const mimeType = fileRecord.mime_type
   const fileName = fileRecord.name
-  const _storagePath = fileRecord.storage_path
+  // const _storagePath = fileRecord.storage_path
   
   console.log('🎯 Analyzing file type:', mimeType, 'for file:', fileName)
   
@@ -171,7 +171,7 @@ async function analyzeFileContent(
   } else {
     // Unknown file type - try to extract any available content
     analysis.summary = `File of type ${mimeType} uploaded but no specific analysis available.`
-    analysis.key_insights = ['File format not directly analyzable', 'May contain valuable project information'] as string[]
+    analysis.key_insights = ['File format not directly analyzable', 'May contain valuable project information']
     analysis.relevance_score = 0.3
   }
   

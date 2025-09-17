@@ -436,6 +436,8 @@ Provide your analysis as a JSON object with these sections:
 }
 
 // Multi-modal file processing for enhanced AI analysis
+// Unused function - keeping for potential future use
+/*
 async function _processMultiModalFiles(_apiKey: string, documentContext: any[] = [], _projectName: string, _projectType: string) {
   console.log('🎬 MULTIMODAL: Starting processMultiModalFiles')
   console.log('📁 MULTIMODAL: Input files count:', documentContext?.length || 0)
@@ -559,6 +561,7 @@ async function _processMultiModalFiles(_apiKey: string, documentContext: any[] =
     imageUrls
   }
 }
+*/
 
 // Supabase client for file operations
 function getSupabaseClient() {
