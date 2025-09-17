@@ -29,7 +29,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
     return file.file_type || 'document'
   }
 
-  const actualFileType = getFileTypeFromMime(file.mime_type)
+  const actualFileType = file ? getFileTypeFromMime(file.mime_type) : 'document'
 
   // Load file URL when file changes
   useEffect(() => {
