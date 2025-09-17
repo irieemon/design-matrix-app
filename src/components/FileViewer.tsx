@@ -26,7 +26,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
         mimeType === 'application/json' ||
         mimeType === 'application/xml' ||
         mimeType === 'application/javascript') return 'text'
-    return file.file_type || 'document'
+    return file?.file_type || 'document'
   }
 
   const actualFileType = file ? getFileTypeFromMime(file.mime_type) : 'document'

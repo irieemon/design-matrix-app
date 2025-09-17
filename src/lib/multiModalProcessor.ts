@@ -114,7 +114,7 @@ export class MultiModalProcessor {
       logger.warn(`⚠️ Failed to process file ${file.name}:`, error)
       return {
         ...baseContent,
-        content: `File: ${file.name} (Processing failed: ${error.message})`
+        content: `File: ${file.name} (Processing failed: ${error instanceof Error ? error.message : 'Unknown error'})`
       }
     }
   }
@@ -366,33 +366,33 @@ export class MultiModalProcessor {
   /**
    * Integrate with GPT-4V for actual image analysis
    */
-  private static async analyzeImageWithGPT4V(imageUrl: string, projectContext: string): Promise<string> {
-    // TODO: Implement GPT-4V integration
-    // Send image + project context to GPT-4V for visual analysis
-    throw new Error('GPT-4V integration not yet implemented')
-  }
+  // private static async analyzeImageWithGPT4V(imageUrl: string, projectContext: string): Promise<string> {
+  //   // TODO: Implement GPT-4V integration
+  //   // Send image + project context to GPT-4V for visual analysis
+  //   throw new Error('GPT-4V integration not yet implemented')
+  // }
   
   /**
    * Integrate with OCR service for text extraction from images
    */
-  private static async extractTextFromImage(imageUrl: string): Promise<string> {
-    // TODO: Implement OCR integration (Tesseract.js, Google Vision API, etc.)
-    throw new Error('OCR integration not yet implemented')
-  }
+  // private static async extractTextFromImage(imageUrl: string): Promise<string> {
+  //   // TODO: Implement OCR integration (Tesseract.js, Google Vision API, etc.)
+  //   throw new Error('OCR integration not yet implemented')
+  // }
   
   /**
    * Integrate with Whisper API for audio transcription
    */
-  private static async transcribeAudio(audioUrl: string): Promise<string> {
-    // TODO: Implement Whisper API integration
-    throw new Error('Whisper integration not yet implemented')
-  }
+  // private static async transcribeAudio(audioUrl: string): Promise<string> {
+  //   // TODO: Implement Whisper API integration
+  //   throw new Error('Whisper integration not yet implemented')
+  // }
   
   /**
    * Extract key frames from video for visual analysis
    */
-  private static async extractVideoFrames(videoUrl: string): Promise<string[]> {
-    // TODO: Implement video frame extraction
-    throw new Error('Video frame extraction not yet implemented')
-  }
+  // private static async extractVideoFrames(videoUrl: string): Promise<string[]> {
+  //   // TODO: Implement video frame extraction
+  //   throw new Error('Video frame extraction not yet implemented')
+  // }
 }
