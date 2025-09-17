@@ -245,7 +245,7 @@ What insights jump out at you? What should we be prioritizing or watching out fo
   
   messages.push({
     role: 'user',
-    content: userContent
+    content: userContent as any // Mixed content array for GPT-4V (text + images)
   })
   
   console.log('📤 OPENAI: Preparing API request...')
