@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react'
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react'
 import { Grid3X3, Map } from 'lucide-react'
 import { Project, IdeaCard, ProjectRoadmap as ProjectRoadmapType } from '../../types'
 import { aiService } from '../../lib/aiService'
@@ -207,7 +207,10 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           relatedIdeas: epic.relatedIdeas,
           risks: phase.risks,
           successCriteria: phase.successCriteria,
-          complexity: epic.complexity
+          complexity: epic.complexity,
+          // Add mapping information to track back to original epic
+          phaseIndex,
+          epicIndex
         })
       })
 
@@ -234,10 +237,69 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     return roadmapData?.executionStrategy?.keyMilestones || []
   }, [roadmapData])
 
+  // Debounced save to avoid excessive database calls during drag operations
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   const handleFeaturesChange = async (updatedFeatures: any[]) => {
-    // Implementation for handling feature changes
-    // This would need to be implemented based on the original component's logic
-    logger.debug('Features changed:', updatedFeatures)
+    if (!roadmapData || !currentProject?.id || !state.selectedRoadmapId) {
+      logger.warn('Cannot save feature changes: missing roadmap data or project info')
+      return
+    }
+
+    // Update the roadmap data with the new feature positions/durations
+    const updatedRoadmapData = { ...roadmapData }
+
+    // Map timeline features back to epic format
+    if (updatedRoadmapData.roadmapAnalysis?.phases) {
+      updatedRoadmapData.roadmapAnalysis.phases.forEach((phase, phaseIndex) => {
+        if (phase.epics) {
+          phase.epics.forEach((epic, epicIndex) => {
+            // Find the updated feature using multiple mapping strategies
+            const updatedFeature = updatedFeatures.find(f =>
+              // Try exact ID match first
+              f.id === (epic as any).originalFeatureId ||
+              // Try position-based ID match
+              f.id === `${phaseIndex}-${epicIndex}` ||
+              // Try phase/epic index match
+              (f.phaseIndex === phaseIndex && f.epicIndex === epicIndex) ||
+              // Fallback to title match
+              f.title === epic.title
+            )
+
+            if (updatedFeature) {
+              epic.startMonth = updatedFeature.startMonth
+              epic.duration = updatedFeature.duration
+              epic.team = updatedFeature.team
+              epic.status = updatedFeature.status
+              logger.debug(`📝 Updated epic "${epic.title}": start=${updatedFeature.startMonth}, duration=${updatedFeature.duration}`)
+            }
+          })
+        }
+      })
+    }
+
+    // Update local state immediately for responsive UI
+    setRoadmapData(updatedRoadmapData)
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    // Debounce database save by 1 second
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        logger.debug('💾 Saving feature changes to database:', updatedFeatures.length, 'features')
+        await DatabaseService.updateProjectRoadmap(
+          state.selectedRoadmapId!,
+          updatedRoadmapData
+        )
+        logger.debug('✅ Feature changes saved successfully')
+      } catch (error) {
+        logger.error('❌ Error saving feature changes:', error)
+        // Don't show error to user since they can still continue working
+      }
+    }, 1000)
   }
 
   const handleHistorySelect = (roadmap: ProjectRoadmapType) => {
