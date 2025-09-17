@@ -364,26 +364,46 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                 {editMode ? (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-blue-900 text-xs font-medium mb-1">Start Month (offset)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="36"
-                        value={currentFeature.startMonth}
-                        onChange={(e) => updateFeature({ startMonth: parseInt(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-blue-200 rounded-lg text-blue-900 focus:border-blue-500 focus:outline-none text-sm bg-white"
-                      />
+                      <label className="block text-blue-900 text-xs font-medium mb-1">Start Month</label>
+                      <div className="relative">
+                        <select
+                          value={currentFeature.startMonth}
+                          onChange={(e) => updateFeature({ startMonth: parseInt(e.target.value) })}
+                          className="appearance-none w-full px-3 py-2 border border-blue-200 rounded-lg text-blue-900 focus:border-blue-500 focus:outline-none text-sm bg-white pr-8"
+                        >
+                          {Array.from({ length: 24 }, (_, i) => {
+                            const monthDate = new Date(startDate)
+                            monthDate.setMonth(monthDate.getMonth() + i)
+                            const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                            return (
+                              <option key={i} value={i}>
+                                {monthName}
+                              </option>
+                            )
+                          })}
+                        </select>
+                        <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-blue-400 pointer-events-none" />
+                      </div>
                     </div>
                     <div>
-                      <label className="block text-blue-900 text-xs font-medium mb-1">Duration (months)</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="24"
-                        value={currentFeature.duration}
-                        onChange={(e) => updateFeature({ duration: parseInt(e.target.value) || 1 })}
-                        className="w-full px-3 py-2 border border-blue-200 rounded-lg text-blue-900 focus:border-blue-500 focus:outline-none text-sm bg-white"
-                      />
+                      <label className="block text-blue-900 text-xs font-medium mb-1">Duration</label>
+                      <div className="relative">
+                        <select
+                          value={currentFeature.duration}
+                          onChange={(e) => updateFeature({ duration: parseInt(e.target.value) })}
+                          className="appearance-none w-full px-3 py-2 border border-blue-200 rounded-lg text-blue-900 focus:border-blue-500 focus:outline-none text-sm bg-white pr-8"
+                        >
+                          {Array.from({ length: 12 }, (_, i) => {
+                            const months = i + 1
+                            return (
+                              <option key={months} value={months}>
+                                {months} month{months !== 1 ? 's' : ''}
+                              </option>
+                            )
+                          })}
+                        </select>
+                        <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-blue-400 pointer-events-none" />
+                      </div>
                     </div>
                   </div>
                 ) : (
