@@ -169,7 +169,31 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       const projectType = currentProject.project_type?.toLowerCase() || 'software'
       const combined = `${epic.title} ${epic.description} ${(epic.userStories || []).join(' ')} ${(epic.deliverables || []).join(' ')}`.toLowerCase()
 
-      if (projectType.includes('software') || projectType.includes('web') || projectType.includes('app')) {
+      if (projectType.includes('marketing') || projectType.includes('campaign') || projectType.includes('brand')) {
+        // Marketing project teams
+        const creativeKeywords = ['creative', 'design', 'visual', 'brand', 'graphics', 'content', 'copy', 'creative asset', 'visual design']
+        if (creativeKeywords.some(keyword => combined.includes(keyword))) {
+          return 'creative'
+        }
+
+        const digitalKeywords = ['digital', 'social', 'online', 'social media', 'paid ads', 'sem', 'seo', 'email', 'website']
+        if (digitalKeywords.some(keyword => combined.includes(keyword))) {
+          return 'digital'
+        }
+
+        const analyticsKeywords = ['analytics', 'tracking', 'measurement', 'metrics', 'data', 'reporting', 'analysis', 'performance']
+        if (analyticsKeywords.some(keyword => combined.includes(keyword))) {
+          return 'analytics'
+        }
+
+        const operationsKeywords = ['operations', 'logistics', 'coordination', 'planning', 'management', 'execution', 'launch']
+        if (operationsKeywords.some(keyword => combined.includes(keyword))) {
+          return 'operations'
+        }
+
+        return 'creative' // Default for marketing projects
+      } else if (projectType.includes('software') || projectType.includes('web') || projectType.includes('app')) {
+        // Software project teams
         const frontendKeywords = ['frontend', 'ui', 'user interface', 'react', 'vue', 'angular', 'design', 'css', 'html', 'web']
         if (frontendKeywords.some(keyword => combined.includes(keyword))) {
           return 'web'
@@ -188,7 +212,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         return 'platform'
       }
 
-      return 'platform'
+      return 'creative' // Fallback default
     }
 
     roadmapData.roadmapAnalysis.phases.forEach((phase, phaseIndex) => {
@@ -243,6 +267,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
 
     logger.debug('✅ Generated', features.length, 'timeline features')
     logger.debug('🎯 Feature teams:', features.map(f => ({ title: f.title, team: f.team })))
+    logger.debug('🏢 Unique teams found:', [...new Set(features.map(f => f.team))])
 
     return features
   }
