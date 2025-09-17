@@ -470,7 +470,8 @@ async function processMultiModalFiles(apiKey: string, documentContext: any[] = [
       // Process based on file type
       console.log(`🔍 MULTIMODAL: Processing file ${doc.name} - Type: ${doc.type}`)
       
-      if (doc.type && doc.type.startsWith('image/')) {
+      if ((doc.type && doc.type.startsWith('image/')) || 
+          (doc.type && ['webp', 'jpeg', 'jpg', 'png', 'gif', 'bmp', 'svg'].includes(doc.type.toLowerCase()))) {
         hasVisualContent = true
         console.log('🖼️ MULTIMODAL: Processing image:', doc.name)
         console.log('📝 MULTIMODAL: Image content available:', !!doc.content, 'Length:', doc.content?.length || 0)
@@ -487,7 +488,8 @@ async function processMultiModalFiles(apiKey: string, documentContext: any[] = [
         // TODO: Get actual signed URL for the image
         // imageUrls.push(signedImageUrl)
         
-      } else if (doc.type && (doc.type.startsWith('video/') || doc.type.startsWith('audio/'))) {
+      } else if ((doc.type && (doc.type.startsWith('video/') || doc.type.startsWith('audio/'))) ||
+                 (doc.type && ['mp4', 'avi', 'mov', 'wmv', 'mp3', 'wav', 'ogg', 'm4a'].includes(doc.type.toLowerCase()))) {
         hasAudioContent = true
         console.log('🎵 MULTIMODAL: Processing audio/video:', doc.name)
         console.log('📝 MULTIMODAL: Audio/video content available:', !!doc.content, 'Length:', doc.content?.length || 0)
