@@ -260,7 +260,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <RoadmapHeader
         currentProject={currentProject}
         roadmapData={roadmapData}
