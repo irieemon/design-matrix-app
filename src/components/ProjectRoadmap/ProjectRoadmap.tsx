@@ -147,8 +147,20 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   // Generate timeline features for timeline view
   const convertToTimelineFeatures = () => {
     if (!roadmapData?.roadmapAnalysis?.phases || !currentProject) {
+      logger.debug('🚫 convertToTimelineFeatures: Missing roadmap data or project', {
+        hasRoadmapData: !!roadmapData,
+        hasAnalysis: !!roadmapData?.roadmapAnalysis,
+        hasPhases: !!roadmapData?.roadmapAnalysis?.phases,
+        phasesLength: roadmapData?.roadmapAnalysis?.phases?.length,
+        hasCurrentProject: !!currentProject
+      })
       return []
     }
+
+    logger.debug('🎯 convertToTimelineFeatures: Starting conversion', {
+      phasesCount: roadmapData.roadmapAnalysis.phases.length,
+      projectType: currentProject.project_type
+    })
 
     const features: any[] = []
     let currentMonth = 1
@@ -180,6 +192,12 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     }
 
     roadmapData.roadmapAnalysis.phases.forEach((phase, phaseIndex) => {
+      logger.debug(`🏗️ Processing phase ${phaseIndex}:`, {
+        phase: phase.phase,
+        epicsCount: phase.epics?.length || 0,
+        duration: phase.duration
+      })
+
       const durationText = phase.duration || '1 month'
       let phaseDuration = 1
 
@@ -191,6 +209,12 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       }
 
       phase.epics?.forEach((epic, epicIndex) => {
+        logger.debug(`  📦 Processing epic ${epicIndex}:`, {
+          title: epic.title,
+          startMonth: epic.startMonth,
+          duration: epic.duration,
+          team: epic.team
+        })
         const priority = epic.priority?.toLowerCase() as 'high' | 'medium' | 'low' || 'medium'
 
         features.push({
@@ -303,9 +327,18 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   }
 
   const handleHistorySelect = (roadmap: ProjectRoadmapType) => {
+    logger.debug('📋 Selecting roadmap from history:', {
+      roadmapId: roadmap.id,
+      createdAt: roadmap.created_at,
+      hasRoadmapData: !!roadmap.roadmap_data,
+      hasAnalysis: !!roadmap.roadmap_data?.roadmapAnalysis,
+      hasPhases: !!roadmap.roadmap_data?.roadmapAnalysis?.phases,
+      phasesCount: roadmap.roadmap_data?.roadmapAnalysis?.phases?.length
+    })
+
     setState(prev => ({ ...prev, selectedRoadmapId: roadmap.id, showHistory: false }))
     setRoadmapData(roadmap.roadmap_data)
-    logger.debug('📋 Selected roadmap from history:', roadmap.id)
+    logger.debug('📋 Roadmap data set from history selection')
   }
 
   if (state.error) {
