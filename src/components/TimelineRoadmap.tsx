@@ -61,11 +61,11 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
 
   // Update features when props change - but preserve user modifications
   React.useEffect(() => {
-    // Only update if we don't have any features yet or if the number of features changed significantly
-    if (features.length === 0 || Math.abs(features.length - initialFeatures.length) > 2) {
+    // Always update features when initialFeatures change, unless user is actively modifying them
+    if (!isResizing && !draggedFeature) {
       setFeatures(initialFeatures)
     }
-  }, [initialFeatures.length]) // Only depend on length, not the full array
+  }, [initialFeatures, isResizing, draggedFeature])
 
   const handleFeatureClick = (feature: RoadmapFeature) => {
     setSelectedFeature(feature)
