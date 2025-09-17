@@ -572,18 +572,18 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   const visibleMonths = months
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden w-full" data-roadmap-export>
-      {/* Header */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-6 py-4">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden w-full" data-roadmap-export>
+      {/* Timeline Header */}
+      <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-6 py-5">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold tracking-wide">{title}</h2>
-            <p className="text-slate-300 text-sm">{subtitle}</p>
+            <h2 className="text-xl font-bold tracking-wide">{title}</h2>
+            <p className="text-slate-300 text-sm mt-1">{subtitle}</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <button
               onClick={handleCreateFeature}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
+              className="flex items-center space-x-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 rounded-xl text-white transition-all shadow-sm hover:shadow-md text-sm font-medium"
             >
               <Plus className="w-4 h-4" />
               <span>Add Feature</span>
@@ -591,42 +591,35 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
             {features.length === 0 && (
               <button
                 onClick={handleLoadSampleData}
-                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white transition-colors"
+                className="flex items-center space-x-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 rounded-xl text-white transition-all shadow-sm hover:shadow-md text-sm font-medium"
               >
                 <Database className="w-4 h-4" />
                 <span>Load Sample Data</span>
               </button>
             )}
-            <button
-              onClick={() => setIsExportModalOpen(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export</span>
-            </button>
           </div>
         </div>
       </div>
 
 
-      {/* Timeline Header */}
-      <div className="bg-white border-b-2 border-gray-200">
+      {/* Timeline Grid Header */}
+      <div className="bg-slate-50 border-b border-slate-200">
         <div className="flex">
           {/* Team column header */}
-          <div className="w-48 flex items-center justify-center py-4 bg-gray-50 border-r-2 border-gray-200">
-            <Users className="w-5 h-5 text-gray-600 mr-2" />
-            <span className="font-semibold text-gray-800">TEAMS</span>
+          <div className="w-48 flex items-center justify-center py-4 bg-slate-100 border-r border-slate-200">
+            <Users className="w-5 h-5 text-slate-600 mr-2" />
+            <span className="font-semibold text-slate-800 text-sm tracking-wide">TEAMS</span>
           </div>
-          
+
           {/* Month headers */}
           <div className="flex-1 flex">
             {visibleMonths.map((month) => (
-              <div 
+              <div
                 key={month.index}
-                className={`flex-1 py-4 text-center border-r border-gray-200 font-semibold ${
-                  month.isCurrentMonth 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-50 text-gray-700'
+                className={`flex-1 py-4 text-center border-r border-slate-200 font-semibold text-sm ${
+                  month.isCurrentMonth
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-50 text-slate-700'
                 }`}
               >
                 {month.name}
@@ -637,7 +630,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
       </div>
 
       {/* Team Swim Lanes */}
-      <div className="divide-y divide-gray-200 min-h-0">
+      <div className="divide-y divide-slate-200 min-h-0">
         {teamLanes.map((team) => {
           const teamFeatures = getFeaturesForTeam(team.id)
           const featureRows = calculateFeatureRows(teamFeatures)
@@ -647,7 +640,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
           return (
             <div key={team.id} className="flex overflow-hidden" style={{ minHeight: `${laneHeight}px` }}>
               {/* Team Label */}
-              <div className={`w-48 ${team.bgColor} border-r-2 border-gray-200 flex items-center px-4 flex-shrink-0`}>
+              <div className={`w-48 ${team.bgColor} border-r border-slate-200 flex items-center px-4 flex-shrink-0`}>
                 <div className="flex items-center space-x-3">
                   <div className={`p-2 bg-white rounded-lg shadow-sm border ${team.color}`}>
                     <team.icon className={`w-6 h-6 ${team.color}`} />
@@ -674,7 +667,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                 {/* Month grid lines */}
                 <div className="absolute inset-0 flex">
                   {visibleMonths.map((month) => (
-                    <div key={month.index} className="flex-1 border-r border-gray-100"></div>
+                    <div key={month.index} className="flex-1 border-r border-slate-100"></div>
                   ))}
                 </div>
                 
@@ -736,36 +729,36 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
       </div>
 
       {/* Legend */}
-      <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+      <div className="bg-slate-50 px-6 py-4 border-t border-slate-200">
         <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center space-x-4">
-            <span className="font-medium text-gray-700">STATUS:</span>
+          <div className="flex items-center space-x-6">
+            <span className="font-semibold text-slate-700 tracking-wide">STATUS:</span>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-gray-200 rounded"></div>
-              <span className="text-gray-600">Planned</span>
+              <div className="w-3 h-3 bg-slate-200 rounded"></div>
+              <span className="text-slate-600">Planned</span>
             </div>
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 bg-blue-400 rounded"></div>
-              <span className="text-gray-600">In Progress</span>
+              <span className="text-slate-600">In Progress</span>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-gray-400 rounded"></div>
-              <span className="text-gray-600">Completed</span>
+              <div className="w-3 h-3 bg-slate-400 rounded"></div>
+              <span className="text-slate-600">Completed</span>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <span className="font-medium text-gray-700">PRIORITY:</span>
+          <div className="flex items-center space-x-6">
+            <span className="font-semibold text-slate-700 tracking-wide">PRIORITY:</span>
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 bg-red-400 rounded"></div>
-              <span className="text-gray-600">High</span>
+              <span className="text-slate-600">High</span>
             </div>
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 bg-yellow-400 rounded"></div>
-              <span className="text-gray-600">Medium</span>
+              <span className="text-slate-600">Medium</span>
             </div>
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 bg-blue-400 rounded"></div>
-              <span className="text-gray-600">Low</span>
+              <span className="text-slate-600">Low</span>
             </div>
           </div>
         </div>
