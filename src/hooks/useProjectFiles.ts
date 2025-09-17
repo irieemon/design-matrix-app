@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { ProjectFile, Project } from '../types'
 import { logger } from '../utils/logger'
 import { FileService } from '../lib/fileService'
+import { supabase } from '../lib/supabase'
 
 interface UseProjectFilesReturn {
   projectFiles: Record<string, ProjectFile[]>
@@ -37,10 +38,55 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
     }
   }
 
-  // Load files when current project changes
+  // Load files when current project changes and set up real-time subscription
   useEffect(() => {
     if (currentProject?.id) {
       loadProjectFiles(currentProject.id)
+      
+      // Set up real-time subscription for file updates
+      logger.debug('🔔 Setting up real-time subscription for project files:', currentProject.id)
+      
+      const subscription = supabase
+        .channel(`project_files_${currentProject.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'project_files',
+            filter: `project_id=eq.${currentProject.id}`
+          },
+          (payload) => {
+            logger.debug('🔔 Real-time file update received:', payload)
+            
+            // Update the specific file in state
+            if (payload.new) {
+              const updatedFile = payload.new as any
+              setProjectFiles(prev => {
+                const currentFiles = prev[currentProject.id] || []
+                const updatedFiles = currentFiles.map(file => 
+                  file.id === updatedFile.id 
+                    ? { ...file, ...updatedFile } 
+                    : file
+                )
+                
+                return {
+                  ...prev,
+                  [currentProject.id]: updatedFiles
+                }
+              })
+              
+              logger.debug('✅ File updated in real-time:', updatedFile.id, 'Status:', updatedFile.analysis_status)
+            }
+          }
+        )
+        .subscribe()
+      
+      // Cleanup subscription on unmount or project change
+      return () => {
+        logger.debug('🔇 Cleaning up real-time subscription for project:', currentProject.id)
+        subscription.unsubscribe()
+      }
     }
   }, [currentProject?.id])
 
