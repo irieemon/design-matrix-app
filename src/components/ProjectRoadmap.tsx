@@ -72,6 +72,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   const [showHistory, setShowHistory] = useState(false)
   const [viewMode, setViewMode] = useState<'detailed' | 'timeline'>('timeline')
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   // Load existing roadmaps when component mounts or project changes
   useEffect(() => {
@@ -109,7 +110,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   //   }
   // }
 
-  const generateRoadmap = async () => {
+  const handleGenerateRoadmap = () => {
     if (!currentProject) {
       setError('Please select a project to generate a roadmap')
       return
@@ -120,8 +121,23 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       return
     }
 
+    // Check if roadmap already exists
+    if (roadmapData) {
+      setShowConfirmModal(true)
+    } else {
+      generateRoadmap()
+    }
+  }
+
+  const generateRoadmap = async () => {
+    if (!currentProject) {
+      setError('Please select a project to generate a roadmap')
+      return
+    }
+
     setIsLoading(true)
     setError(null)
+    setShowConfirmModal(false)
 
     try {
       logger.debug('🗺️ Generating roadmap for project:', currentProject.name)
@@ -570,7 +586,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           </div>
           <div className="flex items-center space-x-3">
             <button
-              onClick={generateRoadmap}
+              onClick={handleGenerateRoadmap}
               disabled={isLoading}
               className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -977,6 +993,43 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
             projectType={currentProject?.project_type || 'software'}
           />
         </Suspense>
+      )}
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md mx-4 shadow-2xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <AlertTriangle className="w-6 h-6 text-amber-500" />
+              <h3 className="text-lg font-semibold text-gray-900">Replace Current Roadmap?</h3>
+            </div>
+            
+            <p className="text-gray-600 mb-6">
+              Generating a new roadmap will replace your current roadmap. Don't worry - you can always 
+              reload your previous roadmap from the history by clicking the{' '}
+              <span className="inline-flex items-center space-x-1 px-2 py-1 bg-gray-100 rounded text-sm">
+                <History className="w-3 h-3" />
+                <span>History</span>
+              </span>{' '}
+              button.
+            </p>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={generateRoadmap}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors"
+              >
+                Generate New Roadmap
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
