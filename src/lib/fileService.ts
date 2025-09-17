@@ -180,7 +180,9 @@ export class FileService {
         content_preview: record.content_preview,
         uploaded_by: record.uploaded_by,
         created_at: record.created_at,
-        updated_at: record.updated_at
+        updated_at: record.updated_at,
+        ai_analysis: record.ai_analysis,
+        analysis_status: record.analysis_status
       }))
 
       logger.debug('📂 Loaded project files:', files.length)
