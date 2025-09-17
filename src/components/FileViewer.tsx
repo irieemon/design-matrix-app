@@ -2,6 +2,8 @@ import { X, FileText, Image, Download, Play, Volume2 } from 'lucide-react'
 import { ProjectFile } from '../types'
 import { logger } from '../utils/logger'
 import { useToast } from '../contexts/ToastContext'
+import { FileService } from '../lib/fileService'
+import { useState, useEffect } from 'react'
 
 interface FileViewerProps {
   file: ProjectFile | null
@@ -11,6 +13,8 @@ interface FileViewerProps {
 
 const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
   const { showError, showWarning } = useToast()
+  const [fileUrl, setFileUrl] = useState<string | null>(null)
+  const [isLoadingUrl, setIsLoadingUrl] = useState(false)
   
   if (!isOpen || !file) return null
 
@@ -28,6 +32,36 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
   }
 
   const actualFileType = getFileTypeFromMime(file.mime_type)
+
+  // Load file URL when file changes
+  useEffect(() => {
+    if (!file || !isOpen) {
+      setFileUrl(null)
+      return
+    }
+
+    // If we already have file_data (base64), use it directly
+    if (file.file_data) {
+      setFileUrl(file.file_data)
+      return
+    }
+
+    // Otherwise, load from storage
+    const loadFileUrl = async () => {
+      setIsLoadingUrl(true)
+      try {
+        const url = await FileService.getFileUrl(file.storage_path)
+        setFileUrl(url)
+      } catch (error) {
+        logger.error('Failed to load file URL:', error)
+        setFileUrl(null)
+      } finally {
+        setIsLoadingUrl(false)
+      }
+    }
+
+    loadFileUrl()
+  }, [file, isOpen])
 
   const downloadFile = (file: ProjectFile) => {
     if (!file.file_data) {
@@ -87,8 +121,18 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
   }
 
   const renderFileContent = () => {
+    // Show loading state while fetching URL
+    if (isLoadingUrl) {
+      return (
+        <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Loading preview...</p>
+        </div>
+      )
+    }
+
     // For images, show the actual image
-    if (actualFileType === 'image' && file.file_data) {
+    if (actualFileType === 'image' && fileUrl) {
       return (
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center space-x-2 mb-4">
@@ -97,7 +141,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
           </div>
           <div className="flex justify-center bg-white rounded-lg p-4 border">
             <img 
-              src={file.file_data} 
+              src={fileUrl} 
               alt={file.original_name}
               className="max-h-96 max-w-full object-contain rounded-lg shadow-sm"
               onError={(e) => {
@@ -117,14 +161,14 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
       )
     }
 
-    // For images without file_data, show placeholder
+    // For images without fileUrl, show placeholder
     if (actualFileType === 'image') {
       return (
         <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg">
           <Image className="w-16 h-16 text-gray-400 mb-4" />
           <p className="text-gray-600 mb-2">Image Preview</p>
           <p className="text-sm text-gray-500">
-            Image data not available for preview
+            Unable to load image preview
           </p>
           <p className="text-xs text-gray-400 mt-2">
             File: {file.original_name}
@@ -134,7 +178,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
     }
 
     // For videos, show the actual video player
-    if (actualFileType === 'video' && file.file_data) {
+    if (actualFileType === 'video' && fileUrl) {
       return (
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center space-x-2 mb-4">
@@ -149,7 +193,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
                 logger.warn('Failed to load video:', file.original_name)
               }}
             >
-              <source src={file.file_data} type={file.mime_type} />
+              <source src={fileUrl} type={file.mime_type} />
               Your browser does not support the video tag.
             </video>
           </div>
@@ -157,14 +201,14 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
       )
     }
 
-    // For videos without file_data, show placeholder
+    // For videos without fileUrl, show placeholder
     if (actualFileType === 'video') {
       return (
         <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg">
           <Play className="w-16 h-16 text-gray-400 mb-4" />
           <p className="text-gray-600 mb-2">Video Preview</p>
           <p className="text-sm text-gray-500">
-            Video data not available for preview
+            Unable to load video preview
           </p>
           <p className="text-xs text-gray-400 mt-2">
             File: {file.original_name}
@@ -174,7 +218,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
     }
 
     // For audio files, show the actual audio player
-    if (actualFileType === 'audio' && file.file_data) {
+    if (actualFileType === 'audio' && fileUrl) {
       return (
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center space-x-2 mb-4">
@@ -189,7 +233,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
                 logger.warn('Failed to load audio:', file.original_name)
               }}
             >
-              <source src={file.file_data} type={file.mime_type} />
+              <source src={fileUrl} type={file.mime_type} />
               Your browser does not support the audio tag.
             </audio>
           </div>
@@ -197,14 +241,14 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
       )
     }
 
-    // For audio without file_data, show placeholder
+    // For audio without fileUrl, show placeholder
     if (actualFileType === 'audio') {
       return (
         <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg">
           <Volume2 className="w-16 h-16 text-gray-400 mb-4" />
           <p className="text-gray-600 mb-2">Audio Preview</p>
           <p className="text-sm text-gray-500">
-            Audio data not available for preview
+            Unable to load audio preview
           </p>
           <p className="text-xs text-gray-400 mt-2">
             File: {file.original_name}
@@ -214,7 +258,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
     }
 
     // For PDF files with file_data, show embedded PDF
-    if (actualFileType === 'pdf' && file.file_data) {
+    if (actualFileType === 'pdf' && fileUrl) {
       return (
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center space-x-2 mb-4">
@@ -223,7 +267,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
           </div>
           <div className="bg-white rounded-lg border overflow-hidden">
             <iframe
-              src={file.file_data}
+              src={fileUrl}
               className="w-full h-96"
               title={file.original_name}
               onError={() => {
