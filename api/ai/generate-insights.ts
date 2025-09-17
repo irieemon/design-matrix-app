@@ -457,7 +457,7 @@ async function processMultiModalFiles(apiKey: string, documentContext: any[] = [
     console.log(`📄 MULTIMODAL: File ${index + 1}: ${doc.name} (${doc.type || doc.mimeType || 'unknown type'})`)
     console.log(`    Content length: ${doc.content?.length || 0} chars`)
     console.log(`    Storage URL: ${doc.storageUrl ? 'available' : 'missing'}`)
-    console.log(`    Storage path: ${doc.storage_path || 'missing'}`)
+    console.log(`    Storage path: ${doc.storagePath || doc.storage_path || 'missing'}`)
     console.log(`    File path: ${doc.file_path || 'missing'}`)
     console.log(`    All keys:`, Object.keys(doc))
   })
@@ -490,12 +490,14 @@ async function processMultiModalFiles(apiKey: string, documentContext: any[] = [
         }
         
         // Get actual signed URL for GPT-4V analysis
-        if (doc.storage_path || doc.file_path) {
+        const filePath = doc.storagePath || doc.storage_path || doc.file_path
+        if (filePath) {
           try {
-            const signedUrl = await getSignedImageUrl(doc.storage_path || doc.file_path)
+            console.log('🔗 MULTIMODAL: Attempting to get signed URL for path:', filePath)
+            const signedUrl = await getSignedImageUrl(filePath)
             if (signedUrl) {
               imageUrls.push(signedUrl)
-              console.log('✅ MULTIMODAL: Generated signed URL for', doc.name)
+              console.log('✅ MULTIMODAL: Generated signed URL for', doc.name, '- URL length:', signedUrl.length)
             } else {
               console.log('⚠️ MULTIMODAL: Failed to generate signed URL for', doc.name)
             }
@@ -503,7 +505,7 @@ async function processMultiModalFiles(apiKey: string, documentContext: any[] = [
             console.warn('⚠️ MULTIMODAL: Error getting signed URL for', doc.name, ':', error)
           }
         } else {
-          console.log('⚠️ MULTIMODAL: No storage path available for', doc.name)
+          console.log('⚠️ MULTIMODAL: No storage path available for', doc.name, '- Available keys:', Object.keys(doc))
         }
         
       } else if ((doc.type && (doc.type.startsWith('video/') || doc.type.startsWith('audio/'))) ||
