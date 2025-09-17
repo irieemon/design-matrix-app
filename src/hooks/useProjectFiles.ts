@@ -48,6 +48,9 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
       
       const subscription = supabase
         .channel(`project_files_${currentProject.id}`)
+        .on('broadcast', { event: 'test' }, payload => {
+          logger.debug('🔔 Broadcast test received:', payload)
+        })
         .on(
           'postgres_changes',
           {
@@ -92,17 +95,30 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
           },
           (payload) => {
             logger.debug('🔔 Real-time file update received:', payload)
+            logger.debug('🔔 Payload details:', {
+              old: payload.old,
+              new: payload.new,
+              eventType: payload.eventType
+            })
             
             // Update the specific file in state
             if (payload.new) {
               const updatedFile = payload.new as any
+              logger.debug('🔔 Processing update for file:', updatedFile.id, {
+                oldStatus: payload.old?.analysis_status,
+                newStatus: updatedFile.analysis_status,
+                hasAiAnalysis: !!updatedFile.ai_analysis
+              })
+              
               setProjectFiles(prev => {
                 const currentFiles = prev[currentProject.id] || []
+                logger.debug('🔔 Current files in state:', currentFiles.map(f => ({ id: f.id, status: f.analysis_status })))
                 
                 // Check if file exists in current state
                 const fileExists = currentFiles.some(file => file.id === updatedFile.id)
                 if (!fileExists) {
                   logger.debug('⚠️ File not found in current state, skipping update:', updatedFile.id)
+                  logger.debug('⚠️ Available file IDs:', currentFiles.map(f => f.id))
                   return prev
                 }
                 
@@ -118,17 +134,39 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
                 )
                 
                 logger.debug('✅ File updated in real-time:', updatedFile.id, 'Status:', updatedFile.analysis_status)
+                logger.debug('✅ Updated files after change:', updatedFiles.map(f => ({ id: f.id, status: f.analysis_status })))
                 
                 return {
                   ...prev,
                   [currentProject.id]: updatedFiles
                 }
               })
+            } else {
+              logger.debug('⚠️ No payload.new in UPDATE event')
             }
           }
         )
-        .subscribe()
+        .subscribe((status, err) => {
+          logger.debug('🔔 Subscription status:', status, err)
+          if (status === 'SUBSCRIBED') {
+            logger.debug('✅ Successfully subscribed to real-time updates for project:', currentProject.id)
+          } else if (status === 'CLOSED') {
+            logger.debug('🔴 Subscription closed for project:', currentProject.id)
+          } else if (status === 'CHANNEL_ERROR') {
+            logger.error('❌ Channel error for project:', currentProject.id, err)
+          }
+        })
       
+      // Test the subscription by sending a broadcast after setup
+      setTimeout(() => {
+        logger.debug('🧪 Testing subscription with broadcast...')
+        subscription.send({ 
+          type: 'broadcast',
+          event: 'test', 
+          payload: { message: 'test from useProjectFiles' }
+        })
+      }, 2000)
+
       // Cleanup subscription on unmount or project change
       return () => {
         logger.debug('🔇 Cleaning up real-time subscription for project:', currentProject.id)

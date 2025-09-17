@@ -92,13 +92,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       )
       
       // Save analysis results
-      const { error: updateError } = await supabase
+      console.log('💾 Updating database with analysis results for file:', fileId)
+      const { data: updateData, error: updateError } = await supabase
         .from('project_files')
         .update({ 
           ai_analysis: analysis,
           analysis_status: 'completed'
         })
         .eq('id', fileId)
+        .select()
       
       if (updateError) {
         console.error('❌ Failed to save analysis:', updateError)
@@ -109,7 +111,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'Failed to save analysis results' })
       }
       
-      console.log('✅ File analysis completed and saved')
+      console.log('✅ File analysis completed and saved. Updated record:', updateData)
+      console.log('🔔 Database update should trigger real-time subscription now')
       return res.status(200).json({ analysis, cached: false })
       
     } catch (analysisError) {
