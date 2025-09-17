@@ -46,10 +46,11 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       const history = await DatabaseService.getProjectRoadmaps(currentProject.id)
       setRoadmapHistory(history)
 
-      // Load the most recent roadmap if available
-      if (history.length > 0 && !state.selectedRoadmapId) {
+      // Load the most recent roadmap if available and no roadmap is currently loaded
+      if (history.length > 0 && !roadmapData) {
         setState(prev => ({ ...prev, selectedRoadmapId: history[0].id }))
         setRoadmapData(history[0].roadmap_data)
+        logger.debug('📋 Loaded most recent roadmap:', history[0].id)
       }
     } catch (error) {
       logger.error('Error loading roadmap history:', error)
@@ -94,7 +95,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       )
 
       if (data) {
-        console.log('🗺️ ProjectRoadmap: Setting roadmap data:', data)
+        logger.debug('🗺️ ProjectRoadmap: Setting roadmap data:', data)
         setRoadmapData(data)
 
         // Save to database
@@ -109,6 +110,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           if (roadmapId) {
             setState(prev => ({ ...prev, selectedRoadmapId: roadmapId }))
             await loadRoadmapHistory()
+            logger.debug('✅ Roadmap saved and history updated:', roadmapId)
           }
         } catch (error) {
           logger.error('Error saving roadmap:', error)
@@ -118,6 +120,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         logger.debug('✅ Roadmap generated successfully')
       } else {
         setState(prev => ({ ...prev, error: 'Failed to generate roadmap. Please try again.' }))
+        logger.error('❌ Roadmap generation failed - no data returned')
       }
     } catch (error) {
       logger.error('Error generating roadmap:', error)
@@ -236,6 +239,12 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     logger.debug('Features changed:', updatedFeatures)
   }
 
+  const handleHistorySelect = (roadmap: ProjectRoadmapType) => {
+    setState(prev => ({ ...prev, selectedRoadmapId: roadmap.id, showHistory: false }))
+    setRoadmapData(roadmap.roadmap_data)
+    logger.debug('📋 Selected roadmap from history:', roadmap.id)
+  }
+
   if (state.error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
@@ -259,9 +268,11 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         viewMode={viewMode}
         showHistory={state.showHistory}
         roadmapHistory={roadmapHistory}
+        selectedRoadmapId={state.selectedRoadmapId}
         onGenerateRoadmap={handleGenerateRoadmap}
         onToggleViewMode={setViewMode}
         onToggleHistory={() => setState(prev => ({ ...prev, showHistory: !prev.showHistory }))}
+        onHistorySelect={handleHistorySelect}
         onExportClick={() => setState(prev => ({ ...prev, isExportModalOpen: true }))}
       />
 

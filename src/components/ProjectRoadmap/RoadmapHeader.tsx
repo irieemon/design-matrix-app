@@ -10,9 +10,11 @@ interface RoadmapHeaderProps {
   viewMode: RoadmapViewMode['mode']
   showHistory: boolean
   roadmapHistory: ProjectRoadmapType[]
+  selectedRoadmapId: string | null
   onGenerateRoadmap: () => void
   onToggleViewMode: (mode: RoadmapViewMode['mode']) => void
   onToggleHistory: () => void
+  onHistorySelect: (roadmap: ProjectRoadmapType) => void
   onExportClick: () => void
 }
 
@@ -23,9 +25,11 @@ const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({
   viewMode,
   showHistory,
   roadmapHistory,
+  selectedRoadmapId,
   onGenerateRoadmap,
   onToggleViewMode,
   onToggleHistory,
+  onHistorySelect,
   onExportClick
 }) => {
   if (!currentProject) {
@@ -134,6 +138,43 @@ const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({
               <span className="font-medium">Total Duration:</span> {roadmapData.roadmapAnalysis.totalDuration}
             </div>
           )}
+        </div>
+      )}
+
+      {/* History Panel */}
+      {showHistory && roadmapHistory.length > 0 && (
+        <div className="mt-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+          <div className="p-4">
+            <h3 className="text-sm font-medium text-slate-900 mb-3">Roadmap History</h3>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {roadmapHistory.map((roadmap) => (
+                <button
+                  key={roadmap.id}
+                  onClick={() => onHistorySelect(roadmap)}
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                    selectedRoadmapId === roadmap.id
+                      ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                      : 'hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">
+                      {new Date(roadmap.created_at).toLocaleDateString()} at{' '}
+                      {new Date(roadmap.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {roadmap.idea_count} ideas
+                    </span>
+                  </div>
+                  {roadmap.roadmap_data?.roadmapAnalysis?.totalDuration && (
+                    <div className="text-xs text-slate-500 mt-1">
+                      Duration: {roadmap.roadmap_data.roadmapAnalysis.totalDuration}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
