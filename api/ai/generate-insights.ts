@@ -105,7 +105,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = [], projectContext: any = null) {
+async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = [], _projectContext: any = null) {
   
   console.log('🚀 OPENAI FUNCTION: Starting generateInsightsWithOpenAI')
   console.log('🎯 OPENAI: API Key available:', !!apiKey, 'Length:', apiKey?.length || 0)
@@ -327,7 +327,7 @@ What insights jump out at you? What should we be prioritizing or watching out fo
   }
 }
 
-async function generateInsightsWithAnthropic(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = [], projectContext: any = null) {
+async function generateInsightsWithAnthropic(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = [], _projectContext: any = null) {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -436,7 +436,7 @@ Provide your analysis as a JSON object with these sections:
 }
 
 // Multi-modal file processing for enhanced AI analysis
-async function processMultiModalFiles(apiKey: string, documentContext: any[] = [], projectName: string, projectType: string) {
+async function processMultiModalFiles(_apiKey: string, documentContext: any[] = [], _projectName: string, _projectType: string) {
   console.log('🎬 MULTIMODAL: Starting processMultiModalFiles')
   console.log('📁 MULTIMODAL: Input files count:', documentContext?.length || 0)
   
