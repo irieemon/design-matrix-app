@@ -51,6 +51,40 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
         .on(
           'postgres_changes',
           {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'project_files',
+            filter: `project_id=eq.${currentProject.id}`
+          },
+          (payload) => {
+            logger.debug('🔔 Real-time file insert received:', payload)
+            
+            // Add new file to state if it's not already there
+            if (payload.new) {
+              const newFile = payload.new as any
+              setProjectFiles(prev => {
+                const currentFiles = prev[currentProject.id] || []
+                
+                // Check if file already exists
+                const fileExists = currentFiles.some(file => file.id === newFile.id)
+                if (fileExists) {
+                  logger.debug('⚠️ File already exists, skipping insert:', newFile.id)
+                  return prev
+                }
+                
+                logger.debug('✅ New file added in real-time:', newFile.id, 'Status:', newFile.analysis_status)
+                
+                return {
+                  ...prev,
+                  [currentProject.id]: [newFile, ...currentFiles]
+                }
+              })
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
             event: 'UPDATE',
             schema: 'public',
             table: 'project_files',
@@ -64,19 +98,32 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
               const updatedFile = payload.new as any
               setProjectFiles(prev => {
                 const currentFiles = prev[currentProject.id] || []
+                
+                // Check if file exists in current state
+                const fileExists = currentFiles.some(file => file.id === updatedFile.id)
+                if (!fileExists) {
+                  logger.debug('⚠️ File not found in current state, skipping update:', updatedFile.id)
+                  return prev
+                }
+                
                 const updatedFiles = currentFiles.map(file => 
                   file.id === updatedFile.id 
-                    ? { ...file, ...updatedFile } 
+                    ? { 
+                        ...file, 
+                        analysis_status: updatedFile.analysis_status,
+                        ai_analysis: updatedFile.ai_analysis,
+                        updated_at: updatedFile.updated_at
+                      } 
                     : file
                 )
+                
+                logger.debug('✅ File updated in real-time:', updatedFile.id, 'Status:', updatedFile.analysis_status)
                 
                 return {
                   ...prev,
                   [currentProject.id]: updatedFiles
                 }
               })
-              
-              logger.debug('✅ File updated in real-time:', updatedFile.id, 'Status:', updatedFile.analysis_status)
             }
           }
         )

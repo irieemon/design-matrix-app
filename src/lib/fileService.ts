@@ -89,7 +89,8 @@ export class FileService {
         storage_path: uploadData.path, // This is the actual path returned by Supabase
         content_preview: contentPreview,
         mime_type: file.type,
-        uploaded_by: uploadedBy || null
+        uploaded_by: uploadedBy || null,
+        analysis_status: 'pending' // Initialize with pending status for AI analysis
       }
 
       const { data: dbData, error: dbError } = await supabase
@@ -125,7 +126,9 @@ export class FileService {
         content_preview: dbData.content_preview,
         uploaded_by: dbData.uploaded_by,
         created_at: dbData.created_at,
-        updated_at: dbData.updated_at
+        updated_at: dbData.updated_at,
+        analysis_status: dbData.analysis_status,
+        ai_analysis: dbData.ai_analysis
       }
 
       // Trigger AI analysis in the background (fire and forget)
