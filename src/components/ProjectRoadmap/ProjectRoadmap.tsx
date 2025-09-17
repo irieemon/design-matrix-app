@@ -265,11 +265,9 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         currentProject={currentProject}
         roadmapData={roadmapData}
         isLoading={state.isLoading}
-        viewMode={viewMode}
         roadmapHistory={roadmapHistory}
         selectedRoadmapId={state.selectedRoadmapId}
         onGenerateRoadmap={handleGenerateRoadmap}
-        onToggleViewMode={setViewMode}
         onHistorySelect={handleHistorySelect}
         onExportClick={() => setState(prev => ({ ...prev, isExportModalOpen: true }))}
       />

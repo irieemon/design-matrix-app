@@ -1,17 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Map, Grid3X3, Download, History, Sparkles, Loader, ChevronDown } from 'lucide-react'
+import { Download, History, Sparkles, Loader, ChevronDown } from 'lucide-react'
 import { Project, ProjectRoadmap as ProjectRoadmapType } from '../../types'
-import { RoadmapData, RoadmapViewMode } from './types'
+import { RoadmapData } from './types'
 
 interface RoadmapHeaderProps {
   currentProject: Project | null
   roadmapData: RoadmapData | null
   isLoading: boolean
-  viewMode: RoadmapViewMode['mode']
   roadmapHistory: ProjectRoadmapType[]
   selectedRoadmapId: string | null
   onGenerateRoadmap: () => void
-  onToggleViewMode: (mode: RoadmapViewMode['mode']) => void
   onHistorySelect: (roadmap: ProjectRoadmapType) => void
   onExportClick: () => void
 }
@@ -20,11 +18,9 @@ const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({
   currentProject,
   roadmapData,
   isLoading,
-  viewMode,
   roadmapHistory,
   selectedRoadmapId,
   onGenerateRoadmap,
-  onToggleViewMode,
   onHistorySelect,
   onExportClick
 }) => {
