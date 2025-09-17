@@ -1,5 +1,5 @@
 import React, { useState, lazy, Suspense } from 'react'
-import { Users, Monitor, Smartphone, TrendingUp, Settings, BarChart3, Grid3X3, Plus, Download, Database, Loader } from 'lucide-react'
+import { Users, Monitor, Smartphone, TrendingUp, Settings, BarChart3, Plus, Download, Database, Loader } from 'lucide-react'
 import FeatureDetailModal from './FeatureDetailModal'
 import { sampleMarketingRoadmap, sampleSoftwareRoadmap, sampleEventRoadmap } from '../utils/sampleRoadmapData'
 
@@ -37,8 +37,6 @@ interface TimelineRoadmapProps {
   title?: string
   subtitle?: string
   onFeaturesChange?: (features: RoadmapFeature[]) => void
-  viewMode?: 'timeline' | 'detailed'
-  onViewModeChange?: (mode: 'timeline' | 'detailed') => void
   projectType?: string
 }
 
@@ -48,8 +46,6 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   title = "PRODUCT ROADMAP",
   subtitle = "ENVISION 6.0",
   onFeaturesChange,
-  viewMode = 'timeline',
-  onViewModeChange,
   projectType = 'software'
 }) => {
   const [selectedFeature, setSelectedFeature] = useState<RoadmapFeature | null>(null)

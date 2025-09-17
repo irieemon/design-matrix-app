@@ -266,12 +266,10 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         roadmapData={roadmapData}
         isLoading={state.isLoading}
         viewMode={viewMode}
-        showHistory={state.showHistory}
         roadmapHistory={roadmapHistory}
         selectedRoadmapId={state.selectedRoadmapId}
         onGenerateRoadmap={handleGenerateRoadmap}
         onToggleViewMode={setViewMode}
-        onToggleHistory={() => setState(prev => ({ ...prev, showHistory: !prev.showHistory }))}
         onHistorySelect={handleHistorySelect}
         onExportClick={() => setState(prev => ({ ...prev, isExportModalOpen: true }))}
       />
@@ -285,8 +283,6 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
               title={currentProject?.name || 'PROJECT ROADMAP'}
               subtitle={`${timelineFeatures.length} Features • ${roadmapData.roadmapAnalysis?.totalDuration || '6 months'}`}
               onFeaturesChange={handleFeaturesChange}
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
               projectType={currentProject?.project_type || 'software'}
             />
           )}

@@ -8,12 +8,10 @@ interface RoadmapHeaderProps {
   roadmapData: RoadmapData | null
   isLoading: boolean
   viewMode: RoadmapViewMode['mode']
-  showHistory: boolean
   roadmapHistory: ProjectRoadmapType[]
   selectedRoadmapId: string | null
   onGenerateRoadmap: () => void
   onToggleViewMode: (mode: RoadmapViewMode['mode']) => void
-  onToggleHistory: () => void
   onHistorySelect: (roadmap: ProjectRoadmapType) => void
   onExportClick: () => void
 }
@@ -23,12 +21,10 @@ const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({
   roadmapData,
   isLoading,
   viewMode,
-  showHistory,
   roadmapHistory,
   selectedRoadmapId,
   onGenerateRoadmap,
   onToggleViewMode,
-  onToggleHistory,
   onHistorySelect,
   onExportClick
 }) => {
