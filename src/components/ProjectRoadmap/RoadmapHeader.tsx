@@ -163,7 +163,7 @@ const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({
                       {new Date(roadmap.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                     <span className="text-xs text-slate-500">
-                      {roadmap.idea_count} ideas
+                      {roadmap.ideas_analyzed} ideas
                     </span>
                   </div>
                   {roadmap.roadmap_data?.roadmapAnalysis?.totalDuration && (
