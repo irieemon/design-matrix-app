@@ -70,6 +70,14 @@ export class FileService {
       }
 
       logger.debug('✅ File uploaded to storage:', uploadData.path)
+      
+      // Log detailed path information for debugging
+      logger.debug('📋 Upload path details:', {
+        uploadedPath: uploadData.path,
+        originalStoragePath: storagePath,
+        pathsMatch: uploadData.path === storagePath,
+        bucketName: this.BUCKET_NAME
+      })
 
       // Create file metadata record
       const fileRecord = {
@@ -78,7 +86,7 @@ export class FileService {
         original_name: file.name,
         file_type: fileExtension.toLowerCase(),
         file_size: file.size,
-        storage_path: uploadData.path,
+        storage_path: uploadData.path, // This is the actual path returned by Supabase
         content_preview: contentPreview,
         mime_type: file.type,
         uploaded_by: uploadedBy || null
@@ -238,15 +246,67 @@ export class FileService {
    */
   static async getFileUrl(storagePath: string): Promise<string | null> {
     try {
+      logger.debug('🔗 Getting signed URL for storage path:', storagePath)
+      
+      // Clean and normalize the storage path
+      let cleanPath = storagePath
+      
+      // Remove any leading slashes that might cause issues
+      if (cleanPath.startsWith('/')) {
+        cleanPath = cleanPath.substring(1)
+        logger.debug('🧹 Removed leading slash from path:', cleanPath)
+      }
+      
+      // Log the exact path we're trying to access
+      logger.debug('🎯 Attempting to access file at path:', cleanPath)
+      logger.debug('📦 Using bucket:', this.BUCKET_NAME)
+      
       const { data, error } = await supabase.storage
         .from(this.BUCKET_NAME)
-        .createSignedUrl(storagePath, 3600) // URL valid for 1 hour
+        .createSignedUrl(cleanPath, 3600) // URL valid for 1 hour
 
       if (error) {
         logger.error('❌ Error creating signed URL:', error)
+        logger.error('❌ Storage path that failed:', cleanPath)
+        logger.error('❌ Bucket name:', this.BUCKET_NAME)
+        
+        // Try to list files in the project directory to debug
+        try {
+          const pathParts = cleanPath.split('/')
+          if (pathParts.length >= 2) {
+            const projectPath = `${pathParts[0]}/${pathParts[1]}`
+            logger.debug('🔍 Listing files in project directory:', projectPath)
+            
+            const { data: fileList, error: listError } = await supabase.storage
+              .from(this.BUCKET_NAME)
+              .list(projectPath)
+            
+            if (listError) {
+              logger.error('❌ Could not list project files:', listError)
+            } else {
+              logger.debug('📁 Files in project directory:', fileList?.map(f => f.name))
+              
+              // Check if there are files in the 'files' subdirectory
+              if (pathParts.length >= 3) {
+                const filesPath = `${pathParts[0]}/${pathParts[1]}/files`
+                const { data: filesInDir, error: filesDirError } = await supabase.storage
+                  .from(this.BUCKET_NAME)
+                  .list(filesPath)
+                
+                if (!filesDirError && filesInDir) {
+                  logger.debug('📁 Files in files subdirectory:', filesInDir.map(f => f.name))
+                }
+              }
+            }
+          }
+        } catch (debugError) {
+          logger.warn('⚠️ Debug file listing failed:', debugError)
+        }
+        
         return null
       }
 
+      logger.debug('✅ Successfully created signed URL')
       return data.signedUrl
     } catch (error) {
       logger.error('❌ Error getting file URL:', error)

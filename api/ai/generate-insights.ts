@@ -588,13 +588,69 @@ async function getSignedImageUrl(filePath: string): Promise<string | null> {
   try {
     console.log('🔗 SUPABASE: Getting signed URL for:', filePath)
     
+    // Clean and normalize the storage path
+    let cleanPath = filePath
+    
+    // Remove any leading slashes that might cause issues
+    if (cleanPath.startsWith('/')) {
+      cleanPath = cleanPath.substring(1)
+      console.log('🧹 SUPABASE: Removed leading slash from path:', cleanPath)
+    }
+    
+    console.log('🎯 SUPABASE: Attempting to access file at path:', cleanPath)
+    
     // Try to get signed URL from project-files bucket
     const { data, error } = await supabase.storage
       .from('project-files')
-      .createSignedUrl(filePath, 3600) // 1 hour expiry
+      .createSignedUrl(cleanPath, 3600) // 1 hour expiry
     
     if (error) {
       console.error('❌ SUPABASE: Error creating signed URL:', error)
+      console.error('❌ SUPABASE: Failed path:', cleanPath)
+      
+      // Try to list files in the project directory to debug
+      try {
+        const pathParts = cleanPath.split('/')
+        if (pathParts.length >= 2) {
+          const projectPath = `${pathParts[0]}/${pathParts[1]}`
+          console.log('🔍 SUPABASE: Listing files in project directory:', projectPath)
+          
+          const { data: fileList, error: listError } = await supabase.storage
+            .from('project-files')
+            .list(projectPath)
+          
+          if (listError) {
+            console.error('❌ SUPABASE: Could not list project files:', listError)
+          } else {
+            console.log('📁 SUPABASE: Files in project directory:', fileList?.map(f => f.name))
+            
+            // Check if there are files in the 'files' subdirectory
+            if (pathParts.length >= 3) {
+              const filesPath = `${pathParts[0]}/${pathParts[1]}/files`
+              const { data: filesInDir, error: filesDirError } = await supabase.storage
+                .from('project-files')
+                .list(filesPath)
+              
+              if (!filesDirError && filesInDir) {
+                console.log('📁 SUPABASE: Files in files subdirectory:', filesInDir.map(f => f.name))
+                
+                // Look for similar filenames
+                const targetFileName = pathParts[pathParts.length - 1]
+                const similarFiles = filesInDir.filter(f => 
+                  f.name.includes(targetFileName.substring(0, 10)) || 
+                  targetFileName.includes(f.name.substring(0, 10))
+                )
+                if (similarFiles.length > 0) {
+                  console.log('🔍 SUPABASE: Found similar files:', similarFiles.map(f => f.name))
+                }
+              }
+            }
+          }
+        }
+      } catch (debugError) {
+        console.warn('⚠️ SUPABASE: Debug file listing failed:', debugError)
+      }
+      
       return null
     }
     
