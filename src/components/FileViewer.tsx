@@ -60,7 +60,8 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
       }
     }
 
-    loadFileUrl()
+    // Call async function without returning its Promise
+    void loadFileUrl()
   }, [file, isOpen])
 
   const downloadFile = (file: ProjectFile) => {
