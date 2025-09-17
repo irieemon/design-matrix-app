@@ -107,7 +107,6 @@ const ProjectFiles: React.FC<ProjectFilesProps> = ({
             files={files}
             onDeleteFile={handleDeleteFile}
             onViewFile={handleViewFile}
-            currentProjectId={currentProject.id}
           />
         )}
       </div>

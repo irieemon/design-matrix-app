@@ -9,11 +9,10 @@ interface FileManagerProps {
   files: ProjectFile[]
   onDeleteFile: (fileId: string) => void
   onViewFile?: (file: ProjectFile) => void
-  currentProjectId: string
 }
 
-const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFile, currentProjectId }) => {
-  const { showError, showWarning, showSuccess } = useToast()
+const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFile }) => {
+  const { showError, showWarning } = useToast()
   const [selectedFiles, setSelectedFiles] = useState<string[]>([])
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean
