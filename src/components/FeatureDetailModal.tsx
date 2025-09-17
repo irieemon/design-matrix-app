@@ -223,7 +223,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-slate-200">
         {/* Header */}
-        <div className="bg-slate-100 border-b border-slate-200 p-6">
+        <div className="bg-gray-200 border-b border-slate-200 p-6">
           <div className="flex items-start justify-between gap-6">
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-3 mb-4">
