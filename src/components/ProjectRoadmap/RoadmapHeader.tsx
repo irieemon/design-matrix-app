@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Download, History, Sparkles, Loader, ChevronDown } from 'lucide-react'
+import { Map, Download, History, Sparkles, Loader, ChevronDown } from 'lucide-react'
 import { Project, ProjectRoadmap as ProjectRoadmapType } from '../../types'
 import { RoadmapData } from './types'
 
