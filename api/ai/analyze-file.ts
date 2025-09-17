@@ -82,30 +82,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'No AI service configured' })
     }
     
-    // Analyze the file based on its type
-    const analysis = await analyzeFileContent(
-      openaiKey,
-      supabase,
-      fileRecord,
-      projectId
-    )
-    
-    // Save analysis results
-    const { error: updateError } = await supabase
-      .from('project_files')
-      .update({ 
-        ai_analysis: analysis,
-        analysis_status: 'completed'
-      })
-      .eq('id', fileId)
-    
-    if (updateError) {
-      console.error('❌ Failed to save analysis:', updateError)
-      return res.status(500).json({ error: 'Failed to save analysis results' })
+    try {
+      // Analyze the file based on its type
+      const analysis = await analyzeFileContent(
+        openaiKey,
+        supabase,
+        fileRecord,
+        projectId
+      )
+      
+      // Save analysis results
+      const { error: updateError } = await supabase
+        .from('project_files')
+        .update({ 
+          ai_analysis: analysis,
+          analysis_status: 'completed'
+        })
+        .eq('id', fileId)
+      
+      if (updateError) {
+        console.error('❌ Failed to save analysis:', updateError)
+        await supabase
+          .from('project_files')
+          .update({ analysis_status: 'failed' })
+          .eq('id', fileId)
+        return res.status(500).json({ error: 'Failed to save analysis results' })
+      }
+      
+      console.log('✅ File analysis completed and saved')
+      return res.status(200).json({ analysis, cached: false })
+      
+    } catch (analysisError) {
+      console.error('❌ Analysis failed:', analysisError)
+      await supabase
+        .from('project_files')
+        .update({ analysis_status: 'failed' })
+        .eq('id', fileId)
+      return res.status(500).json({ error: 'Analysis failed' })
     }
-    
-    console.log('✅ File analysis completed and saved')
-    return res.status(200).json({ analysis, cached: false })
     
   } catch (error) {
     console.error('❌ File analysis error:', error)
@@ -191,6 +205,7 @@ async function analyzeImageFile(apiKey: string, supabase: any, fileRecord: any, 
       console.error('❌ Failed to get signed URL for image:', urlError)
       analysis.summary = 'Image uploaded but could not be accessed for analysis'
       analysis.key_insights = ['Image file uploaded', 'Analysis unavailable due to storage access issue']
+      analysis.relevance_score = 0.3
       return analysis
     }
     
