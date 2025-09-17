@@ -1,4 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
+import { createClient } from '@supabase/supabase-js'
 
 // Rate limiting store
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
@@ -456,6 +457,9 @@ async function processMultiModalFiles(apiKey: string, documentContext: any[] = [
     console.log(`📄 MULTIMODAL: File ${index + 1}: ${doc.name} (${doc.type || doc.mimeType || 'unknown type'})`)
     console.log(`    Content length: ${doc.content?.length || 0} chars`)
     console.log(`    Storage URL: ${doc.storageUrl ? 'available' : 'missing'}`)
+    console.log(`    Storage path: ${doc.storage_path || 'missing'}`)
+    console.log(`    File path: ${doc.file_path || 'missing'}`)
+    console.log(`    All keys:`, Object.keys(doc))
   })
   
   let textContent = ''
@@ -485,8 +489,22 @@ async function processMultiModalFiles(apiKey: string, documentContext: any[] = [
           console.log('⚠️ MULTIMODAL: No content available for image', doc.name)
         }
         
-        // TODO: Get actual signed URL for the image
-        // imageUrls.push(signedImageUrl)
+        // Get actual signed URL for GPT-4V analysis
+        if (doc.storage_path || doc.file_path) {
+          try {
+            const signedUrl = await getSignedImageUrl(doc.storage_path || doc.file_path)
+            if (signedUrl) {
+              imageUrls.push(signedUrl)
+              console.log('✅ MULTIMODAL: Generated signed URL for', doc.name)
+            } else {
+              console.log('⚠️ MULTIMODAL: Failed to generate signed URL for', doc.name)
+            }
+          } catch (error) {
+            console.warn('⚠️ MULTIMODAL: Error getting signed URL for', doc.name, ':', error)
+          }
+        } else {
+          console.log('⚠️ MULTIMODAL: No storage path available for', doc.name)
+        }
         
       } else if ((doc.type && (doc.type.startsWith('video/') || doc.type.startsWith('audio/'))) ||
                  (doc.type && ['mp4', 'avi', 'mov', 'wmv', 'mp3', 'wav', 'ogg', 'm4a'].includes(doc.type.toLowerCase()))) {
@@ -533,6 +551,53 @@ async function processMultiModalFiles(apiKey: string, documentContext: any[] = [
     audioTranscripts: audioTranscripts.trim(),
     imageDescriptions: imageDescriptions.trim(),
     imageUrls
+  }
+}
+
+// Supabase client for file operations
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('⚠️ SUPABASE: Missing environment variables')
+    return null
+  }
+  
+  return createClient(supabaseUrl, supabaseKey)
+}
+
+// Get signed URL for image file
+async function getSignedImageUrl(filePath: string): Promise<string | null> {
+  const supabase = getSupabaseClient()
+  if (!supabase) {
+    console.warn('⚠️ SUPABASE: Client not available')
+    return null
+  }
+  
+  try {
+    console.log('🔗 SUPABASE: Getting signed URL for:', filePath)
+    
+    // Try to get signed URL from project-files bucket
+    const { data, error } = await supabase.storage
+      .from('project-files')
+      .createSignedUrl(filePath, 3600) // 1 hour expiry
+    
+    if (error) {
+      console.error('❌ SUPABASE: Error creating signed URL:', error)
+      return null
+    }
+    
+    if (data?.signedUrl) {
+      console.log('✅ SUPABASE: Generated signed URL successfully')
+      return data.signedUrl
+    }
+    
+    console.warn('⚠️ SUPABASE: No signed URL returned')
+    return null
+  } catch (error) {
+    console.error('❌ SUPABASE: Exception getting signed URL:', error)
+    return null
   }
 }
 
