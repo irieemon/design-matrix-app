@@ -78,8 +78,6 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   }
 
   const handleSaveFeature = (updatedFeature: RoadmapFeature) => {
-    console.log('🎯 TimelineRoadmap: handleSaveFeature called with:', updatedFeature)
-    
     let updatedFeatures: RoadmapFeature[]
     
     // Check if this is a new feature (temp id) or existing
@@ -89,21 +87,17 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
         ...updatedFeature,
         id: `feature-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       }
-      console.log('✨ Creating new feature:', newFeature)
       updatedFeatures = [...features, newFeature]
     } else {
       // Update existing feature
-      console.log('📝 Updating existing feature:', updatedFeature.id)
       updatedFeatures = features.map(f => 
         f.id === updatedFeature.id ? updatedFeature : f
       )
     }
     
-    console.log('📋 Updated features array:', updatedFeatures)
     setFeatures(updatedFeatures)
     
     if (onFeaturesChange) {
-      console.log('🔄 Calling onFeaturesChange with updated features')
       onFeaturesChange(updatedFeatures)
     }
   }
@@ -473,12 +467,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
 
   // Get features for a specific team
   const getFeaturesForTeam = (teamId: string) => {
-    const teamFeatures = features.filter(feature => feature.team === teamId)
-    console.log(`🏷️ Team ${teamId}: found ${teamFeatures.length} features`)
-    if (teamFeatures.length > 0) {
-      console.log(`   Features:`, teamFeatures.map(f => ({ id: f.id, title: f.title, team: f.team })))
-    }
-    return teamFeatures
+    return features.filter(feature => feature.team === teamId)
   }
 
   // Calculate non-overlapping row positions for features
@@ -821,7 +810,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
         onDelete={handleDeleteFeature}
         startDate={startDate}
         mode={selectedFeature ? 'edit' : 'create'}
-        availableTeams={teamLanes.map(team => team.name)}
+        availableTeams={teamLanes.map(team => team.id)}
         projectType={projectType}
       />
 

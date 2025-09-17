@@ -93,21 +93,10 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
   const timeline = getFeatureTimeline()
 
   const handleSave = () => {
-    console.log('💾 FeatureDetailModal: handleSave called')
-    console.log('📝 Edited feature:', editedFeature)
-    console.log('🎯 Mode:', mode)
-    
     if (editedFeature && (editedFeature.title.trim() !== '')) {
-      console.log('✅ Feature is valid, calling onSave')
       onSave(editedFeature)
       setEditMode(false)
       onClose()
-    } else {
-      console.log('❌ Feature is invalid:', {
-        editedFeature: !!editedFeature,
-        title: editedFeature?.title,
-        titleTrimmed: editedFeature?.title?.trim()
-      })
     }
   }
 
@@ -190,8 +179,24 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
     }
   }
 
+  const getTeamDisplayName = (teamId: string) => {
+    switch (teamId) {
+      case 'creative': return 'Creative Team'
+      case 'digital': return 'Digital Marketing'
+      case 'analytics': return 'Analytics Team'
+      case 'web': return 'Web Team'
+      case 'mobile': return 'Mobile Team'
+      case 'platform': return 'Platform Team'
+      case 'testing': return 'QA & Testing'
+      default: return teamId.charAt(0).toUpperCase() + teamId.slice(1) + ' Team'
+    }
+  }
+
   const getTeamColor = (team: string) => {
     switch (team) {
+      case 'creative': return 'bg-pink-100 text-pink-800 border-pink-200'
+      case 'digital': return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'analytics': return 'bg-green-100 text-green-800 border-green-200'
       case 'web': return 'bg-orange-100 text-orange-800 border-orange-200'
       case 'mobile': return 'bg-blue-100 text-blue-800 border-blue-200'
       case 'marketing': return 'bg-purple-100 text-purple-800 border-purple-200'
@@ -202,10 +207,14 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
 
   const getTeamIcon = (team: string) => {
     switch (team) {
+      case 'creative': return '🎨'
+      case 'digital': return '📈'
+      case 'analytics': return '📊'
       case 'web': return '🖥️'
       case 'mobile': return '📱'
       case 'marketing': return '📈'
       case 'platform': return '⚙️'
+      case 'testing': return '🧪'
       default: return '💼'
     }
   }
@@ -258,7 +267,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                       className="px-3 py-1 rounded-full text-sm border bg-white text-gray-900"
                     >
                       {availableTeams.map(team => (
-                        <option key={team} value={team}>{team} Team</option>
+                        <option key={team} value={team}>{getTeamDisplayName(team)}</option>
                       ))}
                     </select>
                   </>
@@ -271,7 +280,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                       {currentFeature.status}
                     </span>
                     <span className={`px-3 py-1 rounded-full text-sm border ${getTeamColor(currentFeature.team)}`}>
-                      {currentFeature.team} team
+                      {getTeamDisplayName(currentFeature.team)}
                     </span>
                   </>
                 )}
@@ -375,7 +384,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                   <Users className="w-5 h-5 text-purple-600" />
                   <h3 className="font-semibold text-purple-900">Team</h3>
                 </div>
-                <p className="text-purple-800 font-medium capitalize">{currentFeature.team} Team</p>
+                <p className="text-purple-800 font-medium">{getTeamDisplayName(currentFeature.team)}</p>
                 <p className="text-purple-600 text-sm">Primary responsibility</p>
               </div>
 
