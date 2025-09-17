@@ -1,5 +1,5 @@
-import React from 'react'
-import { Map, Grid3X3, Download, History, Sparkles, Loader } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { Map, Grid3X3, Download, History, Sparkles, Loader, ChevronDown } from 'lucide-react'
 import { Project, ProjectRoadmap as ProjectRoadmapType } from '../../types'
 import { RoadmapData, RoadmapViewMode } from './types'
 
@@ -32,6 +32,22 @@ const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({
   onHistorySelect,
   onExportClick
 }) => {
+  const [isHistoryDropdownOpen, setIsHistoryDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsHistoryDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
   if (!currentProject) {
     return (
       <div className="text-center py-12">
@@ -43,19 +59,19 @@ const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({
   }
 
   return (
-    <div className="mb-8">
+    <div className="mb-6">
       {/* Project Info & Actions */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-        <div>
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-6">
+        <div className="flex-1">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
             {currentProject.name} Roadmap
           </h1>
-          <p className="text-slate-600">
+          <p className="text-slate-600 mb-4">
             Strategic execution plan for your {currentProject.project_type?.toLowerCase()} project
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           {/* Generate/Regenerate Button */}
           <button
             onClick={onGenerateRoadmap}
@@ -87,20 +103,59 @@ const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({
             </button>
           )}
 
-          {/* History Button */}
+          {/* History Dropdown */}
           {roadmapHistory.length > 0 && (
-            <button
-              onClick={onToggleHistory}
-              className={`flex items-center space-x-2 px-4 py-3 rounded-xl transition-colors ${
-                showHistory
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-              title="View roadmap history"
-            >
-              <History className="w-5 h-5" />
-              <span className="hidden sm:inline">History ({roadmapHistory.length})</span>
-            </button>
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setIsHistoryDropdownOpen(!isHistoryDropdownOpen)}
+                className="flex items-center space-x-2 bg-slate-100 text-slate-700 px-4 py-3 rounded-xl hover:bg-slate-200 transition-colors"
+                title="View roadmap history"
+              >
+                <History className="w-5 h-5" />
+                <span className="hidden sm:inline">History ({roadmapHistory.length})</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isHistoryDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isHistoryDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg border border-slate-200 shadow-lg z-50">
+                  <div className="p-4">
+                    <h3 className="text-sm font-medium text-slate-900 mb-3">Roadmap History</h3>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {roadmapHistory.map((roadmap) => (
+                        <button
+                          key={roadmap.id}
+                          onClick={() => {
+                            onHistorySelect(roadmap)
+                            setIsHistoryDropdownOpen(false)
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                            selectedRoadmapId === roadmap.id
+                              ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                              : 'hover:bg-slate-50 text-slate-700'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">
+                              {new Date(roadmap.created_at).toLocaleDateString()} at{' '}
+                              {new Date(roadmap.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            <span className="text-xs text-slate-500">
+                              {roadmap.ideas_analyzed} ideas
+                            </span>
+                          </div>
+                          {roadmap.roadmap_data?.roadmapAnalysis?.totalDuration && (
+                            <div className="text-xs text-slate-500 mt-1">
+                              Duration: {roadmap.roadmap_data.roadmapAnalysis.totalDuration}
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -141,42 +196,6 @@ const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({
         </div>
       )}
 
-      {/* History Panel */}
-      {showHistory && roadmapHistory.length > 0 && (
-        <div className="mt-4 bg-white rounded-lg border border-slate-200 shadow-sm">
-          <div className="p-4">
-            <h3 className="text-sm font-medium text-slate-900 mb-3">Roadmap History</h3>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {roadmapHistory.map((roadmap) => (
-                <button
-                  key={roadmap.id}
-                  onClick={() => onHistorySelect(roadmap)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                    selectedRoadmapId === roadmap.id
-                      ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                      : 'hover:bg-slate-50 text-slate-700'
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">
-                      {new Date(roadmap.created_at).toLocaleDateString()} at{' '}
-                      {new Date(roadmap.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      {roadmap.ideas_analyzed} ideas
-                    </span>
-                  </div>
-                  {roadmap.roadmap_data?.roadmapAnalysis?.totalDuration && (
-                    <div className="text-xs text-slate-500 mt-1">
-                      Duration: {roadmap.roadmap_data.roadmapAnalysis.totalDuration}
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

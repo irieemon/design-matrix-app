@@ -608,32 +608,6 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
               <Download className="w-4 h-4" />
               <span>Export</span>
             </button>
-            {onViewModeChange && (
-              <div className="flex items-center bg-slate-700/50 rounded-lg border border-slate-600 p-1">
-                <button
-                  onClick={() => onViewModeChange('timeline')}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'timeline'
-                      ? 'bg-slate-600 text-white'
-                      : 'text-slate-300 hover:text-white'
-                  }`}
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  <span>Timeline</span>
-                </button>
-                <button
-                  onClick={() => onViewModeChange('detailed')}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'detailed'
-                      ? 'bg-slate-600 text-white'
-                      : 'text-slate-300 hover:text-white'
-                  }`}
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                  <span>Detailed</span>
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
