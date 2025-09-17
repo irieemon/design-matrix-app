@@ -154,25 +154,25 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       const combined = `${epic.title} ${epic.description} ${(epic.userStories || []).join(' ')} ${(epic.deliverables || []).join(' ')}`.toLowerCase()
 
       if (projectType.includes('software') || projectType.includes('web') || projectType.includes('app')) {
-        const frontendKeywords = ['frontend', 'ui', 'user interface', 'react', 'vue', 'angular', 'design', 'css', 'html']
+        const frontendKeywords = ['frontend', 'ui', 'user interface', 'react', 'vue', 'angular', 'design', 'css', 'html', 'web']
         if (frontendKeywords.some(keyword => combined.includes(keyword))) {
-          return 'frontend'
+          return 'web'
         }
 
-        const backendKeywords = ['backend', 'api', 'database', 'server', 'auth', 'authentication', 'security', 'data']
-        if (backendKeywords.some(keyword => combined.includes(keyword))) {
-          return 'backend'
+        const mobileKeywords = ['mobile', 'app', 'ios', 'android', 'smartphone', 'tablet']
+        if (mobileKeywords.some(keyword => combined.includes(keyword))) {
+          return 'mobile'
         }
 
-        const devopsKeywords = ['devops', 'deployment', 'infrastructure', 'ci/cd', 'monitoring', 'testing', 'automation']
-        if (devopsKeywords.some(keyword => combined.includes(keyword))) {
-          return 'devops'
+        const testingKeywords = ['test', 'testing', 'qa', 'quality', 'automation', 'validation']
+        if (testingKeywords.some(keyword => combined.includes(keyword))) {
+          return 'testing'
         }
 
-        return 'fullstack'
+        return 'platform'
       }
 
-      return 'execution'
+      return 'platform'
     }
 
     roadmapData.roadmapAnalysis.phases.forEach((phase, phaseIndex) => {
