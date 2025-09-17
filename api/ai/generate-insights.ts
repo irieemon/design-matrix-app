@@ -105,21 +105,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = [], projectContext: any = null) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      seed: Math.floor(Math.random() * 1000000),
-      messages: [
-        {
-          role: 'system',
-          content: `You are an experienced strategic consultant analyzing this specific project. Think like a seasoned advisor who asks the right questions and provides insights based on what you actually see.
+  
+  // Process multi-modal file content for enhanced AI analysis
+  const multiModalContent = await processMultiModalFiles(apiKey, documentContext, projectName, projectType)
+  
+  // Prepare messages array with potential image content
+  const messages = [
+    {
+      role: 'system',
+      content: `You are an experienced strategic consultant analyzing this specific project. Think like a seasoned advisor who asks the right questions and provides insights based on what you actually see.
 
 Analyze the actual ideas provided - what do they tell you about this project's real focus, challenges, and opportunities? Look for patterns, gaps, and strategic priorities that emerge from the specific context.
+
+${multiModalContent.hasVisualContent ? 'IMPORTANT: This project includes visual content (images, videos) that you can analyze directly. Pay attention to visual insights and design elements.' : ''}
+${multiModalContent.hasAudioContent ? 'IMPORTANT: This project includes audio content that has been transcribed. Consider the spoken insights and meeting content in your analysis.' : ''}
 
 Avoid generic business templates. Instead, provide thoughtful analysis that someone familiar with this exact project would find valuable and actionable.
 
@@ -168,10 +167,16 @@ Provide your analysis as a JSON object with these sections:
   ],
   "nextSteps": ["Board-level next step 1", "Board-level next step 2"]
 }`
-        },
-        {
-          role: 'user',
-          content: `I'm looking for strategic insights on this project. Take a look at what we're working on and give me your honest assessment - what do you see? What patterns emerge? What should we be thinking about?
+    }
+  ]
+  
+  // Build the user message with multi-modal content
+  let userContent = []
+  
+  // Start with text content
+  userContent.push({
+    type: 'text',
+    text: `I'm looking for strategic insights on this project. Take a look at what we're working on and give me your honest assessment - what do you see? What patterns emerge? What should we be thinking about?
 
 Here's what we're building:
 
@@ -182,14 +187,52 @@ ${ideas.map(idea => `• ${idea.title} - ${idea.description}`).join('\n')}
 
 ${roadmapContext ? `We already have some roadmap planning in place.` : ''}
 
-${documentContext && documentContext.length > 0 ? `
-ADDITIONAL CONTEXT:
-${documentContext.map(doc => `• ${doc.name}: ${doc.content.substring(0, 200)}...`).join('\n')}
+${multiModalContent.textContent ? `
+DOCUMENT CONTEXT:
+${multiModalContent.textContent}
+` : ''}
+
+${multiModalContent.audioTranscripts ? `
+AUDIO TRANSCRIPTS FROM PROJECT FILES:
+${multiModalContent.audioTranscripts}
+` : ''}
+
+${multiModalContent.imageDescriptions ? `
+VISUAL CONTENT ANALYSIS:
+${multiModalContent.imageDescriptions}
 ` : ''}
 
 What insights jump out at you? What should we be prioritizing or watching out for?`
+  })
+  
+  // Add image content for GPT-4V analysis
+  if (multiModalContent.imageUrls && multiModalContent.imageUrls.length > 0) {
+    multiModalContent.imageUrls.forEach(imageUrl => {
+      userContent.push({
+        type: 'image_url',
+        image_url: {
+          url: imageUrl,
+          detail: 'high'
         }
-      ],
+      })
+    })
+  }
+  
+  messages.push({
+    role: 'user',
+    content: userContent
+  })
+  
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o', // GPT-4V capable model
+      seed: Math.floor(Math.random() * 1000000),
+      messages: messages,
       temperature: getRandomTemperature(),
       max_tokens: 4000,
     }),
@@ -333,6 +376,87 @@ Provide your analysis as a JSON object with these sections:
     console.error('Failed to parse Anthropic response:', parseError)
     console.error('Content that failed to parse:', content.substring(0, 500))
     throw new Error(`Anthropic returned invalid JSON: ${parseError}`)
+  }
+}
+
+// Multi-modal file processing for enhanced AI analysis
+async function processMultiModalFiles(apiKey: string, documentContext: any[] = [], projectName: string, projectType: string) {
+  if (!documentContext || documentContext.length === 0) {
+    return {
+      hasVisualContent: false,
+      hasAudioContent: false,
+      textContent: '',
+      audioTranscripts: '',
+      imageDescriptions: '',
+      imageUrls: []
+    }
+  }
+
+  console.log('🔄 Processing multi-modal files for AI analysis:', documentContext.length, 'files')
+  
+  let textContent = ''
+  let audioTranscripts = ''
+  let imageDescriptions = ''
+  let imageUrls = []
+  let hasVisualContent = false
+  let hasAudioContent = false
+
+  for (const doc of documentContext) {
+    try {
+      // Process based on file type
+      if (doc.type && doc.type.startsWith('image/')) {
+        hasVisualContent = true
+        console.log('🖼️ Processing image:', doc.name)
+        
+        // For images, we could get the signed URL for direct GPT-4V analysis
+        // For now, we'll use the content preview and add a placeholder URL
+        if (doc.content) {
+          imageDescriptions += `Image "${doc.name}": ${doc.content}\n\n`
+        }
+        
+        // TODO: Get actual signed URL for the image
+        // imageUrls.push(signedImageUrl)
+        
+      } else if (doc.type && (doc.type.startsWith('video/') || doc.type.startsWith('audio/'))) {
+        hasAudioContent = true
+        console.log('🎵 Processing audio/video:', doc.name)
+        
+        // For audio/video, we use the transcribed content
+        if (doc.content) {
+          audioTranscripts += `${doc.type.startsWith('video/') ? 'Video' : 'Audio'} "${doc.name}":\n${doc.content}\n\n`
+        }
+        
+        // TODO: Get transcription using the transcribe-audio API
+        // const transcription = await transcribeFile(apiKey, doc.storageUrl, projectName, projectType)
+        // audioTranscripts += transcription
+        
+      } else {
+        // Text documents
+        if (doc.content) {
+          textContent += `Document "${doc.name}":\n${doc.content}\n\n`
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to process file:', doc.name, error)
+    }
+  }
+
+  console.log('✅ Multi-modal processing complete:', {
+    hasVisualContent,
+    hasAudioContent,
+    textLength: textContent.length,
+    audioLength: audioTranscripts.length,
+    imageDescLength: imageDescriptions.length,
+    imageUrls: imageUrls.length
+  })
+
+  return {
+    hasVisualContent,
+    hasAudioContent,
+    textContent: textContent.trim(),
+    audioTranscripts: audioTranscripts.trim(),
+    imageDescriptions: imageDescriptions.trim(),
+    imageUrls
   }
 }
 

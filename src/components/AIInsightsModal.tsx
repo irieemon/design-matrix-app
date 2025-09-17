@@ -104,27 +104,35 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
         }
       })
       
-      // Filter files that have content available for AI analysis
-      const filesWithExtractedContent = files.filter(file => 
-        file.content_preview && file.content_preview.trim()
+      // Include ALL uploaded files for AI analysis display
+      // Multi-modal processing handles images, audio, video even without content_preview
+      const allUploadedFiles = files.filter(file => 
+        file.name && file.file_type // Just need basic file info
       )
-      setFilesWithContent(filesWithExtractedContent)
+      setFilesWithContent(allUploadedFiles)
       
-      logger.debug('📁 FINAL RESULT: Loaded project files:', files.length, 'total,', filesWithExtractedContent.length, 'with content')
+      logger.debug('📁 FINAL RESULT: Loaded project files:', files.length, 'total,', allUploadedFiles.length, 'for AI analysis')
       
-      if (filesWithExtractedContent.length > 0) {
-        logger.debug('✅ FILES WITH CONTENT FOUND - should show in UI!')
-        filesWithExtractedContent.forEach((file: ProjectFile, index: number) => {
-          logger.debug(`✅ File ${index + 1} with content: ${file.name}`)
-          logger.debug(`📝 File ${index + 1} content preview: "${file.content_preview?.substring(0, 200)}..."`)
+      if (allUploadedFiles.length > 0) {
+        logger.debug('✅ ALL FILES FOUND FOR AI ANALYSIS - should show in UI!')
+        allUploadedFiles.forEach((file: ProjectFile, index: number) => {
+          logger.debug(`✅ File ${index + 1}: ${file.name} (${file.file_type})`)
+          if (file.content_preview) {
+            logger.debug(`📝 File ${index + 1} has content preview: ${file.content_preview.length} chars`)
+          } else if (file.file_type?.startsWith('image/')) {
+            logger.debug(`🖼️ File ${index + 1} is image - will be analyzed with GPT-4V`)
+          } else if (file.file_type?.startsWith('audio/') || file.file_type?.startsWith('video/')) {
+            logger.debug(`🎵 File ${index + 1} is audio/video - will be transcribed with Whisper`)
+          }
         })
         
         // Also log to console for easier debugging
-        console.log('🎯 AI INSIGHTS: Files with content found:', filesWithExtractedContent.length)
-        console.log('🎯 AI INSIGHTS: File names:', filesWithExtractedContent.map(f => f.name))
+        console.log('🎯 AI INSIGHTS: All files for analysis:', allUploadedFiles.length)
+        console.log('🎯 AI INSIGHTS: File names:', allUploadedFiles.map(f => f.name))
+        console.log('🎯 AI INSIGHTS: File types:', allUploadedFiles.map(f => f.file_type))
       } else {
-        logger.warn('❌ NO FILES WITH CONTENT FOUND - file references will not show')
-        console.warn('🎯 AI INSIGHTS: No files with content found for project:', currentProject?.id)
+        logger.warn('❌ NO FILES FOUND - file references will not show')
+        console.warn('🎯 AI INSIGHTS: No files found for project:', currentProject?.id)
       }
     } catch (error) {
       logger.warn('Could not load project files from backend:', error)

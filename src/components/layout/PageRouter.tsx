@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { User, Project } from '../../types'
 import MatrixPage from '../pages/MatrixPage'
 import DataManagement from '../pages/DataManagement'
@@ -61,6 +62,24 @@ const PageRouter: React.FC<PageRouterProps> = ({
 }) => {
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
 
+  // Handle redirects that require a project when no project is available
+  useEffect(() => {
+    if (!isRestoringProject && !currentProject) {
+      const pagesRequiringProject = ['data', 'reports', 'roadmap', 'files', 'collaboration']
+      if (pagesRequiringProject.includes(currentPage)) {
+        onPageChange('projects')
+      }
+    }
+  }, [currentPage, currentProject, isRestoringProject, onPageChange])
+
+  // Handle invalid pages
+  useEffect(() => {
+    const validPages = ['matrix', 'home', 'data', 'reports', 'projects', 'roadmap', 'files', 'collaboration', 'user']
+    if (!validPages.includes(currentPage)) {
+      onPageChange('matrix')
+    }
+  }, [currentPage, onPageChange])
+
   const renderPageContent = () => {
     
     switch (currentPage) {
@@ -87,18 +106,14 @@ const PageRouter: React.FC<PageRouterProps> = ({
       
       case 'data':
         if (!currentProject) {
-          if (isRestoringProject) {
-            return (
-              <div className="bg-slate-50 min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-slate-600">Loading project...</p>
-                </div>
+          return (
+            <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-600">{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
               </div>
-            )
-          }
-          onPageChange('projects')
-          return null
+            </div>
+          )
         }
         return (
           <div className="bg-slate-50 min-h-screen">
@@ -112,18 +127,14 @@ const PageRouter: React.FC<PageRouterProps> = ({
       
       case 'reports':
         if (!currentProject) {
-          if (isRestoringProject) {
-            return (
-              <div className="bg-slate-50 min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-slate-600">Loading project...</p>
-                </div>
+          return (
+            <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-600">{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
               </div>
-            )
-          }
-          onPageChange('projects')
-          return null
+            </div>
+          )
         }
         return (
           <div className="bg-slate-50 min-h-screen">
@@ -156,18 +167,14 @@ const PageRouter: React.FC<PageRouterProps> = ({
       
       case 'roadmap':
         if (!currentProject) {
-          if (isRestoringProject) {
-            return (
-              <div className="bg-slate-50 min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-slate-600">Loading project...</p>
-                </div>
+          return (
+            <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-600">{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
               </div>
-            )
-          }
-          onPageChange('projects')
-          return null
+            </div>
+          )
         }
         return (
           <div className="bg-slate-50 min-h-screen">
@@ -181,18 +188,14 @@ const PageRouter: React.FC<PageRouterProps> = ({
       
       case 'files':
         if (!currentProject || !currentUser) {
-          if (isRestoringProject) {
-            return (
-              <div className="bg-slate-50 min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-slate-600">Loading project...</p>
-                </div>
+          return (
+            <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-600">{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
               </div>
-            )
-          }
-          onPageChange('projects')
-          return null
+            </div>
+          )
         }
         return (
           <div className="bg-slate-50 min-h-screen">
@@ -207,18 +210,14 @@ const PageRouter: React.FC<PageRouterProps> = ({
       
       case 'collaboration':
         if (!currentProject || !currentUser) {
-          if (isRestoringProject) {
-            return (
-              <div className="bg-slate-50 min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-slate-600">Loading project...</p>
-                </div>
+          return (
+            <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-600">{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
               </div>
-            )
-          }
-          onPageChange('projects')
-          return null
+            </div>
+          )
         }
         return (
           <div className="bg-slate-50 min-h-screen">
@@ -242,7 +241,6 @@ const PageRouter: React.FC<PageRouterProps> = ({
         )
       
       default:
-        onPageChange('matrix')
         return null
     }
   }

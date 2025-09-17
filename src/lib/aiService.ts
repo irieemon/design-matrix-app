@@ -192,7 +192,8 @@ class SecureAIService {
       ideas: ideaSignature,
       projectName: projectName || 'Project',
       projectType: projectType || 'General',
-      projectId: projectId || 'none'
+      projectId: projectId || 'none',
+      version: 'v2-multimodal' // Cache buster for new multi-modal support
     })
     
     return aiCache.getOrSet(cacheKey, async () => {
@@ -234,24 +235,53 @@ class SecureAIService {
         try {
           const projectFiles = await FileService.getProjectFiles(projectId)
           if (projectFiles.length > 0) {
-            // Extract content previews from text files, PDFs, and other documents
-            documentContext = projectFiles
-              .filter(file => file.content_preview && file.content_preview.trim())
-              .map(file => ({
+            // Process ALL uploaded files - text, images, audio, video
+            documentContext = projectFiles.map(file => {
+              // For text files and PDFs, use content_preview
+              if (file.content_preview && file.content_preview.trim()) {
+                return {
+                  name: file.name,
+                  type: file.file_type,
+                  mimeType: file.mime_type,
+                  content: file.content_preview,
+                  storagePath: file.storage_path
+                }
+              }
+              
+              // For images, videos, and audio - include metadata for processing
+              return {
                 name: file.name,
                 type: file.file_type,
-                content: file.content_preview
-              }))
+                mimeType: file.mime_type,
+                content: `${file.mime_type.startsWith('image/') ? 'Image' : 
+                         file.mime_type.startsWith('video/') ? 'Video' : 
+                         file.mime_type.startsWith('audio/') ? 'Audio' : 'File'} file: ${file.name} (${Math.round(file.file_size / 1024)}KB)`,
+                storagePath: file.storage_path,
+                fileSize: file.file_size
+              }
+            })
             
-            const fileTypes = documentContext.map((doc: any) => doc.type).join(', ')
-            logger.debug('📁 Found document context from backend:', documentContext.length, 'files with content')
-            logger.debug('📄 File types being analyzed:', fileTypes)
+            const allFileTypes = documentContext.map((doc: any) => doc.type).join(', ')
+            const imageFiles = documentContext.filter(doc => doc.mimeType?.startsWith('image/'))
+            const audioFiles = documentContext.filter(doc => doc.mimeType?.startsWith('audio/') || doc.mimeType?.startsWith('video/'))
+            const textFiles = documentContext.filter(doc => !doc.mimeType?.startsWith('image/') && !doc.mimeType?.startsWith('audio/') && !doc.mimeType?.startsWith('video/'))
+            
+            logger.debug('📁 Found ALL project files:', {
+              total: documentContext.length,
+              images: imageFiles.length,
+              audioVideo: audioFiles.length,
+              textDocs: textFiles.length
+            })
+            logger.debug('📄 All file types being analyzed:', allFileTypes)
             
             // Enhanced console logging for easier debugging
-            console.log('🎯 AI SERVICE: Document context loaded:', {
-              fileCount: documentContext.length,
+            console.log('🎯 AI SERVICE: ALL FILES loaded:', {
+              totalFiles: documentContext.length,
+              imageFiles: imageFiles.length,
+              audioVideoFiles: audioFiles.length,
+              textFiles: textFiles.length,
               fileNames: documentContext.map(doc => doc.name),
-              totalContent: documentContext.reduce((sum, doc) => sum + (doc.content?.length || 0), 0)
+              totalTextContent: documentContext.reduce((sum, doc) => sum + (doc.content?.length || 0), 0)
             })
             
             // Log detailed file analysis information
@@ -997,37 +1027,59 @@ class SecureAIService {
     const fileTypes = hasFiles ? documentContext.map((doc: any) => doc.type).join(', ') : 'none'
     const fileCount = hasFiles ? documentContext.length : 0
     
-    logger.debug('📁 Generating mock insights with file context:', fileCount, 'files of types:', fileTypes)
+    // Categorize files by type
+    const imageFiles = documentContext.filter(doc => doc.mimeType?.startsWith('image/'))
+    const audioFiles = documentContext.filter(doc => doc.mimeType?.startsWith('audio/') || doc.mimeType?.startsWith('video/'))
+    const textFiles = documentContext.filter(doc => !doc.mimeType?.startsWith('image/') && !doc.mimeType?.startsWith('audio/') && !doc.mimeType?.startsWith('video/'))
+    
+    logger.debug('📁 Generating mock insights with ALL file types:', {
+      totalFiles: fileCount,
+      images: imageFiles.length,
+      audioVideo: audioFiles.length,
+      textDocs: textFiles.length
+    })
     
     if (hasFiles) {
-      logger.warn('🎯 MOCK INSIGHTS: Files detected and being processed!')
-      logger.warn(`🎯 File count: ${fileCount}`)
+      logger.warn('🎯 MOCK INSIGHTS: ALL FILES detected and being processed!')
+      logger.warn(`🎯 Total files: ${fileCount}`)
+      logger.warn(`🎯 Images: ${imageFiles.length}`)
+      logger.warn(`🎯 Audio/Video: ${audioFiles.length}`)
+      logger.warn(`🎯 Text/Documents: ${textFiles.length}`)
       logger.warn(`🎯 File types: ${fileTypes}`)
       documentContext.forEach((doc: any, index: number) => {
-        logger.warn(`🎯 File ${index + 1}: ${doc.name} - ${doc.content?.length || 0} characters`)
+        const fileTypeIcon = doc.mimeType?.startsWith('image/') ? '🖼️' : 
+                           doc.mimeType?.startsWith('video/') ? '🎥' : 
+                           doc.mimeType?.startsWith('audio/') ? '🎵' : '📄'
+        logger.warn(`🎯 File ${index + 1}: ${fileTypeIcon} ${doc.name} - ${doc.content?.length || 0} characters (${doc.mimeType})`)
       })
     } else {
       logger.warn('🎯 MOCK INSIGHTS: No files detected - using generic insights')
     }
     
+    const fileTypeBreakdown = hasFiles ? 
+      `${textFiles.length} text documents${imageFiles.length > 0 ? `, ${imageFiles.length} images` : ''}${audioFiles.length > 0 ? `, ${audioFiles.length} audio/video files` : ''}` :
+      'no files'
+
     return {
-      executiveSummary: `Strategic analysis of ${(ideas || []).length} initiatives reveals significant market opportunity${hasFiles ? ` informed by ${fileCount} uploaded documents (${fileTypes})` : ''}. Analysis shows strong potential for rapid growth and market capture based on current initiative portfolio${hasFiles ? ' and supporting documentation context' : ''}.`,
+      executiveSummary: `Strategic analysis of ${(ideas || []).length} initiatives reveals significant market opportunity${hasFiles ? ` informed by ${fileCount} uploaded files (${fileTypeBreakdown})` : ''}. Analysis shows strong potential for rapid growth and market capture based on current initiative portfolio${hasFiles ? ' and multi-modal supporting content including visual and document assets' : ''}.`,
       
       keyInsights: [
         {
-          insight: 'Document-Informed Market Opportunity',
-          impact: hasFiles 
-            ? `Based on uploaded documents (${fileTypes}), market conditions present significant opportunity for rapid growth and competitive positioning.`
-            : 'Current market conditions and competitive landscape present significant opportunity for rapid growth and market share capture.'
+          insight: hasFiles && imageFiles.length > 0 ? 'Visual Content-Informed Strategy' : hasFiles ? 'Document-Informed Market Opportunity' : 'Market Opportunity Analysis',
+          impact: hasFiles && imageFiles.length > 0
+            ? `Analysis of uploaded visual content (${imageFiles.length} images) combined with ${textFiles.length > 0 ? 'documentation' : 'project context'} reveals strategic opportunities for visual design and user experience optimization.`
+            : hasFiles 
+              ? `Based on uploaded content (${fileTypeBreakdown}), market conditions present significant opportunity for rapid growth and competitive positioning.`
+              : 'Current market conditions and competitive landscape present significant opportunity for rapid growth and market share capture.'
         },
         {
           insight: 'Strategic Execution Priority',
           impact: 'Portfolio balance between quick wins and strategic initiatives optimizes risk-adjusted returns and stakeholder value creation.'
         },
         {
-          insight: hasFiles ? 'Documentation-Supported Planning' : 'Competitive Positioning',
+          insight: hasFiles ? 'Multi-Modal Content Analysis' : 'Competitive Positioning',
           impact: hasFiles 
-            ? `Project documentation provides valuable context for strategic planning and risk assessment across ${fileCount} supporting files.`
+            ? `Project analysis leverages ${fileTypeBreakdown} providing comprehensive context for strategic planning across visual, textual, and ${audioFiles.length > 0 ? 'audio/video ' : ''}content dimensions.`
             : 'First-mover advantages and differentiated capabilities create defensible market position with scalable growth potential.'
         }
       ],

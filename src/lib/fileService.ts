@@ -42,9 +42,13 @@ export class FileService {
         }
       }
 
-      // Generate unique file path
+      // Generate unique file path with sanitized filename
       const fileExtension = file.name.split('.').pop() || ''
-      const uniqueFileName = `${crypto.randomUUID()}_${file.name}`
+      const sanitizedFileName = file.name
+        .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace invalid characters with underscore
+        .replace(/_{2,}/g, '_') // Replace multiple underscores with single underscore
+        .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
+      const uniqueFileName = `${crypto.randomUUID()}_${sanitizedFileName}`
       const storagePath = `projects/${projectId}/files/${uniqueFileName}`
 
       logger.debug('📁 Upload path:', storagePath)
@@ -230,15 +234,20 @@ export class FileService {
   }
 
   /**
-   * Get public URL for a file (if needed for downloads)
+   * Get signed URL for a file (works with private buckets)
    */
   static async getFileUrl(storagePath: string): Promise<string | null> {
     try {
-      const { data } = await supabase.storage
+      const { data, error } = await supabase.storage
         .from(this.BUCKET_NAME)
-        .getPublicUrl(storagePath)
+        .createSignedUrl(storagePath, 3600) // URL valid for 1 hour
 
-      return data.publicUrl
+      if (error) {
+        logger.error('❌ Error creating signed URL:', error)
+        return null
+      }
+
+      return data.signedUrl
     } catch (error) {
       logger.error('❌ Error getting file URL:', error)
       return null
