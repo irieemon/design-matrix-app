@@ -129,9 +129,12 @@ export class FileService {
       }
 
       // Trigger AI analysis in the background (fire and forget)
-      this.triggerFileAnalysis(projectFile.id, projectId).catch(error => {
-        logger.warn('⚠️ Background file analysis failed:', error)
-      })
+      // NOTE: Only works in production (Vercel), not localhost
+      if (window.location.hostname !== 'localhost') {
+        this.triggerFileAnalysis(projectFile.id, projectId).catch(error => {
+          logger.warn('⚠️ Background file analysis failed:', error)
+        })
+      }
 
       return {
         success: true,
