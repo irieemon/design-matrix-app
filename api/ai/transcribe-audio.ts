@@ -1,6 +1,12 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { authenticate, checkUserRateLimit } from '../auth/middleware.js'
 
+interface WhisperSegment {
+  avg_logprob?: number;
+  start: number;
+  end: number;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -135,7 +141,7 @@ async function transcribeAudioWithWhisper(
   }
 }
 
-function calculateAverageConfidence(segments: any[]): number {
+function calculateAverageConfidence(segments: WhisperSegment[]): number {
   if (!segments || segments.length === 0) return 0
   
   const totalConfidence = segments.reduce((sum, segment) => {
@@ -147,7 +153,7 @@ function calculateAverageConfidence(segments: any[]): number {
   return Math.max(0, Math.min(100, (avgLogProb + 1) * 100))
 }
 
-function detectSpeakers(segments: any[]): string[] {
+function detectSpeakers(segments: WhisperSegment[]): string[] {
   // Simple speaker detection based on pause patterns and voice characteristics
   // This is a placeholder - real speaker diarization would require additional processing
   

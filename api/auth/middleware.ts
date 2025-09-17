@@ -14,7 +14,7 @@ export interface AuthenticatedRequest extends VercelRequest {
   }
 }
 
-export async function authenticate(req: VercelRequest): Promise<{ user: any; error?: string }> {
+export async function authenticate(req: VercelRequest): Promise<{ user: { id: string; email?: string } | null; error?: string }> {
   try {
     // Get the authorization header
     const authHeader = req.headers.authorization

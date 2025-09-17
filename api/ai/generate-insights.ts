@@ -501,23 +501,12 @@ async function processMultiModalFiles(_apiKey: string, documentContext: any[] = 
             } else {
               console.log('⚠️ MULTIMODAL: Failed to generate signed URL for', doc.name)
               
-              // Fallback: Use demo images for testing GPT-4V when files are missing
-              const demoImageUrl = getDemoImageUrlForTesting(doc.name, doc.type)
-              if (demoImageUrl) {
-                imageUrls.push(demoImageUrl)
-                console.log('🎭 MULTIMODAL: Using demo image fallback for GPT-4V testing:', doc.name)
-                imageDescriptions += `DEMO IMAGE (original file missing): This is a placeholder image for "${doc.name}". The actual uploaded file is not available in storage.\n\n`
-              }
+              console.log('❌ MULTIMODAL: Skipping image - no signed URL available for:', doc.name)
             }
           } catch (error) {
             console.warn('⚠️ MULTIMODAL: Error getting signed URL for', doc.name, ':', error)
             
-            // Fallback: Use demo images for testing
-            const demoImageUrl = getDemoImageUrlForTesting(doc.name, doc.type)
-            if (demoImageUrl) {
-              imageUrls.push(demoImageUrl)
-              console.log('🎭 MULTIMODAL: Using demo image fallback after error for:', doc.name)
-            }
+            console.log('❌ MULTIMODAL: Skipping image due to error getting signed URL:', doc.name)
           }
         } else {
           console.log('⚠️ MULTIMODAL: No storage path available for', doc.name, '- Available keys:', Object.keys(doc))
@@ -682,41 +671,6 @@ async function getSignedImageUrl(filePath: string): Promise<string | null> {
   }
 }
 
-// Demo image URLs for testing GPT-4V when actual files are missing
-function getDemoImageUrlForTesting(fileName: string, fileType: string): string | null {
-  console.log('🎭 DEMO: Looking for demo image for:', fileName, 'type:', fileType)
-  
-  // For dog/spaniel images, use a demo dog image
-  if (fileName.toLowerCase().includes('spaniel') || fileName.toLowerCase().includes('dog')) {
-    const demoUrl = 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=800&h=600&fit=crop'
-    console.log('🐕 DEMO: Using demo spaniel image:', demoUrl)
-    return demoUrl
-  }
-  
-  // For kitchen/modern images
-  if (fileName.toLowerCase().includes('kitchen') || fileName.toLowerCase().includes('modern')) {
-    const demoUrl = 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=600&fit=crop'
-    console.log('🏠 DEMO: Using demo kitchen image:', demoUrl)
-    return demoUrl
-  }
-  
-  // For general JPEG images
-  if (fileType === 'jpeg' || fileType === 'jpg' || fileName.toLowerCase().includes('img_')) {
-    const demoUrl = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop'
-    console.log('📸 DEMO: Using demo photo for JPEG:', demoUrl)
-    return demoUrl
-  }
-  
-  // Default demo image for any image type
-  if (fileType && (fileType.startsWith('image/') || ['webp', 'jpeg', 'jpg', 'png', 'gif'].includes(fileType.toLowerCase()))) {
-    const demoUrl = 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&h=600&fit=crop'
-    console.log('🖼️ DEMO: Using default demo image:', demoUrl)
-    return demoUrl
-  }
-  
-  console.log('❌ DEMO: No demo image available for:', fileName, fileType)
-  return null
-}
 
 // Dynamic prompt variation helpers to reduce repetitive AI responses
 function getRandomTemperature(): number {
