@@ -558,11 +558,19 @@ async function processMultiModalFiles(apiKey: string, documentContext: any[] = [
 
 // Supabase client for file operations
 function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY
+  
+  console.log('🔑 SUPABASE: Environment check:', {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseKey,
+    urlLength: supabaseUrl?.length || 0,
+    keyLength: supabaseKey?.length || 0
+  })
   
   if (!supabaseUrl || !supabaseKey) {
     console.warn('⚠️ SUPABASE: Missing environment variables')
+    console.warn('Available env vars:', Object.keys(process.env).filter(key => key.toLowerCase().includes('supabase')))
     return null
   }
   
