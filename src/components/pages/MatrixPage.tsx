@@ -149,7 +149,6 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
                 files={getCurrentProjectFiles()}
                 onFilesUploaded={handleFilesUploaded}
                 onDeleteFile={handleDeleteFile}
-                onFilesReset={refreshProjectFiles}
                 isEmbedded={true}
               />
             </div>

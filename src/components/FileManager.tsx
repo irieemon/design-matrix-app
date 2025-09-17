@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, Image, File, Download, Trash2, Eye, Calendar, User, FileIcon, AlertTriangle, RefreshCw, Brain, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { FileText, Image, File, Download, Trash2, Eye, Calendar, User, FileIcon, Brain, CheckCircle, XCircle, Clock } from 'lucide-react'
 import { ProjectFile, FileType } from '../types'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import { logger } from '../utils/logger'
@@ -10,10 +10,9 @@ interface FileManagerProps {
   onDeleteFile: (fileId: string) => void
   onViewFile?: (file: ProjectFile) => void
   currentProjectId: string
-  onFilesReset?: () => void
 }
 
-const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFile, currentProjectId, onFilesReset }) => {
+const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFile, currentProjectId }) => {
   const { showError, showWarning, showSuccess } = useToast()
   const [selectedFiles, setSelectedFiles] = useState<string[]>([])
   const [deleteModal, setDeleteModal] = useState<{
@@ -22,7 +21,6 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
     fileName?: string
     isMultiple?: boolean
   }>({ isOpen: false })
-  const [isResetting, setIsResetting] = useState(false)
 
   const downloadFile = (file: ProjectFile) => {
     if (!file.file_data) {
@@ -62,46 +60,6 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
     }
   }
 
-  const resetOrphanedFiles = async () => {
-    setIsResetting(true)
-    try {
-      logger.info('🔄 Resetting orphaned file records for project:', currentProjectId)
-      
-      const response = await fetch('/api/debug/reset-project-files', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          projectId: currentProjectId,
-          confirmReset: true
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to reset files: ${response.status}`)
-      }
-
-      const result = await response.json()
-      
-      if (result.success) {
-        showSuccess(`Reset complete! Deleted ${result.deletedFiles} orphaned file records. You can now re-upload your files.`)
-        logger.info('✅ File reset successful:', result)
-        
-        // Call the callback to refresh the file list
-        if (onFilesReset) {
-          onFilesReset()
-        }
-      } else {
-        throw new Error(result.error || 'Reset failed')
-      }
-    } catch (error) {
-      logger.error('❌ Error resetting files:', error)
-      showError(`Failed to reset files: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      setIsResetting(false)
-    }
-  }
 
   const getFileIcon = (fileType: FileType, size = 'w-5 h-5') => {
     switch (fileType) {
@@ -252,19 +210,6 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
                 />
                 <span>Select all</span>
               </label>
-              <button
-                onClick={resetOrphanedFiles}
-                disabled={isResetting}
-                className="flex items-center space-x-2 px-3 py-1.5 text-sm text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-orange-200"
-                title="Reset orphaned file records (files that exist in database but not in storage)"
-              >
-                {isResetting ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <AlertTriangle className="w-4 h-4" />
-                )}
-                <span>{isResetting ? 'Resetting...' : 'Reset Files'}</span>
-              </button>
             </>
           )}
         </div>
