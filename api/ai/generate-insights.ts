@@ -106,8 +106,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = [], projectContext: any = null) {
   
+  console.log('🚀 OPENAI FUNCTION: Starting generateInsightsWithOpenAI')
+  console.log('🎯 OPENAI: API Key available:', !!apiKey, 'Length:', apiKey?.length || 0)
+  console.log('📋 OPENAI: Ideas count:', ideas?.length || 0)
+  console.log('📁 OPENAI: Document context files:', documentContext?.length || 0)
+  
+  if (documentContext && documentContext.length > 0) {
+    console.log('📄 OPENAI: Document files details:')
+    documentContext.forEach((doc, index) => {
+      console.log(`  ${index + 1}. ${doc.name} (${doc.mimeType || doc.type || 'unknown'}) - ${doc.content?.length || 0} chars`)
+      if (doc.content) {
+        console.log(`     Content preview: "${doc.content.substring(0, 100)}..."`)
+      }
+    })
+  }
+  
   // Process multi-modal file content for enhanced AI analysis
+  console.log('🔄 OPENAI: Starting multi-modal file processing...')
   const multiModalContent = await processMultiModalFiles(apiKey, documentContext, projectName, projectType)
+  console.log('✅ OPENAI: Multi-modal processing complete:', {
+    hasVisualContent: multiModalContent.hasVisualContent,
+    hasAudioContent: multiModalContent.hasAudioContent,
+    textContentLength: multiModalContent.textContent?.length || 0,
+    audioTranscriptsLength: multiModalContent.audioTranscripts?.length || 0,
+    imageDescriptionsLength: multiModalContent.imageDescriptions?.length || 0,
+    imageUrlsCount: multiModalContent.imageUrls?.length || 0
+  })
   
   // Prepare messages array with potential image content
   const messages = [
@@ -223,6 +247,15 @@ What insights jump out at you? What should we be prioritizing or watching out fo
     content: userContent
   })
   
+  console.log('📤 OPENAI: Preparing API request...')
+  console.log('🎯 OPENAI: Using model: gpt-4o')
+  console.log('📋 OPENAI: Message count:', messages.length)
+  console.log('📁 OPENAI: User content items:', userContent.length)
+  userContent.forEach((item, index) => {
+    console.log(`  ${index + 1}. Type: ${item.type}, ${item.type === 'text' ? `Text length: ${item.text?.length}` : 'Image URL provided'}`)
+  })
+  
+  console.log('🌐 OPENAI: Making API call to OpenAI...')
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -238,18 +271,40 @@ What insights jump out at you? What should we be prioritizing or watching out fo
     }),
   })
   
+  console.log('📡 OPENAI: API Response status:', response.status, response.statusText)
+  
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`)
+    const errorText = await response.text()
+    console.error('❌ OPENAI: API Error details:', errorText)
+    throw new Error(`OpenAI API error: ${response.status} - ${errorText}`)
   }
   
+  console.log('✅ OPENAI: API call successful!')
   const data = await response.json()
+  console.log('📊 OPENAI: Response data structure:', {
+    choices: data.choices?.length || 0,
+    usage: data.usage,
+    model: data.model
+  })
+  
   const content = data.choices[0]?.message?.content
   
   if (!content) {
+    console.error('❌ OPENAI: Empty content in response:', data)
     throw new Error('OpenAI returned empty response')
   }
   
-  console.log('OpenAI raw response:', content.substring(0, 200) + '...')
+  console.log('📝 OPENAI: Raw response length:', content.length)
+  console.log('📝 OPENAI: Raw response preview:', content.substring(0, 300) + '...')
+  
+  // Check if response mentions specific file content
+  const mentionsImages = content.toLowerCase().includes('image') || content.toLowerCase().includes('visual') || content.toLowerCase().includes('dog') || content.toLowerCase().includes('spaniel')
+  const mentionsHygiene = content.toLowerCase().includes('hygiene') || content.toLowerCase().includes('soap') || content.toLowerCase().includes('clean')
+  console.log('🔍 OPENAI: Content analysis flags:', {
+    mentionsImages,
+    mentionsHygiene,
+    hasSpecificContent: mentionsImages || mentionsHygiene
+  })
   
   try {
     // Remove markdown code blocks if present (```json ... ```)
@@ -381,7 +436,11 @@ Provide your analysis as a JSON object with these sections:
 
 // Multi-modal file processing for enhanced AI analysis
 async function processMultiModalFiles(apiKey: string, documentContext: any[] = [], projectName: string, projectType: string) {
+  console.log('🎬 MULTIMODAL: Starting processMultiModalFiles')
+  console.log('📁 MULTIMODAL: Input files count:', documentContext?.length || 0)
+  
   if (!documentContext || documentContext.length === 0) {
+    console.log('⚠️ MULTIMODAL: No documents provided, returning empty result')
     return {
       hasVisualContent: false,
       hasAudioContent: false,
@@ -392,7 +451,12 @@ async function processMultiModalFiles(apiKey: string, documentContext: any[] = [
     }
   }
 
-  console.log('🔄 Processing multi-modal files for AI analysis:', documentContext.length, 'files')
+  console.log('🔄 MULTIMODAL: Processing files for AI analysis:', documentContext.length, 'files')
+  documentContext.forEach((doc, index) => {
+    console.log(`📄 MULTIMODAL: File ${index + 1}: ${doc.name} (${doc.type || doc.mimeType || 'unknown type'})`)
+    console.log(`    Content length: ${doc.content?.length || 0} chars`)
+    console.log(`    Storage URL: ${doc.storageUrl ? 'available' : 'missing'}`)
+  })
   
   let textContent = ''
   let audioTranscripts = ''
@@ -404,14 +468,20 @@ async function processMultiModalFiles(apiKey: string, documentContext: any[] = [
   for (const doc of documentContext) {
     try {
       // Process based on file type
+      console.log(`🔍 MULTIMODAL: Processing file ${doc.name} - Type: ${doc.type}`)
+      
       if (doc.type && doc.type.startsWith('image/')) {
         hasVisualContent = true
-        console.log('🖼️ Processing image:', doc.name)
+        console.log('🖼️ MULTIMODAL: Processing image:', doc.name)
+        console.log('📝 MULTIMODAL: Image content available:', !!doc.content, 'Length:', doc.content?.length || 0)
         
         // For images, we could get the signed URL for direct GPT-4V analysis
         // For now, we'll use the content preview and add a placeholder URL
         if (doc.content) {
           imageDescriptions += `Image "${doc.name}": ${doc.content}\n\n`
+          console.log('✅ MULTIMODAL: Added image description for', doc.name)
+        } else {
+          console.log('⚠️ MULTIMODAL: No content available for image', doc.name)
         }
         
         // TODO: Get actual signed URL for the image
@@ -419,11 +489,15 @@ async function processMultiModalFiles(apiKey: string, documentContext: any[] = [
         
       } else if (doc.type && (doc.type.startsWith('video/') || doc.type.startsWith('audio/'))) {
         hasAudioContent = true
-        console.log('🎵 Processing audio/video:', doc.name)
+        console.log('🎵 MULTIMODAL: Processing audio/video:', doc.name)
+        console.log('📝 MULTIMODAL: Audio/video content available:', !!doc.content, 'Length:', doc.content?.length || 0)
         
         // For audio/video, we use the transcribed content
         if (doc.content) {
           audioTranscripts += `${doc.type.startsWith('video/') ? 'Video' : 'Audio'} "${doc.name}":\n${doc.content}\n\n`
+          console.log('✅ MULTIMODAL: Added audio transcript for', doc.name)
+        } else {
+          console.log('⚠️ MULTIMODAL: No content available for audio/video', doc.name)
         }
         
         // TODO: Get transcription using the transcribe-audio API
