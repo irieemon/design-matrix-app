@@ -50,7 +50,6 @@ describe('useFeatureDragDrop', () => {
   const defaultParams = {
     features: mockFeatures,
     onFeaturesChange: mockOnFeaturesChange,
-    timelineDuration,
     setFeatures: mockSetFeatures
   }
 

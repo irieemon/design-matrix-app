@@ -4,7 +4,6 @@ import { RoadmapFeature } from './useTimelineFeatures'
 interface UseFeatureDragDropParams {
   features: RoadmapFeature[]
   onFeaturesChange?: (features: RoadmapFeature[]) => void
-  timelineDuration: number
   setFeatures: React.Dispatch<React.SetStateAction<RoadmapFeature[]>>
 }
 
@@ -22,7 +21,6 @@ interface UseFeatureDragDropReturn {
 export const useFeatureDragDrop = ({
   features,
   onFeaturesChange,
-  timelineDuration,
   setFeatures
 }: UseFeatureDragDropParams): UseFeatureDragDropReturn => {
   const [draggedFeature, setDraggedFeature] = useState<RoadmapFeature | null>(null)
