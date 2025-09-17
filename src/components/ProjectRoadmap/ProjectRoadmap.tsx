@@ -284,6 +284,8 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
               subtitle={`${timelineFeatures.length} Features • ${roadmapData.roadmapAnalysis?.totalDuration || '6 months'}`}
               onFeaturesChange={handleFeaturesChange}
               projectType={currentProject?.project_type || 'software'}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
             />
           )}
 

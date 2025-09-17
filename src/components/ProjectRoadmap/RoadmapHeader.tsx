@@ -62,47 +62,12 @@ const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
             {currentProject.name} Roadmap
           </h1>
-          <div className="flex items-center gap-4">
-            <p className="text-slate-600">
-              Strategic execution plan for your {currentProject.project_type?.toLowerCase()} project
-            </p>
-            {roadmapData?.roadmapAnalysis?.totalDuration && (
-              <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                Total Duration: {roadmapData.roadmapAnalysis.totalDuration}
-              </span>
-            )}
-          </div>
+          <p className="text-slate-600">
+            Strategic execution plan for your {currentProject.project_type?.toLowerCase()} project
+          </p>
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
-          {/* View Mode Toggle */}
-          {roadmapData && (
-            <div className="flex space-x-1 bg-slate-100 rounded-lg p-1 shadow-sm mr-2">
-              <button
-                onClick={() => onToggleViewMode('timeline')}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'timeline'
-                    ? 'bg-white text-purple-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Grid3X3 className="w-4 h-4" />
-                <span>Timeline</span>
-              </button>
-              <button
-                onClick={() => onToggleViewMode('detailed')}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'detailed'
-                    ? 'bg-white text-purple-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Map className="w-4 h-4" />
-                <span>Detailed</span>
-              </button>
-            </div>
-          )}
-
           {/* Generate/Regenerate Button */}
           <button
             onClick={onGenerateRoadmap}
