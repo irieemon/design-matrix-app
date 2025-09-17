@@ -15,8 +15,6 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
   const { showError, showWarning } = useToast()
   const [fileUrl, setFileUrl] = useState<string | null>(null)
   const [isLoadingUrl, setIsLoadingUrl] = useState(false)
-  
-  if (!isOpen || !file) return null
 
   // Helper function to determine file type from MIME type
   const getFileTypeFromMime = (mimeType: string): string => {
@@ -63,6 +61,9 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
     // Call async function without returning its Promise
     void loadFileUrl()
   }, [file, isOpen])
+
+  // Early return after all hooks
+  if (!isOpen || !file) return null
 
   const downloadFile = (file: ProjectFile) => {
     if (!file.file_data) {
@@ -127,7 +128,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
       return (
         <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading preview...</p>
+          <p className="text-gray-600">Loading file preview...</p>
         </div>
       )
     }
