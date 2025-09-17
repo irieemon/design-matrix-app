@@ -179,7 +179,7 @@ function detectSpeakers(segments: WhisperSegment[]): string[] {
 function extractKeyPoints(text: string, projectContext: any): string[] {
   if (!text || text.length < 50) return []
   
-  const keyPoints = []
+  const keyPoints: string[] = []
   const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 20)
   
   // Look for important keywords related to project context

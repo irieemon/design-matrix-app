@@ -436,7 +436,7 @@ Provide your analysis as a JSON object with these sections:
 }
 
 // Multi-modal file processing for enhanced AI analysis
-async function processMultiModalFiles(_apiKey: string, documentContext: any[] = [], _projectName: string, _projectType: string) {
+async function _processMultiModalFiles(_apiKey: string, documentContext: any[] = [], _projectName: string, _projectType: string) {
   console.log('🎬 MULTIMODAL: Starting processMultiModalFiles')
   console.log('📁 MULTIMODAL: Input files count:', documentContext?.length || 0)
   

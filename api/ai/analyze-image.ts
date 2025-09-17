@@ -202,7 +202,7 @@ function extractPotentialText(analysisContent: string): string {
   return textMatches.map(match => match.replace(/"/g, '')).join(' ')
 }
 
-function extractInsights(analysisContent: string, projectContext: any): string[] {
+function extractInsights(analysisContent: string, _projectContext: any): string[] {
   const insights = []
   
   // Look for insight indicators in the analysis

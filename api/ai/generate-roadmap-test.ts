@@ -62,6 +62,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
   } catch (error) {
     console.error('Error in test function:', error)
-    return res.status(500).json({ error: 'Test function failed', details: error.message })
+    return res.status(500).json({ error: 'Test function failed', details: error instanceof Error ? error.message : 'Unknown error' })
   }
 }

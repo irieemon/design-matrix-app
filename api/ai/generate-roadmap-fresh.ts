@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     console.log('📥 Roadmap request body:', req.body)
     
-    const { projectName, projectType, ideas } = req.body
+    const { projectName, projectType: _projectType, ideas } = req.body
     
     // Validate required fields
     if (!projectName || !ideas || !Array.isArray(ideas)) {
@@ -90,7 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('❌ Error in roadmap generation:', error)
     return res.status(500).json({ 
       error: 'Failed to generate roadmap',
-      details: error.message 
+      details: error instanceof Error ? error.message : 'Unknown error' 
     })
   }
 }

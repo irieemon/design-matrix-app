@@ -137,11 +137,11 @@ async function analyzeFileContent(
   apiKey: string,
   supabase: any,
   fileRecord: any,
-  projectId: string
+  _projectId: string
 ) {
   const mimeType = fileRecord.mime_type
   const fileName = fileRecord.name
-  const storagePath = fileRecord.storage_path
+  const _storagePath = fileRecord.storage_path
   
   console.log('🎯 Analyzing file type:', mimeType, 'for file:', fileName)
   
@@ -152,7 +152,7 @@ async function analyzeFileContent(
     visual_description: '',
     audio_transcript: '',
     relevance_score: 0.5,
-    content_type: 'text' as const,
+    content_type: 'text' as 'text' | 'image' | 'audio' | 'video' | 'mixed',
     analysis_model: 'gpt-4o',
     analysis_version: '1.0',
     analyzed_at: new Date().toISOString()
@@ -171,7 +171,7 @@ async function analyzeFileContent(
   } else {
     // Unknown file type - try to extract any available content
     analysis.summary = `File of type ${mimeType} uploaded but no specific analysis available.`
-    analysis.key_insights = ['File format not directly analyzable', 'May contain valuable project information']
+    analysis.key_insights = ['File format not directly analyzable', 'May contain valuable project information'] as string[]
     analysis.relevance_score = 0.3
   }
   
