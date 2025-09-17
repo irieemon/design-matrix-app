@@ -1,4 +1,4 @@
-import { X, FileText, Image, Download } from 'lucide-react'
+import { X, FileText, Image, Download, Play, Volume2 } from 'lucide-react'
 import { ProjectFile } from '../types'
 import { logger } from '../utils/logger'
 import { useToast } from '../contexts/ToastContext'
@@ -13,6 +13,21 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
   const { showError, showWarning } = useToast()
   
   if (!isOpen || !file) return null
+
+  // Helper function to determine file type from MIME type
+  const getFileTypeFromMime = (mimeType: string): string => {
+    if (mimeType.startsWith('image/')) return 'image'
+    if (mimeType.startsWith('video/')) return 'video'
+    if (mimeType.startsWith('audio/')) return 'audio'
+    if (mimeType === 'application/pdf') return 'pdf'
+    if (mimeType.startsWith('text/') || 
+        mimeType === 'application/json' ||
+        mimeType === 'application/xml' ||
+        mimeType === 'application/javascript') return 'text'
+    return file.file_type || 'document'
+  }
+
+  const actualFileType = getFileTypeFromMime(file.mime_type)
 
   const downloadFile = (file: ProjectFile) => {
     if (!file.file_data) {
@@ -72,14 +87,44 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
   }
 
   const renderFileContent = () => {
-    // For images, we'd normally show the actual image
-    if (file.file_type === 'image') {
+    // For images, show the actual image
+    if (actualFileType === 'image' && file.file_data) {
+      return (
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-4">
+            <Image className="w-5 h-5 text-gray-600" />
+            <h4 className="text-sm font-medium text-gray-900">Image Preview</h4>
+          </div>
+          <div className="flex justify-center bg-white rounded-lg p-4 border">
+            <img 
+              src={file.file_data} 
+              alt={file.original_name}
+              className="max-h-96 max-w-full object-contain rounded-lg shadow-sm"
+              onError={(e) => {
+                // Fallback if image fails to load
+                const target = e.target as HTMLImageElement
+                target.style.display = 'none'
+                target.nextElementSibling?.classList.remove('hidden')
+              }}
+            />
+            <div className="hidden flex flex-col items-center justify-center h-96 text-gray-500">
+              <Image className="w-16 h-16 text-gray-400 mb-4" />
+              <p className="text-sm">Failed to load image preview</p>
+              <p className="text-xs mt-2">File: {file.original_name}</p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // For images without file_data, show placeholder
+    if (actualFileType === 'image') {
       return (
         <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg">
           <Image className="w-16 h-16 text-gray-400 mb-4" />
           <p className="text-gray-600 mb-2">Image Preview</p>
           <p className="text-sm text-gray-500">
-            In a full implementation, the actual image would be displayed here
+            Image data not available for preview
           </p>
           <p className="text-xs text-gray-400 mt-2">
             File: {file.original_name}
@@ -88,8 +133,110 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
       )
     }
 
+    // For videos, show the actual video player
+    if (actualFileType === 'video' && file.file_data) {
+      return (
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-4">
+            <Play className="w-5 h-5 text-gray-600" />
+            <h4 className="text-sm font-medium text-gray-900">Video Preview</h4>
+          </div>
+          <div className="flex justify-center bg-black rounded-lg overflow-hidden">
+            <video 
+              controls 
+              className="max-h-96 max-w-full"
+              onError={() => {
+                logger.warn('Failed to load video:', file.original_name)
+              }}
+            >
+              <source src={file.file_data} type={file.mime_type} />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      )
+    }
+
+    // For videos without file_data, show placeholder
+    if (actualFileType === 'video') {
+      return (
+        <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg">
+          <Play className="w-16 h-16 text-gray-400 mb-4" />
+          <p className="text-gray-600 mb-2">Video Preview</p>
+          <p className="text-sm text-gray-500">
+            Video data not available for preview
+          </p>
+          <p className="text-xs text-gray-400 mt-2">
+            File: {file.original_name}
+          </p>
+        </div>
+      )
+    }
+
+    // For audio files, show the actual audio player
+    if (actualFileType === 'audio' && file.file_data) {
+      return (
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-4">
+            <Volume2 className="w-5 h-5 text-gray-600" />
+            <h4 className="text-sm font-medium text-gray-900">Audio Preview</h4>
+          </div>
+          <div className="flex justify-center bg-white rounded-lg p-8 border">
+            <audio 
+              controls 
+              className="w-full max-w-md"
+              onError={() => {
+                logger.warn('Failed to load audio:', file.original_name)
+              }}
+            >
+              <source src={file.file_data} type={file.mime_type} />
+              Your browser does not support the audio tag.
+            </audio>
+          </div>
+        </div>
+      )
+    }
+
+    // For audio without file_data, show placeholder
+    if (actualFileType === 'audio') {
+      return (
+        <div className="flex flex-col items-center justify-center h-96 bg-gray-50 rounded-lg">
+          <Volume2 className="w-16 h-16 text-gray-400 mb-4" />
+          <p className="text-gray-600 mb-2">Audio Preview</p>
+          <p className="text-sm text-gray-500">
+            Audio data not available for preview
+          </p>
+          <p className="text-xs text-gray-400 mt-2">
+            File: {file.original_name}
+          </p>
+        </div>
+      )
+    }
+
+    // For PDF files with file_data, show embedded PDF
+    if (actualFileType === 'pdf' && file.file_data) {
+      return (
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-4">
+            <FileText className="w-5 h-5 text-gray-600" />
+            <h4 className="text-sm font-medium text-gray-900">PDF Preview</h4>
+          </div>
+          <div className="bg-white rounded-lg border overflow-hidden">
+            <iframe
+              src={file.file_data}
+              className="w-full h-96"
+              title={file.original_name}
+              onError={() => {
+                logger.warn('Failed to load PDF preview:', file.original_name)
+              }}
+            />
+          </div>
+        </div>
+      )
+    }
+
     // For text files and PDFs with content preview
-    if (file.content_preview && (file.file_type === 'txt' || file.file_type === 'md' || file.file_type === 'pdf')) {
+    if (file.content_preview && (actualFileType === 'text' || actualFileType === 'pdf')) {
       return (
         <div className="bg-gray-50 rounded-lg p-6">
           <div className="flex items-center space-x-2 mb-4">
@@ -111,8 +258,8 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
         <FileText className="w-16 h-16 text-gray-400 mb-4" />
         <p className="text-gray-600 mb-2">Document Preview</p>
         <p className="text-sm text-gray-500 text-center max-w-md">
-          In a full implementation, this would show a preview of your {file.file_type.toUpperCase()} document. 
-          For now, you can download it to view the content.
+          Preview not available for {actualFileType.toUpperCase()} files. 
+          Download the file to view its content.
         </p>
         <button 
           onClick={() => downloadFile(file)}
