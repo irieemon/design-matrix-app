@@ -366,7 +366,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         const priority = epic.priority?.toLowerCase() as 'high' | 'medium' | 'low' || 'medium'
         
         features.push({
-          id: `${phaseIndex}-${epicIndex}`,
+          id: (epic as any).originalFeatureId || `${phaseIndex}-${epicIndex}`,
           title: epic.title || `Epic ${epicIndex + 1}`,
           description: epic.description,
           startMonth: epic.startMonth !== undefined ? epic.startMonth : currentMonth,
@@ -408,9 +408,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
 
   // Handle feature changes and save them back to roadmap data
   const handleFeaturesChange = async (updatedFeatures: any[]) => {
-    console.log('🚀 ProjectRoadmap: handleFeaturesChange called with:', updatedFeatures)
     if (!currentProject) {
-      console.log('❌ No current project, returning early')
       return
     }
     
@@ -437,15 +435,30 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         }
       }
 
-      // Convert features to epics and organize into phases
-      const newFeatures = updatedFeatures.filter(f => !f.id.includes('-')) // New features have different ID format
-      if (newFeatures.length > 0) {
-        // Create a new phase for manually added features
-        const newPhase = {
-          phase: 'Manual Features',
-          duration: '2-4 months',
-          description: 'Features added manually to the roadmap',
-          epics: newFeatures.map(feature => ({
+      // Handle manually added features (those with feature- IDs)
+      const manualFeatures = updatedFeatures.filter(f => f.id.startsWith('feature-'))
+      if (manualFeatures.length > 0) {
+        // Find or create the Manual Features phase
+        let manualPhase = updatedRoadmapData.roadmapAnalysis.phases.find(p => p.phase === 'Manual Features')
+        
+        if (!manualPhase) {
+          // Create new Manual Features phase
+          manualPhase = {
+            phase: 'Manual Features',
+            duration: '2-4 months',
+            description: 'Features added manually to the roadmap',
+            epics: [],
+            risks: [],
+            successCriteria: []
+          }
+          updatedRoadmapData.roadmapAnalysis.phases.push(manualPhase)
+        }
+        
+        // Add or update features in the manual phase
+        manualFeatures.forEach(feature => {
+          const existingEpicIndex = manualPhase!.epics?.findIndex(epic => (epic as any).originalFeatureId === feature.id)
+          
+          const epicData = {
             title: feature.title,
             description: feature.description || '',
             userStories: feature.userStories || [],
@@ -456,12 +469,19 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
             startMonth: feature.startMonth,
             duration: feature.duration,
             status: feature.status,
-            team: feature.team
-          })),
-          risks: [],
-          successCriteria: []
-        }
-        updatedRoadmapData.roadmapAnalysis.phases.push(newPhase)
+            team: feature.team,
+            originalFeatureId: feature.id
+          }
+          
+          if (existingEpicIndex !== -1) {
+            // Update existing epic
+            manualPhase!.epics![existingEpicIndex] = epicData
+          } else {
+            // Add new epic
+            manualPhase!.epics = manualPhase!.epics || []
+            manualPhase!.epics.push(epicData)
+          }
+        })
       }
 
       // Update existing features if they match phase-epic format
