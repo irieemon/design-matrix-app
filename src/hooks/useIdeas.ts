@@ -208,11 +208,14 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     console.log('🔄 useIdeas: Project changed effect triggered. Current project:', currentProject?.name, currentProject?.id)
     console.log('🔄 useIdeas: Current user:', currentUser?.email, currentUser?.id)
     logger.debug('🔄 Project changed effect triggered. Current project:', currentProject?.name, currentProject?.id)
-    
+
+    // CRITICAL: Clear ideas immediately when project changes to prevent flash of wrong ideas
+    setIdeas([])
+
     // Check if this is a demo user
     const isDemoUser = currentUser?.id?.startsWith('00000000-0000-0000-0000-00000000000')
     console.log('🎭 useIdeas: Is demo user:', isDemoUser)
-    
+
     if (currentProject) {
       if (isDemoUser) {
         console.log('📂 useIdeas: Demo user: loading ideas for:', currentProject.name, currentProject.id)
@@ -242,16 +245,27 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
       return
     }
 
-    logger.debug('🔄 Setting up project-specific subscription for:', currentProject?.id || 'all projects')
+    // Only subscribe if we have a project to avoid unnecessary subscriptions
+    if (!currentProject?.id) {
+      logger.debug('🔄 No project selected, skipping subscription setup')
+      return
+    }
+
+    logger.debug('🔄 Setting up project-specific subscription for:', currentProject.id)
     const unsubscribe = DatabaseService.subscribeToIdeas(
-      setIdeas,
-      currentProject?.id,
+      (freshIdeas) => {
+        // Only update ideas if they belong to the current project to prevent cross-project pollution
+        const projectIdeas = freshIdeas.filter(idea => idea.project_id === currentProject.id)
+        logger.debug('🔄 Subscription callback: filtered', projectIdeas.length, 'ideas for current project:', currentProject.id)
+        setIdeas(projectIdeas)
+      },
+      currentProject.id,
       currentUser.id,
       { skipInitialLoad: true } // Skip initial load since ideas are loaded by project change effect
     )
-    
+
     return () => {
-      logger.debug('🔄 Cleaning up subscription')
+      logger.debug('🔄 Cleaning up subscription for project:', currentProject.id)
       unsubscribe()
     }
   }, [currentUser, currentProject?.id])
