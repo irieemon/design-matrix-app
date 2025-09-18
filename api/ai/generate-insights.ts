@@ -299,10 +299,51 @@ Be specific about THIS project - not generic business advice.`
     content: userContent as any // Mixed content array for GPT-4V (text + images)
   })
   
+  // Map frontend model names to actual OpenAI API models
+  function mapModelToOpenAI(modelName: string): string {
+    const modelMapping: Record<string, string> = {
+      // GPT-5 Series -> Map to latest available OpenAI models
+      'gpt-5': 'gpt-4o',
+      'gpt-5-mini': 'gpt-4o-mini',
+      'gpt-5-nano': 'gpt-4o-mini',
+      'gpt-5-chat-latest': 'gpt-4o',
+
+      // GPT-4.1 Series -> Map to GPT-4 variants
+      'gpt-4.1': 'gpt-4-turbo-preview',
+      'gpt-4.1-mini': 'gpt-4o-mini',
+      'gpt-4.1-nano': 'gpt-4o-mini',
+
+      // Research models -> Map to reasoning models or fallbacks
+      'o3-deep-research': 'o1-preview',
+      'o4-mini-deep-research': 'o1-mini',
+
+      // Specialized models -> Map to closest equivalent
+      'gpt-realtime': 'gpt-4o',
+
+      // Existing models - pass through unchanged
+      'gpt-4o': 'gpt-4o',
+      'gpt-4o-mini': 'gpt-4o-mini',
+      'gpt-4-turbo': 'gpt-4-turbo-preview',
+      'gpt-4': 'gpt-4',
+      'gpt-3.5-turbo': 'gpt-3.5-turbo',
+      'o1-preview': 'o1-preview',
+      'o1-mini': 'o1-mini'
+    }
+
+    return modelMapping[modelName] || 'gpt-4o'
+  }
+
   // Use smart model selection or fallback to defaults
-  const selectedModel = modelSelection?.model || 'gpt-4o'
+  const requestedModel = modelSelection?.model || 'gpt-4o'
+  const selectedModel = mapModelToOpenAI(requestedModel)
   const selectedTemperature = modelSelection?.temperature || getRandomTemperature()
   const selectedMaxTokens = modelSelection?.maxTokens || 4000
+
+  console.log('🔄 OPENAI: Model mapping:', {
+    requested: requestedModel,
+    mapped: selectedModel,
+    reasoning: requestedModel !== selectedModel ? 'Mapped to available OpenAI model' : 'Using original model'
+  })
 
   console.log('📤 OPENAI: Preparing API request...')
   console.log('🎯 OPENAI: Smart Model Selection:', {
