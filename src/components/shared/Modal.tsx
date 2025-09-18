@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { LoadingOverlay } from './LoadingSpinner'
 
@@ -78,10 +79,11 @@ export const BaseModal: React.FC<BaseModalProps> = ({
 
   if (!isOpen) return null
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
       onClick={handleBackdropClick}
+      style={{ zIndex: 9999 }}
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
@@ -125,6 +127,9 @@ export const BaseModal: React.FC<BaseModalProps> = ({
       </div>
     </div>
   )
+
+  // Render modal content to document.body using React portal
+  return createPortal(modalContent, document.body)
 }
 
 interface ConfirmModalProps {

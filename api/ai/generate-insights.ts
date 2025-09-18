@@ -40,15 +40,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     console.log('📥 Request body keys:', Object.keys(req.body))
-    const { ideas, projectName, projectType, roadmapContext, documentContext, projectContext } = req.body
-    
+    const { ideas, projectName, projectType, roadmapContext, documentContext, projectContext, modelSelection, taskContext } = req.body
+
     console.log('🔍 Parsed request:', {
       ideasCount: ideas?.length || 0,
       projectName,
       projectType,
       hasRoadmapContext: !!roadmapContext,
       documentCount: documentContext?.length || 0,
-      hasProjectContext: !!projectContext
+      hasProjectContext: !!projectContext,
+      hasModelSelection: !!modelSelection,
+      selectedModel: modelSelection?.model || 'default',
+      complexity: taskContext?.complexity || 'unknown'
     })
     
     if (!ideas || !Array.isArray(ideas)) {
@@ -72,8 +75,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let insights = {}
     
     if (openaiKey) {
-      console.log('Using OpenAI for insights generation')
-      insights = await generateInsightsWithOpenAI(openaiKey, ideas, projectName, projectType, roadmapContext, documentContext, projectContext)
+      console.log('🤖 Using OpenAI for insights generation')
+      console.log('📊 Model Selection:', {
+        model: modelSelection?.model || 'gpt-4o (default)',
+        temperature: modelSelection?.temperature || 'dynamic',
+        reasoning: modelSelection?.reasoning || 'No routing provided'
+      })
+      insights = await generateInsightsWithOpenAI(openaiKey, ideas, projectName, projectType, roadmapContext, documentContext, projectContext, modelSelection)
     } else if (anthropicKey) {
       console.log('Using Anthropic for insights generation')
       insights = await generateInsightsWithAnthropic(anthropicKey, ideas, projectName, projectType, roadmapContext, documentContext, projectContext)
@@ -105,7 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = [], _projectContext: any = null) {
+async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = [], _projectContext: any = null, modelSelection: any = null) {
   
   console.log('🚀 OPENAI FUNCTION: Starting generateInsightsWithOpenAI')
   console.log('🎯 OPENAI: API Key available:', !!apiKey, 'Length:', apiKey?.length || 0)
@@ -138,18 +146,27 @@ async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectN
   const messages = [
     {
       role: 'system',
-      content: `You are an experienced strategic consultant analyzing this specific project. Think like a seasoned advisor who asks the right questions and provides insights based on what you actually see.
+      content: `You are an experienced strategic consultant who specializes in analyzing SPECIFIC project contexts. Your job is to provide insights that are deeply relevant to THIS PARTICULAR PROJECT.
 
-Analyze the actual ideas provided - what do they tell you about this project's real focus, challenges, and opportunities? Look for patterns, gaps, and strategic priorities that emerge from the specific context.
+CRITICAL INSTRUCTIONS:
+1. ANALYZE WHAT'S ACTUALLY HERE: Look at the specific ideas, project name, and context provided. What do they tell you about the real business model, target market, and challenges?
+2. BE SPECIFIC, NOT GENERIC: Instead of saying "focus on user experience," say "optimize the subscription onboarding flow" if that's what the ideas suggest.
+3. REFERENCE ACTUAL IDEAS: Quote or reference the specific ideas provided. Don't invent generic scenarios.
+4. THINK LIKE AN INSIDER: Write as if you understand this exact business and industry.
 
-${multiModalContent.hasVisualContent ? 'IMPORTANT: This project includes visual content (images, videos) that you can analyze directly. Pay attention to visual insights and design elements.' : ''}
-${multiModalContent.hasAudioContent ? 'IMPORTANT: This project includes audio content that has been transcribed. Consider the spoken insights and meeting content in your analysis.' : ''}
+${multiModalContent.hasVisualContent ? 'VISUAL CONTEXT: This project includes images/videos. Analyze what they reveal about the product, market, or business model.' : ''}
+${multiModalContent.hasAudioContent ? 'AUDIO CONTEXT: This project includes transcribed audio. Consider the spoken insights and strategic discussions.' : ''}
 
-Avoid generic business templates. Instead, provide thoughtful analysis that someone familiar with this exact project would find valuable and actionable.
+FORBIDDEN PATTERNS - Do NOT use these generic phrases:
+- "focus on user experience" (be specific about WHAT user experience)
+- "leverage digital marketing" (specify WHICH channels for WHAT purpose)
+- "enhance community engagement" (explain HOW based on the actual business)
+- "diverse marketing channels" (specify channels relevant to THIS project)
+- "brand awareness initiatives" (detail what makes sense for THIS brand)
 
-Write conversationally and insightfully, like you're advising a founder or product team who knows their domain well.
+Instead, provide tactical, actionable insights that reference the actual ideas and project context.
 
-IMPORTANT: Respond ONLY with valid JSON. Do not include any explanatory text before or after the JSON.
+RESPOND WITH VALID JSON ONLY - no explanatory text before or after.
 
 Provide your analysis as a JSON object with these sections:
 {
@@ -199,35 +216,56 @@ Provide your analysis as a JSON object with these sections:
   let userContent = []
   
   // Start with text content
+  // Build a detailed context analysis
+  const ideaAnalysis = ideas.map((idea, index) => {
+    const position = idea.quadrant || 'unknown'
+    return `${index + 1}. "${idea.title}" (${position} quadrant)${idea.description ? ` - ${idea.description}` : ''}`
+  }).join('\n')
+
+  const projectContext = `
+PROJECT ANALYSIS REQUIRED FOR: ${projectName} (${projectType})
+
+SPECIFIC IDEAS TO ANALYZE:
+${ideaAnalysis}
+
+QUADRANT DISTRIBUTION:
+- Quick Wins: ${ideas.filter(i => i.quadrant === 'quick-wins').length} ideas
+- Major Projects: ${ideas.filter(i => i.quadrant === 'major-projects').length} ideas
+- Fill-ins: ${ideas.filter(i => i.quadrant === 'fill-ins').length} ideas
+- Thankless Tasks: ${ideas.filter(i => i.quadrant === 'thankless-tasks').length} ideas`
+
   userContent.push({
     type: 'text',
-    text: `I'm looking for strategic insights on this project. Take a look at what we're working on and give me your honest assessment - what do you see? What patterns emerge? What should we be thinking about?
+    text: `STRATEGIC ANALYSIS REQUEST:
 
-Here's what we're building:
+${projectContext}
 
-PROJECT: ${projectName} (${projectType})
-
-IDEAS WE'RE CONSIDERING:
-${ideas.map(idea => `• ${idea.title} - ${idea.description}`).join('\n')}
-
-${roadmapContext ? `We already have some roadmap planning in place.` : ''}
+${roadmapContext ? `EXISTING ROADMAP CONTEXT: Previous planning exists - build on this foundation.` : ''}
 
 ${multiModalContent.textContent ? `
-DOCUMENT CONTEXT:
+DOCUMENT INTELLIGENCE:
 ${multiModalContent.textContent}
 ` : ''}
 
 ${multiModalContent.audioTranscripts ? `
-AUDIO TRANSCRIPTS FROM PROJECT FILES:
+MEETING TRANSCRIPTS:
 ${multiModalContent.audioTranscripts}
 ` : ''}
 
 ${multiModalContent.imageDescriptions ? `
-VISUAL CONTENT ANALYSIS:
+VISUAL ASSETS ANALYSIS:
 ${multiModalContent.imageDescriptions}
 ` : ''}
 
-What insights jump out at you? What should we be prioritizing or watching out for?`
+REQUIRED OUTPUT:
+Analyze these SPECIFIC ideas and provide strategic insights that reference the actual project context. Look for:
+1. What business model emerges from these ideas?
+2. What market/customer segment do these ideas target?
+3. Which ideas have synergies or conflicts?
+4. What's missing from this portfolio?
+5. What sequence makes strategic sense?
+
+Be specific about THIS project - not generic business advice.`
   })
   
   // Add image content for GPT-4V analysis
@@ -248,14 +286,24 @@ What insights jump out at you? What should we be prioritizing or watching out fo
     content: userContent as any // Mixed content array for GPT-4V (text + images)
   })
   
+  // Use smart model selection or fallback to defaults
+  const selectedModel = modelSelection?.model || 'gpt-4o'
+  const selectedTemperature = modelSelection?.temperature || getRandomTemperature()
+  const selectedMaxTokens = modelSelection?.maxTokens || 4000
+
   console.log('📤 OPENAI: Preparing API request...')
-  console.log('🎯 OPENAI: Using model: gpt-4o')
+  console.log('🎯 OPENAI: Smart Model Selection:', {
+    model: selectedModel,
+    temperature: selectedTemperature,
+    maxTokens: selectedMaxTokens,
+    reasoning: modelSelection?.reasoning || 'Default selection'
+  })
   console.log('📋 OPENAI: Message count:', messages.length)
   console.log('📁 OPENAI: User content items:', userContent.length)
   userContent.forEach((item, index) => {
     console.log(`  ${index + 1}. Type: ${item.type}, ${item.type === 'text' ? `Text length: ${item.text?.length}` : 'Image URL provided'}`)
   })
-  
+
   console.log('🌐 OPENAI: Making API call to OpenAI...')
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -264,11 +312,11 @@ What insights jump out at you? What should we be prioritizing or watching out fo
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o', // GPT-4V capable model
+      model: selectedModel,
       seed: Math.floor(Math.random() * 1000000),
       messages: messages,
-      temperature: getRandomTemperature(),
-      max_tokens: 4000,
+      temperature: selectedTemperature,
+      max_tokens: selectedMaxTokens,
     }),
   })
   

@@ -2,6 +2,8 @@ import { IdeaCard } from '../../types'
 import { logger } from '../../utils/logger'
 import { aiCache, AICache } from '../aiCache'
 import { FileService } from '../fileService'
+import { OpenAIModelRouter, TaskContext, AITaskType } from './openaiModelRouter'
+import { IntelligentMockDataService } from './intelligentMockData'
 
 interface ProjectContext {
   name?: string
@@ -36,6 +38,9 @@ interface InsightsRequest {
   roadmapContext?: any
   documentContext?: DocumentContext[]
   projectContext?: ProjectContext
+  // Smart model routing fields
+  modelSelection?: any
+  taskContext?: TaskContext
 }
 
 interface KeyInsight {
@@ -114,7 +119,33 @@ export class AIInsightsService {
   ): Promise<InsightsReport> {
     logger.debug('🔍 Generating insights for', (ideas || []).length, 'ideas')
 
-    // Create cache key from core parameters
+    // Build context for intelligent model selection
+    const context = await this.buildInsightsContext(projectId, currentProject)
+
+    // Analyze complexity and determine optimal model
+    const complexity = OpenAIModelRouter.analyzeComplexity({
+      ideaCount: (ideas || []).length,
+      hasFiles: (context.documentContext?.length || 0) > 0,
+      hasImages: context.documentContext?.some(doc => doc.mimeType?.startsWith('image/')) || false,
+      hasAudio: context.documentContext?.some(doc => doc.mimeType?.startsWith('audio/') || doc.mimeType?.startsWith('video/')) || false,
+      projectType: projectType || 'general',
+      documentCount: context.documentContext?.length || 0
+    })
+
+    const taskContext: TaskContext = {
+      type: 'strategic-insights' as AITaskType,
+      complexity,
+      ideaCount: (ideas || []).length,
+      hasFiles: (context.documentContext?.length || 0) > 0,
+      hasImages: context.documentContext?.some(doc => doc.mimeType?.startsWith('image/')) || false,
+      hasAudio: context.documentContext?.some(doc => doc.mimeType?.startsWith('audio/') || doc.mimeType?.startsWith('video/')) || false,
+      userTier: 'pro' // TODO: Get from user context
+    }
+
+    const modelSelection = OpenAIModelRouter.selectModel(taskContext)
+    OpenAIModelRouter.logSelection(taskContext, modelSelection)
+
+    // Create cache key from core parameters including model selection
     const ideaSignature = (ideas || []).map(idea => ({
       content: idea.content,
       x: Math.round(idea.x / 10) * 10,
@@ -126,11 +157,12 @@ export class AIInsightsService {
       projectName: projectName || 'Project',
       projectType: projectType || 'General',
       projectId: projectId || 'none',
-      version: 'v2-multimodal'
+      model: modelSelection.model,
+      complexity: complexity,
+      version: 'v3-smart-routing'
     })
 
     return aiCache.getOrSet(cacheKey, async () => {
-      const context = await this.buildInsightsContext(projectId, currentProject)
 
       try {
         const requestPayload: InsightsRequest = {
@@ -143,7 +175,10 @@ export class AIInsightsService {
           projectType: projectType || 'General',
           roadmapContext: context.roadmapContext,
           documentContext: context.documentContext,
-          projectContext: context.projectContext
+          projectContext: context.projectContext,
+          // Include model selection for smart routing
+          modelSelection: modelSelection,
+          taskContext: taskContext
         }
 
         this.logInsightsRequest(requestPayload)
@@ -193,10 +228,17 @@ export class AIInsightsService {
       } catch (error) {
         logger.error('🚫 AI insights generation failed:', error)
 
-        // In development, provide mock data with file context
+        // In development, provide intelligent mock data for testing AI optimizations
         if (this.baseUrl.includes('localhost')) {
-          logger.warn('🔧 Using mock insights with file context for development')
-          return this.generateMockInsightsWithFiles(ideas, context.documentContext || [])
+          logger.warn('🔧 Using intelligent mock insights for development and testing')
+          return this.generateIntelligentDevelopmentInsights(
+            ideas,
+            projectName || 'Development Project',
+            projectType || 'General',
+            context.documentContext || [],
+            taskContext,
+            modelSelection
+          )
         }
 
         throw new Error(`Failed to generate insights: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your API configuration and try again.`)
@@ -515,52 +557,6 @@ export class AIInsightsService {
     }
   }
 
-  /**
-   * Generate mock insights with file context for development
-   */
-  private generateMockInsightsWithFiles(ideas: IdeaCard[], documentContext: DocumentContext[] = []): InsightsReport {
-    const hasFiles = documentContext && documentContext.length > 0
-    const fileCount = hasFiles ? documentContext.length : 0
-
-    return {
-      executiveSummary: `Development mode insights for ${(ideas || []).length} ideas${hasFiles ? ` with ${fileCount} supporting documents` : ''}. This analysis provides mock insights for testing purposes with realistic content structure and formatting.`,
-
-      keyInsights: [
-        {
-          insight: 'Development Environment',
-          impact: 'Mock insights generated for development and testing purposes with realistic data structure.'
-        },
-        {
-          insight: hasFiles ? 'File Context Integration' : 'Standard Analysis',
-          impact: hasFiles
-            ? `${fileCount} files processed for context-aware insights generation.`
-            : 'Standard mock insights without file context integration.'
-        },
-        {
-          insight: 'Testing Framework',
-          impact: 'Comprehensive mock data ensures proper UI testing and development workflow.'
-        }
-      ],
-
-      priorityRecommendations: {
-        immediate: [
-          'Configure production AI service endpoints',
-          'Test with real project data',
-          'Validate insight accuracy'
-        ],
-        shortTerm: [
-          'Deploy to staging environment',
-          'Conduct user acceptance testing',
-          'Optimize performance metrics'
-        ],
-        longTerm: [
-          'Scale to production workloads',
-          'Monitor insight quality',
-          'Expand AI capabilities'
-        ]
-      }
-    }
-  }
 
   /**
    * Log insights request for debugging
@@ -618,6 +614,229 @@ export class AIInsightsService {
       totalTextContent: documentContext.reduce((sum, doc) => sum + (doc.content?.length || 0), 0)
     })
   }
+
+  /**
+   * Generate intelligent development insights for testing AI optimizations
+   */
+  private generateIntelligentDevelopmentInsights(
+    ideas: IdeaCard[],
+    projectName: string,
+    projectType: string,
+    documentContext: DocumentContext[] = [],
+    taskContext: TaskContext,
+    modelSelection: any
+  ): InsightsReport {
+    logger.debug('🧠 Generating intelligent development insights:', {
+      projectName,
+      projectType,
+      ideaCount: ideas.length,
+      taskType: taskContext.type,
+      complexity: taskContext.complexity,
+      selectedModel: modelSelection.model
+    })
+
+    // Determine if we should use existing ideas or generate scenario-based data
+    const useExistingIdeas = ideas && ideas.length > 0
+
+    if (useExistingIdeas) {
+      // Use existing ideas but enhance with intelligent context
+      logger.info('🎯 Using existing ideas with intelligent context enhancement')
+      return this.enhanceExistingIdeasWithIntelligence(ideas, projectName, projectType, documentContext, taskContext, modelSelection)
+    } else {
+      // Generate a complete intelligent scenario for testing
+      logger.info('🎭 Generating complete intelligent scenario for testing')
+      return this.generateScenarioBasedInsights(projectName, projectType, taskContext, modelSelection)
+    }
+  }
+
+  /**
+   * Enhance existing ideas with intelligent context
+   */
+  private enhanceExistingIdeasWithIntelligence(
+    ideas: IdeaCard[],
+    projectName: string,
+    projectType: string,
+    documentContext: DocumentContext[],
+    taskContext: TaskContext,
+    modelSelection: any
+  ): InsightsReport {
+    const hasFiles = documentContext && documentContext.length > 0
+    const ideaCount = ideas.length
+
+    // Analyze idea distribution across quadrants
+    const quadrantAnalysis = this.analyzeQuadrantDistribution(ideas)
+    const complexityIndicators = this.getComplexityIndicators(ideas, projectType)
+
+    return {
+      executiveSummary: `Intelligent development analysis of ${ideaCount} ideas for ${projectName} (${projectType}) using ${modelSelection.model} with ${taskContext.complexity} complexity routing. ${quadrantAnalysis.dominantStrategy} Project demonstrates ${complexityIndicators.primaryFocus} with ${quadrantAnalysis.distribution}${hasFiles ? ` enhanced by ${documentContext.length} supporting documents` : ''}. Model selection reasoning: ${modelSelection.reasoning}`,
+
+      keyInsights: [
+        {
+          insight: `Smart Model Routing Validation`,
+          impact: `Selected ${modelSelection.model} for ${taskContext.type} task with ${taskContext.complexity} complexity. This validates our intelligent routing system's ability to optimize cost vs performance based on actual project requirements.`
+        },
+        {
+          insight: `${quadrantAnalysis.primaryQuadrant} Strategy Focus`,
+          impact: `Project emphasizes ${quadrantAnalysis.primaryQuadrant.replace('-', ' ')} with ${quadrantAnalysis.primaryCount} of ${ideaCount} ideas. This indicates ${this.getQuadrantStrategy(quadrantAnalysis.primaryQuadrant)} approach for ${projectName}.`
+        },
+        {
+          insight: `Development Context Integration`,
+          impact: hasFiles
+            ? `${documentContext.length} files provide rich context for ${complexityIndicators.primaryFocus}, enabling more sophisticated AI analysis and reducing generic responses.`
+            : `Project structure suggests ${complexityIndicators.secondaryFocus} implementation pattern typical of ${projectType.toLowerCase()} projects.`
+        }
+      ],
+
+      priorityRecommendations: {
+        immediate: [
+          `Validate ${modelSelection.model} performance for ${taskContext.type} tasks`,
+          `Test anti-generic AI response quality with real project context`,
+          `Execute ${quadrantAnalysis.quickWinCount} quick-win initiatives for immediate validation`
+        ],
+        shortTerm: [
+          `Scale successful ${quadrantAnalysis.primaryQuadrant} strategies across project`,
+          `Monitor cost optimization from smart model routing (estimated ${this.getCostImpact(modelSelection.model)} savings)`,
+          `Implement remaining ${quadrantAnalysis.majorProjectCount} major initiatives with validated approach`
+        ],
+        longTerm: [
+          `Refine model routing based on actual performance metrics`,
+          `Expand intelligent context engineering to related project types`,
+          `Build comprehensive testing framework for AI optimization validation`
+        ]
+      },
+
+      riskAssessment: {
+        risks: [
+          `Model routing accuracy for edge cases in ${projectType} projects`,
+          `Context engineering effectiveness with sparse project data`,
+          `Development-to-production AI behavior consistency`
+        ],
+        mitigations: [
+          `${this.getCostImpact(modelSelection.model)} cost optimization through intelligent routing`,
+          `Improved AI response quality through enhanced context engineering`,
+          `Scalable testing framework for AI feature development`
+        ]
+      },
+
+
+
+    }
+  }
+
+  /**
+   * Generate complete scenario-based insights for testing
+   */
+  private generateScenarioBasedInsights(
+    projectName: string,
+    projectType: string,
+    taskContext: TaskContext,
+    modelSelection: any
+  ): InsightsReport {
+    // Select appropriate scenario based on task context
+    let scenario = IntelligentMockDataService.getScenarioByComplexity(taskContext.complexity)
+
+    // If project name/type suggest specific scenario, try to match
+    if (projectType.toLowerCase().includes('saas') || projectType.toLowerCase().includes('platform')) {
+      const saasScenarios = IntelligentMockDataService.getProjectScenarios().filter(s => s.type.includes('SaaS') || s.type.includes('Platform'))
+      if (saasScenarios.length > 0) {
+        scenario = saasScenarios.find(s => s.complexity === taskContext.complexity) || scenario
+      }
+    }
+
+    logger.info(`🎭 Using intelligent scenario: ${scenario.name} (${scenario.complexity} complexity)`)
+
+    // Generate insights with scenario context but use provided project name
+    const insights = IntelligentMockDataService.generateIntelligentMockInsights(scenario)
+
+    // Customize for the actual project name while keeping scenario intelligence
+    insights.executiveSummary = insights.executiveSummary.replace(scenario.name, projectName)
+
+    // Add development mode context
+    insights._developmentContext = {
+      originalProjectName: projectName,
+      originalProjectType: projectType,
+      selectedScenario: scenario.id,
+      scenarioName: scenario.name,
+      modelSelection: modelSelection,
+      taskContext: taskContext
+    }
+
+    return insights
+  }
+
+  /**
+   * Analyze quadrant distribution of ideas
+   */
+  private analyzeQuadrantDistribution(ideas: IdeaCard[]) {
+    const distribution = ideas.reduce((acc, idea) => {
+      const quadrant = this.getQuadrantFromPosition(idea.x, idea.y)
+      acc[quadrant] = (acc[quadrant] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+
+    const entries = Object.entries(distribution).sort(([,a], [,b]) => b - a)
+    const [primaryQuadrant, primaryCount] = entries[0] || ['quick-wins', 0]
+
+    const quickWinCount = distribution['quick-wins'] || 0
+    const majorProjectCount = distribution['major-projects'] || 0
+
+    return {
+      distribution: `${quickWinCount} quick wins, ${majorProjectCount} major projects, ${distribution['fill-ins'] || 0} fill-ins, ${distribution['thankless-tasks'] || 0} infrastructure tasks`,
+      primaryQuadrant,
+      primaryCount,
+      quickWinCount,
+      majorProjectCount,
+      dominantStrategy: primaryQuadrant === 'quick-wins' ? 'Rapid iteration strategy.' :
+                      primaryQuadrant === 'major-projects' ? 'Strategic development focus.' :
+                      primaryQuadrant === 'fill-ins' ? 'Incremental improvement approach.' :
+                      'Infrastructure-first methodology.'
+    }
+  }
+
+  /**
+   * Get complexity indicators based on ideas and project type
+   */
+  private getComplexityIndicators(_ideas: IdeaCard[], projectType: string) {
+    const typeIndicators = {
+      'SaaS': ['platform scalability', 'API integration'],
+      'E-commerce': ['payment processing', 'inventory management'],
+      'Mobile': ['user experience', 'performance optimization'],
+      'Fintech': ['security compliance', 'real-time processing'],
+      'EdTech': ['learning analytics', 'content delivery']
+    }
+
+    const matchedType = Object.keys(typeIndicators).find(type =>
+      projectType.toLowerCase().includes(type.toLowerCase())
+    )
+
+    const indicators = matchedType ? typeIndicators[matchedType as keyof typeof typeIndicators] : ['feature development', 'user engagement']
+
+    return {
+      primaryFocus: indicators[0],
+      secondaryFocus: indicators[1]
+    }
+  }
+
+  /**
+   * Get strategy description for quadrant
+   */
+  private getQuadrantStrategy(quadrant: string): string {
+    switch (quadrant) {
+      case 'quick-wins': return 'rapid value delivery and iterative validation'
+      case 'major-projects': return 'strategic capability building and competitive differentiation'
+      case 'fill-ins': return 'operational efficiency and user experience enhancement'
+      case 'thankless-tasks': return 'infrastructure foundation and technical debt management'
+      default: return 'balanced development'
+    }
+  }
+
+  /**
+   * Get cost impact description for model
+   */
+  private getCostImpact(model: string): string {
+    return model === 'gpt-4o-mini' ? '~60-70%' : model === 'gpt-4o' ? 'premium quality' : 'optimized'
+  }
+
 }
 
 // Export singleton instance
