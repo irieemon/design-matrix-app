@@ -123,7 +123,9 @@ describe('useIdeas', () => {
 
       expect(mockDatabaseService.subscribeToIdeas).toHaveBeenCalledWith(
         expect.any(Function),
-        mockProject.id
+        mockProject.id,
+        mockUser.id,
+        { skipInitialLoad: true }
       )
 
       unmount()

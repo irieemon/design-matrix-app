@@ -311,9 +311,11 @@ describe('DatabaseService', () => {
 
       mockSupabaseClient.channel.mockReturnValue(mockChannel)
 
-      const unsubscribe = DatabaseService.subscribeToIdeas(mockCallback, 'test-project-id')
+      const unsubscribe = DatabaseService.subscribeToIdeas(mockCallback, 'test-project-id', 'test-user-id')
 
-      expect(mockSupabaseClient.channel).toHaveBeenCalledWith('ideas_changes')
+      expect(mockSupabaseClient.channel).toHaveBeenCalledWith(
+        expect.stringMatching(/^ideas_changes_test_user_id_[a-z0-9]{6}$/)
+      )
       expect(mockChannel.on).toHaveBeenCalledWith(
         'postgres_changes',
         expect.objectContaining({
@@ -341,7 +343,7 @@ describe('DatabaseService', () => {
 
       mockSupabaseClient.channel.mockReturnValue(mockChannel)
 
-      DatabaseService.subscribeToIdeas(mockCallback, 'test-project-id')
+      DatabaseService.subscribeToIdeas(mockCallback, 'test-project-id', 'test-user-id')
 
       // Simulate a lock-only change (heartbeat update)
       const lockOnlyPayload = {

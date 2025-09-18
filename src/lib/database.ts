@@ -336,13 +336,34 @@ export class DatabaseService {
     }
   }
 
+  // Generate channel name for testing purposes
+  static generateChannelName(userId?: string, customSessionId?: string): string {
+    const sessionId = customSessionId || Math.random().toString(36).substring(2, 8)
+    return userId
+      ? `ideas_changes_${userId.replace(/-/g, '_')}_${sessionId}`
+      : `ideas_changes_anonymous_${sessionId}`
+  }
+
   // Subscribe to real-time changes
-  static subscribeToIdeas(callback: (ideas: IdeaCard[]) => void, projectId?: string) {
-    logger.debug('Setting up real-time subscription...', { projectId })
-    
+  static subscribeToIdeas(
+    callback: (ideas: IdeaCard[]) => void,
+    projectId?: string,
+    userId?: string,
+    options?: { skipInitialLoad?: boolean }
+  ) {
+    logger.debug('Setting up real-time subscription...', { projectId, userId, options })
+
+    // Generate unique channel name to prevent cross-user interference
+    const sessionId = Math.random().toString(36).substring(2, 8)
+    const channelName = userId
+      ? `ideas_changes_${userId.replace(/-/g, '_')}_${sessionId}`
+      : `ideas_changes_anonymous_${sessionId}`
+
+    logger.debug('🔄 Creating unique channel:', channelName)
+
     // Real-time subscription
     const channel = supabase
-      .channel('ideas_changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -473,11 +494,16 @@ export class DatabaseService {
         }
       })
 
-    // Load initial data when subscription is set up
+    // Load initial data when subscription is set up (unless explicitly skipped)
     const loadInitialData = async () => {
+      if (options?.skipInitialLoad) {
+        logger.debug('⏩ Skipping initial data load as requested')
+        return
+      }
+
       logger.debug('🔄 Loading initial data for subscription...', { projectId })
       try {
-        const initialIdeas = projectId 
+        const initialIdeas = projectId
           ? await this.getProjectIdeas(projectId)
           : await this.getAllIdeas()
         logger.debug('📊 Initial data loaded, calling callback with', (initialIdeas || []).length, 'ideas')
@@ -487,8 +513,8 @@ export class DatabaseService {
         callback([]) // Fallback to empty array
       }
     }
-    
-    // Load initial data immediately
+
+    // Load initial data immediately (unless skipped)
     loadInitialData()
 
     return () => {

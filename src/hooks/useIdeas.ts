@@ -243,7 +243,12 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     }
 
     logger.debug('🔄 Setting up project-specific subscription for:', currentProject?.id || 'all projects')
-    const unsubscribe = DatabaseService.subscribeToIdeas(setIdeas, currentProject?.id)
+    const unsubscribe = DatabaseService.subscribeToIdeas(
+      setIdeas,
+      currentProject?.id,
+      currentUser.id,
+      { skipInitialLoad: true } // Skip initial load since ideas are loaded by project change effect
+    )
     
     return () => {
       logger.debug('🔄 Cleaning up subscription')
