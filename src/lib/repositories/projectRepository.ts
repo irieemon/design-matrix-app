@@ -39,7 +39,7 @@ export class ProjectRepository {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .eq('created_by', userId)
+        .eq('owner_id', userId)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -323,7 +323,7 @@ export class ProjectRepository {
             event: '*',
             schema: 'public',
             table: 'projects',
-            ...(userId && { filter: `created_by=eq.${userId}` })
+            ...(userId && { filter: `owner_id=eq.${userId}` })
           },
           async (payload) => {
             logger.debug('🔴 Project real-time change detected:', payload.eventType)
@@ -397,7 +397,7 @@ export class ProjectRepository {
       const insightData = {
         project_id: projectId,
         insights_data: insights,
-        created_by: userId,
+        owner_id: userId,
         idea_count: ideaCount,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()

@@ -253,7 +253,7 @@ export class UserRepository {
       const { count: projectCount, error: projectError } = await supabase
         .from('projects')
         .select('*', { count: 'exact', head: true })
-        .eq('created_by', userId)
+        .eq('owner_id', userId)
 
       if (projectError) {
         logger.error('Error getting project count:', projectError)
