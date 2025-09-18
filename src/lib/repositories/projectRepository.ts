@@ -394,12 +394,24 @@ export class ProjectRepository {
     try {
       logger.debug('Saving project insights for project:', projectId, 'with', ideaCount, 'ideas')
 
+      // Get the next version number
+      const { data: existingInsights } = await supabase
+        .from('project_insights')
+        .select('version')
+        .eq('project_id', projectId)
+        .order('version', { ascending: false })
+        .limit(1)
+
+      const nextVersion = (existingInsights?.[0]?.version || 0) + 1
+      const insightsName = `Insights v${nextVersion} - ${new Date().toLocaleDateString()}`
+
       const insightData = {
         project_id: projectId,
+        version: nextVersion,
+        name: insightsName,
         insights_data: insights,
-        owner_id: userId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        created_by: userId,
+        ideas_analyzed: ideaCount
       }
 
       const { data, error } = await supabase
