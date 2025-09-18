@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Sparkles, History, Clock } from 'lucide-react'
+import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Sparkles, History, Clock, AlertTriangle, X, Cpu } from 'lucide-react'
 import { IdeaCard, Project, ProjectInsights as ProjectInsightsType, User } from '../../types'
 import { DatabaseService } from '../../lib/database'
 import AIInsightsModal from '../AIInsightsModal'
@@ -16,6 +16,8 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
   const [insightsHistory, setInsightsHistory] = useState<ProjectInsightsType[]>([])
   const [selectedInsightId, setSelectedInsightId] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
+  const [showWarning, setShowWarning] = useState(false)
+  const [selectedModel, setSelectedModel] = useState<'gpt-4o' | 'gpt-4o-mini'>('gpt-4o')
   // const [isLoadingHistory, setIsLoadingHistory] = useState(false)
 
   // Function to convert user ID to display name
@@ -72,6 +74,21 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
     loadInsightsHistory()
   }
 
+  const handleGenerateNewInsight = () => {
+    if (insightsHistory.length > 0) {
+      setShowWarning(true)
+    } else {
+      setSelectedInsightId(null)
+      setShowAIInsights(true)
+    }
+  }
+
+  const confirmGenerateNew = () => {
+    setShowWarning(false)
+    setSelectedInsightId(null)
+    setShowAIInsights(true)
+  }
+
   const handleViewHistoricalInsight = (insightId: string) => {
     setSelectedInsightId(insightId)
     setShowAIInsights(true)
@@ -121,23 +138,53 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
             <p className="text-slate-600">AI-powered insights and analytics from your Prioritas data</p>
           </div>
           
-          {/* Prominent AI Insights Button */}
-          <button 
-            onClick={() => {
-              setSelectedInsightId(null) // Create new insight
-              setShowAIInsights(true)
-            }}
-            disabled={ideas.length === 0}
-            className="flex items-center space-x-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-4 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 group"
-          >
-            <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-              <Sparkles className="w-6 h-6" />
+          {/* AI Controls Section */}
+          <div className="flex flex-col space-y-4">
+            {/* Model Selection Toggle */}
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 text-sm text-slate-600">
+                <Cpu className="w-4 h-4" />
+                <span className="font-medium">AI Model:</span>
+              </div>
+              <div className="flex bg-slate-100 rounded-lg p-1">
+                <button
+                  onClick={() => setSelectedModel('gpt-4o')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    selectedModel === 'gpt-4o'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  GPT-4o
+                </button>
+                <button
+                  onClick={() => setSelectedModel('gpt-4o-mini')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    selectedModel === 'gpt-4o-mini'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  GPT-4o Mini
+                </button>
+              </div>
             </div>
-            <div className="text-left">
-              <div className="font-bold text-lg">Generate AI Insights</div>
-              <div className="text-sm text-purple-100 font-medium">Strategic analysis & recommendations</div>
-            </div>
-          </button>
+
+            {/* Prominent AI Insights Button */}
+            <button
+              onClick={handleGenerateNewInsight}
+              disabled={ideas.length === 0}
+              className="flex items-center space-x-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-4 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 group"
+            >
+              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div className="text-left">
+                <div className="font-bold text-lg">Generate AI Insights</div>
+                <div className="text-sm text-purple-100 font-medium">Strategic analysis & recommendations</div>
+              </div>
+            </button>
+          </div>
         </div>
         
         {ideas.length === 0 && (
@@ -148,6 +195,57 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
           </div>
         )}
       </div>
+
+      {/* AI Insights History Section - Moved Higher for Prominence */}
+      {insightsHistory.length > 0 && (
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-50 rounded-xl">
+                <History className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">AI Insights History</h3>
+                <p className="text-sm text-slate-600">{insightsHistory.length} saved insight{insightsHistory.length !== 1 ? 's' : ''} - Access your previous reports here</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="text-slate-500 hover:text-slate-700 transition-colors"
+            >
+              {showHistory ? 'Hide' : 'Show'} History
+            </button>
+          </div>
+
+          {showHistory && (
+            <div className="space-y-3">
+              {insightsHistory.map((insight) => (
+                <div key={insight.id} className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-slate-900">{insight.name}</h4>
+                      <div className="flex items-center space-x-4 mt-1 text-sm text-slate-500">
+                        <span className="flex items-center space-x-1">
+                          <Clock className="w-3 h-3" />
+                          <span>{new Date(insight.created_at).toLocaleDateString()}</span>
+                        </span>
+                        <span>{insight.ideas_analyzed} ideas analyzed</span>
+                        <span>Version {insight.version}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleViewHistoricalInsight(insight.id)}
+                      className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      View
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Key Metrics Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -334,54 +432,39 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
         </div>
       </div>
 
-      {/* Insights History Section */}
-      {insightsHistory.length > 0 && (
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-50 rounded-xl">
-                <History className="w-5 h-5 text-purple-600" />
+      {/* Warning Dialog */}
+      {showWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md mx-4 shadow-2xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-2 bg-amber-50 rounded-xl">
+                <AlertTriangle className="w-6 h-6 text-amber-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">AI Insights History</h3>
-                <p className="text-sm text-slate-600">{insightsHistory.length} saved insight{insightsHistory.length !== 1 ? 's' : ''}</p>
+                <h3 className="text-lg font-semibold text-slate-900">Generate New AI Report?</h3>
+                <p className="text-sm text-slate-600">You have {insightsHistory.length} existing report{insightsHistory.length !== 1 ? 's' : ''}</p>
               </div>
             </div>
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className="text-slate-500 hover:text-slate-700 transition-colors"
-            >
-              {showHistory ? 'Hide' : 'Show'} History
-            </button>
-          </div>
-          
-          {showHistory && (
-            <div className="space-y-3">
-              {insightsHistory.map((insight) => (
-                <div key={insight.id} className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-slate-900">{insight.name}</h4>
-                      <div className="flex items-center space-x-4 mt-1 text-sm text-slate-500">
-                        <span className="flex items-center space-x-1">
-                          <Clock className="w-3 h-3" />
-                          <span>{new Date(insight.created_at).toLocaleDateString()}</span>
-                        </span>
-                        <span>{insight.ideas_analyzed} ideas analyzed</span>
-                        <span>Version {insight.version}</span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleViewHistoricalInsight(insight.id)}
-                      className="px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                    >
-                      View
-                    </button>
-                  </div>
-                </div>
-              ))}
+
+            <p className="text-slate-700 mb-6">
+              This will create a new AI insights report. You can always access your previous reports in the <strong>AI Insights History</strong> section above.
+            </p>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowWarning(false)}
+                className="flex-1 px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmGenerateNew}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Generate New
+              </button>
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -392,6 +475,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
         ideas={ideas}
         currentProject={currentProject}
         selectedInsightId={selectedInsightId || undefined}
+        preferredModel={selectedModel}
         onClose={() => {
           setShowAIInsights(false)
           setSelectedInsightId(null)

@@ -15,6 +15,7 @@ interface AIInsightsModalProps {
   ideas: IdeaCard[]
   currentProject: Project | null
   selectedInsightId?: string
+  preferredModel?: 'gpt-4o' | 'gpt-4o-mini'
   onClose: () => void
   onInsightSaved?: (insightId: string) => void
 }
@@ -36,7 +37,7 @@ interface InsightsReport {
   }
 }
 
-const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, currentProject, selectedInsightId, onClose }) => {
+const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, currentProject, selectedInsightId, preferredModel, onClose, onInsightSaved }) => {
 
   // Modern state management with shared hooks
   const [savedInsightId, setSavedInsightId] = useState<string | null>(null)
@@ -84,7 +85,8 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
         currentProject?.name,
         currentProject?.project_type,
         currentProject?.id,
-        currentProject
+        currentProject,
+        preferredModel
       )
 
       startTransition(() => {
@@ -155,7 +157,9 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
       onSuccess: (savedId) => {
         logger.debug('✅ Insights saved successfully:', savedId)
         setSavedInsightId(savedId)
-        // TODO: Add onInsightSaved callback when needed
+        if (onInsightSaved) {
+          onInsightSaved(savedId)
+        }
       },
       onError: (error) => logger.error('Failed to save insights:', error)
     }

@@ -115,7 +115,8 @@ export class AIInsightsService {
     projectName?: string,
     projectType?: string,
     projectId?: string,
-    currentProject?: any
+    currentProject?: any,
+    preferredModel?: 'gpt-4o' | 'gpt-4o-mini'
   ): Promise<InsightsReport> {
     logger.debug('🔍 Generating insights for', (ideas || []).length, 'ideas')
 
@@ -142,7 +143,18 @@ export class AIInsightsService {
       userTier: 'pro' // TODO: Get from user context
     }
 
-    const modelSelection = OpenAIModelRouter.selectModel(taskContext)
+    let modelSelection = OpenAIModelRouter.selectModel(taskContext)
+
+    // Override with preferred model if specified by user
+    if (preferredModel) {
+      logger.debug('🎛️ User selected model override:', preferredModel)
+      modelSelection = {
+        ...modelSelection,
+        model: preferredModel,
+        reasoning: `User selected ${preferredModel} for testing/comparison purposes. Original recommendation: ${modelSelection.model}`
+      }
+    }
+
     OpenAIModelRouter.logSelection(taskContext, modelSelection)
 
     // Create cache key from core parameters including model selection
