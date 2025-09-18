@@ -373,101 +373,10 @@ export class DatabaseService {
         },
         (payload) => {
           logger.debug('🔴 Real-time change detected:', payload.eventType)
-          
-          // Skip refresh for editing_at-only changes to prevent feedback loop
-          if (payload.eventType === 'UPDATE' && payload.old && payload.new) {
-            const oldData = payload.old
-            const newData = payload.new
-            
-            // Log what changed for debugging
-            const changedFields = Object.keys(newData).filter(key => {
-              return oldData[key] !== newData[key]
-            })
-            logger.debug('🔍 Changed fields:', changedFields)
-            
-            // SPECIAL CASE: Distinguish between lock-related changes and content changes
-            // Lock-only changes involve editing_at and/or editing_by (not updated_at alone)
-            const lockOnlyChange = changedFields.length > 0 && changedFields.every(field => 
-              field === 'editing_at' || field === 'editing_by'
-            ) && changedFields.some(field => field === 'editing_at' || field === 'editing_by')
-            
-            if (lockOnlyChange) {
-              // Allow initial lock changes (when editing_by changes between null and actual value)
-              const oldEditingBy = oldData.editing_by
-              const newEditingBy = newData.editing_by
-              const editingByChanged = oldEditingBy !== newEditingBy
-              const ideaId = newData.id || oldData.id
-              
-              logger.debug('🔍 Lock change analysis:', { 
-                editingByChanged, 
-                oldEditingBy, 
-                newEditingBy, 
-                changedFields,
-                ideaId
-              })
-              
-              // Initial lock: null -> user ID (allow)
-              // Release lock: user ID -> null (allow)
-              // Heartbeat update: user ID -> same user ID with only timestamp change (block)
-              const isInitialLockChange = editingByChanged && (
-                (oldEditingBy === null && newEditingBy !== null) || // Taking lock
-                (oldEditingBy !== null && newEditingBy === null)    // Releasing lock
-              )
-              
-              if (isInitialLockChange) {
-                logger.debug('🔓 ALLOWING refresh - initial lock change detected:', { 
-                  oldEditingBy, 
-                  newEditingBy,
-                  changedFields,
-                  ideaId
-                })
-                // Allow all editing_by changes through immediately - no delays or caching
-              } else {
-                logger.debug('🔒 BLOCKED refresh - heartbeat lock update detected:', { 
-                  changedFields, 
-                  editingByChanged, 
-                  oldEditingBy, 
-                  newEditingBy 
-                })
-                return // Block heartbeat updates
-              }
-            } else {
-              // Only run secondary filtering if not a lock-only change
-              // More robust check: compare all keys except timestamps AND locks
-              const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)])
-              const significantChanges = Array.from(allKeys).some(key => {
-                // Skip ALL lock and timestamp fields completely
-                if (key === 'editing_at' || key === 'updated_at' || key === 'editing_by') return false
-                
-                // Handle null vs undefined consistently
-                const oldValue = oldData[key]
-                const newValue = newData[key]
-                
-                // Both null/undefined - no change
-                if ((oldValue == null) && (newValue == null)) return false
-                
-                // One null, other not - significant change
-                if ((oldValue == null) !== (newValue == null)) return true
-                
-                // Both have values - compare them
-                const hasChanged = oldValue !== newValue
-                
-                // Log significant field changes for debugging
-                if (hasChanged) {
-                  logger.debug(`⚡ SIGNIFICANT CHANGE detected in field '${key}': '${oldValue}' → '${newValue}'`)
-                }
-                
-                return hasChanged
-              })
-              
-              if (!significantChanges) {
-                logger.debug('⏸️ BLOCKED refresh - no content changes detected:', changedFields)
-                return // CRITICAL: Block the callback completely
-              } else {
-                logger.debug('✅ ALLOWING refresh - content changes detected:', changedFields)
-              }
-            }
-          }
+
+          // TEMPORARY SIMPLIFIED VERSION to fix Supabase binding mismatch
+          // The complex filtering was causing "mismatch between server and client bindings" error
+          logger.debug('🔒 SIMPLIFIED: Allowing all real-time changes to fix subscription binding')
           
           logger.debug('✅ Real-time callback executing - refreshing ideas')
           
