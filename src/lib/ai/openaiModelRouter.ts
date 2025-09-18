@@ -59,9 +59,10 @@ export class OpenAIModelRouter {
     // Strategic insights require deep reasoning - use GPT-5 for best results
     if (type === 'strategic-insights') {
       const useGPT5 = complexity === 'high' || ideaCount > 15 || hasFiles || hasImages
+      const selectedModel = useGPT5 ? 'gpt-5' : 'gpt-5-mini'
       return {
-        model: useGPT5 ? 'gpt-5' : 'gpt-5-mini',
-        temperature: this.getTemperatureForTask(type, complexity),
+        model: selectedModel,
+        temperature: this.getTemperatureForTask(type, complexity, selectedModel),
         maxTokens: useGPT5 ? 8000 : 6000, // GPT-5 can handle more tokens
         reasoning: useGPT5
           ? 'Strategic insights with high complexity require GPT-5\'s advanced reasoning and built-in thinking.'
@@ -72,9 +73,10 @@ export class OpenAIModelRouter {
 
     // Risk assessment needs conservative, thorough analysis - use GPT-5 for best results
     if (type === 'risk-assessment') {
+      const selectedModel = complexity === 'high' ? 'gpt-5' : 'gpt-5-mini'
       return {
-        model: complexity === 'high' ? 'gpt-5' : 'gpt-5-mini',
-        temperature: 0.3, // Lower temperature for conservative analysis
+        model: selectedModel,
+        temperature: this.getTemperatureForTask(type, complexity, selectedModel),
         maxTokens: complexity === 'high' ? 7000 : 5000, // GPT-5 enhanced token limits
         reasoning: complexity === 'high'
           ? 'Complex risk assessment requires GPT-5\'s advanced reasoning for comprehensive coverage.'
@@ -86,9 +88,10 @@ export class OpenAIModelRouter {
     // Roadmap planning benefits from structured thinking - use GPT-5 for best results
     if (type === 'roadmap-planning') {
       const useAdvancedModel = complexity === 'high' || ideaCount > 10 || hasFiles
+      const selectedModel = useAdvancedModel ? 'gpt-5' : 'gpt-5-mini'
       return {
-        model: useAdvancedModel ? 'gpt-5' : 'gpt-5-mini',
-        temperature: 0.6,
+        model: selectedModel,
+        temperature: this.getTemperatureForTask(type, complexity, selectedModel),
         maxTokens: useAdvancedModel ? 5000 : 3500, // GPT-5 enhanced limits
         reasoning: useAdvancedModel
           ? 'Complex roadmap planning benefits from GPT-5\'s advanced reasoning and built-in thinking.'
@@ -99,9 +102,10 @@ export class OpenAIModelRouter {
 
     // Multimodal content (images/audio) - GPT-5 excels at multimodal analysis
     if (hasImages || hasAudio) {
+      const selectedModel = 'gpt-5'
       return {
-        model: 'gpt-5',
-        temperature: this.getTemperatureForTask(type, complexity),
+        model: selectedModel,
+        temperature: this.getTemperatureForTask(type, complexity, selectedModel),
         maxTokens: 6000, // GPT-5 enhanced multimodal capacity
         reasoning: 'Multimodal content analysis benefits from GPT-5\'s advanced image and audio understanding.',
         cost: 'medium'
@@ -111,9 +115,10 @@ export class OpenAIModelRouter {
     // Idea generation benefits from GPT-5's creative thinking
     if (type === 'idea-generation') {
       const useAdvancedModel = complexity === 'high' || ideaCount > 15 || userTier === 'enterprise'
+      const selectedModel = useAdvancedModel ? 'gpt-5' : 'gpt-5-mini'
       return {
-        model: useAdvancedModel ? 'gpt-5' : 'gpt-5-mini',
-        temperature: 1.0, // High creativity for idea generation
+        model: selectedModel,
+        temperature: this.getTemperatureForTask(type, complexity, selectedModel),
         maxTokens: useAdvancedModel ? 4000 : 2500, // GPT-5 enhanced creative output
         reasoning: useAdvancedModel
           ? 'Complex idea generation benefits from GPT-5\'s advanced creative reasoning.'
@@ -124,9 +129,10 @@ export class OpenAIModelRouter {
 
     // Quick analysis and content enhancement - GPT-5 Mini is perfect
     if (type === 'quick-analysis' || type === 'content-enhancement') {
+      const selectedModel = 'gpt-5-mini'
       return {
-        model: 'gpt-5-mini',
-        temperature: this.getTemperatureForTask(type, complexity),
+        model: selectedModel,
+        temperature: this.getTemperatureForTask(type, complexity, selectedModel),
         maxTokens: 2500, // GPT-5 Mini enhanced capacity
         reasoning: 'Quick analysis and content enhancement benefit from GPT-5 Mini\'s efficiency and capability.',
         cost: 'low'
@@ -134,9 +140,10 @@ export class OpenAIModelRouter {
     }
 
     // Default fallback - use GPT-5 Mini for unknown tasks (since it's performing well)
+    const defaultModel = 'gpt-5-mini'
     return {
-      model: 'gpt-5-mini',
-      temperature: 0.7,
+      model: defaultModel,
+      temperature: this.getTemperatureForTask(type, complexity, defaultModel),
       maxTokens: 3000, // GPT-5 Mini enhanced default
       reasoning: 'Default routing to GPT-5 Mini for optimal performance and cost-effectiveness.',
       cost: 'low'
@@ -144,9 +151,21 @@ export class OpenAIModelRouter {
   }
 
   /**
-   * Get optimal temperature based on task type and complexity
+   * Check if a model is a GPT-5 or O-series model with parameter restrictions
    */
-  private static getTemperatureForTask(type: AITaskType, complexity: 'low' | 'medium' | 'high'): number {
+  private static isGPT5Model(model: OpenAIModel): boolean {
+    return model.startsWith('gpt-5') || model.startsWith('o1') || model.startsWith('o3') || model.startsWith('o4')
+  }
+
+  /**
+   * Get optimal temperature based on task type, complexity, and model capabilities
+   */
+  private static getTemperatureForTask(type: AITaskType, complexity: 'low' | 'medium' | 'high', model?: OpenAIModel): number {
+    // GPT-5 models only support default temperature (1)
+    if (model && this.isGPT5Model(model)) {
+      return 1
+    }
+
     const baseTemperatures: Record<AITaskType, number> = {
       'strategic-insights': 0.7,     // Balanced creativity and accuracy
       'idea-generation': 1.0,        // High creativity

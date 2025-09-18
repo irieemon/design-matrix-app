@@ -324,9 +324,9 @@ Be specific about THIS project - not generic business advice.`
   }
 
   // Use smart model selection or fallback to defaults
-  const requestedModel = modelSelection?.model || 'gpt-4o'
+  const requestedModel = modelSelection?.model || 'gpt-5'
   const selectedModel = mapModelToOpenAI(requestedModel)
-  const selectedTemperature = modelSelection?.temperature || getRandomTemperature()
+  const selectedTemperature = modelSelection?.temperature || getRandomTemperature(selectedModel)
   const selectedMaxTokens = modelSelection?.maxTokens || 4000
 
   console.log('🔄 OPENAI: Model mapping:', {
@@ -350,13 +350,22 @@ Be specific about THIS project - not generic business advice.`
 
   console.log('🌐 OPENAI: Making API call to OpenAI...')
 
-  // GPT-5 models use max_completion_tokens instead of max_tokens
+  // GPT-5 models have stricter parameter requirements
   const isGPT5Model = selectedModel.startsWith('gpt-5') || selectedModel.startsWith('o1') || selectedModel.startsWith('o3') || selectedModel.startsWith('o4')
+
+  // Handle token parameters: GPT-5 uses max_completion_tokens, older models use max_tokens
   const tokenParams = isGPT5Model
     ? { max_completion_tokens: selectedMaxTokens }
     : { max_tokens: selectedMaxTokens }
 
-  console.log('🔧 OPENAI: Token parameter used:', isGPT5Model ? 'max_completion_tokens' : 'max_tokens', 'for model:', selectedModel)
+  // Handle temperature parameters: GPT-5 only supports default temperature (1)
+  const temperatureParams = isGPT5Model
+    ? {} // Omit temperature to use default (1) for GPT-5
+    : { temperature: selectedTemperature }
+
+  console.log('🔧 OPENAI: Parameter adjustments for model:', selectedModel)
+  console.log('🔧 OPENAI: Token parameter:', isGPT5Model ? 'max_completion_tokens' : 'max_tokens')
+  console.log('🔧 OPENAI: Temperature handling:', isGPT5Model ? 'default (1)' : `custom (${selectedTemperature})`)
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -368,7 +377,7 @@ Be specific about THIS project - not generic business advice.`
       model: selectedModel,
       seed: Math.floor(Math.random() * 1000000),
       messages: messages,
-      temperature: selectedTemperature,
+      ...temperatureParams,
       ...tokenParams,
     }),
   })
@@ -880,7 +889,13 @@ async function processCachedFileAnalysis(documentContext: any[] = []) {
 }
 
 // Dynamic prompt variation helpers to reduce repetitive AI responses
-function getRandomTemperature(): number {
+function getRandomTemperature(model?: string): number {
+  // GPT-5 models only support default temperature (1)
+  if (model && (model.startsWith('gpt-5') || model.startsWith('o1') || model.startsWith('o3') || model.startsWith('o4'))) {
+    return 1
+  }
+
+  // For older models, use varied temperatures
   const temperatures = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
   return temperatures[Math.floor(Math.random() * temperatures.length)]
 }
