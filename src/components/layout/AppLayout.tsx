@@ -146,8 +146,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({
       </div>
 
       {/* Modals */}
-      {showAddModal && addIdea && (
-        <AddIdeaModal 
+      {addIdea && (
+        <AddIdeaModal
+          isOpen={showAddModal}
           onClose={() => setShowAddModal(false)}
           onAdd={addIdea}
           currentUser={currentUser}
@@ -163,9 +164,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({
         />
       )}
 
-      {editingIdea && updateIdea && deleteIdea && (
-        <EditIdeaModal 
+      {updateIdea && deleteIdea && (
+        <EditIdeaModal
           idea={editingIdea}
+          isOpen={!!editingIdea}
           currentUser={currentUser}
           onClose={() => setEditingIdea(null)}
           onUpdate={updateIdea}

@@ -1,4 +1,5 @@
 import React, { useState, lazy, Suspense } from 'react'
+import { useAsyncOperation } from '../hooks/shared/useAsyncOperation'
 import { Users, Monitor, Smartphone, TrendingUp, Settings, BarChart3, Plus, Database, Loader, Grid3X3, Map } from 'lucide-react'
 import FeatureDetailModal from './FeatureDetailModal'
 import { sampleMarketingRoadmap, sampleSoftwareRoadmap, sampleEventRoadmap } from '../utils/sampleRoadmapData'
@@ -52,10 +53,32 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   viewMode = 'timeline',
   onViewModeChange
 }) => {
-  const [selectedFeature, setSelectedFeature] = useState<RoadmapFeature | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  // Modal state management with useAsyncOperation
+  const modalOperation = useAsyncOperation(
+    async (feature?: RoadmapFeature | null) => {
+      return { selectedFeature: feature || null, isOpen: !!feature }
+    }
+  )
+
+  // Features management with useAsyncOperation
+  const featuresOperation = useAsyncOperation(
+    async (newFeatures: RoadmapFeature[]) => {
+      if (onFeaturesChange) {
+        onFeaturesChange(newFeatures)
+      }
+      return newFeatures
+    }
+  )
+
+  // Initialize features on mount
+  React.useEffect(() => {
+    if (initialFeatures.length > 0 && !featuresOperation.state.data) {
+      featuresOperation.execute(initialFeatures)
+    }
+  }, [])
+
+  // Simple UI interaction states remain as useState
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
-  const [features, setFeatures] = useState<RoadmapFeature[]>(initialFeatures)
   const [draggedFeature, setDraggedFeature] = useState<RoadmapFeature | null>(null)
   const [isResizing, setIsResizing] = useState<string | null>(null)
 
@@ -65,30 +88,30 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
     // 1. It's the initial load (features array is empty)
     // 2. The number of features has changed (features added/removed)
     // 3. User is not currently interacting (not resizing or dragging)
+    const currentFeatures = featuresOperation.state.data || []
     const shouldUpdate = !isResizing && !draggedFeature && (
-      features.length === 0 ||
-      features.length !== initialFeatures.length ||
-      !features.every(f => initialFeatures.some(inf => inf.id === f.id))
+      currentFeatures.length === 0 ||
+      currentFeatures.length !== initialFeatures.length ||
+      !currentFeatures.every(f => initialFeatures.some(inf => inf.id === f.id))
     )
 
     if (shouldUpdate) {
-      setFeatures(initialFeatures)
+      featuresOperation.execute(initialFeatures)
     }
-  }, [initialFeatures, isResizing, draggedFeature, features.length])
+  }, [initialFeatures, isResizing, draggedFeature, featuresOperation.state.data?.length])
 
   const handleFeatureClick = (feature: RoadmapFeature) => {
-    setSelectedFeature(feature)
-    setIsModalOpen(true)
+    modalOperation.execute(feature)
   }
 
   const handleCloseModal = () => {
-    setIsModalOpen(false)
-    setSelectedFeature(null)
+    modalOperation.execute(null)
   }
 
   const handleSaveFeature = (updatedFeature: RoadmapFeature) => {
+    const currentFeatures = featuresOperation.state.data || []
     let updatedFeatures: RoadmapFeature[]
-    
+
     // Check if this is a new feature (temp id) or existing
     if (updatedFeature.id.startsWith('temp-')) {
       // Create new feature with real ID
@@ -96,32 +119,25 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
         ...updatedFeature,
         id: `feature-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       }
-      updatedFeatures = [...features, newFeature]
+      updatedFeatures = [...currentFeatures, newFeature]
     } else {
       // Update existing feature
-      updatedFeatures = features.map(f => 
+      updatedFeatures = currentFeatures.map((f: RoadmapFeature) =>
         f.id === updatedFeature.id ? updatedFeature : f
       )
     }
-    
-    setFeatures(updatedFeatures)
-    
-    if (onFeaturesChange) {
-      onFeaturesChange(updatedFeatures)
-    }
+
+    featuresOperation.execute(updatedFeatures)
   }
 
   const handleDeleteFeature = (featureId: string) => {
-    const updatedFeatures = features.filter(f => f.id !== featureId)
-    setFeatures(updatedFeatures)
-    if (onFeaturesChange) {
-      onFeaturesChange(updatedFeatures)
-    }
+    const currentFeatures = featuresOperation.state.data || []
+    const updatedFeatures = currentFeatures.filter((f: RoadmapFeature) => f.id !== featureId)
+    featuresOperation.execute(updatedFeatures)
   }
 
   const handleCreateFeature = () => {
-    setSelectedFeature(null) // Create mode with no selected feature
-    setIsModalOpen(true)
+    modalOperation.execute(null) // Create mode with no selected feature
   }
 
   const handleLoadSampleData = () => {
@@ -146,10 +162,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
     
     console.log('Sample data to load:', sampleData)
     
-    setFeatures(sampleData)
-    if (onFeaturesChange) {
-      onFeaturesChange(sampleData)
-    }
+    featuresOperation.execute(sampleData)
     
     console.log('Sample data loaded, features count:', sampleData.length)
   }
@@ -169,14 +182,14 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
     e.preventDefault()
     if (!draggedFeature) return
 
-    const updatedFeatures = features.map(feature => 
-      feature.id === draggedFeature.id 
+    const currentFeatures = featuresOperation.state.data || []
+    const updatedFeatures = currentFeatures.map((feature: RoadmapFeature) =>
+      feature.id === draggedFeature.id
         ? { ...feature, team: targetTeamId, startMonth: targetMonth }
         : feature
     )
-    
-    setFeatures(updatedFeatures)
-    onFeaturesChange?.(updatedFeatures)
+
+    featuresOperation.execute(updatedFeatures)
     setDraggedFeature(null)
   }
 
@@ -188,7 +201,8 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
     
     const handleMouseMove = (e: MouseEvent) => {
       // Calculate new duration based on mouse position
-      const feature = features.find(f => f.id === featureId)
+      const currentFeatures = featuresOperation.state.data || []
+      const feature = currentFeatures.find(f => f.id === featureId)
       if (!feature) return
 
       const rect = (e.target as HTMLElement).closest('.timeline-container')?.getBoundingClientRect()
@@ -200,19 +214,17 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
       
       if (direction === 'right') {
         const newDuration = Math.max(1, newMonth - feature.startMonth + 1)
-        const updatedFeatures = features.map(f => 
+        const updatedFeatures = currentFeatures.map((f: RoadmapFeature) =>
           f.id === featureId ? { ...f, duration: newDuration } : f
         )
-        setFeatures(updatedFeatures)
-        onFeaturesChange?.(updatedFeatures)
+        featuresOperation.execute(updatedFeatures)
       } else {
         const newStartMonth = Math.max(0, newMonth)
         const newDuration = feature.duration + (feature.startMonth - newStartMonth)
-        const updatedFeatures = features.map(f => 
+        const updatedFeatures = currentFeatures.map((f: RoadmapFeature) =>
           f.id === featureId ? { ...f, startMonth: newStartMonth, duration: Math.max(1, newDuration) } : f
         )
-        setFeatures(updatedFeatures)
-        onFeaturesChange?.(updatedFeatures)
+        featuresOperation.execute(updatedFeatures)
       }
     }
 
@@ -229,7 +241,8 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   // Generate contextual team lanes based on project type and features
   const getContextualTeamLanes = (): TeamLane[] => {
     const type = projectType.toLowerCase()
-    const teamIds = new Set(features.map(f => f.team))
+    const currentFeatures = featuresOperation.state.data || []
+    const teamIds = new Set<string>(currentFeatures.map((f: RoadmapFeature) => f.team))
     
     if (type.includes('software') || type.includes('app') || type.includes('platform') || type.includes('system')) {
       // Software development teams
@@ -405,7 +418,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
         'measurement': { name: 'MEASUREMENT TEAM', icon: BarChart3, color: 'text-green-600', bgColor: 'bg-green-50' }
       }
       
-      teamIds.forEach(teamId => {
+      teamIds.forEach((teamId: string) => {
         const teamConfig = teamMapping[teamId as keyof typeof teamMapping]
         if (teamConfig) {
           teams.push({
@@ -429,20 +442,22 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   
   // Debug: Log all features and their teams
   React.useEffect(() => {
-    console.log('🎯 All features:', features.map(f => ({ id: f.id, title: f.title, team: f.team })))
+    const currentFeatures = featuresOperation.state.data || []
+    console.log('🎯 All features:', currentFeatures.map((f: RoadmapFeature) => ({ id: f.id, title: f.title, team: f.team })))
     console.log('🏢 Available teams:', teamLanes.map(t => ({ id: t.id, name: t.name })))
-  }, [features, teamLanes])
+  }, [featuresOperation.state.data, teamLanes])
   
 
   // Calculate smart timeline duration based on features
   const calculateTimelineDuration = () => {
-    if (features.length === 0) {
+    const currentFeatures = featuresOperation.state.data || []
+    if (currentFeatures.length === 0) {
       return 6 // Default to 6 months when no features
     }
-    
+
     // Find the latest end date among all features
     const latestEndMonth = Math.max(
-      ...features.map(feature => feature.startMonth + feature.duration)
+      ...currentFeatures.map((feature: RoadmapFeature) => feature.startMonth + feature.duration)
     )
     
     // Add 2 months buffer as requested
@@ -476,7 +491,8 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
 
   // Get features for a specific team
   const getFeaturesForTeam = (teamId: string) => {
-    return features.filter(feature => feature.team === teamId)
+    const currentFeatures = featuresOperation.state.data || []
+    return currentFeatures.filter((feature: RoadmapFeature) => feature.team === teamId)
   }
 
   // Calculate non-overlapping row positions for features
@@ -629,7 +645,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
               <Plus className="w-4 h-4" />
               <span>Add Feature</span>
             </button>
-            {features.length === 0 && (
+            {(featuresOperation.state.data?.length === 0) && (
               <button
                 onClick={handleLoadSampleData}
                 className="flex items-center space-x-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 rounded-xl text-white transition-all shadow-sm hover:shadow-md text-sm font-medium"
@@ -716,7 +732,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
                 <div className="relative h-full px-2 pt-2">
                   {(() => {
                     const featureRows = calculateFeatureRows(teamFeatures)
-                    return teamFeatures.map((feature) => {
+                    return teamFeatures.map((feature: RoadmapFeature) => {
                       const styles = getFeatureStyles(feature.priority, feature.status)
                       const position = getFeaturePosition(feature)
                       
@@ -806,14 +822,14 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
       </div>
 
       {/* Feature Detail Modal */}
-      <FeatureDetailModal 
-        feature={selectedFeature}
-        isOpen={isModalOpen}
+      <FeatureDetailModal
+        feature={(modalOperation.state.data as any)?.selectedFeature || null}
+        isOpen={(modalOperation.state.data as any)?.isOpen || false}
         onClose={handleCloseModal}
         onSave={handleSaveFeature}
         onDelete={handleDeleteFeature}
         startDate={startDate}
-        mode={selectedFeature ? 'edit' : 'create'}
+        mode={(modalOperation.state.data as any)?.selectedFeature ? 'edit' : 'create'}
         availableTeams={teamLanes.map(team => team.id)}
         projectType={projectType}
       />
@@ -831,7 +847,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
           <RoadmapExportModal 
             isOpen={isExportModalOpen}
             onClose={() => setIsExportModalOpen(false)}
-            features={features}
+            features={featuresOperation.state.data || []}
             title={title}
             subtitle={subtitle}
             startDate={startDate}

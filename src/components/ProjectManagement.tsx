@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, FolderOpen, Calendar, Users, DollarSign, Edit2, Trash2, Archive, MoreVertical, Search, Filter, Sparkles } from 'lucide-react'
 import { Project, IdeaCard, ProjectType, User } from '../types'
-import { DatabaseService } from '../lib/database'
+import { ProjectRepository } from '../lib/repositories'
 import ProjectStartupFlow from './ProjectStartupFlow'
 import AIStarterModal from './AIStarterModal'
 import { logger } from '../utils/logger'
@@ -62,7 +62,14 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
     }
     
     // Subscribe to real-time project updates
-    const unsubscribe = DatabaseService.subscribeToProjects(setProjects)
+    const unsubscribe = ProjectRepository.subscribeToProjects(
+      (projects) => {
+        if (projects) {
+          setProjects(projects)
+        }
+      },
+      currentUser?.id
+    )
     
     return unsubscribe
   }, [currentUser?.id])
@@ -75,7 +82,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
       // Test both approaches: database first, then fallback to test data
       try {
         logger.debug('🔄 Attempting database query...')
-        const userProjects = await DatabaseService.getUserOwnedProjects(currentUser.id)
+        const userProjects = await ProjectRepository.getUserOwnedProjects(currentUser.id)
         logger.debug('✅ Database query succeeded! Projects:', userProjects.length)
         
         if (userProjects.length > 0) {
@@ -162,7 +169,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
 
   const handleUpdateProjectStatus = async (projectId: string, status: Project['status']) => {
     try {
-      const updatedProject = await DatabaseService.updateProject(projectId, { status })
+      const updatedProject = await ProjectRepository.updateProject(projectId, { status })
       if (updatedProject) {
         setProjects(prev => prev.map(p => p.id === projectId ? updatedProject : p))
       }
@@ -180,7 +187,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
   const confirmDeleteProject = async () => {
     const { project } = showDeleteConfirm
     try {
-      const success = await DatabaseService.deleteProject(project.id)
+      const success = await ProjectRepository.deleteProject(project.id)
       if (success) {
         setProjects(prev => prev.filter(p => p.id !== project.id))
         if (currentProject?.id === project.id) {

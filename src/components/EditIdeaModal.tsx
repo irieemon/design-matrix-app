@@ -1,33 +1,37 @@
 import { useState, useEffect } from 'react'
-import { X, Edit3, Trash2 } from 'lucide-react'
+import { Edit3, Trash2 } from 'lucide-react'
 import { IdeaCard, User } from '../types'
-import { DatabaseService } from '../lib/database'
+import { IdeaRepository } from '../lib/repositories'
 import { useToast } from '../contexts/ToastContext'
+import { BaseModal } from './shared'
 
 interface EditIdeaModalProps {
-  idea: IdeaCard
+  idea: IdeaCard | null
+  isOpen: boolean
   currentUser: User | null
   onClose: () => void
   onUpdate: (idea: IdeaCard) => void
   onDelete: (ideaId: string) => void
 }
 
-const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClose, onUpdate, onDelete }) => {
+const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser, onClose, onUpdate, onDelete }) => {
   const { showWarning } = useToast()
-  const [content, setContent] = useState(idea.content)
-  const [details, setDetails] = useState(idea.details || '')
-  const [x] = useState(idea.x)
-  const [y] = useState(idea.y)
-  const [priority, setPriority] = useState(idea.priority)
+  const [content, setContent] = useState(idea?.content || '')
+  const [details, setDetails] = useState(idea?.details || '')
+  const [x] = useState(idea?.x || 260)
+  const [y] = useState(idea?.y || 260)
+  const [priority, setPriority] = useState<IdeaCard['priority']>(idea?.priority || 'moderate')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
 
   // Lock the idea when modal opens (only once)
   useEffect(() => {
+    if (!idea || !isOpen) return
+
     let shouldUnlock = false
-    
+
     const lockIdea = async () => {
-      const locked = await DatabaseService.lockIdeaForEditing(idea.id, currentUser?.id || '')
+      const locked = await IdeaRepository.lockIdeaForEditing(idea.id, currentUser?.id || '')
       setIsLocked(locked)
       shouldUnlock = locked // Set flag for cleanup
       
@@ -43,14 +47,16 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
     // Cleanup: unlock when modal closes
     return () => {
       if (shouldUnlock) {
-        DatabaseService.unlockIdea(idea.id, currentUser?.id || '')
+        IdeaRepository.unlockIdea(idea.id, currentUser?.id || '')
       }
     }
-  }, []) // Empty dependency array - only run on mount/unmount
+  }, [idea?.id, isOpen]) // Re-run if idea changes or modal opens
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!content.trim()) return
+
+    if (!idea) return
 
     // Update the idea with unlock data included
     onUpdate({
@@ -69,36 +75,33 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
 
   const handleCancel = async () => {
     // Explicitly unlock before closing
-    if (isLocked) {
-      await DatabaseService.unlockIdea(idea.id, currentUser?.id || '')
+    if (isLocked && idea) {
+      await IdeaRepository.unlockIdea(idea.id, currentUser?.id || '')
       setIsLocked(false)
     }
     onClose()
   }
 
   const handleDelete = () => {
+    if (!idea) return
     onDelete(idea.id)
   }
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <Edit3 className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Edit Idea</h2>
-          </div>
-          <button
-            onClick={handleCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+  if (!idea) return null
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+  return (
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleCancel}
+      title="Edit Idea"
+      size="xl"
+    >
+      <div className="flex items-center space-x-3 mb-6">
+        <Edit3 className="w-5 h-5 text-blue-600" />
+        <p className="text-slate-600">Edit your idea details and priority</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* Idea Title */}
           <div>
@@ -212,9 +215,8 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, currentUser, onClos
               </button>
             </div>
           )}
-        </form>
-      </div>
-    </div>
+      </form>
+    </BaseModal>
   )
 }
 

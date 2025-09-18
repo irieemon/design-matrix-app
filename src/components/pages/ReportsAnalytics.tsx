@@ -387,18 +387,17 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
 
 
       {/* AI Insights Modal */}
-      {showAIInsights && (
-        <AIInsightsModal 
-          ideas={ideas}
-          currentProject={currentProject}
-          selectedInsightId={selectedInsightId || undefined}
-          onClose={() => {
-            setShowAIInsights(false)
-            setSelectedInsightId(null)
-          }}
-          onInsightSaved={handleInsightSaved}
-        />
-      )}
+      <AIInsightsModal
+        isOpen={showAIInsights}
+        ideas={ideas}
+        currentProject={currentProject}
+        selectedInsightId={selectedInsightId || undefined}
+        onClose={() => {
+          setShowAIInsights(false)
+          setSelectedInsightId(null)
+        }}
+        onInsightSaved={handleInsightSaved}
+      />
     </div>
   )
 }

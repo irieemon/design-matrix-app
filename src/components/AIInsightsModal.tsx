@@ -1,15 +1,17 @@
 import { useState, useEffect, useTransition } from 'react'
-import { createPortal } from 'react-dom'
-import { X, Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Calendar, Users, Lightbulb, Download, Save, FileText } from 'lucide-react'
+import { Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Download, Save, FileText, Lightbulb } from 'lucide-react'
 import { IdeaCard, Project, ProjectFile } from '../types'
-import { aiService } from '../lib/aiService'
-import { DatabaseService } from '../lib/database'
+import { aiInsightsService } from '../lib/ai/aiInsightsService'
 import { FileService } from '../lib/fileService'
 import { exportInsightsToPDFProfessional } from '../utils/pdfExportSimple'
 import { useAIWorker } from '../hooks/useAIWorker'
+import { useAsyncOperation } from '../hooks/shared/useAsyncOperation'
+import { BaseModal } from './shared/Modal'
+import { ProjectRepository } from '../lib/repositories'
 import { logger } from '../utils/logger'
 
 interface AIInsightsModalProps {
+  isOpen: boolean
   ideas: IdeaCard[]
   currentProject: Project | null
   selectedInsightId?: string
@@ -28,60 +30,150 @@ interface InsightsReport {
     shortTerm: string[]
     longTerm: string[]
   }
-  riskAssessment: {
-    highRisk: string[]
-    opportunities: string[]
+  riskAssessment?: {
+    risks: string[]
+    mitigations: string[]
   }
-  suggestedRoadmap: Array<{
-    phase: string
-    duration: string
-    focus: string
-    ideas: string[]
-  }>
-  resourceAllocation: {
-    quickWins: string
-    strategic: string
-  }
-  futureEnhancements: Array<{
-    title: string
-    description: string
-    relatedIdea?: string
-    impact: 'high' | 'medium' | 'low'
-    timeframe: string
-  }>
-  nextSteps: string[]
 }
 
-const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject, selectedInsightId, onClose, onInsightSaved }) => {
-  
-  // Premium AI experience state management
-  const [isLoading, setIsLoading] = useState(true)
-  const [insights, setInsights] = useState<InsightsReport | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isHistorical, setIsHistorical] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
+const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, currentProject, selectedInsightId, onClose }) => {
+
+  // Modern state management with shared hooks
   const [savedInsightId, setSavedInsightId] = useState<string | null>(null)
   const [filesWithContent, setFilesWithContent] = useState<ProjectFile[]>([])
-  
+
   // React 19 Concurrent Features for premium experience
   const [, startTransition] = useTransition()
   const [aiProgress, setAiProgress] = useState(0)
   const [aiStage, setAiStage] = useState<'analyzing' | 'synthesizing' | 'optimizing' | 'finalizing' | 'complete'>('analyzing')
   const [processingSteps, setProcessingSteps] = useState<string[]>([])
   const [estimatedTime, setEstimatedTime] = useState<number>(0)
+
+  // Insights generation with unified async operation management
+  const insightsOperation = useAsyncOperation(
+    async () => {
+      logger.debug('🔍 Generating AI insights for', (ideas || []).length, 'ideas...')
+
+      // Enhanced progress tracking
+      startTransition(() => {
+        setAiStage('analyzing')
+        setAiProgress(5)
+        setProcessingSteps(['🔍 Analyzing idea patterns and relationships'])
+        setEstimatedTime(12)
+      })
+
+      // Simulate progressive analysis steps
+      await new Promise(resolve => setTimeout(resolve, 800))
+      startTransition(() => {
+        setAiProgress(25)
+        setProcessingSteps(prev => [...prev, '🧠 Synthesizing insights from analysis'])
+        setEstimatedTime(8)
+      })
+
+      await new Promise(resolve => setTimeout(resolve, 600))
+      startTransition(() => {
+        setAiStage('synthesizing')
+        setAiProgress(50)
+        setProcessingSteps(prev => [...prev, '⚡ Optimizing recommendation priorities'])
+        setEstimatedTime(4)
+      })
+
+      // Call the new modular AI insights service
+      const report = await aiInsightsService.generateInsights(
+        ideas,
+        currentProject?.name,
+        currentProject?.project_type,
+        currentProject?.id,
+        currentProject
+      )
+
+      startTransition(() => {
+        setAiProgress(100)
+        setAiStage('complete')
+        setProcessingSteps(prev => [...prev, '✅ Insights generation complete'])
+        setEstimatedTime(0)
+      })
+
+      return report
+    },
+    {
+      onError: (error) => {
+        logger.error('Insights generation failed:', error)
+        startTransition(() => {
+          setAiProgress(0)
+          setAiStage('analyzing')
+          setProcessingSteps([])
+        })
+      },
+      resetOnExecute: true
+    }
+  )
+
+  // Historical insights loading
+  const historicalOperation = useAsyncOperation(
+    async (insightId: string) => {
+      logger.debug('📊 Loading historical insight:', insightId)
+      const historicalInsight = await ProjectRepository.getProjectInsight(insightId)
+
+      if (!historicalInsight) {
+        throw new Error('Insight not found')
+      }
+
+      return historicalInsight.insights_data
+    },
+    {
+      onSuccess: () => {
+        if (selectedInsightId) {
+          setSavedInsightId(selectedInsightId)
+        }
+      },
+      onError: (error) => logger.error('Error loading historical insight:', error)
+    }
+  )
+
+  // Insights saving operation
+  const saveOperation = useAsyncOperation(
+    async (insights: InsightsReport) => {
+      if (!currentProject) {
+        throw new Error('No project selected')
+      }
+
+      const savedId = await ProjectRepository.saveProjectInsights(
+        currentProject.id,
+        insights,
+        currentProject.owner_id || 'unknown',
+        (ideas || []).length
+      )
+
+      if (!savedId) {
+        throw new Error('Failed to save insights')
+      }
+
+      return savedId
+    },
+    {
+      onSuccess: (savedId) => {
+        logger.debug('✅ Insights saved successfully:', savedId)
+        setSavedInsightId(savedId)
+        // TODO: Add onInsightSaved callback when needed
+      },
+      onError: (error) => logger.error('Failed to save insights:', error)
+    }
+  )
+
   // Web Worker integration for premium performance
   const { } = useAIWorker()
 
   useEffect(() => {
     // Load project files first
     loadProjectFiles()
-    
+
     if (selectedInsightId) {
       // Load historical insight
-      loadHistoricalInsight(selectedInsightId)
+      historicalOperation.execute(selectedInsightId)
     } else {
       // Generate new insights
-      generateInsights()
+      insightsOperation.execute()
     }
   }, [ideas, selectedInsightId])
 
@@ -139,179 +231,9 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
     }
   }
 
-  const loadHistoricalInsight = async (insightId: string) => {
-    setIsLoading(true)
-    setError(null)
-    setIsHistorical(true)
-    
-    try {
-      logger.debug('📊 Loading historical insight:', insightId)
-      const historicalInsight = await DatabaseService.getProjectInsight(insightId)
-      
-      if (historicalInsight) {
-        setInsights(historicalInsight.insights_data)
-        setSavedInsightId(insightId)
-        logger.debug('✅ Loaded historical insight successfully')
-      } else {
-        throw new Error('Insight not found')
-      }
-    } catch (err) {
-      logger.error('Error loading historical insight:', err)
-      setError('Failed to load historical insight. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const generateInsights = async () => {
-    setError(null)
-    setIsHistorical(false)
-    
-    // Start the premium AI processing experience
-    startTransition(() => {
-      setIsLoading(true)
-      setAiProgress(0)
-      setAiStage('analyzing')
-      setProcessingSteps([])
-      setEstimatedTime(15) // Start with 15 second estimate
-    })
-    
-    try {
-      logger.debug('🔍 Generating AI insights for', (ideas || []).length, 'ideas...')
-      
-      // Stage 1: Analysis (0-25%)
-      startTransition(() => {
-        setAiStage('analyzing')
-        setAiProgress(5)
-        setProcessingSteps(['🔍 Analyzing idea patterns and relationships'])
-        setEstimatedTime(12)
-      })
-      
-      // Simulate progressive analysis steps
-      await new Promise(resolve => setTimeout(resolve, 800))
-      startTransition(() => {
-        setAiProgress(15)
-        setProcessingSteps(prev => [...prev, '📊 Evaluating priority and impact scores'])
-        setEstimatedTime(10)
-      })
-      
-      await new Promise(resolve => setTimeout(resolve, 600))
-      startTransition(() => {
-        setAiProgress(25)
-        setProcessingSteps(prev => [...prev, '🎯 Identifying strategic patterns'])
-        setEstimatedTime(8)
-      })
-      
-      // Stage 2: Synthesis (25-50%)
-      startTransition(() => {
-        setAiStage('synthesizing')
-        setAiProgress(30)
-        setProcessingSteps(prev => [...prev, '🧠 Synthesizing insights from analysis'])
-        setEstimatedTime(7)
-      })
-      
-      await new Promise(resolve => setTimeout(resolve, 700))
-      startTransition(() => {
-        setAiProgress(40)
-        setProcessingSteps(prev => [...prev, '🔗 Connecting themes and opportunities'])
-        setEstimatedTime(5)
-      })
-      
-      await new Promise(resolve => setTimeout(resolve, 500))
-      startTransition(() => {
-        setAiProgress(50)
-        setProcessingSteps(prev => [...prev, '📈 Generating strategic recommendations'])
-        setEstimatedTime(4)
-      })
-      
-      // Stage 3: Optimization (50-75%)
-      startTransition(() => {
-        setAiStage('optimizing')
-        setAiProgress(55)
-        setProcessingSteps(prev => [...prev, '⚡ Optimizing recommendation priorities'])
-        setEstimatedTime(3)
-      })
-      
-      // Call the actual AI service
-      const report = await aiService.generateInsights(
-        ideas, 
-        currentProject?.name, 
-        currentProject?.project_type, 
-        currentProject?.id,
-        currentProject
-      )
-      
-      await new Promise(resolve => setTimeout(resolve, 400))
-      startTransition(() => {
-        setAiProgress(70)
-        setProcessingSteps(prev => [...prev, '🎨 Formatting insights and roadmap'])
-        setEstimatedTime(2)
-      })
-      
-      // Stage 4: Finalizing (75-100%)
-      startTransition(() => {
-        setAiStage('finalizing')
-        setAiProgress(80)
-        setProcessingSteps(prev => [...prev, '✨ Finalizing report structure'])
-        setEstimatedTime(1)
-      })
-      
-      await new Promise(resolve => setTimeout(resolve, 300))
-      startTransition(() => {
-        setAiProgress(90)
-        setProcessingSteps(prev => [...prev, '🎯 Applying final optimizations'])
-        setEstimatedTime(0)
-      })
-      
-      await new Promise(resolve => setTimeout(resolve, 200))
-      
-      // Complete the process
-      startTransition(() => {
-        setAiProgress(100)
-        setAiStage('complete')
-        setProcessingSteps(prev => [...prev, '✅ AI insights generated successfully!'])
-        setInsights(report)
-        setIsLoading(false)
-      })
-      
-    } catch (err) {
-      logger.error('Error generating insights:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate insights. Please try again.'
-      
-      startTransition(() => {
-        setError(errorMessage)
-        setIsLoading(false)
-        setAiProgress(0)
-        setProcessingSteps([])
-      })
-    }
-  }
-
-  const saveInsights = async () => {
-    if (!insights || !currentProject || savedInsightId) return
-    
-    setIsSaving(true)
-    try {
-      const savedId = await DatabaseService.saveProjectInsights(
-        currentProject.id,
-        insights,
-        currentProject.owner?.id || 'unknown',
-        (ideas || []).length
-      )
-      
-      if (savedId) {
-        setSavedInsightId(savedId)
-        onInsightSaved?.(savedId)
-        logger.debug('✅ Insights saved successfully:', savedId)
-      }
-    } catch (error) {
-      logger.error('Error saving insights:', error)
-    } finally {
-      setIsSaving(false)
-    }
-  }
 
   const handleDownloadPDF = async () => {
+    const insights = insightsOperation.state.data || historicalOperation.state.data
     if (insights) {
       try {
         await exportInsightsToPDFProfessional(insights, (ideas || []).length, currentProject, filesWithContent)
@@ -322,41 +244,53 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
     }
   }
 
-  return createPortal(
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                {isHistorical ? 'Historical AI Insights' : 'AI Strategic Insights'}
-              </h2>
-              <p className="text-sm text-gray-600">
-                {isHistorical ? 'Previously generated analysis' : `Analysis of ${(ideas || []).length} ideas in your priority matrix`}
-                {!isHistorical && filesWithContent.length > 0 && (
-                  <span className="block mt-1">
-                    🔍 Informed by {filesWithContent.length} document{filesWithContent.length !== 1 ? 's' : ''}: {' '}
-                    {filesWithContent.slice(0, 3).map(file => file.original_name).join(', ')}
-                    {filesWithContent.length > 3 && ` and ${filesWithContent.length - 3} more`}
-                  </span>
-                )}
-              </p>
-            </div>
+  // Create custom title component with icon and subtitle
+  const modalTitle = (
+    <div className="flex items-center space-x-3">
+      <div className="p-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg">
+        <Sparkles className="w-5 h-5 text-white" />
+      </div>
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">
+          {historicalOperation.state.data ? 'Historical AI Insights' : 'AI Strategic Insights'}
+        </h2>
+        <p className="text-sm text-gray-600">
+          {historicalOperation.state.data ? 'Previously generated analysis' : `Analysis of ${(ideas || []).length} ideas in your priority matrix`}
+          {!historicalOperation.state.data && filesWithContent.length > 0 && (
+            <span className="block mt-1">
+              🔍 Informed by {filesWithContent.length} document{filesWithContent.length !== 1 ? 's' : ''}: {' '}
+              {filesWithContent.slice(0, 3).map(file => file.original_name).join(', ')}
+              {filesWithContent.length > 3 && ` and ${filesWithContent.length - 3} more`}
+            </span>
+          )}
+        </p>
+      </div>
+    </div>
+  )
+
+  return (
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="xl"
+      showCloseButton={false}
+    >
+      <div className="bg-white">
+        {/* Custom header with icon and subtitle */}
+        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
+          <div className="flex items-center justify-between">
+            {modalTitle}
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors p-2"
+            >
+              ✕
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-2"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         {/* File References Section */}
-        {!isHistorical && filesWithContent.length > 0 && (
+        {!historicalOperation.state.data && filesWithContent.length > 0 && (
           <div className="px-6 py-4 bg-blue-50 border-b border-blue-100">
             <div className="flex items-start space-x-3">
               <FileText className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -384,7 +318,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
 
         {/* Content */}
         <div className="p-6">
-          {isLoading && (
+          {(insightsOperation.state.loading || historicalOperation.state.loading) && (
             <div className="py-8">
               {/* Premium AI Processing Interface */}
               <div className="max-w-2xl mx-auto">
@@ -473,15 +407,15 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
             </div>
           )}
 
-          {error && (
+          {(insightsOperation.state.error || historicalOperation.state.error) && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
               <div className="flex items-center space-x-2">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
                 <span className="font-medium text-red-800">Error</span>
               </div>
-              <p className="text-red-700 mt-1">{error}</p>
-              <button 
-                onClick={generateInsights}
+              <p className="text-red-700 mt-1">{insightsOperation.state.error || historicalOperation.state.error}</p>
+              <button
+                onClick={() => insightsOperation.execute()}
                 className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 Try Again
@@ -489,210 +423,125 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
             </div>
           )}
 
-          {insights && (
+          {(insightsOperation.state.data || historicalOperation.state.data) && (
             <div className="space-y-8">
-              {/* Executive Summary */}
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border border-slate-200">
-                <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2 text-slate-600" />
-                  Executive Summary
-                </h3>
-                <p className="text-slate-700 leading-relaxed">{insights.executiveSummary}</p>
-              </div>
+              {/* Get the insights from either operation */}
+              {(() => {
+                const insights = insightsOperation.state.data || historicalOperation.state.data
 
-              {/* Key Insights */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Lightbulb className="w-5 h-5 mr-2 text-amber-600" />
-                  Key Insights
-                </h3>
-                <div className="grid gap-4">
-                  {(insights.keyInsights || []).map((item, index) => (
-                    <div key={index} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                      <h4 className="font-semibold text-gray-900 mb-2">{item.insight}</h4>
-                      <p className="text-gray-600 text-sm">{item.impact}</p>
+                return (
+                  <>
+                    {/* Executive Summary */}
+                    <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border border-slate-200">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-3 flex items-center">
+                        <TrendingUp className="w-5 h-5 mr-2 text-slate-600" />
+                        Executive Summary
+                      </h3>
+                      <p className="text-slate-700 leading-relaxed">{insights?.executiveSummary}</p>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Priority Recommendations */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Target className="w-5 h-5 mr-2 text-blue-600" />
-                  Priority Recommendations
-                </h3>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="bg-red-50 rounded-xl p-4 border border-red-200">
-                    <h4 className="font-semibold text-red-800 mb-3">🚨 Immediate (30 days)</h4>
-                    <ul className="space-y-2">
-                      {(insights.priorityRecommendations?.immediate || []).map((item, index) => (
-                        <li key={index} className="text-sm text-red-700 flex items-start">
-                          <CheckCircle className="w-3 h-3 mr-2 mt-0.5 text-red-600 flex-shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
-                    <h4 className="font-semibold text-amber-800 mb-3">⏳ Short Term (3 months)</h4>
-                    <ul className="space-y-2">
-                      {(insights.priorityRecommendations?.shortTerm || []).map((item, index) => (
-                        <li key={index} className="text-sm text-amber-700 flex items-start">
-                          <CheckCircle className="w-3 h-3 mr-2 mt-0.5 text-amber-600 flex-shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                    <h4 className="font-semibold text-blue-800 mb-3">🎯 Long Term (6-12 months)</h4>
-                    <ul className="space-y-2">
-                      {(insights.priorityRecommendations?.longTerm || []).map((item, index) => (
-                        <li key={index} className="text-sm text-blue-700 flex items-start">
-                          <CheckCircle className="w-3 h-3 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Risk Assessment */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-red-50 rounded-xl p-4 border border-red-200">
-                  <h4 className="font-semibold text-red-800 mb-3 flex items-center">
-                    <AlertTriangle className="w-4 h-4 mr-2" />
-                    High Risk Areas
-                  </h4>
-                  <ul className="space-y-2">
-                    {(insights.riskAssessment?.highRisk || []).map((risk, index) => (
-                      <li key={index} className="text-sm text-red-700 flex items-start">
-                        <div className="w-2 h-2 bg-red-400 rounded-full mr-2 mt-1.5 flex-shrink-0"></div>
-                        {risk}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-                  <h4 className="font-semibold text-emerald-800 mb-3 flex items-center">
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Key Opportunities
-                  </h4>
-                  <ul className="space-y-2">
-                    {(insights.riskAssessment?.opportunities || []).map((opportunity, index) => (
-                      <li key={index} className="text-sm text-emerald-700 flex items-start">
-                        <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2 mt-1.5 flex-shrink-0"></div>
-                        {opportunity}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              {/* Suggested Roadmap */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Calendar className="w-5 h-5 mr-2 text-purple-600" />
-                  Suggested Implementation Roadmap
-                </h3>
-                <div className="space-y-4">
-                  {(insights.suggestedRoadmap || []).map((phase, index) => (
-                    <div key={index} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h4 className="font-semibold text-gray-900">{phase.phase}</h4>
-                          <span className="text-sm text-purple-600 font-medium">{phase.duration}</span>
-                        </div>
-                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                          <span className="text-purple-700 font-semibold text-sm">{index + 1}</span>
-                        </div>
-                      </div>
-                      <p className="text-gray-700 mb-3">{phase.focus}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {(phase.ideas || []).map((idea, ideaIndex) => (
-                          <span key={ideaIndex} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
-                            {idea}
-                          </span>
+                    {/* Key Insights */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <Lightbulb className="w-5 h-5 mr-2 text-amber-600" />
+                        Key Insights
+                      </h3>
+                      <div className="grid gap-4">
+                        {(insights?.keyInsights || []).map((item: any, index: number) => (
+                          <div key={index} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                            <h4 className="font-semibold text-gray-900 mb-2">{item.insight}</h4>
+                            <p className="text-gray-600 text-sm">{item.impact}</p>
+                          </div>
                         ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Resource Allocation */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Users className="w-5 h-5 mr-2 text-green-600" />
-                  Resource Allocation Recommendations
-                </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-                    <h4 className="font-semibold text-emerald-800 mb-2">Quick Wins Strategy</h4>
-                    <p className="text-sm text-emerald-700">{insights.resourceAllocation?.quickWins || 'No quick wins strategy defined'}</p>
-                  </div>
-                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                    <h4 className="font-semibold text-blue-800 mb-2">Strategic Initiatives</h4>
-                    <p className="text-sm text-blue-700">{insights.resourceAllocation?.strategic || 'No strategic recommendations defined'}</p>
-                  </div>
-                </div>
-              </div>
+                    {/* Priority Recommendations */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <Target className="w-5 h-5 mr-2 text-blue-600" />
+                        Priority Recommendations
+                      </h3>
+                      <div className="grid md:grid-cols-3 gap-6">
+                        <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+                          <h4 className="font-semibold text-red-800 mb-3">🚨 Immediate (30 days)</h4>
+                          <ul className="space-y-2">
+                            {(insights?.priorityRecommendations?.immediate || []).map((item: string, index: number) => (
+                              <li key={index} className="text-sm text-red-700 flex items-start">
+                                <CheckCircle className="w-3 h-3 mr-2 mt-0.5 text-red-600 flex-shrink-0" />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
 
-              {/* Future Enhancements */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Lightbulb className="w-5 h-5 mr-2 text-yellow-600" />
-                  Future Enhancement Opportunities
-                </h3>
-                <div className="grid gap-4">
-                  {(insights.futureEnhancements || []).map((enhancement, index) => (
-                    <div key={index} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900">{enhancement.title}</h4>
-                        <div className="flex items-center space-x-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            enhancement.impact === 'high' ? 'bg-red-100 text-red-800' :
-                            enhancement.impact === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {enhancement.impact} impact
-                          </span>
-                          <span className="text-xs text-purple-600 font-medium">{enhancement.timeframe}</span>
+                        <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                          <h4 className="font-semibold text-amber-800 mb-3">⏳ Short Term (3 months)</h4>
+                          <ul className="space-y-2">
+                            {(insights?.priorityRecommendations?.shortTerm || []).map((item: string, index: number) => (
+                              <li key={index} className="text-sm text-amber-700 flex items-start">
+                                <CheckCircle className="w-3 h-3 mr-2 mt-0.5 text-amber-600 flex-shrink-0" />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                          <h4 className="font-semibold text-blue-800 mb-3">🎯 Long Term (6-12 months)</h4>
+                          <ul className="space-y-2">
+                            {(insights?.priorityRecommendations?.longTerm || []).map((item: string, index: number) => (
+                              <li key={index} className="text-sm text-blue-700 flex items-start">
+                                <CheckCircle className="w-3 h-3 mr-2 mt-0.5 text-blue-600 flex-shrink-0" />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       </div>
-                      <p className="text-gray-600 text-sm mb-2">{enhancement.description}</p>
-                      {enhancement.relatedIdea && (
-                        <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-md inline-block">
-                          Related to: {enhancement.relatedIdea}
-                        </div>
-                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Next Steps */}
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <CheckCircle className="w-5 h-5 mr-2 text-green-600" />
-                  Immediate Next Steps
-                </h3>
-                <div className="grid gap-3">
-                  {(insights.nextSteps || []).map((step, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
-                        <span className="text-green-700 font-semibold text-xs">{index + 1}</span>
+                    {/* Risk Assessment */}
+                    {insights?.riskAssessment && (
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+                          <h4 className="font-semibold text-red-800 mb-3 flex items-center">
+                            <AlertTriangle className="w-4 h-4 mr-2" />
+                            Risk Areas
+                          </h4>
+                          <ul className="space-y-2">
+                            {(insights.riskAssessment?.risks || []).map((risk: string, index: number) => (
+                              <li key={index} className="text-sm text-red-700 flex items-start">
+                                <div className="w-2 h-2 bg-red-400 rounded-full mr-2 mt-1.5 flex-shrink-0"></div>
+                                {risk}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
+                          <h4 className="font-semibold text-emerald-800 mb-3 flex items-center">
+                            <TrendingUp className="w-4 h-4 mr-2" />
+                            Risk Mitigations
+                          </h4>
+                          <ul className="space-y-2">
+                            {(insights.riskAssessment?.mitigations || []).map((mitigation: string, index: number) => (
+                              <li key={index} className="text-sm text-emerald-700 flex items-start">
+                                <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2 mt-1.5 flex-shrink-0"></div>
+                                {mitigation}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
-                      <span className="text-gray-700">{step}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                    )}
+
+
+
+
+                  </>
+                )
+              })()}
             </div>
           )}
         </div>
@@ -701,21 +550,21 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
         <div className="border-t border-gray-200 p-6 bg-gray-50">
           <div className="flex justify-between items-center">
             <p className="text-sm text-gray-500">
-              {isHistorical ? 'Historical insight' : 'Generated by AI'} • Analysis based on {isHistorical ? 'saved data' : (ideas || []).length + ' ideas'}
-              {!isHistorical && filesWithContent.length > 0 && ` • ${filesWithContent.length} document${filesWithContent.length !== 1 ? 's' : ''} analyzed`}
+              {historicalOperation.state.data ? 'Historical insight' : 'Generated by AI'} • Analysis based on {historicalOperation.state.data ? 'saved data' : (ideas || []).length + ' ideas'}
+              {!historicalOperation.state.data && filesWithContent.length > 0 && ` • ${filesWithContent.length} document${filesWithContent.length !== 1 ? 's' : ''} analyzed`}
             </p>
             <div className="flex space-x-3">
-              {insights && !isHistorical && !savedInsightId && (
+              {(insightsOperation.state.data || historicalOperation.state.data) && !historicalOperation.state.data && !savedInsightId && (
                 <button
-                  onClick={saveInsights}
-                  disabled={isSaving}
+                  onClick={() => saveOperation.execute(insightsOperation.state.data!)}
+                  disabled={saveOperation.state.loading}
                   className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{isSaving ? 'Saving...' : 'Save Insights'}</span>
+                  <span>{saveOperation.state.loading ? 'Saving...' : 'Save Insights'}</span>
                 </button>
               )}
-              {insights && (
+              {(insightsOperation.state.data || historicalOperation.state.data) && (
                 <button
                   onClick={handleDownloadPDF}
                   className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-colors font-medium"
@@ -734,8 +583,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ ideas, currentProject
           </div>
         </div>
       </div>
-    </div>,
-    document.body
+    </BaseModal>
   )
 }
 

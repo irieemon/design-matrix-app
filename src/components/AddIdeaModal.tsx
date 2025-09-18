@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { X, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { IdeaCard, User } from '../types'
+import { BaseModal } from './shared'
 
 interface AddIdeaModalProps {
+  isOpen: boolean
   onClose: () => void
   onAdd: (idea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>) => void
   currentUser?: User | null
 }
 
-const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ onClose, onAdd, currentUser }) => {
+const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ isOpen, onClose, onAdd, currentUser }) => {
   const [content, setContent] = useState('')
   const [details, setDetails] = useState('')
   const [x, setX] = useState(260) // Center of 520px usable area
@@ -40,24 +42,19 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ onClose, onAdd, currentUser
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <Plus className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Add New Idea</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Add New Idea"
+      size="xl"
+    >
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+      <div className="flex items-center space-x-3 mb-6">
+        <Plus className="w-5 h-5 text-blue-600" />
+        <p className="text-slate-600">Create a new idea for your priority matrix</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
           {/* Idea Title */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -131,9 +128,8 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ onClose, onAdd, currentUser
               Add Idea
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </BaseModal>
   )
 }
 
