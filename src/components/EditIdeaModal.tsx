@@ -3,7 +3,7 @@ import { Edit3, Trash2 } from 'lucide-react'
 import { IdeaCard, User } from '../types'
 import { IdeaRepository } from '../lib/repositories'
 import { useToast } from '../contexts/ToastContext'
-import { BaseModal } from './shared'
+import { BaseModal } from './shared/Modal'
 
 interface EditIdeaModalProps {
   idea: IdeaCard | null
@@ -96,12 +96,13 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
       title="Edit Idea"
       size="xl"
     >
-      <div className="flex items-center space-x-3 mb-6">
-        <Edit3 className="w-5 h-5 text-blue-600" />
-        <p className="text-slate-600">Edit your idea details and priority</p>
-      </div>
+      <div className="p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <Edit3 className="w-5 h-5 text-blue-600" />
+          <p className="text-slate-600">Edit your idea details and priority</p>
+        </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* Idea Title */}
           <div>
@@ -215,7 +216,8 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
               </button>
             </div>
           )}
-      </form>
+        </form>
+      </div>
     </BaseModal>
   )
 }
