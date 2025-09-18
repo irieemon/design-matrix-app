@@ -392,13 +392,12 @@ export class ProjectRepository {
     ideaCount: number
   ): Promise<string | null> {
     try {
-      logger.debug('Saving project insights for project:', projectId)
+      logger.debug('Saving project insights for project:', projectId, 'with', ideaCount, 'ideas')
 
       const insightData = {
         project_id: projectId,
         insights_data: insights,
         owner_id: userId,
-        idea_count: ideaCount,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
