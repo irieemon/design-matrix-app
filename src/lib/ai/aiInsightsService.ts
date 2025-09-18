@@ -837,6 +837,103 @@ export class AIInsightsService {
     return model === 'gpt-4o-mini' ? '~60-70%' : model === 'gpt-4o' ? 'premium quality' : 'optimized'
   }
 
+  /**
+   * Generate comprehensive risk assessment using enhanced model selection
+   */
+  async generateComprehensiveRiskAssessment(
+    ideas: IdeaCard[],
+    projectName?: string,
+    projectType?: string,
+    projectId?: string,
+    currentProject?: any
+  ): Promise<{ risks: string[], mitigations: string[] }> {
+    logger.debug('🛡️ Generating comprehensive risk assessment for', (ideas || []).length, 'ideas')
+
+    // Build context for intelligent model selection
+    const context = await this.buildInsightsContext(projectId, currentProject)
+
+    // Analyze complexity for risk assessment
+    const complexity = OpenAIModelRouter.analyzeComplexity({
+      ideaCount: (ideas || []).length,
+      hasFiles: (context.documentContext?.length || 0) > 0,
+      hasImages: context.documentContext?.some(doc => doc.mimeType?.startsWith('image/')) || false,
+      hasAudio: context.documentContext?.some(doc => doc.mimeType?.startsWith('audio/') || doc.mimeType?.startsWith('video/')) || false,
+      projectType: projectType || 'general',
+      documentCount: context.documentContext?.length || 0
+    })
+
+    const taskContext: TaskContext = {
+      type: 'risk-assessment' as AITaskType, // Use dedicated risk assessment task type
+      complexity,
+      ideaCount: (ideas || []).length,
+      hasFiles: (context.documentContext?.length || 0) > 0,
+      hasImages: context.documentContext?.some(doc => doc.mimeType?.startsWith('image/')) || false,
+      hasAudio: context.documentContext?.some(doc => doc.mimeType?.startsWith('audio/') || doc.mimeType?.startsWith('video/')) || false,
+      userTier: 'pro'
+    }
+
+    const modelSelection = OpenAIModelRouter.selectModel(taskContext)
+    OpenAIModelRouter.logSelection(taskContext, modelSelection)
+
+    logger.info('🔍 Enhanced Risk Assessment Configuration:', {
+      model: modelSelection.model,
+      maxTokens: modelSelection.maxTokens,
+      temperature: modelSelection.temperature,
+      complexity: complexity,
+      reasoning: modelSelection.reasoning
+    })
+
+    const requestPayload = {
+      ideas: (ideas || []).map(idea => ({
+        title: idea.content,
+        description: idea.details || '',
+        quadrant: this.getQuadrantFromPosition(idea.x, idea.y)
+      })),
+      projectName: projectName || 'Project',
+      projectType: projectType || 'General',
+      roadmapContext: context.roadmapContext,
+      documentContext: context.documentContext,
+      projectContext: context.projectContext,
+      modelSelection: modelSelection,
+      taskContext: taskContext,
+      focusArea: 'comprehensive-risk-analysis' // Special flag for enhanced risk focus
+    }
+
+    try {
+      const headers = await this.getAuthHeaders()
+      const response = await fetch(`${this.baseUrl}/api/ai/generate-insights`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestPayload)
+      })
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment before trying again.')
+        }
+        throw new Error(`Server error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      const insights = data.insights || {}
+
+      logger.info('✅ Comprehensive risk assessment completed:', {
+        risksCount: insights.riskAssessment?.risks?.length || 0,
+        mitigationsCount: insights.riskAssessment?.mitigations?.length || 0,
+        modelUsed: modelSelection.model,
+        tokensUsed: modelSelection.maxTokens
+      })
+
+      return {
+        risks: insights.riskAssessment?.risks || [],
+        mitigations: insights.riskAssessment?.mitigations || []
+      }
+    } catch (error) {
+      logger.error('❌ Comprehensive risk assessment failed:', error)
+      throw error
+    }
+  }
+
 }
 
 // Export singleton instance

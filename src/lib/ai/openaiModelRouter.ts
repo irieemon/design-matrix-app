@@ -45,24 +45,24 @@ export class OpenAIModelRouter {
   static selectModel(context: TaskContext): ModelSelection {
     const { type, complexity, ideaCount = 0, hasFiles = false, hasImages = false, hasAudio = false, userTier = 'pro' } = context
 
-    // Strategic insights require deep reasoning - always use gpt-4o
+    // Strategic insights require deep reasoning - always use gpt-4o with high token limit
     if (type === 'strategic-insights') {
       return {
         model: 'gpt-4o',
         temperature: this.getTemperatureForTask(type, complexity),
-        maxTokens: 4000,
+        maxTokens: complexity === 'high' ? 6000 : 4000,
         reasoning: 'Strategic insights require advanced reasoning and multi-faceted analysis. GPT-4o excels at complex strategic thinking.',
         cost: 'high'
       }
     }
 
-    // Risk assessment needs conservative, thorough analysis - use gpt-4o
+    // Risk assessment needs conservative, thorough analysis - use gpt-4o with enhanced token limit
     if (type === 'risk-assessment') {
       return {
         model: 'gpt-4o',
         temperature: 0.3, // Lower temperature for conservative analysis
-        maxTokens: 3000,
-        reasoning: 'Risk assessment requires careful, conservative analysis. GPT-4o provides more thorough risk evaluation.',
+        maxTokens: complexity === 'high' ? 5000 : 4000, // Increased for comprehensive risk analysis
+        reasoning: 'Risk assessment requires careful, conservative analysis with comprehensive coverage. GPT-4o with enhanced token limit provides thorough risk evaluation.',
         cost: 'high'
       }
     }

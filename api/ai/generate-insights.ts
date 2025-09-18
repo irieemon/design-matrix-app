@@ -40,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     console.log('📥 Request body keys:', Object.keys(req.body))
-    const { ideas, projectName, projectType, roadmapContext, documentContext, projectContext, modelSelection, taskContext } = req.body
+    const { ideas, projectName, projectType, roadmapContext, documentContext, projectContext, modelSelection, taskContext, focusArea } = req.body
 
     console.log('🔍 Parsed request:', {
       ideasCount: ideas?.length || 0,
@@ -51,7 +51,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       hasProjectContext: !!projectContext,
       hasModelSelection: !!modelSelection,
       selectedModel: modelSelection?.model || 'default',
-      complexity: taskContext?.complexity || 'unknown'
+      complexity: taskContext?.complexity || 'unknown',
+      focusArea: focusArea || 'standard'
     })
     
     if (!ideas || !Array.isArray(ideas)) {
@@ -81,7 +82,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         temperature: modelSelection?.temperature || 'dynamic',
         reasoning: modelSelection?.reasoning || 'No routing provided'
       })
-      insights = await generateInsightsWithOpenAI(openaiKey, ideas, projectName, projectType, roadmapContext, documentContext, projectContext, modelSelection)
+      insights = await generateInsightsWithOpenAI(openaiKey, ideas, projectName, projectType, roadmapContext, documentContext, projectContext, modelSelection, focusArea)
     } else if (anthropicKey) {
       console.log('Using Anthropic for insights generation')
       insights = await generateInsightsWithAnthropic(anthropicKey, ideas, projectName, projectType, roadmapContext, documentContext, projectContext)
@@ -113,7 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = [], _projectContext: any = null, modelSelection: any = null) {
+async function generateInsightsWithOpenAI(apiKey: string, ideas: any[], projectName: string, projectType: string, roadmapContext: any = null, documentContext: any[] = [], _projectContext: any = null, modelSelection: any = null, focusArea: string = 'standard') {
   
   console.log('🚀 OPENAI FUNCTION: Starting generateInsightsWithOpenAI')
   console.log('🎯 OPENAI: API Key available:', !!apiKey, 'Length:', apiKey?.length || 0)
@@ -164,6 +165,18 @@ FORBIDDEN PATTERNS - Do NOT use these generic phrases:
 - "diverse marketing channels" (specify channels relevant to THIS project)
 - "brand awareness initiatives" (detail what makes sense for THIS brand)
 
+${focusArea === 'comprehensive-risk-analysis' ? `
+ENHANCED RISK ANALYSIS MODE ACTIVATED:
+Since this is a comprehensive risk assessment request, provide EXTRA THOROUGH risk analysis:
+- Analyze each quadrant for specific risks (Quick Wins: execution risks, Major Projects: scope/complexity risks, etc.)
+- Consider technical risks, market risks, operational risks, financial risks, and strategic risks
+- Provide specific, actionable mitigations for each identified risk
+- Include risk interdependencies and cascading effects
+- Suggest risk monitoring and early warning indicators
+- Prioritize risks by impact and likelihood
+- Provide 5-8 specific risks and matching detailed mitigations
+` : ''}
+
 Instead, provide tactical, actionable insights that reference the actual ideas and project context.
 
 RESPOND WITH VALID JSON ONLY - no explanatory text before or after.
@@ -183,8 +196,8 @@ Provide your analysis as a JSON object with these sections:
     "longTerm": ["Bigger picture moves"]
   },
   "riskAssessment": {
-    "highRisk": ["What concerns you"],
-    "opportunities": ["What excites you about this"]
+    "risks": ["Specific risks and challenges for this project"],
+    "mitigations": ["Practical strategies to address these risks"]
   },
   "suggestedRoadmap": [
     {
@@ -426,8 +439,8 @@ Provide your analysis as a JSON object with these sections:
     "longTerm": ["Bigger picture moves"]
   },
   "riskAssessment": {
-    "highRisk": ["What concerns you"],
-    "opportunities": ["What excites you about this"]
+    "risks": ["Specific risks and challenges for this project"],
+    "mitigations": ["Practical strategies to address these risks"]
   },
   "suggestedRoadmap": [
     {
