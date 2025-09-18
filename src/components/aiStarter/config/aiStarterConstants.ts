@@ -1,7 +1,5 @@
 // AI Starter Configuration Constants
 
-import type { ProjectType } from '../../../types'
-
 // Form validation constants
 export const AI_STARTER_VALIDATION = {
   MIN_PROJECT_NAME_LENGTH: 1,

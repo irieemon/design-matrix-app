@@ -1,5 +1,5 @@
 import React from 'react'
-import { Sparkles, ArrowRight, Lightbulb, Loader } from 'lucide-react'
+import { Sparkles, Lightbulb, Loader } from 'lucide-react'
 import type { ProjectType } from '../../types'
 
 interface ProjectBasicsStepProps {

@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { X } from 'lucide-react'
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 import { Project, IdeaCard, User, ProjectType } from '../types'
@@ -41,8 +40,8 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
   const [questionAnswers, setQuestionAnswers] = useState<Record<number, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [ideaCount, setIdeaCount] = useState(AI_STARTER_VALIDATION.DEFAULT_IDEA_COUNT)
-  const [ideaTolerance, setIdeaTolerance] = useState(AI_STARTER_VALIDATION.DEFAULT_IDEA_TOLERANCE)
+  const [ideaCount, setIdeaCount] = useState<number>(AI_STARTER_VALIDATION.DEFAULT_IDEA_COUNT)
+  const [ideaTolerance, setIdeaTolerance] = useState<number>(AI_STARTER_VALIDATION.DEFAULT_IDEA_TOLERANCE)
 
 
   const handleInitialAnalysis = async () => {
@@ -107,10 +106,6 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
     setError(null)
 
     try {
-      // Compile answers into additional context
-      const additionalContext = analysis.clarifyingQuestions
-        .map((q, index) => `${q.question} ${questionAnswers[index] || 'Not specified'}`)
-        .join('\n')
 
       logger.debug('🎯 Re-analyzing with additional context...')
       
