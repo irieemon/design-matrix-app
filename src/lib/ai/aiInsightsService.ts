@@ -2,7 +2,7 @@ import { IdeaCard } from '../../types'
 import { logger } from '../../utils/logger'
 import { aiCache, AICache } from '../aiCache'
 import { FileService } from '../fileService'
-import { OpenAIModelRouter, TaskContext, AITaskType } from './openaiModelRouter'
+import { OpenAIModelRouter, TaskContext, AITaskType, OpenAIModel } from './openaiModelRouter'
 import { IntelligentMockDataService } from './intelligentMockData'
 
 interface ProjectContext {
@@ -116,7 +116,7 @@ export class AIInsightsService {
     projectType?: string,
     projectId?: string,
     currentProject?: any,
-    preferredModel?: 'gpt-4o' | 'gpt-4o-mini'
+    preferredModel?: OpenAIModel
   ): Promise<InsightsReport> {
     logger.debug('🔍 Generating insights for', (ideas || []).length, 'ideas')
 

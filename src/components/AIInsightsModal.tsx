@@ -2,6 +2,7 @@ import { useState, useEffect, useTransition } from 'react'
 import { Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Download, Save, FileText, Lightbulb } from 'lucide-react'
 import { IdeaCard, Project, ProjectFile } from '../types'
 import { aiInsightsService } from '../lib/ai/aiInsightsService'
+import { OpenAIModel } from '../lib/ai/openaiModelRouter'
 import { FileService } from '../lib/fileService'
 import { exportInsightsToPDFProfessional } from '../utils/pdfExportSimple'
 import { useAIWorker } from '../hooks/useAIWorker'
@@ -15,7 +16,7 @@ interface AIInsightsModalProps {
   ideas: IdeaCard[]
   currentProject: Project | null
   selectedInsightId?: string
-  preferredModel?: 'gpt-4o' | 'gpt-4o-mini'
+  preferredModel?: OpenAIModel
   onClose: () => void
   onInsightSaved?: (insightId: string) => void
 }

@@ -15,8 +15,17 @@ export type AITaskType =
   | 'roadmap-planning'      // Structured, sequential thinking
   | 'content-enhancement'   // Text improvement, refinement
 
+export type OpenAIModel =
+  | 'gpt-4o'
+  | 'gpt-4o-mini'
+  | 'gpt-4-turbo'
+  | 'gpt-4'
+  | 'gpt-3.5-turbo'
+  | 'o1-preview'
+  | 'o1-mini'
+
 export interface ModelSelection {
-  model: 'gpt-4o' | 'gpt-4o-mini'
+  model: OpenAIModel
   temperature: number
   maxTokens: number
   reasoning: string
@@ -186,9 +195,14 @@ export class OpenAIModelRouter {
    * Get cost estimate for a model selection
    */
   static getCostEstimate(selection: ModelSelection, tokensEstimate: number = 2000): string {
-    const costs = {
+    const costs: Record<OpenAIModel, { input: number; output: number }> = {
       'gpt-4o': { input: 5.00, output: 15.00 }, // per 1M tokens
-      'gpt-4o-mini': { input: 0.15, output: 0.60 } // per 1M tokens
+      'gpt-4o-mini': { input: 0.15, output: 0.60 }, // per 1M tokens
+      'gpt-4-turbo': { input: 10.00, output: 30.00 }, // per 1M tokens
+      'gpt-4': { input: 30.00, output: 60.00 }, // per 1M tokens
+      'gpt-3.5-turbo': { input: 0.50, output: 1.50 }, // per 1M tokens
+      'o1-preview': { input: 15.00, output: 60.00 }, // per 1M tokens
+      'o1-mini': { input: 3.00, output: 12.00 } // per 1M tokens
     }
 
     const modelCost = costs[selection.model]

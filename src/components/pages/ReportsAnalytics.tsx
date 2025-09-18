@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Sparkles, History, Clock, AlertTriangle, Cpu } from 'lucide-react'
+import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Sparkles, History, Clock, AlertTriangle, Cpu, ChevronDown } from 'lucide-react'
 import { IdeaCard, Project, ProjectInsights as ProjectInsightsType, User } from '../../types'
 import { DatabaseService } from '../../lib/database'
 import AIInsightsModal from '../AIInsightsModal'
+import { OpenAIModel } from '../../lib/ai/openaiModelRouter'
 import { logger } from '../../utils/logger'
 
 interface ReportsAnalyticsProps {
@@ -17,8 +18,25 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
   const [selectedInsightId, setSelectedInsightId] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
   const [showWarning, setShowWarning] = useState(false)
-  const [selectedModel, setSelectedModel] = useState<'gpt-4o' | 'gpt-4o-mini'>('gpt-4o')
+  const [selectedModel, setSelectedModel] = useState<OpenAIModel>('gpt-4o')
+  const [showModelDropdown, setShowModelDropdown] = useState(false)
   // const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+
+  // Available OpenAI models with display info
+  const availableModels: Array<{
+    value: OpenAIModel;
+    label: string;
+    description: string;
+    cost: 'low' | 'medium' | 'high'
+  }> = [
+    { value: 'gpt-4o', label: 'GPT-4o', description: 'Latest multimodal model', cost: 'high' },
+    { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Fast and cost-effective', cost: 'low' },
+    { value: 'gpt-4-turbo', label: 'GPT-4 Turbo', description: 'Advanced reasoning', cost: 'high' },
+    { value: 'gpt-4', label: 'GPT-4', description: 'Original GPT-4', cost: 'high' },
+    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'Fast and reliable', cost: 'medium' },
+    { value: 'o1-preview', label: 'O1 Preview', description: 'Advanced reasoning model', cost: 'high' },
+    { value: 'o1-mini', label: 'O1 Mini', description: 'Efficient reasoning', cost: 'medium' }
+  ]
 
   // Function to convert user ID to display name
   const getUserDisplayName = (userId: string | null): string => {
@@ -94,6 +112,21 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
     setShowAIInsights(true)
   }
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (!target.closest('.model-dropdown')) {
+        setShowModelDropdown(false)
+      }
+    }
+
+    if (showModelDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showModelDropdown])
+
   const priorityData = (ideas || []).reduce((acc, idea) => {
     acc[idea.priority] = (acc[idea.priority] || 0) + 1
     return acc
@@ -140,33 +173,53 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
           
           {/* AI Controls Section */}
           <div className="flex flex-col space-y-4">
-            {/* Model Selection Toggle */}
+            {/* Model Selection Dropdown */}
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2 text-sm text-slate-600">
                 <Cpu className="w-4 h-4" />
                 <span className="font-medium">AI Model:</span>
               </div>
-              <div className="flex bg-slate-100 rounded-lg p-1">
+              <div className="relative model-dropdown">
                 <button
-                  onClick={() => setSelectedModel('gpt-4o')}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    selectedModel === 'gpt-4o'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                  onClick={() => setShowModelDropdown(!showModelDropdown)}
+                  className="flex items-center space-x-2 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors min-w-[180px]"
                 >
-                  GPT-4o
+                  <span>{availableModels.find(m => m.value === selectedModel)?.label}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
                 </button>
-                <button
-                  onClick={() => setSelectedModel('gpt-4o-mini')}
-                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                    selectedModel === 'gpt-4o-mini'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  GPT-4o Mini
-                </button>
+
+                {showModelDropdown && (
+                  <div className="absolute top-full mt-1 w-72 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
+                    <div className="p-2 space-y-1">
+                      {availableModels.map((model) => (
+                        <button
+                          key={model.value}
+                          onClick={() => {
+                            setSelectedModel(model.value)
+                            setShowModelDropdown(false)
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-md hover:bg-slate-50 transition-colors ${
+                            selectedModel === model.value ? 'bg-purple-50 text-purple-700' : 'text-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium">{model.label}</div>
+                              <div className="text-xs text-slate-500">{model.description}</div>
+                            </div>
+                            <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              model.cost === 'low' ? 'bg-green-100 text-green-700' :
+                              model.cost === 'medium' ? 'bg-amber-100 text-amber-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {model.cost}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
