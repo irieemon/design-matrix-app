@@ -91,63 +91,63 @@ export class OpenAIModelRouter {
       }
     }
 
-    // Roadmap planning benefits from structured thinking - use gpt-4o for complex projects
+    // Roadmap planning benefits from structured thinking - use GPT-5 for best results
     if (type === 'roadmap-planning') {
       const useAdvancedModel = complexity === 'high' || ideaCount > 10 || hasFiles
       return {
-        model: useAdvancedModel ? 'gpt-4o' : 'gpt-4o-mini',
+        model: useAdvancedModel ? 'gpt-5' : 'gpt-5-mini',
         temperature: 0.6,
-        maxTokens: useAdvancedModel ? 3500 : 2500,
+        maxTokens: useAdvancedModel ? 5000 : 3500, // GPT-5 enhanced limits
         reasoning: useAdvancedModel
-          ? 'Complex roadmap planning with multiple ideas or files requires advanced reasoning.'
-          : 'Simple roadmap planning can be handled efficiently by gpt-4o-mini.',
-        cost: useAdvancedModel ? 'high' : 'medium'
+          ? 'Complex roadmap planning benefits from GPT-5\'s advanced reasoning and built-in thinking.'
+          : 'Simple roadmap planning handled efficiently by GPT-5 Mini.',
+        cost: useAdvancedModel ? 'medium' : 'low'
       }
     }
 
-    // Multimodal content (images/audio) requires gpt-4o
+    // Multimodal content (images/audio) - GPT-5 excels at multimodal analysis
     if (hasImages || hasAudio) {
       return {
-        model: 'gpt-4o',
+        model: 'gpt-5',
         temperature: this.getTemperatureForTask(type, complexity),
-        maxTokens: 4000,
-        reasoning: 'Multimodal content analysis (images, audio) requires GPT-4o capabilities.',
-        cost: 'high'
+        maxTokens: 6000, // GPT-5 enhanced multimodal capacity
+        reasoning: 'Multimodal content analysis benefits from GPT-5\'s advanced image and audio understanding.',
+        cost: 'medium'
       }
     }
 
-    // Idea generation can often use gpt-4o-mini for cost efficiency
+    // Idea generation benefits from GPT-5's creative thinking
     if (type === 'idea-generation') {
       const useAdvancedModel = complexity === 'high' || ideaCount > 15 || userTier === 'enterprise'
       return {
-        model: useAdvancedModel ? 'gpt-4o' : 'gpt-4o-mini',
+        model: useAdvancedModel ? 'gpt-5' : 'gpt-5-mini',
         temperature: 1.0, // High creativity for idea generation
-        maxTokens: useAdvancedModel ? 3000 : 2000,
+        maxTokens: useAdvancedModel ? 4000 : 2500, // GPT-5 enhanced creative output
         reasoning: useAdvancedModel
-          ? 'Complex idea generation or enterprise users benefit from GPT-4o creativity.'
-          : 'Standard idea generation is cost-effectively handled by gpt-4o-mini.',
-        cost: useAdvancedModel ? 'high' : 'low'
+          ? 'Complex idea generation benefits from GPT-5\'s advanced creative reasoning.'
+          : 'Standard idea generation handled efficiently by GPT-5 Mini.',
+        cost: useAdvancedModel ? 'medium' : 'low'
       }
     }
 
-    // Quick analysis and content enhancement can use gpt-4o-mini
+    // Quick analysis and content enhancement - GPT-5 Mini is perfect
     if (type === 'quick-analysis' || type === 'content-enhancement') {
       return {
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         temperature: this.getTemperatureForTask(type, complexity),
-        maxTokens: 2000,
-        reasoning: 'Quick analysis and content enhancement are efficiently handled by gpt-4o-mini.',
+        maxTokens: 2500, // GPT-5 Mini enhanced capacity
+        reasoning: 'Quick analysis and content enhancement benefit from GPT-5 Mini\'s efficiency and capability.',
         cost: 'low'
       }
     }
 
-    // Default fallback - use gpt-4o-mini for unknown tasks
+    // Default fallback - use GPT-5 Mini for unknown tasks (since it's performing well)
     return {
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       temperature: 0.7,
-      maxTokens: 2500,
-      reasoning: 'Default routing to cost-effective gpt-4o-mini for standard tasks.',
-      cost: 'medium'
+      maxTokens: 3000, // GPT-5 Mini enhanced default
+      reasoning: 'Default routing to GPT-5 Mini for optimal performance and cost-effectiveness.',
+      cost: 'low'
     }
   }
 
