@@ -170,17 +170,61 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
   const { } = useAIWorker()
 
   useEffect(() => {
+    // Only run when modal is opened and we have ideas or are loading historical insight
+    if (!isOpen) {
+      logger.debug('🎭 AIInsightsModal: Modal not open, skipping effect')
+      return
+    }
+
+    logger.debug('🎭 AIInsightsModal: Effect triggered', {
+      isOpen,
+      selectedInsightId,
+      ideasLength: ideas.length,
+      insightsLoading: insightsOperation.state.loading,
+      insightsData: !!insightsOperation.state.data,
+      historicalLoading: historicalOperation.state.loading,
+      historicalData: !!historicalOperation.state.data
+    })
+
     // Load project files first
     loadProjectFiles()
 
     if (selectedInsightId) {
-      // Load historical insight
-      historicalOperation.execute(selectedInsightId)
+      // Load historical insight - only if not already loading/loaded
+      if (!historicalOperation.state.loading && !historicalOperation.state.data) {
+        logger.debug('🎭 AIInsightsModal: Loading historical insight:', selectedInsightId)
+        historicalOperation.execute(selectedInsightId)
+      } else {
+        logger.debug('🎭 AIInsightsModal: Historical insight already loading/loaded, skipping')
+      }
     } else {
-      // Generate new insights
-      insightsOperation.execute()
+      // Generate new insights - only if we have ideas and not already loading/loaded
+      if (ideas.length > 0 && !insightsOperation.state.loading && !insightsOperation.state.data) {
+        logger.debug('🎭 AIInsightsModal: Generating new insights for', ideas.length, 'ideas')
+        insightsOperation.execute()
+      } else {
+        logger.debug('🎭 AIInsightsModal: New insights already loading/loaded or no ideas, skipping')
+      }
     }
-  }, [ideas, selectedInsightId])
+  }, [isOpen, selectedInsightId, ideas.length])
+
+  // Reset states when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      logger.debug('🎭 AIInsightsModal: Modal closed, resetting all states')
+      // Reset async operations
+      insightsOperation.reset()
+      historicalOperation.reset()
+      saveOperation.reset()
+
+      // Reset progress tracking
+      setAiProgress(0)
+      setAiStage('analyzing')
+      setProcessingSteps([])
+      setEstimatedTime(0)
+      setSavedInsightId(null)
+    }
+  }, [isOpen])
 
   const loadProjectFiles = async () => {
     if (!currentProject?.id) {
