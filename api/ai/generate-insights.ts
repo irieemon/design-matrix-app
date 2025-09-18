@@ -302,35 +302,25 @@ Be specific about THIS project - not generic business advice.`
   // Map frontend model names to actual OpenAI API models
   function mapModelToOpenAI(modelName: string): string {
     const modelMapping: Record<string, string> = {
-      // GPT-5 Series -> Map to latest available OpenAI models
-      'gpt-5': 'gpt-4o',
-      'gpt-5-mini': 'gpt-4o-mini',
-      'gpt-5-nano': 'gpt-4o-mini',
-      'gpt-5-chat-latest': 'gpt-4o',
+      // GPT-5 Series -> Use real GPT-5 models (now available!)
+      'gpt-5': 'gpt-5',
+      'gpt-5-mini': 'gpt-5-mini',
+      'gpt-5-nano': 'gpt-5-nano',
+      'gpt-5-chat-latest': 'gpt-5-chat-latest',
 
-      // GPT-4.1 Series -> Map to GPT-4 variants
-      'gpt-4.1': 'gpt-4-turbo-preview',
-      'gpt-4.1-mini': 'gpt-4o-mini',
-      'gpt-4.1-nano': 'gpt-4o-mini',
-
-      // Research models -> Map to reasoning models or fallbacks
+      // Research models -> Map to reasoning models
       'o3-deep-research': 'o1-preview',
       'o4-mini-deep-research': 'o1-mini',
 
-      // Specialized models -> Map to closest equivalent
-      'gpt-realtime': 'gpt-4o',
+      // Specialized models -> Use real GPT-5 or closest equivalent
+      'gpt-realtime': 'gpt-realtime',
 
-      // Existing models - pass through unchanged
-      'gpt-4o': 'gpt-4o',
-      'gpt-4o-mini': 'gpt-4o-mini',
-      'gpt-4-turbo': 'gpt-4-turbo-preview',
-      'gpt-4': 'gpt-4',
-      'gpt-3.5-turbo': 'gpt-3.5-turbo',
+      // O-Series models - pass through unchanged
       'o1-preview': 'o1-preview',
       'o1-mini': 'o1-mini'
     }
 
-    return modelMapping[modelName] || 'gpt-4o'
+    return modelMapping[modelName] || 'gpt-5'
   }
 
   // Use smart model selection or fallback to defaults

@@ -22,39 +22,27 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
   const [showModelDropdown, setShowModelDropdown] = useState(false)
   // const [isLoadingHistory, setIsLoadingHistory] = useState(false)
 
-  // Available OpenAI models with display info
+  // Available OpenAI models with display info - GPT-5 Era
   const availableModels: Array<{
     value: OpenAIModel;
     label: string;
     description: string;
     cost: 'low' | 'medium' | 'high'
   }> = [
-    // GPT-5 Series (2025) - Latest and greatest
-    { value: 'gpt-5', label: 'GPT-5', description: 'Smartest model with built-in thinking', cost: 'medium' },
-    { value: 'gpt-5-mini', label: 'GPT-5 Mini', description: 'Cost-effective GPT-5 variant', cost: 'low' },
-    { value: 'gpt-5-nano', label: 'GPT-5 Nano', description: 'Ultra-efficient GPT-5', cost: 'low' },
-    { value: 'gpt-5-chat-latest', label: 'GPT-5 Chat', description: 'ChatGPT non-reasoning model', cost: 'medium' },
+    // GPT-5 Series - The new standard
+    { value: 'gpt-5', label: 'GPT-5', description: 'Latest smartest model with built-in thinking', cost: 'medium' },
+    { value: 'gpt-5-mini', label: 'GPT-5 Mini', description: 'Fast, cost-effective GPT-5', cost: 'low' },
+    { value: 'gpt-5-nano', label: 'GPT-5 Nano', description: 'Ultra-efficient for simple tasks', cost: 'low' },
+    { value: 'gpt-5-chat-latest', label: 'GPT-5 Chat', description: 'Conversational GPT-5 model', cost: 'medium' },
 
-    // GPT-4.1 Series (2025) - Enhanced GPT-4
-    { value: 'gpt-4.1', label: 'GPT-4.1', description: 'Enhanced coding & reasoning', cost: 'medium' },
-    { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini', description: 'Improved GPT-4 efficiency', cost: 'low' },
-    { value: 'gpt-4.1-nano', label: 'GPT-4.1 Nano', description: 'Compact GPT-4.1', cost: 'low' },
-
-    // GPT-4 Series - Proven workhorses
-    { value: 'gpt-4o', label: 'GPT-4o', description: 'Multimodal flagship model', cost: 'high' },
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Fast and cost-effective', cost: 'low' },
-    { value: 'gpt-4-turbo', label: 'GPT-4 Turbo', description: 'Advanced reasoning', cost: 'high' },
-    { value: 'gpt-4', label: 'GPT-4', description: 'Original GPT-4', cost: 'high' },
-    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'Fast and reliable', cost: 'medium' },
-
-    // O-Series - Deep reasoning models
-    { value: 'o1-preview', label: 'O1 Preview', description: 'Advanced reasoning model', cost: 'high' },
-    { value: 'o1-mini', label: 'O1 Mini', description: 'Efficient reasoning', cost: 'medium' },
+    // O-Series - Deep reasoning specialists
+    { value: 'o1-preview', label: 'O1 Preview', description: 'Advanced reasoning & logic', cost: 'high' },
+    { value: 'o1-mini', label: 'O1 Mini', description: 'Efficient reasoning model', cost: 'medium' },
     { value: 'o3-deep-research', label: 'O3 Deep Research', description: 'Multi-step research & analysis', cost: 'high' },
-    { value: 'o4-mini-deep-research', label: 'O4 Mini Research', description: 'Efficient research model', cost: 'high' },
+    { value: 'o4-mini-deep-research', label: 'O4 Mini Research', description: 'Efficient research specialist', cost: 'high' },
 
     // Specialized Models
-    { value: 'gpt-realtime', label: 'GPT Realtime', description: 'Advanced speech-to-speech', cost: 'high' }
+    { value: 'gpt-realtime', label: 'GPT Realtime', description: 'Advanced speech-to-speech AI', cost: 'high' }
   ]
 
   // Function to convert user ID to display name
