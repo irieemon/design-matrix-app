@@ -16,6 +16,13 @@ export type AITaskType =
   | 'content-enhancement'   // Text improvement, refinement
 
 export type OpenAIModel =
+  | 'gpt-5'
+  | 'gpt-5-mini'
+  | 'gpt-5-nano'
+  | 'gpt-5-chat-latest'
+  | 'gpt-4.1'
+  | 'gpt-4.1-mini'
+  | 'gpt-4.1-nano'
   | 'gpt-4o'
   | 'gpt-4o-mini'
   | 'gpt-4-turbo'
@@ -23,6 +30,9 @@ export type OpenAIModel =
   | 'gpt-3.5-turbo'
   | 'o1-preview'
   | 'o1-mini'
+  | 'o3-deep-research'
+  | 'o4-mini-deep-research'
+  | 'gpt-realtime'
 
 export interface ModelSelection {
   model: OpenAIModel
@@ -54,25 +64,30 @@ export class OpenAIModelRouter {
   static selectModel(context: TaskContext): ModelSelection {
     const { type, complexity, ideaCount = 0, hasFiles = false, hasImages = false, hasAudio = false, userTier = 'pro' } = context
 
-    // Strategic insights require deep reasoning - always use gpt-4o with high token limit
+    // Strategic insights require deep reasoning - use GPT-5 for best results
     if (type === 'strategic-insights') {
+      const useGPT5 = complexity === 'high' || ideaCount > 15 || hasFiles || hasImages
       return {
-        model: 'gpt-4o',
+        model: useGPT5 ? 'gpt-5' : 'gpt-5-mini',
         temperature: this.getTemperatureForTask(type, complexity),
-        maxTokens: complexity === 'high' ? 6000 : 4000,
-        reasoning: 'Strategic insights require advanced reasoning and multi-faceted analysis. GPT-4o excels at complex strategic thinking.',
-        cost: 'high'
+        maxTokens: useGPT5 ? 8000 : 6000, // GPT-5 can handle more tokens
+        reasoning: useGPT5
+          ? 'Strategic insights with high complexity require GPT-5\'s advanced reasoning and built-in thinking.'
+          : 'Standard strategic insights benefit from GPT-5 Mini\'s efficiency and capability.',
+        cost: useGPT5 ? 'medium' : 'low'
       }
     }
 
-    // Risk assessment needs conservative, thorough analysis - use gpt-4o with enhanced token limit
+    // Risk assessment needs conservative, thorough analysis - use GPT-5 for best results
     if (type === 'risk-assessment') {
       return {
-        model: 'gpt-4o',
+        model: complexity === 'high' ? 'gpt-5' : 'gpt-5-mini',
         temperature: 0.3, // Lower temperature for conservative analysis
-        maxTokens: complexity === 'high' ? 5000 : 4000, // Increased for comprehensive risk analysis
-        reasoning: 'Risk assessment requires careful, conservative analysis with comprehensive coverage. GPT-4o with enhanced token limit provides thorough risk evaluation.',
-        cost: 'high'
+        maxTokens: complexity === 'high' ? 7000 : 5000, // GPT-5 enhanced token limits
+        reasoning: complexity === 'high'
+          ? 'Complex risk assessment requires GPT-5\'s advanced reasoning for comprehensive coverage.'
+          : 'Standard risk assessment benefits from GPT-5 Mini\'s efficient analysis.',
+        cost: complexity === 'high' ? 'medium' : 'low'
       }
     }
 
@@ -196,13 +211,32 @@ export class OpenAIModelRouter {
    */
   static getCostEstimate(selection: ModelSelection, tokensEstimate: number = 2000): string {
     const costs: Record<OpenAIModel, { input: number; output: number }> = {
+      // GPT-5 Series (2025) - Half input cost of GPT-4o
+      'gpt-5': { input: 1.25, output: 10.00 }, // per 1M tokens
+      'gpt-5-mini': { input: 0.08, output: 0.30 }, // per 1M tokens
+      'gpt-5-nano': { input: 0.04, output: 0.15 }, // per 1M tokens
+      'gpt-5-chat-latest': { input: 1.25, output: 10.00 }, // per 1M tokens
+
+      // GPT-4.1 Series (2025) - Improved GPT-4o
+      'gpt-4.1': { input: 4.00, output: 12.00 }, // per 1M tokens
+      'gpt-4.1-mini': { input: 0.12, output: 0.50 }, // per 1M tokens
+      'gpt-4.1-nano': { input: 0.06, output: 0.25 }, // per 1M tokens
+
+      // GPT-4 Series
       'gpt-4o': { input: 5.00, output: 15.00 }, // per 1M tokens
       'gpt-4o-mini': { input: 0.15, output: 0.60 }, // per 1M tokens
       'gpt-4-turbo': { input: 10.00, output: 30.00 }, // per 1M tokens
       'gpt-4': { input: 30.00, output: 60.00 }, // per 1M tokens
       'gpt-3.5-turbo': { input: 0.50, output: 1.50 }, // per 1M tokens
+
+      // O-Series Reasoning Models
       'o1-preview': { input: 15.00, output: 60.00 }, // per 1M tokens
-      'o1-mini': { input: 3.00, output: 12.00 } // per 1M tokens
+      'o1-mini': { input: 3.00, output: 12.00 }, // per 1M tokens
+      'o3-deep-research': { input: 20.00, output: 80.00 }, // per 1M tokens
+      'o4-mini-deep-research': { input: 8.00, output: 32.00 }, // per 1M tokens
+
+      // Specialized Models
+      'gpt-realtime': { input: 6.00, output: 18.00 } // per 1M tokens
     }
 
     const modelCost = costs[selection.model]
