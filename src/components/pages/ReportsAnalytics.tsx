@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Sparkles, History, Clock, AlertTriangle, X, Cpu } from 'lucide-react'
+import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Sparkles, History, Clock, AlertTriangle, Cpu } from 'lucide-react'
 import { IdeaCard, Project, ProjectInsights as ProjectInsightsType, User } from '../../types'
 import { DatabaseService } from '../../lib/database'
 import AIInsightsModal from '../AIInsightsModal'
