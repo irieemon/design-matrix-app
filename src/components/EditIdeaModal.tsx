@@ -24,6 +24,15 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
 
+  // Update form state when idea changes
+  useEffect(() => {
+    if (idea) {
+      setContent(idea.content || '')
+      setDetails(idea.details || '')
+      setPriority(idea.priority || 'moderate')
+    }
+  }, [idea])
+
   // Lock the idea when modal opens (only once)
   useEffect(() => {
     if (!idea || !isOpen) return
