@@ -349,6 +349,15 @@ Be specific about THIS project - not generic business advice.`
   })
 
   console.log('🌐 OPENAI: Making API call to OpenAI...')
+
+  // GPT-5 models use max_completion_tokens instead of max_tokens
+  const isGPT5Model = selectedModel.startsWith('gpt-5') || selectedModel.startsWith('o1') || selectedModel.startsWith('o3') || selectedModel.startsWith('o4')
+  const tokenParams = isGPT5Model
+    ? { max_completion_tokens: selectedMaxTokens }
+    : { max_tokens: selectedMaxTokens }
+
+  console.log('🔧 OPENAI: Token parameter used:', isGPT5Model ? 'max_completion_tokens' : 'max_tokens', 'for model:', selectedModel)
+
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -360,7 +369,7 @@ Be specific about THIS project - not generic business advice.`
       seed: Math.floor(Math.random() * 1000000),
       messages: messages,
       temperature: selectedTemperature,
-      max_tokens: selectedMaxTokens,
+      ...tokenParams,
     }),
   })
   
