@@ -1,0 +1,882 @@
+/**
+ * Enhanced Input Component Styles
+ *
+ * S-tier SaaS dashboard input system with comprehensive state management,
+ * animations, accessibility, and responsive design.
+ */
+
+/* ============================================
+   Base Input Styles
+   ============================================ */
+
+.input {
+  /* Layout and positioning */
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--hairline-default);
+  border-radius: 8px;
+  background: var(--surface-primary);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+
+  /* ANIMATED LUX: Smooth focus transitions */
+  transition: border-color var(--duration-base) var(--easing-out),
+              box-shadow var(--duration-base) var(--easing-glide);
+
+  /* Performance optimizations */
+  transform: translateZ(0);
+  will-change: border-color, box-shadow;
+}
+
+.input__field {
+  /* Typography */
+  font-family: inherit;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #1f2937;
+  background: transparent;
+  border: none;
+  outline: none;
+  flex: 1;
+  width: 100%;
+
+  /* Placeholder styling */
+  &::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
+  }
+
+  /* Auto-fill styling */
+  &:-webkit-autofill {
+    box-shadow: 0 0 0 100px white inset;
+    -webkit-text-fill-color: #1f2937;
+  }
+}
+
+.input__container {
+  position: relative;
+  width: 100%;
+}
+
+.input__wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.input__label--required:after {
+  content: ' *';
+  color: #dc2626;
+}
+
+.input__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #6b7280;
+  transition: color 0.18s ease;
+}
+
+.input__icon--before {
+  margin-left: 12px;
+  margin-right: 8px;
+}
+
+.input__icon--after {
+  margin-left: 8px;
+  margin-right: 12px;
+}
+
+.input__message {
+  font-size: 0.75rem;
+  font-weight: 400;
+  margin-top: 4px;
+  min-height: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.input__message--error {
+  color: #dc2626;
+}
+
+.input__message--success {
+  color: #059669;
+}
+
+.input__message--info {
+  color: #2563eb;
+}
+
+.input__message--warning {
+  color: #d97706;
+}
+
+/* Loading indicator */
+.input__loading {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ============================================
+   Size Variants (5 sizes: xs, sm, md, lg, xl)
+   ============================================ */
+
+.input--xs {
+  min-height: 28px;
+  border-radius: 6px;
+}
+
+.input--xs .input__field {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+}
+
+.input--xs .input__field:has(+ .input__icon--before) {
+  padding-left: 0;
+}
+
+.input--xs .input__field:has(~ .input__icon--after) {
+  padding-right: 0;
+}
+
+.input--xs .input__icon {
+  font-size: 0.875rem;
+  width: 14px;
+  height: 14px;
+}
+
+.input--xs .input__icon--before {
+  margin-left: 8px;
+  margin-right: 6px;
+}
+
+.input--xs .input__icon--after {
+  margin-left: 6px;
+  margin-right: 8px;
+}
+
+.input--sm {
+  min-height: 32px;
+  border-radius: 6px;
+}
+
+.input--sm .input__field {
+  padding: 8px 14px;
+  font-size: 0.875rem;
+}
+
+.input--sm .input__field:has(+ .input__icon--before) {
+  padding-left: 0;
+}
+
+.input--sm .input__field:has(~ .input__icon--after) {
+  padding-right: 0;
+}
+
+.input--sm .input__icon {
+  font-size: 1rem;
+  width: 16px;
+  height: 16px;
+}
+
+.input--sm .input__icon--before {
+  margin-left: 10px;
+  margin-right: 6px;
+}
+
+.input--sm .input__icon--after {
+  margin-left: 6px;
+  margin-right: 10px;
+}
+
+.input--md {
+  min-height: 40px;
+  border-radius: 8px;
+}
+
+.input--md .input__field {
+  padding: 10px 16px;
+  font-size: 0.875rem;
+}
+
+.input--md .input__field:has(+ .input__icon--before) {
+  padding-left: 0;
+}
+
+.input--md .input__field:has(~ .input__icon--after) {
+  padding-right: 0;
+}
+
+.input--md .input__icon {
+  font-size: 1.125rem;
+  width: 18px;
+  height: 18px;
+}
+
+.input--md .input__icon--before {
+  margin-left: 12px;
+  margin-right: 8px;
+}
+
+.input--md .input__icon--after {
+  margin-left: 8px;
+  margin-right: 12px;
+}
+
+.input--lg {
+  min-height: 44px;
+  border-radius: 8px;
+}
+
+.input--lg .input__field {
+  padding: 12px 18px;
+  font-size: 1rem;
+}
+
+.input--lg .input__field:has(+ .input__icon--before) {
+  padding-left: 0;
+}
+
+.input--lg .input__field:has(~ .input__icon--after) {
+  padding-right: 0;
+}
+
+.input--lg .input__icon {
+  font-size: 1.25rem;
+  width: 20px;
+  height: 20px;
+}
+
+.input--lg .input__icon--before {
+  margin-left: 14px;
+  margin-right: 10px;
+}
+
+.input--lg .input__icon--after {
+  margin-left: 10px;
+  margin-right: 14px;
+}
+
+.input--xl {
+  min-height: 52px;
+  border-radius: 10px;
+}
+
+.input--xl .input__field {
+  padding: 16px 24px;
+  font-size: 1.125rem;
+}
+
+.input--xl .input__field:has(+ .input__icon--before) {
+  padding-left: 0;
+}
+
+.input--xl .input__field:has(~ .input__icon--after) {
+  padding-right: 0;
+}
+
+.input--xl .input__icon {
+  font-size: 1.5rem;
+  width: 24px;
+  height: 24px;
+}
+
+.input--xl .input__icon--before {
+  margin-left: 18px;
+  margin-right: 12px;
+}
+
+.input--xl .input__icon--after {
+  margin-left: 12px;
+  margin-right: 18px;
+}
+
+/* ============================================
+   Variant Styles (3 variants: primary, secondary, tertiary)
+   ============================================ */
+
+/* Primary Variant - ANIMATED LUX */
+.input--primary {
+  border-color: var(--hairline-default);
+  background: var(--surface-primary);
+}
+
+.input--primary:focus-within {
+  border-color: var(--hairline-focus);
+  box-shadow: var(--shadow-focus-ring-lux);
+}
+
+.input--primary:hover:not(:focus-within):not([data-state="disabled"]) {
+  border-color: var(--hairline-hover);
+}
+
+.input--primary .input__field:focus {
+  color: var(--graphite-800);
+}
+
+.input--primary .input__icon {
+  color: var(--graphite-500);
+  transition: color var(--duration-fast) var(--easing-out);
+}
+
+.input--primary:focus-within .input__icon {
+  color: var(--sapphire-500);
+}
+
+/* Secondary Variant - ANIMATED LUX */
+.input--secondary {
+  border-color: var(--hairline-default);
+  background: var(--canvas-secondary);
+}
+
+.input--secondary:focus-within {
+  border-color: var(--hairline-focus);
+  background: var(--surface-primary);
+  box-shadow: var(--shadow-focus-ring-lux);
+}
+
+.input--secondary:hover:not(:focus-within):not([data-state="disabled"]) {
+  border-color: var(--hairline-hover);
+  background: var(--surface-primary);
+}
+
+.input--secondary .input__field {
+  color: var(--graphite-700);
+}
+
+.input--secondary .input__field::placeholder {
+  color: var(--graphite-400);
+}
+
+.input--secondary .input__icon {
+  color: var(--graphite-400);
+  transition: color var(--duration-fast) var(--easing-out);
+}
+
+.input--secondary:focus-within .input__icon {
+  color: var(--graphite-700);
+}
+
+/* Tertiary Variant - ANIMATED LUX */
+.input--tertiary {
+  border-color: transparent;
+  background: transparent;
+  border-bottom: 1px solid var(--hairline-default);
+  border-radius: 0;
+}
+
+.input--tertiary:focus-within {
+  border-bottom-color: var(--hairline-focus);
+  box-shadow: none;
+}
+
+.input--tertiary:hover:not(:focus-within):not([data-state="disabled"]) {
+  border-bottom-color: var(--hairline-hover);
+}
+
+.input--tertiary .input__field {
+  color: var(--graphite-800);
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.input--tertiary .input__field::placeholder {
+  color: var(--graphite-400);
+}
+
+.input--tertiary .input__icon {
+  color: var(--graphite-400);
+  transition: color var(--duration-fast) var(--easing-out);
+}
+
+.input--tertiary:focus-within .input__icon {
+  color: var(--sapphire-500);
+}
+
+.input--tertiary .input__icon--before {
+  margin-left: 0;
+}
+
+.input--tertiary .input__icon--after {
+  margin-right: 0;
+}
+
+/* ============================================
+   State Styles (6 states)
+   ============================================ */
+
+/* Idle State (default) */
+.input[data-state="idle"] {
+  /* Default styles already applied */
+}
+
+/* Loading State */
+.input[data-state="loading"] {
+  cursor: wait;
+}
+
+.input[data-state="loading"] .input__field {
+  padding-right: 36px;
+}
+
+.input[data-state="loading"] .input__loading {
+  display: block;
+}
+
+/* Error State */
+.input[data-state="error"] {
+  border-color: #dc2626;
+  animation: shake 0.3s ease-in-out;
+}
+
+.input[data-state="error"]:focus-within {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.input[data-state="error"] .input__field {
+  color: #1f2937;
+}
+
+.input[data-state="error"] .input__icon {
+  color: #dc2626;
+}
+
+.input[data-state="error"] .input__label {
+  color: #dc2626;
+}
+
+/* Success State */
+.input[data-state="success"] {
+  border-color: #059669;
+  animation: successPulse 0.4s ease-out;
+}
+
+.input[data-state="success"]:focus-within {
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+.input[data-state="success"] .input__field {
+  color: #1f2937;
+}
+
+.input[data-state="success"] .input__icon {
+  color: #059669;
+}
+
+.input[data-state="success"] .input__label {
+  color: #059669;
+}
+
+/* Disabled State */
+.input[data-state="disabled"],
+.input:has(.input__field:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-color: #e5e7eb;
+  background: #f9fafb;
+}
+
+.input[data-state="disabled"] .input__field,
+.input .input__field:disabled {
+  cursor: not-allowed;
+  color: #9ca3af;
+  background: transparent;
+}
+
+.input[data-state="disabled"] .input__field::placeholder,
+.input .input__field:disabled::placeholder {
+  color: #d1d5db;
+}
+
+.input[data-state="disabled"] .input__icon,
+.input:has(.input__field:disabled) .input__icon {
+  color: #d1d5db;
+}
+
+.input[data-state="disabled"] .input__label,
+.input:has(.input__field:disabled) .input__label {
+  color: #9ca3af;
+}
+
+.input[data-state="disabled"]:hover,
+.input:has(.input__field:disabled):hover {
+  border-color: #e5e7eb;
+  box-shadow: none;
+}
+
+/* Pending State */
+.input[data-state="pending"] {
+  border-color: #f59e0b;
+}
+
+.input[data-state="pending"]:focus-within {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.input[data-state="pending"] .input__icon {
+  color: #f59e0b;
+}
+
+.input[data-state="pending"]:after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  width: 4px;
+  height: 4px;
+  background: #f59e0b;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+  transform: translateY(-50%);
+}
+
+/* ============================================
+   Special Input Types
+   ============================================ */
+
+/* Password input with toggle visibility */
+.input--password {
+  position: relative;
+}
+
+.input--password .input__toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.18s ease;
+}
+
+.input--password .input__toggle:hover {
+  color: #374151;
+}
+
+.input--password .input__toggle:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.input--password .input__field {
+  padding-right: 40px;
+}
+
+/* Search input */
+.input--search .input__field {
+  padding-left: 36px;
+}
+
+.input--search .input__search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 1rem;
+}
+
+.input--search:focus-within .input__search-icon {
+  color: #6366f1;
+}
+
+/* Number input */
+.input--number .input__field {
+  text-align: right;
+}
+
+.input--number .input__field::-webkit-outer-spin-button,
+.input--number .input__field::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input--number .input__field[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes spin {
+  from {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+@keyframes successPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ============================================
+   Accessibility Enhancements
+   ============================================ */
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .input {
+    transition: none;
+    animation: none;
+  }
+
+  .input[data-state="error"] {
+    animation: none;
+  }
+
+  .input[data-state="success"] {
+    animation: none;
+  }
+
+  .input__loading {
+    animation: none;
+  }
+
+  .input[data-state="pending"]:after {
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .input {
+    border-width: 2px;
+  }
+
+  .input--tertiary {
+    border-bottom-width: 3px;
+  }
+
+  .input[data-state="error"] {
+    border-width: 3px;
+  }
+
+  .input[data-state="success"] {
+    border-width: 3px;
+  }
+}
+
+/* Focus indicators for keyboard navigation */
+.input:focus-within {
+  outline-style: none;
+}
+
+.input__field:focus-visible {
+  outline: 2px solid transparent;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .input {
+    min-height: 44px; /* Touch target size */
+  }
+
+  .input--xs {
+    min-height: 36px;
+  }
+
+  .input--sm {
+    min-height: 40px;
+  }
+
+  /* Larger touch targets on mobile */
+  .input--xs .input__field { padding: 8px 12px; }
+  .input--sm .input__field { padding: 10px 14px; }
+  .input--md .input__field { padding: 12px 16px; }
+  .input--lg .input__field { padding: 14px 18px; }
+  .input--xl .input__field { padding: 16px 24px; }
+
+  /* Disable zoom on input focus for iOS */
+  .input__field {
+    font-size: 16px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .input--primary {
+    border-color: #4b5563;
+    background: #374151;
+  }
+
+  .input--primary .input__field {
+    color: #f3f4f6;
+  }
+
+  .input--primary .input__field::placeholder {
+    color: #9ca3af;
+  }
+
+  .input--primary .input__field:-webkit-autofill {
+    box-shadow: 0 0 0 100px #374151 inset;
+    -webkit-text-fill-color: #f3f4f6;
+  }
+
+  .input--secondary {
+    border-color: #6b7280;
+    background: #4b5563;
+  }
+
+  .input--secondary .input__field {
+    color: #f3f4f6;
+  }
+
+  .input--secondary:focus-within {
+    background: #374151;
+  }
+
+  .input--tertiary {
+    border-bottom-color: #6b7280;
+  }
+
+  .input--tertiary .input__field {
+    color: #f3f4f6;
+  }
+
+  .input[data-state="disabled"],
+  .input:has(.input__field:disabled) {
+    background: #4b5563;
+    border-color: #6b7280;
+  }
+
+  .input__label {
+    color: #e5e7eb;
+  }
+
+  .input__message--error {
+    color: #f87171;
+  }
+
+  .input__message--success {
+    color: #34d399;
+  }
+
+  .input__message--info {
+    color: #60a5fa;
+  }
+
+  .input__message--warning {
+    color: #fbbf24;
+  }
+}
+
+/* ============================================
+   Performance Optimizations
+   ============================================ */
+
+/* Layer promotion for smooth animations */
+.input:focus-within,
+.input:hover,
+.input[data-state="loading"],
+.input[data-state="error"],
+.input[data-state="success"] {
+  will-change: border-color, box-shadow;
+}
+
+/* Optimize repaints during state transitions */
+.input[data-state="loading"] .input__loading {
+  will-change: transform;
+}
+
+/* Clean up will-change after animations */
+.input:not(:focus-within):not(:hover):not([data-state="loading"]):not([data-state="error"]):not([data-state="success"]) {
+  will-change: auto;
+}
+
+/* ============================================
+   Component Integration Utilities
+   ============================================ */
+
+/* Full width modifier */
+.input--full-width {
+  width: 100%;
+}
+
+.input--full-width .input__container {
+  width: 100%;
+}
+
+/* Inline modifier */
+.input--inline {
+  display: inline-flex;
+  width: auto;
+}
+
+.input--inline .input__container {
+  width: auto;
+}
+
+/* Group integration for form layouts */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group--horizontal {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.input-group--horizontal .input__container {
+  flex: 1;
+}
+
+/* Validation message fade-in */
+.input__message {
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: all 0.18s ease;
+}
+
+.input__message:not(:empty) {
+  opacity: 1;
+  transform: translateY(0);
+}

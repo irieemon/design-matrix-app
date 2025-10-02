@@ -1,0 +1,87 @@
+phase: 2
+phase_name: "Core Components (Buttons & Inputs)"
+status: in_progress
+started: 2025-10-02T16:15:00Z
+completed: null
+git_branch: feature/lux-phase-2-core-components
+git_commit: pending
+
+completed_tasks:
+  - Applied Animated Lux styling to Button component (all variants)
+  - Applied Animated Lux styling to Input component (all variants)
+  - Updated button.css with Lux tokens (graphite, hairline, shadows, motion)
+  - Updated input.css with Lux tokens (hairline borders, focus rings, icon transitions)
+  - Updated textarea.css base styles (border, shadow, transitions)
+  - Updated select.css base styles (border, shadow, transitions)
+  - Build validation successful (5.80s)
+
+current_task: "Need to apply Lux to Card components (excluding idea cards)"
+
+next_steps:
+  - Identify all Card components (exclude IdeaCardComponent, OptimizedIdeaCard)
+  - Apply Lux card-hover animation (shadow expansion, +2% tint)
+  - Test visual changes in development
+  - Complete Phase 2 checkpoint
+
+files_modified:
+  - src/styles/button.css (Lux styling for all button variants)
+  - src/styles/input.css (Lux styling for all input variants)
+  - src/styles/textarea.css (base Lux transitions)
+  - src/styles/select.css (base Lux transitions)
+
+button_changes:
+  - Primary: graphite-700 bg, -1px hover lift, Lux shadows
+  - Secondary: hairline borders, canvas backgrounds, Lux focus ring
+  - Tertiary: graphite text, canvas hover, smooth transitions
+  - Danger: garnet-700 hover, Lux shadows
+  - Ghost: graphite colors, canvas hover
+  - All: 140ms fast easing, 120ms instant press, Lux focus rings
+
+input_changes:
+  - Borders: hairline-default → hairline-hover → hairline-focus (sapphire)
+  - Focus ring: Lux sapphire ring (190ms glide easing)
+  - Icons: graphite-500 → sapphire-500 on focus (140ms transition)
+  - Backgrounds: surface-primary (white) or canvas-secondary (off-white)
+  - Placeholders: graphite-400
+  - All variants updated (primary, secondary, tertiary)
+
+validation_results:
+  build_status: "success"
+  build_time: "5.80s"
+  css_bundle_size: "296.18 kB (36.72 kB gzipped)" # +1.74 kB from Phase 1
+  bundle_increase: "+1.74 kB (0.6% increase - acceptable)"
+  warnings: "Pre-existing (@keyframes none, chunk sizes)"
+  errors: 0
+  visual_changes: "YES - Buttons and inputs now use Lux colors/animations"
+
+visual_changes_expected:
+  buttons:
+    - Primary buttons now graphite (not pure black)
+    - All buttons have -1px hover lift
+    - Sapphire focus rings instead of black outlines
+    - Wider, softer shadows
+
+  inputs:
+    - Hairline borders (lighter, more refined)
+    - Sapphire focus rings with smooth fade-in
+    - Icons change color on focus
+    - Smoother transitions (190ms glide)
+
+issues_encountered: []
+
+notes: |
+  Phase 2 is progressing well! Buttons and Inputs now fully use Animated Lux.
+
+  Visual changes are now visible:
+  - Buttons have the refined graphite color (#374151) instead of pure black
+  - All interactive elements have smooth Lux animations
+  - Focus rings are sapphire with soft glow
+  - Shadows are width-dominant and subtle
+
+  Still need to:
+  - Apply card-hover to Card components (excluding idea cards)
+  - Full testing of visual changes
+  - Visual regression baseline capture
+
+  Risk Level: 🟡 MEDIUM - High usage components, visual changes active
+  Rollback: git reset --hard lux-checkpoint-phase-1

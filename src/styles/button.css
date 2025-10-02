@@ -1,0 +1,636 @@
+/**
+ * Enhanced Button Component Styles
+ *
+ * S-tier SaaS dashboard button system with comprehensive state management,
+ * animations, accessibility, and responsive design.
+ */
+
+/* ============================================
+   Base Button Styles
+   ============================================ */
+
+.btn {
+  /* Layout and positioning */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  border-radius: 8px;
+
+  /* Typography */
+  font-family: inherit;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+
+  /* Interaction */
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+
+  /* Transitions - ANIMATED LUX */
+  transition: transform var(--duration-fast) var(--easing-out),
+              box-shadow var(--duration-fast) var(--easing-out),
+              background-color var(--duration-fast) var(--easing-out),
+              border-color var(--duration-fast) var(--easing-out),
+              color var(--duration-fast) var(--easing-out);
+
+  /* Performance optimizations */
+  transform: translateZ(0);
+  will-change: transform, box-shadow;
+}
+
+/* Button content structure */
+.btn__content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+
+.btn__text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn__icon--before {
+  margin-right: 4px;
+}
+
+.btn__icon--after {
+  margin-left: 4px;
+}
+
+/* Loading state content */
+.btn__content--loading {
+  opacity: 0.8;
+}
+
+.btn__loading-text {
+  margin-left: 8px;
+  opacity: 0.7;
+}
+
+/* Error and success state content */
+.btn__content--error,
+.btn__content--success {
+  font-weight: 500;
+}
+
+.btn__error-message {
+  color: inherit;
+}
+
+.btn__success-message {
+  color: inherit;
+}
+
+/* Full width modifier */
+.btn--full-width {
+  width: 100%;
+  display: flex;
+}
+
+/* ============================================
+   Size Variants (5 sizes: xs, sm, md, lg, xl)
+   ============================================ */
+
+.btn--xs {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  min-height: 28px;
+  border-radius: 6px;
+  gap: 4px;
+}
+
+.btn--xs .btn__content {
+  gap: 4px;
+}
+
+.btn--xs .btn__icon {
+  font-size: 0.875rem;
+  width: 14px;
+  height: 14px;
+}
+
+.btn--sm {
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  min-height: 32px;
+  border-radius: 6px;
+  gap: 6px;
+}
+
+.btn--sm .btn__content {
+  gap: 6px;
+}
+
+.btn--sm .btn__icon {
+  font-size: 1rem;
+  width: 16px;
+  height: 16px;
+}
+
+.btn--md {
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  min-height: 40px;
+  border-radius: 8px;
+  gap: 8px;
+}
+
+.btn--md .btn__content {
+  gap: 8px;
+}
+
+.btn--md .btn__icon {
+  font-size: 1.125rem;
+  width: 18px;
+  height: 18px;
+}
+
+.btn--lg {
+  padding: 12px 24px;
+  font-size: 1rem;
+  min-height: 44px;
+  border-radius: 8px;
+  gap: 10px;
+}
+
+.btn--lg .btn__content {
+  gap: 10px;
+}
+
+.btn--lg .btn__icon {
+  font-size: 1.25rem;
+  width: 20px;
+  height: 20px;
+}
+
+.btn--xl {
+  padding: 16px 32px;
+  font-size: 1.125rem;
+  min-height: 52px;
+  border-radius: 10px;
+  gap: 12px;
+}
+
+.btn--xl .btn__content {
+  gap: 12px;
+}
+
+.btn--xl .btn__icon {
+  font-size: 1.5rem;
+  width: 24px;
+  height: 24px;
+}
+
+/* ============================================
+   Variant Styles (6 variants)
+   ============================================ */
+
+/* Primary Variant - ANIMATED LUX */
+.btn--primary {
+  background: var(--graphite-700);
+  color: #ffffff;
+  border-color: var(--graphite-700);
+  box-shadow: var(--shadow-button-lux);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--graphite-800);
+  border-color: var(--graphite-800);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-button-lux-hover);
+}
+
+.btn--primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-button-lux);
+  transition-duration: var(--duration-instant);
+  transition-timing-function: var(--easing-in);
+}
+
+.btn--primary:focus-visible {
+  box-shadow: var(--shadow-focus-ring-lux);
+  outline: none;
+}
+
+/* Secondary Variant - ANIMATED LUX */
+.btn--secondary {
+  background: var(--surface-primary);
+  color: var(--graphite-700);
+  border-color: var(--hairline-default);
+  box-shadow: var(--shadow-button-lux);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--canvas-secondary);
+  border-color: var(--hairline-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-button-lux-hover);
+}
+
+.btn--secondary:active:not(:disabled) {
+  transform: translateY(0);
+  background: var(--canvas-tertiary);
+  transition-duration: var(--duration-instant);
+  transition-timing-function: var(--easing-in);
+}
+
+.btn--secondary:focus-visible {
+  box-shadow: var(--shadow-focus-ring-lux);
+  outline: none;
+}
+
+/* Tertiary Variant - ANIMATED LUX */
+.btn--tertiary {
+  background: transparent;
+  color: var(--graphite-500);
+  border-color: transparent;
+}
+
+.btn--tertiary:hover:not(:disabled) {
+  background: var(--canvas-secondary);
+  color: var(--graphite-700);
+  transform: translateY(-1px);
+}
+
+.btn--tertiary:active:not(:disabled) {
+  transform: translateY(0);
+  background: var(--canvas-tertiary);
+  transition-duration: var(--duration-instant);
+  transition-timing-function: var(--easing-in);
+}
+
+.btn--tertiary:focus-visible {
+  box-shadow: var(--shadow-focus-ring-lux);
+  outline: none;
+}
+
+/* Danger Variant - ANIMATED LUX */
+.btn--danger {
+  background: #DC2626;
+  color: #ffffff;
+  border-color: #DC2626;
+  box-shadow: var(--shadow-button-lux);
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: var(--garnet-700);
+  border-color: var(--garnet-700);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(185, 28, 28, 0.15);
+}
+
+.btn--danger:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-button-lux);
+  transition-duration: var(--duration-instant);
+  transition-timing-function: var(--easing-in);
+}
+
+.btn--danger:focus-visible {
+  box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.1);
+  outline: none;
+}
+
+/* Success Variant */
+.btn--success {
+  background: #059669;
+  color: #ffffff;
+  border-color: #059669;
+}
+
+.btn--success:hover:not(:disabled) {
+  background: #047857;
+  border-color: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.btn--success:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
+}
+
+.btn--success:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
+/* Ghost Variant - ANIMATED LUX */
+.btn--ghost {
+  background: transparent;
+  color: var(--graphite-700);
+  border-color: transparent;
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--canvas-tertiary);
+  transform: translateY(-1px);
+}
+
+.btn--ghost:active:not(:disabled) {
+  transform: translateY(0);
+  background: var(--graphite-200);
+  transition-duration: var(--duration-instant);
+  transition-timing-function: var(--easing-in);
+}
+
+.btn--ghost:focus-visible {
+  box-shadow: var(--shadow-focus-ring-lux);
+  outline: none;
+}
+
+/* ============================================
+   State Styles (6 states)
+   ============================================ */
+
+/* Idle State (default) */
+.btn[data-state="idle"] {
+  /* Default styles already applied */
+}
+
+/* Loading State */
+.btn[data-state="loading"] {
+  pointer-events: none;
+  position: relative;
+}
+
+.btn[data-state="loading"]:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  border-radius: inherit;
+  opacity: 0.8;
+  z-index: 1;
+}
+
+/* Error State */
+.btn[data-state="error"] {
+  animation: shake 0.5s ease-in-out;
+}
+
+.btn[data-state="error"].btn--primary,
+.btn[data-state="error"].btn--secondary,
+.btn[data-state="error"].btn--tertiary,
+.btn[data-state="error"].btn--ghost {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.btn[data-state="error"].btn--danger {
+  background: #7f1d1d;
+  border-color: #991b1b;
+}
+
+.btn[data-state="error"].btn--success {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+/* Success State */
+.btn[data-state="success"] {
+  animation: successPulse 0.6s ease-out;
+}
+
+.btn[data-state="success"].btn--primary,
+.btn[data-state="success"].btn--secondary,
+.btn[data-state="success"].btn--tertiary,
+.btn[data-state="success"].btn--danger,
+.btn[data-state="success"].btn--ghost {
+  background: #f0fdf4;
+  color: #059669;
+  border-color: #bbf7d0;
+}
+
+.btn[data-state="success"].btn--success {
+  background: #064e3b;
+  border-color: #065f46;
+}
+
+/* Disabled State */
+.btn[data-state="disabled"],
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Pending State */
+.btn[data-state="pending"] {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.btn[data-state="pending"]:after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+  transform: translateY(-50%);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+@keyframes successPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ============================================
+   Accessibility Enhancements
+   ============================================ */
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+    animation: none;
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .btn[data-state="error"] {
+    animation: none;
+  }
+
+  .btn[data-state="success"] {
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .btn {
+    border-width: 2px;
+  }
+
+  .btn--ghost,
+  .btn--tertiary {
+    border-color: currentColor;
+  }
+}
+
+/* Focus indicators for keyboard navigation */
+.btn:focus-visible {
+  outline-style: solid;
+  outline-width: 2px;
+  outline-offset: 2px;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .btn {
+    min-height: 44px; /* Touch target size */
+  }
+
+  .btn--xs {
+    min-height: 36px;
+  }
+
+  .btn--sm {
+    min-height: 40px;
+  }
+
+  /* Slightly larger touch targets on mobile */
+  .btn--xs { padding: 8px 16px; }
+  .btn--sm { padding: 10px 20px; }
+  .btn--md { padding: 12px 24px; }
+  .btn--lg { padding: 14px 28px; }
+  .btn--xl { padding: 16px 32px; }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .btn--secondary {
+    background: #374151;
+    color: #f3f4f6;
+    border-color: #4b5563;
+  }
+
+  .btn--secondary:hover:not(:disabled) {
+    background: #4b5563;
+    border-color: #6b7280;
+  }
+
+  .btn--tertiary {
+    color: #d1d5db;
+  }
+
+  .btn--tertiary:hover:not(:disabled) {
+    background: #374151;
+    color: #f3f4f6;
+  }
+
+  .btn--ghost {
+    color: #d1d5db;
+  }
+
+  .btn--ghost:hover:not(:disabled) {
+    background: #374151;
+  }
+}
+
+/* ============================================
+   Loading Spinner Integration
+   ============================================ */
+
+.btn .loading-spinner {
+  width: 1em;
+  height: 1em;
+}
+
+.btn--xs .loading-spinner {
+  width: 0.875em;
+  height: 0.875em;
+}
+
+.btn--sm .loading-spinner {
+  width: 0.875em;
+  height: 0.875em;
+}
+
+.btn--md .loading-spinner {
+  width: 1em;
+  height: 1em;
+}
+
+.btn--lg .loading-spinner {
+  width: 1.125em;
+  height: 1.125em;
+}
+
+.btn--xl .loading-spinner {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+/* ============================================
+   Performance Optimizations
+   ============================================ */
+
+/* Layer promotion for smooth animations */
+.btn:hover,
+.btn:focus,
+.btn[data-state="loading"],
+.btn[data-state="error"],
+.btn[data-state="success"] {
+  will-change: transform, box-shadow;
+}
+
+/* Optimize repaints during state transitions */
+.btn[data-state="loading"] * {
+  will-change: opacity;
+}
+
+/* Clean up will-change after animations */
+.btn:not(:hover):not(:focus):not([data-state="loading"]):not([data-state="error"]):not([data-state="success"]) {
+  will-change: auto;
+}
