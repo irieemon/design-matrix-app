@@ -16,35 +16,6 @@ import { createRequestLogger as baseCreateRequestLogger, createPerformanceLogger
 let isColdStart = true
 
 /**
- * Generate or extract request ID for correlation
- */
-function getRequestId(req: VercelRequest): string {
-  // Check for existing request ID from proxy/load balancer
-  const existingId =
-    req.headers['x-request-id'] ||
-    req.headers['x-correlation-id'] ||
-    req.headers['x-amzn-trace-id']
-
-  if (existingId) {
-    return typeof existingId === 'string' ? existingId : existingId[0]
-  }
-
-  // Generate new request ID
-  return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-}
-
-/**
- * Extract client info from request
- */
-function getClientInfo(req: VercelRequest) {
-  return {
-    ip: req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown',
-    userAgent: req.headers['user-agent']?.substring(0, 100) || 'unknown',
-    origin: req.headers['origin'] || req.headers['referer'] || 'unknown'
-  }
-}
-
-/**
  * Create request-scoped logger for API endpoints
  *
  * @param req - Vercel request object
