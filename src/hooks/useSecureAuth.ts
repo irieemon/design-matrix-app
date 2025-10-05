@@ -84,7 +84,7 @@ export function useSecureAuth(): UseSecureAuthReturn {
       setIsLoading(true)
 
       // Call auth/user endpoint (cookies sent automatically)
-      const response = await apiClient.get<{ user: User }>('/api/auth/user')
+      const response = await apiClient.get<{ user: User }>('/api/auth?action=user')
 
       setUser(response.user)
       logger.debug('Session verified', { userId: response.user.id })
@@ -120,7 +120,7 @@ export function useSecureAuth(): UseSecureAuthReturn {
 
       logger.debug('Attempting login...', { email })
 
-      const response = await apiClient.post<{ user: User }>('/api/auth/session', {
+      const response = await apiClient.post<{ user: User }>('/api/auth?action=session', {
         email,
         password,
       })
@@ -148,7 +148,7 @@ export function useSecureAuth(): UseSecureAuthReturn {
       logger.debug('Logging out...')
 
       // Call logout endpoint (clears cookies)
-      await apiClient.delete('/api/auth/session')
+      await apiClient.delete('/api/auth?action=session')
 
       setUser(null)
       logger.debug('Logout successful')
@@ -170,7 +170,7 @@ export function useSecureAuth(): UseSecureAuthReturn {
       setError(null)
       logger.debug('Manually refreshing session...')
 
-      const response = await apiClient.post<{ user: User }>('/api/auth/refresh')
+      const response = await apiClient.post<{ user: User }>('/api/auth?action=refresh')
 
       setUser(response.user)
       logger.debug('Session refresh successful', { userId: response.user.id })

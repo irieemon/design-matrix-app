@@ -43,7 +43,7 @@ export class RoadmapService extends BaseAiService {
       cacheKey,
       async () => {
         try {
-          const data = await this.fetchWithErrorHandling<any>('/api/ai/generate-roadmap-v2', {
+          const data = await this.fetchWithErrorHandling<any>('/api/ai?action=generate-roadmap', {
             projectName,
             projectType: projectType || 'General',
             ideas: (ideas || []).map((idea) => ({

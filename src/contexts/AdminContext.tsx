@@ -112,7 +112,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         isAdmin: boolean
         isSuperAdmin: boolean
         capabilities: string[]
-      }>('/api/auth/admin/verify')
+      }>('/api/auth?action=admin-verify')
 
       logger.debug('AdminContext: Admin verification result:', {
         isAdmin: response.isAdmin,

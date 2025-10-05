@@ -7,12 +7,12 @@
  * API Endpoints
  */
 export const AI_ENDPOINTS = {
-  GENERATE_IDEAS: '/api/ai/generate-ideas',
-  GENERATE_INSIGHTS: '/api/ai/generate-insights',
-  GENERATE_ROADMAP: '/api/ai/generate-roadmap-v2',
-  ANALYZE_FILE: '/api/ai/analyze-file',
-  ANALYZE_IMAGE: '/api/ai/analyze-image',
-  TRANSCRIBE_AUDIO: '/api/ai/transcribe-audio'
+  GENERATE_IDEAS: '/api/ai?action=generate-ideas',
+  GENERATE_INSIGHTS: '/api/ai?action=generate-insights',
+  GENERATE_ROADMAP: '/api/ai?action=generate-roadmap',
+  ANALYZE_FILE: '/api/ai?action=analyze-file',
+  ANALYZE_IMAGE: '/api/ai?action=analyze-image',
+  TRANSCRIBE_AUDIO: '/api/ai?action=transcribe-audio'
 } as const
 
 /**

@@ -346,7 +346,7 @@ export class FileService {
     try {
       logger.debug('🤖 Triggering AI analysis for file:', fileId)
       
-      const response = await fetch('/api/ai/analyze-file', {
+      const response = await fetch('/api/ai?action=analyze-file', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

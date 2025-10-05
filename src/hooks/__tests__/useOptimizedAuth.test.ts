@@ -217,7 +217,7 @@ describe('useOptimizedAuth', () => {
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          '/api/auth/user',
+          '/api/auth?action=user',
           expect.objectContaining({
             headers: expect.objectContaining({
               'Authorization': 'Bearer test-token'

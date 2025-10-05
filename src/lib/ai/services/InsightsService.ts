@@ -228,7 +228,7 @@ export class InsightsService extends BaseAiService {
             })
           }
 
-          const data = await this.fetchWithErrorHandling<any>('/api/ai/generate-insights', requestPayload)
+          const data = await this.fetchWithErrorHandling<any>('/api/ai?action=generate-insights', requestPayload)
           const insights = data.insights || {}
 
           // Log what we received from the AI API

@@ -206,7 +206,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
           }
         }
 
-        const response = await fetch('/api/auth/user', {
+        const response = await fetch('/api/auth?action=user', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -247,7 +247,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
             })
 
             // Retry with fresh token
-            const retryResponse = await fetch('/api/auth/user', {
+            const retryResponse = await fetch('/api/auth?action=user', {
               headers: {
                 'Authorization': `Bearer ${data.session.access_token}`,
                 'Content-Type': 'application/json',
@@ -507,7 +507,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       const token = (await supabase.auth.getSession()).data.session?.access_token
       if (token) {
         logger.debug('🧹 Clearing server-side caches...')
-        const response = await fetch('/api/auth/clear-cache', {
+        const response = await fetch('/api/auth?action=clear-cache', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -561,7 +561,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         const token = (await supabase.auth.getSession()).data.session?.access_token
         if (token) {
           logger.debug('🧹 Clearing server-side caches on logout...')
-          const response = await fetch('/api/auth/clear-cache', {
+          const response = await fetch('/api/auth?action=clear-cache', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,

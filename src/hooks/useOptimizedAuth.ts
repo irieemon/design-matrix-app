@@ -74,7 +74,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
       const token = (await supabase.auth.getSession()).data.session?.access_token
       if (!token) throw new Error('No auth token available')
 
-      const response = await fetch('/api/auth/user', {
+      const response = await fetch('/api/auth?action=user', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

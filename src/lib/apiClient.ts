@@ -68,7 +68,7 @@ async function refreshToken(): Promise<boolean> {
     try {
       logger.debug('Attempting token refresh...')
 
-      const response = await fetch('/api/auth/refresh', {
+      const response = await fetch('/api/auth?action=refresh', {
         method: 'POST',
         credentials: 'include', // Send cookies
       })

@@ -45,7 +45,7 @@ export class IdeaGenerationService extends BaseAiService {
       cacheKey,
       async () => {
         try {
-          const data = await this.fetchWithErrorHandling<any>('/api/ai/generate-ideas', {
+          const data = await this.fetchWithErrorHandling<any>('/api/ai?action=generate-ideas', {
             title,
             description: projectContext?.description || '',
             projectType: projectContext?.type || 'General'
@@ -106,7 +106,7 @@ export class IdeaGenerationService extends BaseAiService {
       cacheKey,
       async () => {
         try {
-          const data = await this.fetchWithErrorHandling<any>('/api/ai/generate-ideas', {
+          const data = await this.fetchWithErrorHandling<any>('/api/ai?action=generate-ideas', {
             title,
             description,
             projectType,
