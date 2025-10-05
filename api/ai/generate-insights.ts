@@ -695,7 +695,7 @@ function getSupabaseClient() {
 }
 
 // Get signed URL for image file
-async function getSignedImageUrl(filePath: string): Promise<string | null> {
+async function _getSignedImageUrl(filePath: string): Promise<string | null> {
   const supabase = getSupabaseClient()
   if (!supabase) {
     console.warn('⚠️ SUPABASE: Client not available')

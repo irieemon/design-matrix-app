@@ -26,18 +26,19 @@ export interface AuthenticatedRequest extends VercelRequest {
 
 /**
  * Middleware handler function type
+ * Can return void, VercelResponse, or Promise of either
  */
 export type MiddlewareHandler = (
   req: AuthenticatedRequest,
   res: VercelResponse
-) => Promise<void> | void
+) => Promise<void | VercelResponse> | void | VercelResponse
 
 /**
  * Middleware wrapper type
  */
 export type MiddlewareWrapper = (
   handler: MiddlewareHandler
-) => (req: VercelRequest, res: VercelResponse) => Promise<void>
+) => (req: VercelRequest, res: VercelResponse) => Promise<void | VercelResponse>
 
 /**
  * Rate limit configuration

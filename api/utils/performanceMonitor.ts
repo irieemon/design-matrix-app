@@ -180,8 +180,8 @@ class AuthPerformanceMonitor {
   }
 
   // Get recent performance trends
-  private getRecentMetrics() {
-    const trends = {}
+  private getRecentMetrics(): Record<string, { trend: 'improving' | 'degrading'; change: number; current: number }> {
+    const trends: Record<string, { trend: 'improving' | 'degrading'; change: number; current: number }> = {}
     for (const [operation, metric] of this.metrics) {
       if (metric.samples.length >= 10) {
         const recent10 = metric.samples.slice(-10)

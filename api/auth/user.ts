@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelResponse } from '@vercel/node'
 import type { AuthenticatedRequest } from '../middleware/types'
 import { authenticatedEndpoint } from '../middleware/compose'
 import { getUserProfile } from './roles'
@@ -25,6 +25,10 @@ async function handler(req: AuthenticatedRequest, res: VercelResponse) {
 
     // User is already authenticated by withAuth middleware
     const user = req.user
+    if (!user) {
+      return res.status(401).json({ error: 'User not authenticated' })
+    }
+
     const profileStart = performance.now()
 
     // PERFORMANCE: Get user profile with timeout protection

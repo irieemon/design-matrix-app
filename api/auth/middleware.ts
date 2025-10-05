@@ -2,7 +2,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import validator from 'validator'
-import { isValidUUID, sanitizeUserId } from '../../src/utils/uuid'
+import { sanitizeUserId } from '../../src/utils/uuid'
 
 // Create optimized Supabase client for server-side auth verification
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
@@ -43,7 +43,6 @@ export interface AuthenticatedRequest extends VercelRequest {
 // Session security
 export function validateSession(req: VercelRequest): boolean {
   const userAgent = req.headers['user-agent']
-  const xForwardedFor = req.headers['x-forwarded-for']
 
   // Basic bot detection
   if (!userAgent || userAgent.length < 10) {
@@ -117,7 +116,7 @@ export async function authenticate(req: VercelRequest): Promise<{ user: { id: st
       result = await supabase.auth.getUser(token)
       clearTimeout(timeoutId)
     } catch (error) {
-      if (error.name === 'AbortError') {
+      if ((error as Error).name === 'AbortError') {
         return { user: null, error: 'Authentication timeout' }
       }
       throw error

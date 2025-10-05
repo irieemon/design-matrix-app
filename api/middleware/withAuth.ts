@@ -102,8 +102,8 @@ export const withAuth: MiddlewareWrapper = (handler: MiddlewareHandler) => {
         id: user.id,
         email: user.email || '',
         role: profile?.role || 'user',
-        iat: user.iat,
-        exp: user.exp,
+        iat: (user as any).iat,
+        exp: (user as any).exp,
       }
 
       authReq.session = {

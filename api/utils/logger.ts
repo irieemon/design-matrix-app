@@ -89,7 +89,7 @@ export function createRequestLogger(req: VercelRequest, endpoint: string) {
     coldStart,
 
     // Environment
-    environment: process.env.NODE_ENV || 'unknown',
+    environment: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'development',
     region: process.env.VERCEL_REGION || 'unknown',
 
     // Timestamp

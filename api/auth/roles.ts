@@ -1,38 +1,5 @@
 /* eslint-disable no-console */
-import { VercelRequest, VercelResponse } from '@vercel/node'
-import { authenticate, securityMiddleware } from './middleware'
-import { createClient } from '@supabase/supabase-js'
-import { optimizedGetUserProfile } from '../utils/queryOptimizer'
-import { isValidUUID, sanitizeUserId, ensureUUID } from '../../src/utils/uuid'
-
-// CRITICAL FIX: Use anonymous key for consistency with frontend auth
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
-
-// PERFORMANCE: Create dedicated server client with optimized settings
-const supabase = createClient(supabaseUrl!, supabaseAnonKey!, {
-  auth: {
-    autoRefreshToken: false,    // Server doesn't need refresh
-    persistSession: false,      // Server doesn't persist
-    detectSessionInUrl: false   // Server doesn't check URLs
-  },
-  // PERFORMANCE: Aggressive connection optimizations
-  global: {
-    headers: {
-      'Connection': 'keep-alive',
-      'Keep-Alive': 'timeout=2, max=1000',  // Faster timeout, more connections
-      'Cache-Control': 'no-store'            // Prevent stale data
-    }
-  },
-  // PERFORMANCE: Optimized timeouts
-  db: {
-    schema: 'public'
-  }
-})
-
-// Profile cache for server-side operations
-const serverProfileCache = new Map<string, { profile: UserProfile; timestamp: number; expires: number }>()
-const SERVER_PROFILE_CACHE_DURATION = 2 * 60 * 1000 // 2 minutes
+import { sanitizeUserId, ensureUUID } from '../../src/utils/uuid'
 
 export type UserRole = 'user' | 'admin' | 'super_admin'
 

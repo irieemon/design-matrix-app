@@ -99,11 +99,11 @@ async function refreshHandler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       success: true,
       user: {
-        id: data.user.id,
-        email: data.user.email,
-        metadata: data.user.user_metadata,
+        id: data.user?.id,
+        email: data.user?.email,
+        metadata: data.user?.user_metadata,
       },
-      expiresAt: data.session.expires_at,
+      expiresAt: data.session?.expires_at,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {

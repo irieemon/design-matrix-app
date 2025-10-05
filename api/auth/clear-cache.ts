@@ -118,7 +118,7 @@ async function authenticateRequest(req: VercelRequest): Promise<{ userId: string
 
     } catch (authError) {
       clearTimeout(timeoutId)
-      if (authError.name === 'AbortError') {
+      if ((authError as Error).name === 'AbortError') {
         console.warn('[SECURITY] Authentication timeout')
       } else {
         console.error('[SECURITY] Authentication error:', authError)
@@ -139,28 +139,28 @@ function clearSimpleCache(): { cleared: number; operations: string[] } {
 
   try {
     // Clear any global caches if they exist
-    if (global.queryOptimizerCache) {
-      const size = global.queryOptimizerCache.size || 0
-      global.queryOptimizerCache.clear?.()
+    if ((globalThis as any).queryOptimizerCache) {
+      const size = (globalThis as any).queryOptimizerCache.size || 0;
+      (globalThis as any).queryOptimizerCache.clear?.()
       totalCleared += size
       operations.push(`QueryOptimizer: ${size} entries`)
     }
 
-    if (global.userProfileCache) {
-      const size = global.userProfileCache.size || 0
-      global.userProfileCache.clear?.()
+    if ((globalThis as any).userProfileCache) {
+      const size = (globalThis as any).userProfileCache.size || 0;
+      (globalThis as any).userProfileCache.clear?.()
       totalCleared += size
       operations.push(`UserProfile: ${size} entries`)
     }
 
-    if (global.connectionPool) {
+    if ((globalThis as any).connectionPool) {
       // Just log, don't clear active connections
       operations.push('ConnectionPool: logged')
     }
 
     // Force garbage collection if available
-    if (global.gc) {
-      global.gc()
+    if ((globalThis as any).gc) {
+      (globalThis as any).gc()
       operations.push('GC: triggered')
     }
 
@@ -168,7 +168,7 @@ function clearSimpleCache(): { cleared: number; operations: string[] } {
 
   } catch (error) {
     console.warn('[CACHE] Cache clearing error (non-critical):', error)
-    return { cleared: 0, operations: ['Error: ' + error.message] }
+    return { cleared: 0, operations: ['Error: ' + (error as Error).message] }
   }
 }
 

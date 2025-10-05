@@ -192,7 +192,7 @@ async function analyzeFileContent(
   
   let analysis = {
     summary: '',
-    key_insights: [],
+    key_insights: [] as string[],
     extracted_text: '',
     visual_description: '',
     audio_transcript: '',

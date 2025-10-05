@@ -64,7 +64,7 @@ export default async function handler(req: any, res: any) {
 
         // Use the postgres connection to execute raw SQL
         // Note: This requires enabling the PostgREST extensions
-        const { data, error } = await supabase
+        const { error: _error } = await supabase
           .from('_migrations')
           .select('*')
           .limit(0)

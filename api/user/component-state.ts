@@ -10,9 +10,10 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelResponse } from '@vercel/node'
 import { z } from 'zod'
-import DOMPurify from 'isomorphic-dompurify'
+import DOMPurify from 'dompurify'
+import { JSDOM } from 'jsdom'
 import {
   withUserRateLimit,
   withCSRF,
@@ -20,6 +21,10 @@ import {
   compose,
   type AuthenticatedRequest,
 } from '../middleware'
+
+// Create a DOMPurify instance for server-side use
+const window = new JSDOM('').window
+const purify = DOMPurify(window as unknown as Window)
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL!
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!
@@ -51,7 +56,7 @@ function sanitizeStateData(data: unknown): unknown {
 
   // Convert to JSON and sanitize
   const jsonString = JSON.stringify(data)
-  const sanitized = DOMPurify.sanitize(jsonString, {
+  const sanitized = purify.sanitize(jsonString, {
     ALLOWED_TAGS: [],  // No HTML tags
     ALLOWED_ATTR: [],  // No attributes
   })

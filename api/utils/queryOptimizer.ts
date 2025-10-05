@@ -3,7 +3,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js'
 import { withPooledConnection } from './connectionPool'
-import { isValidUUID, sanitizeUserId, ensureUUID } from '../../src/utils/uuid'
+import { sanitizeUserId, ensureUUID } from '../../src/utils/uuid'
 
 interface QueryCacheEntry {
   data: any
@@ -155,7 +155,7 @@ class QueryOptimizer {
       const queryTime = performance.now() - queryStart
       this.recordMetrics(operation, queryTime, false)
 
-      console.warn(`Profile fetch timeout/error for ${validUserId}:`, error.message)
+      console.warn(`Profile fetch timeout/error for ${validUserId}:`, (error as Error).message)
       return this.createFallbackProfile(validUserId, userEmail)
     }
   }
@@ -222,7 +222,7 @@ class QueryOptimizer {
       })
 
       // Map results and create cache entries
-      profileData.forEach(profile => {
+      profileData.forEach((profile: any) => {
         results.set(profile.id, profile)
         // Cache individual profiles for future single queries
         const cacheKey = this.generateCacheKey('user_profiles', 'getUserProfile', {

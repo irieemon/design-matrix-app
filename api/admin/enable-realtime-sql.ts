@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Step 1: Set replica identity to FULL (required for UPDATE events to include old and new values)
     try {
       console.log('📋 Setting replica identity to FULL...')
-      const { data, error } = await supabase.rpc('sql', {
+      const { data: _data, error } = await supabase.rpc('sql', {
         query: 'ALTER TABLE public.project_files REPLICA IDENTITY FULL;'
       })
       
@@ -43,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Step 2: Add table to realtime publication
     try {
       console.log('📡 Adding table to realtime publication...')
-      const { data, error } = await supabase.rpc('sql', {
+      const { data: _data2, error } = await supabase.rpc('sql', {
         query: 'ALTER publication supabase_realtime ADD TABLE public.project_files;'
       })
       

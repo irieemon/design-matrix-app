@@ -20,10 +20,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('🔧 Checking and enabling real-time for project_files table...')
     
     const results = {
-      replicaIdentity: 'unknown',
+      replicaIdentity: 'unknown' as string,
       realtimeEnabled: false,
-      policies: [],
-      errors: []
+      policies: [] as any[],
+      errors: [] as string[]
     }
     
     // Step 1: Most common issue - Enable realtime via Supabase dashboard equivalent
