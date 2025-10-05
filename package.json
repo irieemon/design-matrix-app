@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "node -e \"if (process.getuid && process.getuid() === 0) { console.error('\\n❌ ERROR: Never run npm commands with sudo!\\n\\nThis causes massive file permission issues.\\nIf you see permission errors, fix the underlying issue instead.\\n'); process.exit(1); }\"",
+    "predev": "node -e \"if (!process.env.CI && !process.env.VERCEL && process.getuid && process.getuid() === 0) { console.error('\\n❌ ERROR: Never run npm commands with sudo!\\n\\nThis causes massive file permission issues.\\nIf you see permission errors, fix the underlying issue instead.\\n'); process.exit(1); }\"",
     "dev": "vite",
-    "prebuild": "node -e \"if (process.getuid && process.getuid() === 0) { console.error('\\n❌ ERROR: Never run npm commands with sudo!\\n'); process.exit(1); }\"",
+    "prebuild": "node -e \"if (!process.env.CI && !process.env.VERCEL && process.getuid && process.getuid() === 0) { console.error('\\n❌ ERROR: Never run npm commands with sudo!\\n'); process.exit(1); }\"",
     "build": "vite build",
     "build:check": "tsc && vite build",
     "type-check": "tsc --noEmit",
