@@ -1,8 +1,10 @@
 import { PlatformStats, AdminUser, AdminProject, User, ProjectFile } from '../types'
 import { logger } from '../utils/logger'
+import { supabaseAdmin, adminGetAllProjects, adminGetAllUsers, checkIsAdmin } from './supabase'
+import { DatabaseService } from './database'
 
 export class AdminService {
-  // Check if user has admin privileges
+  // Check if user has admin privileges (client-side check)
   static isAdmin(user: User | null): boolean {
     if (!user?.role) return false
     return user.role === 'admin' || user.role === 'super_admin'
@@ -10,6 +12,32 @@ export class AdminService {
 
   static isSuperAdmin(user: User | null): boolean {
     return user?.role === 'super_admin' || false
+  }
+
+  // Server-side admin verification using service role
+  static async verifyAdminStatus(userId: string): Promise<boolean> {
+    try {
+      return await checkIsAdmin(userId)
+    } catch (error) {
+      logger.error('AdminService: Failed to verify admin status:', error)
+      return false
+    }
+  }
+
+  // Admin-specific role detection using environment-based configuration
+  static isAdminEmail(email: string): boolean {
+    const { isAdminEmail } = require('./adminConfig')
+    return isAdminEmail(email)
+  }
+
+  static isSuperAdminEmail(email: string): boolean {
+    const { isSuperAdminEmail } = require('./adminConfig')
+    return isSuperAdminEmail(email)
+  }
+
+  static getAdminRole(email: string): 'user' | 'admin' | 'super_admin' {
+    const { getAdminRole } = require('./adminConfig')
+    return getAdminRole(email)
   }
 
   // Generate mock platform statistics
@@ -32,191 +60,365 @@ export class AdminService {
     })
   }
 
-  // Get all users with admin metadata
+  // Get all users with admin metadata (using service role)
   static async getAllUsers(page: number = 1, limit: number = 50): Promise<{users: AdminUser[], total: number}> {
-    // Mock data - in real app would fetch from database with pagination
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const mockUsers: AdminUser[] = [
-          {
-            id: 'super-admin-1',
-            email: 'admin@prioritas.com',
-            full_name: 'Super Admin',
-            company: 'Prioritas',
-            role: 'super_admin',
-            is_active: true,
-            last_login: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-            created_at: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-            project_count: 12,
-            idea_count: 156,
-            file_count: 45,
-            total_file_size: 123456789
-          },
-          {
-            id: 'admin-1',
-            email: 'manager@company.com',
-            full_name: 'Admin Manager',
-            company: 'Company Inc',
-            role: 'admin',
-            is_active: true,
-            last_login: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-            created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-            project_count: 8,
-            idea_count: 89,
-            file_count: 28,
-            total_file_size: 87654321
-          },
-          {
-            id: 'user-1',
-            email: 'john.doe@example.com',
-            full_name: 'John Doe',
-            company: 'Tech Corp',
-            role: 'user',
-            is_active: true,
-            last_login: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            project_count: 5,
-            idea_count: 47,
-            file_count: 12,
-            total_file_size: 34567890
-          },
-          {
-            id: 'user-2', 
-            email: 'sarah.wilson@startup.io',
-            full_name: 'Sarah Wilson',
-            company: 'StartupCo',
-            role: 'user',
-            is_active: true,
-            last_login: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-            created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-            project_count: 8,
-            idea_count: 92,
-            file_count: 23,
-            total_file_size: 78901234
-          },
-          {
-            id: 'user-3',
-            email: 'mike.inactive@oldcorp.com',
-            full_name: 'Mike Inactive',
-            company: 'OldCorp',
-            role: 'user',
-            is_active: false,
-            last_login: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-            created_at: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-            project_count: 2,
-            idea_count: 8,
-            file_count: 3,
-            total_file_size: 5432109
-          }
-        ]
+    try {
+      logger.debug('AdminService: Fetching all users with service role')
 
-        const startIndex = (page - 1) * limit
-        const paginatedUsers = mockUsers.slice(startIndex, startIndex + limit)
-        
-        resolve({
-          users: paginatedUsers,
-          total: mockUsers.length
+      // Use service role to bypass RLS and get all users
+      const allUsers = await adminGetAllUsers()
+
+      // Enhance user data with admin metadata
+      const adminUsers: AdminUser[] = await Promise.all(
+        allUsers.map(async (user) => {
+          try {
+            // Get user's project count
+            const userProjects = await DatabaseService.getUserOwnedProjects(user.id)
+
+            // Get user's idea count from all their projects
+            let totalIdeaCount = 0
+            for (const project of userProjects) {
+              const projectIdeas = await DatabaseService.getProjectIdeas(project.id)
+              totalIdeaCount += projectIdeas.length
+            }
+
+            return {
+              id: user.id,
+              email: user.email,
+              full_name: user.full_name || user.email.split('@')[0],
+              company: user.company || 'Unknown',
+              role: user.role || 'user',
+              is_active: user.is_active !== false, // Default to true if not explicitly false
+              last_login: user.last_login || user.updated_at,
+              created_at: user.created_at,
+              updated_at: user.updated_at,
+              project_count: userProjects.length,
+              idea_count: totalIdeaCount,
+              file_count: 0, // TODO: Implement file counting
+              total_file_size: 0 // TODO: Implement file size calculation
+            } as AdminUser
+          } catch (error) {
+            logger.error(`AdminService: Error processing user ${user.id}:`, error)
+            // Return basic user data if processing fails
+            return {
+              id: user.id,
+              email: user.email,
+              full_name: user.full_name || user.email.split('@')[0],
+              company: 'Unknown',
+              role: user.role || 'user',
+              is_active: true,
+              last_login: user.updated_at,
+              created_at: user.created_at,
+              updated_at: user.updated_at,
+              project_count: 0,
+              idea_count: 0,
+              file_count: 0,
+              total_file_size: 0
+            } as AdminUser
+          }
         })
-      }, 300)
-    })
+      )
+
+      // Apply pagination
+      const startIndex = (page - 1) * limit
+      const paginatedUsers = adminUsers.slice(startIndex, startIndex + limit)
+
+      return {
+        users: paginatedUsers,
+        total: adminUsers.length
+      }
+    } catch (error) {
+      logger.error('AdminService: Failed to get all users:', error)
+
+      // Fallback to empty result
+      return { users: [], total: 0 }
+    }
   }
 
-  // Get all projects with admin metadata
+  // Get all projects with admin metadata (using service role)
   static async getAllProjects(page: number = 1, limit: number = 20): Promise<{projects: AdminProject[], total: number}> {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const mockProjects: AdminProject[] = [
-          {
-            id: 'proj-1',
-            name: 'Microsoft Supply Chain Integration',
-            description: 'Enterprise supply chain transformation project',
-            project_type: 'business_plan',
-            status: 'active',
-            visibility: 'private',
-            priority_level: 'high',
-            owner_id: 'user-1',
-            created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            idea_count: 23,
-            file_count: 5,
-            total_file_size: 12345678,
-            collaborator_count: 3,
-            last_activity: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            id: 'proj-2',
-            name: 'Mobile App Redesign',
-            description: 'Complete UX overhaul for mobile application',
-            project_type: 'software',
-            status: 'active',
-            visibility: 'team',
-            priority_level: 'medium',
-            owner_id: 'user-2',
-            created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-            idea_count: 34,
-            file_count: 18,
-            total_file_size: 45678901,
-            collaborator_count: 7,
-            last_activity: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            id: 'proj-3',
-            name: 'Dormant Project',
-            description: 'This project has been inactive',
-            project_type: 'other',
-            status: 'paused',
-            visibility: 'private',
-            priority_level: 'low',
-            owner_id: 'user-3',
-            created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-            idea_count: 5,
-            file_count: 1,
-            total_file_size: 123456,
-            collaborator_count: 0,
-            last_activity: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
+    try {
+      logger.debug('AdminService: Fetching all projects with service role')
+
+      // Use service role to bypass RLS and get all projects
+      const allProjects = await adminGetAllProjects()
+
+      if (!allProjects || allProjects.length === 0) {
+        return { projects: [], total: 0 }
+      }
+
+      logger.debug(`AdminService: Found ${allProjects.length} projects in database`)
+
+      // Convert to AdminProject format with metadata
+      const adminProjects: AdminProject[] = await Promise.all(
+        allProjects.map(async (project) => {
+          try {
+            // Get project statistics using service role queries
+            const ideaCount = await this.getProjectIdeaCount(project.id)
+            const collaboratorCount = await this.getProjectCollaboratorCount(project.id)
+            const lastActivity = await this.getProjectLastActivity(project.id)
+
+            return {
+              ...project,
+              idea_count: ideaCount,
+              file_count: 0, // TODO: Implement file counting with service role
+              total_file_size: 0, // TODO: Implement file size calculation
+              collaborator_count: collaboratorCount,
+              last_activity: lastActivity
+            } as AdminProject
+          } catch (statsError) {
+            logger.error(`AdminService: Error getting stats for project ${project.id}:`, statsError)
+            // Return project with minimal stats if error occurs
+            return {
+              ...project,
+              idea_count: 0,
+              file_count: 0,
+              total_file_size: 0,
+              collaborator_count: 0,
+              last_activity: project.updated_at
+            } as AdminProject
           }
-        ]
-
-        const startIndex = (page - 1) * limit
-        const paginatedProjects = mockProjects.slice(startIndex, startIndex + limit)
-        
-        resolve({
-          projects: paginatedProjects,
-          total: mockProjects.length
         })
-      }, 400)
-    })
+      )
+
+      // Apply pagination
+      const startIndex = (page - 1) * limit
+      const paginatedProjects = adminProjects.slice(startIndex, startIndex + limit)
+
+      return {
+        projects: paginatedProjects,
+        total: adminProjects.length
+      }
+    } catch (error) {
+      logger.error('AdminService: Failed to get all projects:', error)
+      return { projects: [], total: 0 }
+    }
   }
 
-  // Update user status
+  // Helper method to get project idea count using service role
+  private static async getProjectIdeaCount(projectId: string): Promise<number> {
+    try {
+      const { count, error } = await supabaseAdmin
+        .from('ideas')
+        .select('*', { count: 'exact', head: true })
+        .eq('project_id', projectId)
+
+      if (error) {
+        logger.error('AdminService: Error getting idea count:', error)
+        return 0
+      }
+
+      return count || 0
+    } catch (error) {
+      logger.error('AdminService: Failed to get idea count:', error)
+      return 0
+    }
+  }
+
+  // Helper method to get project collaborator count using service role
+  private static async getProjectCollaboratorCount(projectId: string): Promise<number> {
+    try {
+      const { count, error } = await supabaseAdmin
+        .from('project_collaborators')
+        .select('*', { count: 'exact', head: true })
+        .eq('project_id', projectId)
+        .eq('status', 'active')
+
+      if (error) {
+        logger.error('AdminService: Error getting collaborator count:', error)
+        return 0
+      }
+
+      return count || 0
+    } catch (error) {
+      logger.error('AdminService: Failed to get collaborator count:', error)
+      return 0
+    }
+  }
+
+  // Helper method to get project last activity using service role
+  private static async getProjectLastActivity(projectId: string): Promise<string> {
+    try {
+      // Get the most recent activity from ideas or project updates
+      const { data: recentIdea } = await supabaseAdmin
+        .from('ideas')
+        .select('updated_at')
+        .eq('project_id', projectId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      const ideaActivity = recentIdea?.updated_at
+
+      // For now, return the most recent idea activity or project updated_at
+      return ideaActivity || new Date().toISOString()
+    } catch (error) {
+      logger.error('AdminService: Failed to get last activity:', error)
+      return new Date().toISOString()
+    }
+  }
+
+  // Update user status using service role
   static async updateUserStatus(userId: string, isActive: boolean): Promise<boolean> {
-    logger.debug(`Admin: ${isActive ? 'Activating' : 'Deactivating'} user ${userId}`)
-    return new Promise(resolve => {
-      setTimeout(() => resolve(true), 500)
-    })
+    try {
+      logger.debug(`AdminService: ${isActive ? 'Activating' : 'Deactivating'} user ${userId}`)
+
+      const { error } = await supabaseAdmin
+        .from('user_profiles')
+        .update({
+          is_active: isActive,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+
+      if (error) {
+        logger.error('AdminService: Error updating user status:', error)
+        return false
+      }
+
+      logger.debug(`AdminService: Successfully ${isActive ? 'activated' : 'deactivated'} user ${userId}`)
+      return true
+    } catch (error) {
+      logger.error('AdminService: Failed to update user status:', error)
+      return false
+    }
   }
 
-  // Update user role
-  static async updateUserRole(userId: string, role: 'user' | 'admin'): Promise<boolean> {
-    logger.debug(`Admin: Setting user ${userId} role to ${role}`)
-    return new Promise(resolve => {
-      setTimeout(() => resolve(true), 500)
-    })
+  // Update user role using service role
+  static async updateUserRole(userId: string, role: 'user' | 'admin' | 'super_admin'): Promise<boolean> {
+    try {
+      logger.debug(`AdminService: Setting user ${userId} role to ${role}`)
+
+      const { error } = await supabaseAdmin
+        .from('user_profiles')
+        .update({
+          role: role,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+
+      if (error) {
+        logger.error('AdminService: Error updating user role:', error)
+        return false
+      }
+
+      logger.debug(`AdminService: Successfully set user ${userId} role to ${role}`)
+      return true
+    } catch (error) {
+      logger.error('AdminService: Failed to update user role:', error)
+      return false
+    }
   }
 
-  // Delete project (admin override)
+  // Delete project (admin override) using service role
   static async deleteProject(projectId: string): Promise<boolean> {
-    logger.debug(`Admin: Deleting project ${projectId}`)
-    return new Promise(resolve => {
-      setTimeout(() => resolve(true), 800)
-    })
+    try {
+      logger.debug(`AdminService: Deleting project ${projectId}`)
+
+      // Delete associated ideas first
+      const { error: ideasError } = await supabaseAdmin
+        .from('ideas')
+        .delete()
+        .eq('project_id', projectId)
+
+      if (ideasError) {
+        logger.warn('AdminService: Error deleting project ideas:', ideasError)
+        // Continue with project deletion even if ideas deletion fails
+      }
+
+      // Delete project collaborators
+      const { error: collaboratorsError } = await supabaseAdmin
+        .from('project_collaborators')
+        .delete()
+        .eq('project_id', projectId)
+
+      if (collaboratorsError) {
+        logger.warn('AdminService: Error deleting project collaborators:', collaboratorsError)
+        // Continue with project deletion
+      }
+
+      // Delete the project itself
+      const { error: projectError } = await supabaseAdmin
+        .from('projects')
+        .delete()
+        .eq('id', projectId)
+
+      if (projectError) {
+        logger.error('AdminService: Error deleting project:', projectError)
+        return false
+      }
+
+      logger.debug(`AdminService: Successfully deleted project ${projectId}`)
+      return true
+    } catch (error) {
+      logger.error('AdminService: Failed to delete project:', error)
+      return false
+    }
+  }
+
+  // Get project details for admin (cross-user access)
+  static async getProjectDetails(projectId: string): Promise<AdminProject | null> {
+    try {
+      logger.debug(`AdminService: Fetching project details for ${projectId}`)
+
+      const { data: project, error } = await supabaseAdmin
+        .from('projects')
+        .select(`
+          *,
+          owner:user_profiles!projects_owner_id_fkey(id, email, full_name)
+        `)
+        .eq('id', projectId)
+        .single()
+
+      if (error) {
+        logger.error('AdminService: Error fetching project details:', error)
+        return null
+      }
+
+      if (!project) {
+        return null
+      }
+
+      // Get enhanced project metadata
+      const ideaCount = await this.getProjectIdeaCount(projectId)
+      const collaboratorCount = await this.getProjectCollaboratorCount(projectId)
+      const lastActivity = await this.getProjectLastActivity(projectId)
+
+      return {
+        ...project,
+        idea_count: ideaCount,
+        file_count: 0, // TODO: Implement file counting
+        total_file_size: 0, // TODO: Implement file size calculation
+        collaborator_count: collaboratorCount,
+        last_activity: lastActivity
+      } as AdminProject
+    } catch (error) {
+      logger.error('AdminService: Failed to get project details:', error)
+      return null
+    }
+  }
+
+  // Get all ideas for a project (admin view)
+  static async getProjectIdeas(projectId: string): Promise<any[]> {
+    try {
+      logger.debug(`AdminService: Fetching ideas for project ${projectId}`)
+
+      const { data: ideas, error } = await supabaseAdmin
+        .from('ideas')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        logger.error('AdminService: Error fetching project ideas:', error)
+        return []
+      }
+
+      return ideas || []
+    } catch (error) {
+      logger.error('AdminService: Failed to get project ideas:', error)
+      return []
+    }
   }
 
   // Get project files with admin view

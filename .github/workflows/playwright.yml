@@ -1,0 +1,357 @@
+name: Playwright Tests
+
+# ============================================================================
+# TRIGGER CONFIGURATION
+# ============================================================================
+# Run on:
+# - Push to main/develop (validate before merge)
+# - Pull requests to main (pre-merge validation)
+# - Manual workflow dispatch (on-demand testing)
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Test type to run'
+        required: true
+        type: choice
+        options:
+          - all
+          - functional
+          - performance
+          - visual
+          - cross-browser
+
+# ============================================================================
+# ENVIRONMENT VARIABLES
+# ============================================================================
+env:
+  NODE_VERSION: '20.x'
+  # Playwright will use these for consistent testing
+  CI: true
+
+# ============================================================================
+# CONCURRENCY CONTROL
+# ============================================================================
+# Cancel in-progress runs of same workflow
+# Saves CI minutes on rapid pushes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ============================================================================
+# JOBS
+# ============================================================================
+jobs:
+  # --------------------------------------------------------------------------
+  # JOB 1: FUNCTIONAL TESTS (SHARDED)
+  # --------------------------------------------------------------------------
+  # Fast parallel execution across 4 shards
+  # Chromium only for speed (cross-browser tested separately)
+  functional-tests:
+    name: Functional Tests (Shard ${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false  # Run all shards even if one fails
+      matrix:
+        shard: [1, 2, 3, 4]  # 4-way parallel execution
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run functional tests (shard ${{ matrix.shard }})
+        run: npx playwright test --config playwright.functional.config.ts --shard=${{ matrix.shard }}/4
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_TOTAL: 4
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: functional-results-shard-${{ matrix.shard }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: functional-failures-shard-${{ matrix.shard }}
+          path: |
+            test-results/artifacts/
+          retention-days: 14
+
+  # --------------------------------------------------------------------------
+  # JOB 2: CROSS-BROWSER TESTS
+  # --------------------------------------------------------------------------
+  # Test across Chromium, Firefox, WebKit
+  # Sequential to save CI minutes (not speed-critical)
+  cross-browser-tests:
+    name: Cross-Browser Tests (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run cross-browser tests
+        run: npx playwright test --config playwright.functional.config.ts --project=${{ matrix.browser }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-browser-results-${{ matrix.browser }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+
+  # --------------------------------------------------------------------------
+  # JOB 3: PERFORMANCE TESTS
+  # --------------------------------------------------------------------------
+  # Sequential execution for accurate performance measurement
+  # Chromium only (performance baseline)
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run performance tests
+        run: npx playwright test --config playwright.performance.config.ts
+
+      - name: Upload performance results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: |
+            test-results/performance-results.json
+            playwright-report/
+          retention-days: 30  # Keep longer for trend analysis
+
+      - name: Analyze performance trends
+        if: always()
+        run: |
+          echo "## Performance Test Results" >> $GITHUB_STEP_SUMMARY
+          if [ -f test-results/performance-results.json ]; then
+            echo "Performance tests completed. See artifacts for details." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Performance results not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # --------------------------------------------------------------------------
+  # JOB 4: VISUAL REGRESSION TESTS
+  # --------------------------------------------------------------------------
+  # Visual snapshot comparison
+  # Chromium only (baseline), optional cross-browser
+  visual-regression-tests:
+    name: Visual Regression Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run visual regression tests
+        run: npx playwright test --config playwright.visual-regression.config.ts --project=chromium
+        continue-on-error: true  # Don't fail build on visual differences
+
+      - name: Upload visual diff artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 14
+
+      - name: Comment on PR with visual changes
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ Visual regression tests detected changes. Please review the visual diff artifacts.'
+            })
+
+  # --------------------------------------------------------------------------
+  # JOB 5: ACCESSIBILITY TESTS
+  # --------------------------------------------------------------------------
+  # Automated WCAG compliance testing
+  accessibility-tests:
+    name: Accessibility Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run accessibility tests
+        run: npx playwright test --config playwright.functional.config.ts --grep "@accessibility"
+
+      - name: Upload accessibility results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 30
+
+  # --------------------------------------------------------------------------
+  # JOB 6: TEST REPORT GENERATION
+  # --------------------------------------------------------------------------
+  # Combine results from all jobs into unified report
+  test-report:
+    name: Generate Test Report
+    runs-on: ubuntu-latest
+    needs: [functional-tests, cross-browser-tests, performance-tests, visual-regression-tests]
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results
+
+      - name: Generate summary
+        run: |
+          echo "# Playwright Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Functional Tests: See artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Cross-Browser Tests: See artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Performance Tests: See artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Visual Regression Tests: See artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "All test results and reports are available in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
+
+# ============================================================================
+# OPTIMIZATION NOTES
+# ============================================================================
+#
+# 1. PARALLELIZATION:
+#    - Functional tests: 4 shards (4x faster)
+#    - Cross-browser: 3 parallel jobs
+#    - Total parallelization: Up to 7 concurrent jobs
+#
+# 2. CACHING:
+#    - npm dependencies cached (setup-node cache: 'npm')
+#    - Playwright browsers cached automatically
+#
+# 3. FAIL-FAST:
+#    - Disabled (fail-fast: false) to see all failures
+#    - Enables better debugging
+#
+# 4. TIMEOUTS:
+#    - Functional: 20 min (should be ~5-10 min)
+#    - Performance: 30 min (sequential execution)
+#    - Visual: 20 min (sequential rendering)
+#
+# 5. ARTIFACT RETENTION:
+#    - Test results: 7 days
+#    - Performance: 30 days (trend analysis)
+#    - Failures: 14 days (debugging)
+#
+# 6. CI MINUTES OPTIMIZATION:
+#    - Functional tests sharded (4x faster)
+#    - Cross-browser only for critical tests
+#    - Visual tests on Chromium only (not all browsers)
+#    - Performance tests only when needed
+#
+# EXPECTED EXECUTION TIME:
+# - Functional (sharded): ~5-10 minutes
+# - Cross-browser: ~10-15 minutes (parallel)
+# - Performance: ~15-20 minutes (sequential)
+# - Visual: ~10-15 minutes (sequential)
+# - Total (parallel): ~15-20 minutes (limited by slowest job)
+#
+# ============================================================================

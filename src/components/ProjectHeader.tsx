@@ -1,13 +1,25 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Edit2, Check, X, Plus, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
 import { Project, IdeaCard, User } from '../types'
 import { DatabaseService } from '../lib/database'
 import AIStarterModal from './AIStarterModal'
+import { Button } from './ui/Button'
 
 interface ProjectHeaderProps {
   currentUser: User
   currentProject?: Project | null
   onProjectChange?: (project: Project | null) => void
+}
+
+// Input focus handlers for Lux focus states
+const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+  e.target.style.borderColor = 'var(--sapphire-500)'
+  e.target.style.boxShadow = '0 0 0 3px var(--sapphire-100)'
+}
+
+const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+  e.target.style.borderColor = 'var(--hairline-default)'
+  e.target.style.boxShadow = 'none'
 }
 
 const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProject, onProjectChange }) => {
@@ -92,19 +104,34 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
     setEditDescription('')
   }
 
-  const handleAIProjectCreated = (newProject: Project, _ideas: IdeaCard[]) => {
+  const handleAIProjectCreated = useCallback((newProject: Project, _ideas: IdeaCard[]) => {
     if (onProjectChange) {
       onProjectChange(newProject)
     }
     // Skip onIdeasCreated - real-time subscription will handle idea updates
-  }
+  }, [onProjectChange])
+
+  const handleCloseAIStarter = useCallback(() => {
+    setShowAIStarter(false)
+  }, [])
 
   if (isCreating) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6 mb-6">
+      <div
+        className="rounded-2xl shadow-sm p-6 mb-6"
+        style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderColor: 'var(--hairline-default)'
+        }}
+      >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--graphite-700)' }}
+            >
               Project Name
             </label>
             <input
@@ -112,12 +139,23 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               placeholder="Enter project name..."
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-lg focus:outline-none"
+              style={{
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: 'var(--hairline-default)',
+                transition: 'border-color 0.15s, box-shadow 0.15s'
+              }}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
               autoFocus
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--graphite-700)' }}
+            >
               Description (optional)
             </label>
             <input
@@ -125,25 +163,33 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
               placeholder="Brief description of your project..."
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-lg focus:outline-none"
+              style={{
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: 'var(--hairline-default)',
+                transition: 'border-color 0.15s, box-shadow 0.15s'
+              }}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
             />
           </div>
           <div className="flex space-x-2">
-            <button
+            <Button
               onClick={handleCreateProject}
               disabled={!editName.trim()}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary"
+              icon={<Check className="w-4 h-4" />}
             >
-              <Check className="w-4 h-4" />
-              <span>Create Project</span>
-            </button>
-            <button
+              Create Project
+            </Button>
+            <Button
               onClick={cancelEdit}
-              className="flex items-center space-x-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+              variant="secondary"
+              icon={<X className="w-4 h-4" />}
             >
-              <X className="w-4 h-4" />
-              <span>Cancel</span>
-            </button>
+              Cancel
+            </Button>
           </div>
         </div>
       </div>
@@ -152,32 +198,50 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
 
   if (!currentProject) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6 mb-6">
+      <div
+        className="rounded-2xl shadow-sm p-6 mb-6"
+        style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderColor: 'var(--hairline-default)'
+        }}
+      >
         <div className="text-center">
-          <h3 className="text-lg font-medium text-slate-900 mb-2">Create Your First Project</h3>
-          <p className="text-slate-600 mb-4">Give your priority matrix a name to get started</p>
+          <h3
+            className="text-lg font-medium mb-2"
+            style={{ color: 'var(--graphite-900)' }}
+          >
+            Create Your First Project
+          </h3>
+          <p
+            className="mb-4"
+            style={{ color: 'var(--graphite-600)' }}
+          >
+            Give your priority matrix a name to get started
+          </p>
           <div className="flex justify-center space-x-3">
-            <button
+            <Button
               onClick={() => setShowAIStarter(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-colors"
+              variant="sapphire"
+              icon={<Sparkles className="w-4 h-4" />}
             >
-              <Sparkles className="w-4 h-4" />
-              <span>AI Starter</span>
-            </button>
-            <button
+              AI Starter
+            </Button>
+            <Button
               onClick={startCreating}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              variant="primary"
+              icon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
-              <span>Manual Setup</span>
-            </button>
+              Manual Setup
+            </Button>
           </div>
         </div>
-        
+
         {showAIStarter && (
           <AIStarterModal
             currentUser={currentUser}
-            onClose={() => setShowAIStarter(false)}
+            onClose={handleCloseAIStarter}
             onProjectCreated={handleAIProjectCreated}
           />
         )}
@@ -187,22 +251,44 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
 
   if (isEditing) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6 mb-6">
+      <div
+        className="rounded-2xl shadow-sm p-6 mb-6"
+        style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderColor: 'var(--hairline-default)'
+        }}
+      >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--graphite-700)' }}
+            >
               Project Name
             </label>
             <input
               type="text"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-lg focus:outline-none"
+              style={{
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: 'var(--hairline-default)',
+                transition: 'border-color 0.15s, box-shadow 0.15s'
+              }}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
               autoFocus
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: 'var(--graphite-700)' }}
+            >
               Description (optional)
             </label>
             <input
@@ -210,25 +296,33 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
               placeholder="Brief description of your project..."
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-lg focus:outline-none"
+              style={{
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: 'var(--hairline-default)',
+                transition: 'border-color 0.15s, box-shadow 0.15s'
+              }}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
             />
           </div>
           <div className="flex space-x-2">
-            <button
+            <Button
               onClick={handleUpdateProject}
               disabled={!editName.trim()}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary"
+              icon={<Check className="w-4 h-4" />}
             >
-              <Check className="w-4 h-4" />
-              <span>Save Changes</span>
-            </button>
-            <button
+              Save Changes
+            </Button>
+            <Button
               onClick={cancelEdit}
-              className="flex items-center space-x-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+              variant="secondary"
+              icon={<X className="w-4 h-4" />}
             >
-              <X className="w-4 h-4" />
-              <span>Cancel</span>
-            </button>
+              Cancel
+            </Button>
           </div>
         </div>
       </div>
@@ -236,15 +330,37 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
   }
 
   return (
-    <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl shadow-sm border border-slate-200/60 p-6 mb-6">
+    <div
+      className="rounded-2xl shadow-sm p-6 mb-6"
+      style={{
+        background: 'linear-gradient(to right, var(--canvas-primary), var(--sapphire-50))',
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        borderColor: 'var(--hairline-default)'
+      }}
+    >
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-bold text-slate-900">{currentProject?.name || 'No Project Selected'}</h1>
+            <h1
+              className="text-2xl font-bold"
+              style={{ color: 'var(--graphite-900)' }}
+            >
+              {currentProject?.name || 'No Project Selected'}
+            </h1>
             {currentProject?.description && Math.ceil(currentProject.description.length / 80) > 3 && (
               <button
                 onClick={() => setIsDescriptionCollapsed(!isDescriptionCollapsed)}
-                className="flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                className="flex items-center transition-colors"
+                style={{
+                  color: 'var(--graphite-400)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--graphite-600)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--graphite-400)'
+                }}
                 title={isDescriptionCollapsed ? "Show full description" : "Collapse description"}
               >
                 {isDescriptionCollapsed ? (
@@ -256,18 +372,24 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
             )}
           </div>
           {currentProject?.description && (
-            <div className={`text-slate-600 transition-all duration-200 ${isDescriptionCollapsed && Math.ceil(currentProject.description.length / 80) > 3 ? 'line-clamp-3' : ''}`}>
-              {isDescriptionCollapsed && Math.ceil(currentProject.description.length / 80) > 3 
+            <div
+              className={`transition-all duration-200 ${isDescriptionCollapsed && Math.ceil(currentProject.description.length / 80) > 3 ? 'line-clamp-3' : ''}`}
+              style={{ color: 'var(--graphite-600)' }}
+            >
+              {isDescriptionCollapsed && Math.ceil(currentProject.description.length / 80) > 3
                 ? currentProject.description.substring(0, 240) + '...'
                 : currentProject.description}
             </div>
           )}
           {currentProject && (
-            <div className="text-xs text-slate-500 mt-2">
+            <div
+              className="text-xs mt-2"
+              style={{ color: 'var(--graphite-500)' }}
+            >
               Created by {
-                currentProject.owner?.full_name || 
-                currentProject.owner?.email || 
-                (currentProject.owner_id === currentUser?.id 
+                currentProject.owner?.full_name ||
+                currentProject.owner?.email ||
+                (currentProject.owner_id === currentUser?.id
                   ? (currentUser?.full_name || currentUser?.email || 'You')
                   : 'Unknown')
               } • {new Date(currentProject.created_at).toLocaleDateString()}
@@ -276,7 +398,18 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
         </div>
         <button
           onClick={startEditing}
-          className="flex items-center space-x-2 px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition-all"
+          className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-all"
+          style={{
+            color: 'var(--graphite-600)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--graphite-900)'
+            e.currentTarget.style.backgroundColor = 'var(--surface-primary)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--graphite-600)'
+            e.currentTarget.style.backgroundColor = 'transparent'
+          }}
           title="Edit project details"
         >
           <Edit2 className="w-4 h-4" />

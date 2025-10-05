@@ -2,6 +2,9 @@ import React, { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { LoadingOverlay } from './LoadingSpinner'
+import { useAccessibleId } from '../../hooks/useAccessibility'
+import { getAccessibleModalProps } from '../../utils/accessibility'
+import { Button } from '../ui/Button'
 
 interface BaseModalProps {
   isOpen: boolean
@@ -42,6 +45,11 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   loadingText
 }) => {
   const modalRef = useRef<HTMLDivElement>(null)
+  const titleId = useAccessibleId('modal-title')
+  const contentId = useAccessibleId('modal-content')
+
+  // Focus trap for accessibility - currently unused in this implementation
+  // const focusTrapRef = useFocusTrap(isOpen)
 
   // Handle escape key
   useEffect(() => {
@@ -56,6 +64,13 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, closeOnEscape, onClose])
+
+  // Combine refs for focus trap and modal
+  const combinedRef = React.useCallback((node: HTMLDivElement | null) => {
+    // Store the node reference for focus management
+    Object.assign(modalRef, { current: node })
+    // Focus trap ref is managed internally
+  }, [])
 
   // Handle backdrop click
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -81,47 +96,57 @@ export const BaseModal: React.FC<BaseModalProps> = ({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 modal-overlay-container"
       onClick={handleBackdropClick}
       style={{ zIndex: 9999 }}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="lux-modal-backdrop" />
 
       {/* Modal */}
       <div
-        ref={modalRef}
+        ref={combinedRef}
         className={`
-          relative bg-white rounded-lg shadow-xl
+          lux-modal
           ${sizeClasses[size]}
-          w-full mx-4
+          w-full
           max-h-[90vh] overflow-hidden
           ${className}
         `}
+        style={{
+          position: 'relative',
+          transform: 'none',
+          left: 'auto',
+          top: 'auto'
+        }}
+        {...getAccessibleModalProps(title ? titleId : undefined, contentId, true)}
       >
         {/* Loading overlay */}
         <LoadingOverlay show={loading} text={loadingText} />
 
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <header className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--hairline-default)' }}>
             {title && (
-              <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+              <h2 id={titleId} className="text-xl font-semibold" style={{ color: 'var(--graphite-900)' }}>
+                {title}
+              </h2>
             )}
             {showCloseButton && (
-              <button
+              <Button
                 onClick={onClose}
-                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                variant="ghost"
+                size="sm"
+                icon={<X className="w-5 h-5" aria-hidden="true" />}
                 aria-label="Close modal"
-              >
-                <X className="w-5 h-5" />
-              </button>
+                className="!p-1 rounded-full"
+              />
             )}
-          </div>
+          </header>
         )}
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-4rem)]">
+        <div id={contentId} className="overflow-y-auto max-h-[calc(90vh-4rem)]" role="document">
           {children}
         </div>
       </div>
@@ -140,7 +165,7 @@ interface ConfirmModalProps {
   message: string
   confirmText?: string
   cancelText?: string
-  variant?: 'danger' | 'warning' | 'info'
+  variant?: 'danger' | 'warning' | 'info' | 'sapphire'
   loading?: boolean
 }
 
@@ -158,18 +183,23 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   variant = 'danger',
   loading = false
 }) => {
+  const messageId = useAccessibleId('confirm-message')
   const variantStyles = {
     danger: {
-      button: 'bg-red-600 hover:bg-red-700 text-white',
+      buttonVariant: 'danger' as const,
       icon: 'text-red-600'
     },
     warning: {
-      button: 'bg-yellow-600 hover:bg-yellow-700 text-white',
+      buttonVariant: 'secondary' as const,
       icon: 'text-yellow-600'
     },
     info: {
-      button: 'bg-blue-600 hover:bg-blue-700 text-white',
+      buttonVariant: 'sapphire' as const,
       icon: 'text-blue-600'
+    },
+    sapphire: {
+      buttonVariant: 'sapphire' as const,
+      icon: 'text-sapphire-600'
     }
   }
 
@@ -180,41 +210,43 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       size="sm"
       showCloseButton={false}
       loading={loading}
+      title={title}
     >
       <div className="p-6">
         <div className="flex items-start">
           <div className="flex-shrink-0">
-            <div className={`w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center`}>
-              <X className={`w-6 h-6 ${variantStyles[variant].icon}`} />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center`} style={{ backgroundColor: 'var(--canvas-secondary)' }} role="img" aria-label={`${variant} icon`}>
+              <X className={`w-6 h-6 ${variantStyles[variant].icon}`} aria-hidden="true" />
             </div>
           </div>
           <div className="ml-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--graphite-900)' }}>
               {title}
             </h3>
-            <p className="text-sm text-gray-500 mb-6">
+            <p id={messageId} className="text-sm mb-6" style={{ color: 'var(--graphite-500)' }}>
               {message}
             </p>
             <div className="flex space-x-3">
-              <button
+              <Button
                 onClick={onConfirm}
                 disabled={loading}
-                className={`
-                  px-4 py-2 text-sm font-medium rounded-md
-                  ${variantStyles[variant].button}
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  transition-colors
-                `}
+                variant={variantStyles[variant].buttonVariant}
+                size="sm"
+                state={loading ? 'loading' : 'idle'}
+                loadingText="Processing..."
+                aria-describedby={messageId}
               >
-                {loading ? 'Processing...' : confirmText}
-              </button>
-              <button
+                {confirmText}
+              </Button>
+              <Button
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                variant="secondary"
+                size="sm"
+                aria-label={cancelText}
               >
                 {cancelText}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -228,7 +260,7 @@ interface FormModalProps extends Omit<BaseModalProps, 'children'> {
   submitText?: string
   cancelText?: string
   submitDisabled?: boolean
-  submitVariant?: 'primary' | 'secondary' | 'danger'
+  submitVariant?: 'primary' | 'secondary' | 'danger' | 'sapphire'
   showFooter?: boolean
   children: React.ReactNode
 }
@@ -250,12 +282,6 @@ export const FormModal: React.FC<FormModalProps> = ({
   loading = false,
   ...modalProps
 }) => {
-  const submitVariantStyles = {
-    primary: 'bg-blue-600 hover:bg-blue-700 text-white',
-    secondary: 'bg-gray-600 hover:bg-gray-700 text-white',
-    danger: 'bg-red-600 hover:bg-red-700 text-white'
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSubmit(e)
@@ -275,27 +301,26 @@ export const FormModal: React.FC<FormModalProps> = ({
         </div>
 
         {showFooter && (
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
-            <button
+          <div className="px-6 py-4 border-t flex justify-end space-x-3" style={{ backgroundColor: 'var(--canvas-secondary)', borderColor: 'var(--hairline-default)' }}>
+            <Button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              variant="secondary"
+              size="sm"
             >
               {cancelText}
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={submitDisabled || loading}
-              className={`
-                px-4 py-2 text-sm font-medium rounded-md
-                ${submitVariantStyles[submitVariant]}
-                disabled:opacity-50 disabled:cursor-not-allowed
-                transition-colors
-              `}
+              variant={submitVariant}
+              size="sm"
+              state={loading ? 'loading' : 'idle'}
+              loadingText="Saving..."
             >
-              {loading ? 'Saving...' : submitText}
-            </button>
+              {submitText}
+            </Button>
           </div>
         )}
       </form>
@@ -359,30 +384,38 @@ export const Drawer: React.FC<DrawerProps> = ({
     <div className="fixed inset-0 z-50">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="lux-modal-backdrop"
         onClick={onClose}
       />
 
       {/* Drawer */}
       <div
         className={`
-          absolute top-0 h-full bg-white shadow-xl
+          absolute top-0 h-full shadow-xl
           ${sizeClasses[size]}
           ${positionClasses[position]}
-          transform transition-transform duration-300 ease-in-out
+          transform ease-in-out
           ${slideClasses[position]}
           ${className}
         `}
+        style={{
+          backgroundColor: 'var(--surface-primary)',
+          transitionProperty: 'transform',
+          transitionDuration: 'var(--duration-moderate)',
+          transitionTimingFunction: 'var(--easing-glide)'
+        }}
       >
         {title && (
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-            <button
+          <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--hairline-default)' }}>
+            <h2 className="text-xl font-semibold" style={{ color: 'var(--graphite-900)' }}>{title}</h2>
+            <Button
               onClick={onClose}
-              className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+              variant="ghost"
+              size="sm"
+              icon={<X className="w-5 h-5" aria-hidden="true" />}
+              aria-label="Close drawer"
+              className="!p-1 rounded-full"
+            />
           </div>
         )}
 

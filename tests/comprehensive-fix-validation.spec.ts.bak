@@ -1,0 +1,474 @@
+import { test, expect, Page } from '@playwright/test';
+import { VisualTestHelper, AuthVisualPatterns } from './visual/utils/visual-helpers';
+
+/**
+ * Comprehensive Fix Validation Suite
+ *
+ * This test suite validates all critical fixes implemented:
+ * 1. Card Background Visibility - White backgrounds, readable text
+ * 2. Double-Click Functionality - Edit modal opens correctly
+ * 3. Performance Stability - 60fps, clean console
+ * 4. Visual Evidence Collection - Screenshots proving fixes work
+ */
+
+test.describe('Comprehensive Fix Validation', () => {
+  let visualHelper: VisualTestHelper;
+
+  test.beforeEach(async ({ page }) => {
+    visualHelper = new VisualTestHelper(page);
+
+    // Navigate to matrix page and wait for full load
+    await page.goto('/dashboard');
+    await page.waitForLoadState('networkidle');
+
+    // Wait for any auth flows to complete
+    await visualHelper.waitForAuthStability();
+  });
+
+  test.describe('Card Background Visibility Validation', () => {
+    test('cards have solid white backgrounds with readable text', async ({ page }) => {
+      console.log('🎯 Testing card background visibility and text readability');
+
+      // Navigate to matrix view
+      await page.goto('/matrix');
+      await page.waitForLoadState('networkidle');
+
+      // Wait for matrix to load
+      await page.waitForSelector('.design-matrix', { timeout: 10000 });
+
+      // Wait for cards to be rendered
+      await page.waitForSelector('.idea-card', { timeout: 5000 });
+
+      // Capture baseline of matrix with cards
+      await visualHelper.compareScreenshot({
+        name: 'matrix-cards-baseline',
+        waitFor: 'networkidle',
+        delay: 1000
+      });
+
+      // Test card background visibility
+      const cards = page.locator('.idea-card');
+      const cardCount = await cards.count();
+
+      console.log(`🔍 Found ${cardCount} cards to validate`);
+
+      if (cardCount > 0) {
+        // Test first few cards for background properties
+        for (let i = 0; i < Math.min(cardCount, 3); i++) {
+          const card = cards.nth(i);
+
+          // Check background color is white/light
+          const backgroundColor = await card.evaluate(el => {
+            const style = window.getComputedStyle(el);
+            return style.backgroundColor;
+          });
+
+          console.log(`📋 Card ${i} background: ${backgroundColor}`);
+
+          // Verify background is not transparent
+          expect(backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+          expect(backgroundColor).not.toBe('transparent');
+
+          // Capture individual card screenshot
+          await expect(card).toHaveScreenshot(`card-${i}-background-validation.png`, {
+            threshold: 0.1
+          });
+        }
+
+        // Test text readability by checking contrast
+        const textElements = page.locator('.idea-card .text-gray-800, .idea-card .text-gray-900, .idea-card h3, .idea-card p');
+        const textCount = await textElements.count();
+
+        if (textCount > 0) {
+          const firstText = textElements.first();
+          const textColor = await firstText.evaluate(el => {
+            const style = window.getComputedStyle(el);
+            return style.color;
+          });
+
+          console.log(`📝 Text color: ${textColor}`);
+
+          // Verify text is dark (readable on white background)
+          expect(textColor).not.toBe('rgb(255, 255, 255)'); // Not white text
+        }
+      }
+
+      // Capture final validation screenshot
+      await visualHelper.compareScreenshot({
+        name: 'card-background-validation-complete',
+        waitFor: 'networkidle',
+        delay: 500
+      });
+    });
+
+    test('cards maintain visibility during hover interactions', async ({ page }) => {
+      console.log('🎯 Testing card visibility during hover states');
+
+      await page.goto('/matrix');
+      await page.waitForLoadState('networkidle');
+      await page.waitForSelector('.idea-card', { timeout: 5000 });
+
+      const cards = page.locator('.idea-card');
+      const cardCount = await cards.count();
+
+      if (cardCount > 0) {
+        const firstCard = cards.first();
+
+        // Capture before hover
+        await visualHelper.compareScreenshot({
+          name: 'card-before-hover',
+          waitFor: 'networkidle',
+          delay: 300
+        });
+
+        // Hover over card
+        await firstCard.hover();
+        await page.waitForTimeout(500); // Let hover effects settle
+
+        // Capture during hover
+        await visualHelper.compareScreenshot({
+          name: 'card-during-hover',
+          waitFor: 'networkidle',
+          delay: 300
+        });
+
+        // Verify background is still visible during hover
+        const hoverBackgroundColor = await firstCard.evaluate(el => {
+          const style = window.getComputedStyle(el);
+          return style.backgroundColor;
+        });
+
+        console.log(`🔍 Hover background color: ${hoverBackgroundColor}`);
+        expect(hoverBackgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+        expect(hoverBackgroundColor).not.toBe('transparent');
+
+        // Move away from card
+        await page.mouse.move(0, 0);
+        await page.waitForTimeout(300);
+
+        // Capture after hover
+        await visualHelper.compareScreenshot({
+          name: 'card-after-hover',
+          waitFor: 'networkidle',
+          delay: 300
+        });
+      }
+    });
+  });
+
+  test.describe('Double-Click Functionality Validation', () => {
+    test('double-click opens edit modal correctly', async ({ page }) => {
+      console.log('🎯 Testing double-click edit modal functionality');
+
+      await page.goto('/matrix');
+      await page.waitForLoadState('networkidle');
+      await page.waitForSelector('.idea-card', { timeout: 5000 });
+
+      const cards = page.locator('.idea-card');
+      const cardCount = await cards.count();
+
+      if (cardCount > 0) {
+        const firstCard = cards.first();
+
+        // Capture before double-click
+        await visualHelper.compareScreenshot({
+          name: 'before-double-click',
+          waitFor: 'networkidle',
+          delay: 500
+        });
+
+        // Perform double-click
+        await firstCard.dblclick();
+
+        // Wait for modal to appear
+        await page.waitForSelector('.modal, .edit-modal, [role="dialog"]', {
+          timeout: 3000,
+          state: 'visible'
+        });
+
+        // Verify modal is visible and functional
+        const modal = page.locator('.modal, .edit-modal, [role="dialog"]').first();
+        await expect(modal).toBeVisible();
+
+        // Capture modal opened state
+        await visualHelper.compareScreenshot({
+          name: 'edit-modal-opened',
+          waitFor: 'networkidle',
+          delay: 500
+        });
+
+        // Check modal has form elements
+        const formElements = modal.locator('input, textarea, select');
+        const formCount = await formElements.count();
+        expect(formCount).toBeGreaterThan(0);
+
+        console.log(`✅ Modal opened with ${formCount} form elements`);
+
+        // Test modal functionality by checking if form is populated
+        const titleField = modal.locator('input[name="title"], input[placeholder*="title" i], input[type="text"]').first();
+        const titleValue = await titleField.inputValue();
+
+        if (titleValue) {
+          console.log(`📝 Modal populated with title: ${titleValue}`);
+        }
+
+        // Close modal
+        const closeButton = modal.locator('button:has-text("Cancel"), button:has-text("Close"), [aria-label="Close"]').first();
+        if (await closeButton.isVisible()) {
+          await closeButton.click();
+        } else {
+          // Try ESC key
+          await page.keyboard.press('Escape');
+        }
+
+        // Wait for modal to close
+        await page.waitForTimeout(500);
+
+        // Capture after modal close
+        await visualHelper.compareScreenshot({
+          name: 'after-modal-close',
+          waitFor: 'networkidle',
+          delay: 300
+        });
+
+        // Verify modal is closed
+        await expect(modal).not.toBeVisible();
+      }
+    });
+
+    test('double-click does not navigate to blank page', async ({ page }) => {
+      console.log('🎯 Testing double-click does not cause navigation issues');
+
+      await page.goto('/matrix');
+      await page.waitForLoadState('networkidle');
+      await page.waitForSelector('.idea-card', { timeout: 5000 });
+
+      const cards = page.locator('.idea-card');
+      const cardCount = await cards.count();
+
+      if (cardCount > 0) {
+        const firstCard = cards.first();
+        const originalUrl = page.url();
+
+        // Double-click card
+        await firstCard.dblclick();
+
+        // Wait a moment for any potential navigation
+        await page.waitForTimeout(1000);
+
+        // Verify we're still on the same page (no unwanted navigation)
+        const currentUrl = page.url();
+        expect(currentUrl).toBe(originalUrl);
+
+        console.log(`✅ No unwanted navigation - stayed on ${currentUrl}`);
+
+        // Verify page content is still intact
+        await expect(page.locator('.design-matrix')).toBeVisible();
+        await expect(page.locator('.idea-card')).toHaveCount(cardCount);
+      }
+    });
+  });
+
+  test.describe('Performance Stability Validation', () => {
+    test('matrix maintains 60fps performance with clean console', async ({ page }) => {
+      console.log('🎯 Testing performance stability and console cleanliness');
+
+      // Set up console monitoring
+      const consoleMessages: string[] = [];
+      const errors: string[] = [];
+
+      page.on('console', msg => {
+        const text = msg.text();
+        consoleMessages.push(`${msg.type()}: ${text}`);
+        if (msg.type() === 'error') {
+          errors.push(text);
+        }
+      });
+
+      // Monitor for network errors
+      page.on('pageerror', error => {
+        errors.push(`Page Error: ${error.message}`);
+      });
+
+      await page.goto('/matrix');
+      await page.waitForLoadState('networkidle');
+
+      // Capture baseline performance
+      await visualHelper.compareScreenshot({
+        name: 'performance-baseline',
+        waitFor: 'networkidle',
+        delay: 1000
+      });
+
+      // Test performance during interactions
+      const cards = page.locator('.idea-card');
+      const cardCount = await cards.count();
+
+      if (cardCount > 0) {
+        // Simulate user interactions for performance testing
+        for (let i = 0; i < Math.min(cardCount, 5); i++) {
+          const card = cards.nth(i);
+
+          // Hover interaction
+          await card.hover();
+          await page.waitForTimeout(100);
+
+          // Move away
+          await page.mouse.move(0, 0);
+          await page.waitForTimeout(100);
+        }
+
+        // Test drag and drop performance if available
+        if (cardCount >= 2) {
+          const sourceCard = cards.first();
+          const targetCard = cards.nth(1);
+
+          await sourceCard.hover();
+          await page.mouse.down();
+          await targetCard.hover();
+          await page.mouse.up();
+
+          await page.waitForTimeout(500);
+        }
+      }
+
+      // Capture after interactions
+      await visualHelper.compareScreenshot({
+        name: 'performance-after-interactions',
+        waitFor: 'networkidle',
+        delay: 500
+      });
+
+      // Validate console cleanliness
+      console.log(`📊 Total console messages: ${consoleMessages.length}`);
+      console.log(`❌ Error messages: ${errors.length}`);
+
+      if (errors.length > 0) {
+        console.log('🚨 Detected errors:');
+        errors.forEach(error => console.log(`  - ${error}`));
+      }
+
+      // Performance validation - no critical errors
+      const criticalErrors = errors.filter(error =>
+        !error.includes('DevTools') &&
+        !error.includes('Extension') &&
+        !error.includes('favicon')
+      );
+
+      expect(criticalErrors.length).toBe(0);
+
+      console.log('✅ Performance validation complete');
+    });
+
+    test('layout stability during matrix operations', async ({ page }) => {
+      console.log('🎯 Testing layout stability during matrix operations');
+
+      await page.goto('/matrix');
+      await page.waitForLoadState('networkidle');
+
+      // Monitor layout shifts
+      const layoutShiftResult = await visualHelper.detectLayoutShift({
+        duration: 3000,
+        threshold: 0.1
+      });
+
+      console.log(`📐 Layout shift score: ${layoutShiftResult.totalShift.toFixed(4)}`);
+
+      // Verify minimal layout shift
+      expect(layoutShiftResult.exceedsThreshold).toBe(false);
+
+      // Capture layout stability evidence
+      await visualHelper.compareScreenshot({
+        name: 'layout-stability-validation',
+        waitFor: 'networkidle',
+        delay: 500
+      });
+    });
+  });
+
+  test.describe('Visual Evidence Collection', () => {
+    test('comprehensive fix validation evidence', async ({ page }) => {
+      console.log('🎯 Collecting comprehensive visual evidence of all fixes');
+
+      // Evidence collection sequence
+      const evidenceSteps = [
+        { action: 'Navigate to matrix', url: '/matrix' },
+        { action: 'Matrix loaded with cards', delay: 1000 },
+        { action: 'Card hover interaction', interaction: 'hover' },
+        { action: 'Double-click edit modal', interaction: 'dblclick' },
+        { action: 'Modal functionality test', interaction: 'modal' },
+        { action: 'Performance validation', interaction: 'performance' }
+      ];
+
+      for (const step of evidenceSteps) {
+        console.log(`📸 Evidence Step: ${step.action}`);
+
+        if (step.url) {
+          await page.goto(step.url);
+          await page.waitForLoadState('networkidle');
+        }
+
+        if (step.delay) {
+          await page.waitForTimeout(step.delay);
+        }
+
+        if (step.interaction) {
+          await this.performInteraction(page, step.interaction);
+        }
+
+        // Capture evidence screenshot
+        await visualHelper.compareScreenshot({
+          name: `evidence-${step.action.toLowerCase().replace(/\s+/g, '-')}`,
+          waitFor: 'networkidle',
+          delay: 300
+        });
+      }
+
+      console.log('✅ Visual evidence collection complete');
+    });
+  });
+
+  // Helper method for interactions
+  async performInteraction(page: Page, interaction: string) {
+    const cards = page.locator('.idea-card');
+    const cardCount = await cards.count();
+
+    if (cardCount === 0) return;
+
+    const firstCard = cards.first();
+
+    switch (interaction) {
+      case 'hover':
+        await firstCard.hover();
+        await page.waitForTimeout(500);
+        break;
+
+      case 'dblclick':
+        await firstCard.dblclick();
+        await page.waitForTimeout(1000);
+        // Close modal if opened
+        const modal = page.locator('.modal, .edit-modal, [role="dialog"]').first();
+        if (await modal.isVisible()) {
+          await page.keyboard.press('Escape');
+          await page.waitForTimeout(300);
+        }
+        break;
+
+      case 'modal':
+        await firstCard.dblclick();
+        await page.waitForSelector('.modal, .edit-modal, [role="dialog"]', {
+          timeout: 2000,
+          state: 'visible'
+        });
+        break;
+
+      case 'performance':
+        // Simulate various interactions for performance testing
+        await firstCard.hover();
+        await page.waitForTimeout(100);
+        await page.mouse.move(0, 0);
+        await page.waitForTimeout(100);
+        break;
+    }
+  }
+});

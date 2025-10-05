@@ -11,9 +11,7 @@ import type {
   Project,
   CreateProjectInput,
   ApiResponse,
-  ProjectQueryOptions,
-  ProjectType,
-  ProjectStatus
+  ProjectQueryOptions
 } from '../../types'
 import type {
   ServiceResult,
@@ -84,7 +82,7 @@ export class ProjectService extends BaseService {
    */
   static async getUserOwnedProjects(
     userId: string,
-    options?: ServiceOptions
+    _options?: ServiceOptions
   ): Promise<ServiceResult<Project[]>> {
     const context = this.createContext('getUserOwnedProjects', userId)
 
@@ -194,7 +192,7 @@ export class ProjectService extends BaseService {
    */
   static async getUserProjects(
     userId: string,
-    options?: ServiceOptions
+    _options?: ServiceOptions
   ): Promise<ServiceResult<Project[]>> {
     const context = this.createContext('getUserProjects', userId)
 
@@ -552,7 +550,7 @@ export class ProjectService extends BaseService {
       return {
         success: false,
         error: {
-          type: 'service',
+          type: 'server',
           message: result.error.message,
           code: result.error.code
         },

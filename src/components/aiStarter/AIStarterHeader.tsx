@@ -7,11 +7,17 @@ interface AIStarterHeaderProps {
 
 const AIStarterHeader: React.FC<AIStarterHeaderProps> = ({ onClose }) => {
   return (
-    <div className="flex items-center justify-between p-6 border-b border-gray-200">
-      <h2 className="text-lg font-semibold text-gray-900">AI Project Starter</h2>
+    <div className="flex items-center justify-between p-6 border-b" style={{
+      borderColor: 'var(--hairline-default)',
+      backgroundColor: 'var(--canvas-secondary)'
+    }}>
+      <h2 className="text-lg font-semibold" style={{ color: 'var(--graphite-900)' }}>AI Project Starter</h2>
       <button
         onClick={onClose}
-        className="text-gray-400 hover:text-gray-600 transition-colors"
+        className="transition-colors"
+        style={{ color: 'var(--graphite-400)' }}
+        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--graphite-600)'}
+        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--graphite-400)'}
       >
         <X className="w-5 h-5" />
       </button>

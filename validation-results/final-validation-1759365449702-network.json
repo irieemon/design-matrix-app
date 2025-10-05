@@ -1,0 +1,1819 @@
+[
+  {
+    "url": "http://localhost:3003/",
+    "method": "GET",
+    "timestamp": 1759365450701,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/@vite/client",
+    "method": "GET",
+    "timestamp": 1759365450709,
+    "status": 200
+  },
+  {
+    "url": "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap",
+    "method": "GET",
+    "timestamp": 1759365450709,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/main.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450709,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/@react-refresh",
+    "method": "GET",
+    "timestamp": 1759365450712,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450717,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/react.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450717,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/react-dom_client.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450718,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/react-router-dom.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450718,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/App.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450718,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/ToastContext.tsx",
+    "method": "GET",
+    "timestamp": 1759365450718,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/index.css?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450718,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/vite/dist/client/env.mjs",
+    "method": "GET",
+    "timestamp": 1759365450718,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/chunk-OU5AQDZK.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450724,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/chunk-EWTE5DHJ.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450724,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/lucide-react.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450724,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/chunk-WRD5HZVH.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450724,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/AppProviders.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450735,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/app/AppWithAuth.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450735,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/NavigationContext.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450740,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/ProjectContext.tsx",
+    "method": "GET",
+    "timestamp": 1759365450740,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/ModalContext.tsx",
+    "method": "GET",
+    "timestamp": 1759365450740,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/ComponentStateProvider.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450740,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/AdminContext.tsx",
+    "method": "GET",
+    "timestamp": 1759365450740,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/AuthMigration.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450740,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/app/AuthenticationFlow.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450741,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/app/MainApp.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450741,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/UserContext.tsx",
+    "method": "GET",
+    "timestamp": 1759365450741,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/logging/index.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450741,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/database.ts",
+    "method": "GET",
+    "timestamp": 1759365450741,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/utils/logger.ts",
+    "method": "GET",
+    "timestamp": 1759365450741,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/animations/componentStateAnimations.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450741,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/types/componentState.ts",
+    "method": "GET",
+    "timestamp": 1759365450741,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/adminService.ts",
+    "method": "GET",
+    "timestamp": 1759365450742,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/apiClient.ts",
+    "method": "GET",
+    "timestamp": 1759365450742,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/SecureAuthContext.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useAuth.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/@vercel_analytics_react.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/admin/AdminPortal.tsx",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/layout/AppLayout.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/layout/PageRouter.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useIdeas.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useBrowserHistory.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/logging/LoggingService.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/logging/hooks/useLogger.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/logging/hooks/usePerformanceLogger.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/logging/contexts/LoggingContext.tsx",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/PrioritasLogo.tsx",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/auth/AuthScreen.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/index.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/usePremiumAnimations.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useTransitionCoordination.ts",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/supabase.ts",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/emailService.ts",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/utils/uuid.ts",
+    "method": "GET",
+    "timestamp": 1759365450747,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/@dnd-kit_core.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/Sidebar.tsx",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/matrix/OptimizedIdeaCard.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/AddIdeaModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/AIIdeaModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/EditIdeaModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useAccessibility.ts",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/utils/accessibility.ts",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/admin/AdminSidebar.tsx",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/admin/AdminDashboard.tsx",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/admin/UserManagement.tsx",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/admin/ProjectManagement.tsx",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/utils/authPerformanceMonitor.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useSecureAuth.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useCsrfToken.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450763,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/utils/cookieUtils.ts",
+    "method": "GET",
+    "timestamp": 1759365450769,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/MatrixPage.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450769,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/DataManagement.tsx",
+    "method": "GET",
+    "timestamp": 1759365450769,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/ReportsAnalytics.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450769,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/UserSettings.tsx",
+    "method": "GET",
+    "timestamp": 1759365450769,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/ProjectCollaboration.tsx",
+    "method": "GET",
+    "timestamp": 1759365450769,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectManagement.tsx",
+    "method": "GET",
+    "timestamp": 1759365450769,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectRoadmap.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450769,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectFiles.tsx",
+    "method": "GET",
+    "timestamp": 1759365450769,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/ButtonTestPage.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450769,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/FormTestPage.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450769,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/SkeletonTestPage.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450769,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useProjectFiles.ts",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useOptimisticUpdates.ts",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/LoadingSpinner.tsx",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/LoadingButton.tsx",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/Button.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/Input.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/Textarea.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/Select.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/SkeletonText.tsx",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/SkeletonCard.tsx",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/SkeletonMatrix.tsx",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/SkeletonTable.tsx",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/@emailjs_browser.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/@supabase_supabase-js.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450774,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/matrix/zIndex.ts",
+    "method": "GET",
+    "timestamp": 1759365450775,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/matrix/performance.ts",
+    "method": "GET",
+    "timestamp": 1759365450775,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/shared/index.ts",
+    "method": "GET",
+    "timestamp": 1759365450775,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/aiService.ts",
+    "method": "GET",
+    "timestamp": 1759365450780,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/repositories/index.ts",
+    "method": "GET",
+    "timestamp": 1759365450780,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/shared/Modal.tsx",
+    "method": "GET",
+    "timestamp": 1759365450780,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/utils/csvUtils.ts",
+    "method": "GET",
+    "timestamp": 1759365450781,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/AIInsightsModal.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450787,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectCollaborators.tsx",
+    "method": "GET",
+    "timestamp": 1759365450787,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/DesignMatrix.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450787,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectHeader.tsx",
+    "method": "GET",
+    "timestamp": 1759365450787,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectRoadmap/ProjectRoadmap.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450787,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/FileUpload.tsx",
+    "method": "GET",
+    "timestamp": 1759365450787,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/FileManager.tsx",
+    "method": "GET",
+    "timestamp": 1759365450787,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/FileViewer.tsx",
+    "method": "GET",
+    "timestamp": 1759365450787,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/fileService.ts",
+    "method": "GET",
+    "timestamp": 1759365450792,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectStartupFlow.tsx",
+    "method": "GET",
+    "timestamp": 1759365450793,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/AIStarterModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365450793,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useComponentState.ts",
+    "method": "GET",
+    "timestamp": 1759365450793,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/shared/LoadingSpinner.tsx",
+    "method": "GET",
+    "timestamp": 1759365450796,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/chunk-NQPNIMY6.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450796,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/repositories/ideaRepository.ts",
+    "method": "GET",
+    "timestamp": 1759365450796,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/repositories/projectRepository.ts",
+    "method": "GET",
+    "timestamp": 1759365450796,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/repositories/userRepository.ts",
+    "method": "GET",
+    "timestamp": 1759365450796,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/aiCache.ts",
+    "method": "GET",
+    "timestamp": 1759365450796,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/react-dom.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450798,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/ai/aiInsightsService.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450799,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/utils/pdfExportSimple.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450799,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useAIWorker.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450799,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/shared/useAsyncOperation.ts",
+    "method": "GET",
+    "timestamp": 1759365450799,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/InviteCollaboratorModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365450799,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useMatrixPerformance.ts",
+    "method": "GET",
+    "timestamp": 1759365450799,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/DeleteConfirmModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365450800,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/TimelineRoadmap.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450801,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectRoadmap/RoadmapHeader.tsx",
+    "method": "GET",
+    "timestamp": 1759365450801,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectRoadmap/PhaseList.tsx",
+    "method": "GET",
+    "timestamp": 1759365450801,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectRoadmap/MilestoneTimeline.tsx",
+    "method": "GET",
+    "timestamp": 1759365450801,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/index.ts",
+    "method": "GET",
+    "timestamp": 1759365450801,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/config/aiStarterUtils.ts",
+    "method": "GET",
+    "timestamp": 1759365450801,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/config/aiStarterConstants.ts",
+    "method": "GET",
+    "timestamp": 1759365450803,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/ai/openaiModelRouter.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450807,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/lib/ai/intelligentMockData.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450807,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/jspdf.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450807,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/FeatureDetailModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365450807,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/utils/sampleRoadmapData.ts",
+    "method": "GET",
+    "timestamp": 1759365450807,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/AIStarterHeader.tsx",
+    "method": "GET",
+    "timestamp": 1759365450807,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/ProjectBasicsStep.tsx",
+    "method": "GET",
+    "timestamp": 1759365450807,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/ClarifyingQuestionsStep.tsx",
+    "method": "GET",
+    "timestamp": 1759365450807,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/ProjectReviewStep.tsx",
+    "method": "GET",
+    "timestamp": 1759365450807,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectRoadmap/EpicCard.tsx",
+    "method": "GET",
+    "timestamp": 1759365450809,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/chunk-D7ZASVPN.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450819,
+    "status": 200
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2",
+    "method": "GET",
+    "timestamp": 1759365450912,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/assets/target.svg",
+    "method": "GET",
+    "timestamp": 1759365450919,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/",
+    "method": "GET",
+    "timestamp": 1759365450968,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/@vite/client",
+    "method": "GET",
+    "timestamp": 1759365450975,
+    "status": 304
+  },
+  {
+    "url": "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap",
+    "method": "GET",
+    "timestamp": 1759365450975,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/main.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450980,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/@react-refresh",
+    "method": "GET",
+    "timestamp": 1759365450980,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/node_modules/vite/dist/client/env.mjs",
+    "method": "GET",
+    "timestamp": 1759365450980,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450980,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/react.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450981,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/react-dom_client.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450981,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/react-router-dom.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450981,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/App.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450981,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/ToastContext.tsx",
+    "method": "GET",
+    "timestamp": 1759365450981,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/index.css?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450981,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/chunk-OU5AQDZK.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450981,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/chunk-EWTE5DHJ.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450981,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/chunk-WRD5HZVH.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450981,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/AppProviders.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450983,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/app/AppWithAuth.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450983,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/lucide-react.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365450983,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/NavigationContext.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450983,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/ProjectContext.tsx",
+    "method": "GET",
+    "timestamp": 1759365450983,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/ModalContext.tsx",
+    "method": "GET",
+    "timestamp": 1759365450983,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/ComponentStateProvider.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450983,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/AdminContext.tsx",
+    "method": "GET",
+    "timestamp": 1759365450983,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/AuthMigration.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450983,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/app/AuthenticationFlow.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450983,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/app/MainApp.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450983,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/UserContext.tsx",
+    "method": "GET",
+    "timestamp": 1759365450983,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/logging/index.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450984,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/database.ts",
+    "method": "GET",
+    "timestamp": 1759365450984,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/utils/logger.ts",
+    "method": "GET",
+    "timestamp": 1759365450984,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/animations/componentStateAnimations.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365450986,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/types/componentState.ts",
+    "method": "GET",
+    "timestamp": 1759365450986,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/adminService.ts",
+    "method": "GET",
+    "timestamp": 1759365450986,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/apiClient.ts",
+    "method": "GET",
+    "timestamp": 1759365450986,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/contexts/SecureAuthContext.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451009,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useAuth.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451009,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/supabase.ts",
+    "method": "GET",
+    "timestamp": 1759365451009,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/emailService.ts",
+    "method": "GET",
+    "timestamp": 1759365451009,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/utils/uuid.ts",
+    "method": "GET",
+    "timestamp": 1759365451009,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/PrioritasLogo.tsx",
+    "method": "GET",
+    "timestamp": 1759365451009,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/auth/AuthScreen.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451009,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/index.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/@vercel_analytics_react.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/admin/AdminPortal.tsx",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/layout/AppLayout.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/layout/PageRouter.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useIdeas.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useBrowserHistory.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/logging/LoggingService.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/logging/hooks/useLogger.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/logging/hooks/usePerformanceLogger.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/logging/contexts/LoggingContext.tsx",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/usePremiumAnimations.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useTransitionCoordination.ts",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/utils/cookieUtils.ts",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useSecureAuth.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useCsrfToken.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/utils/authPerformanceMonitor.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/@supabase_supabase-js.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/chunk-NQPNIMY6.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/@emailjs_browser.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365451010,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/LoadingSpinner.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/LoadingButton.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/Button.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/Input.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/Textarea.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/Select.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/SkeletonText.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/SkeletonCard.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/SkeletonMatrix.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ui/SkeletonTable.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/admin/AdminSidebar.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/admin/AdminDashboard.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/admin/UserManagement.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/admin/ProjectManagement.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/@dnd-kit_core.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/Sidebar.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/matrix/OptimizedIdeaCard.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/AddIdeaModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/AIIdeaModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/EditIdeaModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useAccessibility.ts",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/utils/accessibility.ts",
+    "method": "GET",
+    "timestamp": 1759365451011,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/MatrixPage.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451012,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/DataManagement.tsx",
+    "method": "GET",
+    "timestamp": 1759365451012,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/ReportsAnalytics.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451012,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/UserSettings.tsx",
+    "method": "GET",
+    "timestamp": 1759365451012,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/ProjectCollaboration.tsx",
+    "method": "GET",
+    "timestamp": 1759365451015,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectManagement.tsx",
+    "method": "GET",
+    "timestamp": 1759365451015,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectRoadmap.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451015,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectFiles.tsx",
+    "method": "GET",
+    "timestamp": 1759365451015,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/ButtonTestPage.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451015,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/FormTestPage.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451015,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/pages/SkeletonTestPage.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451015,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useProjectFiles.ts",
+    "method": "GET",
+    "timestamp": 1759365451015,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useOptimisticUpdates.ts",
+    "method": "GET",
+    "timestamp": 1759365451015,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useComponentState.ts",
+    "method": "GET",
+    "timestamp": 1759365451019,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/matrix/zIndex.ts",
+    "method": "GET",
+    "timestamp": 1759365451020,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/matrix/performance.ts",
+    "method": "GET",
+    "timestamp": 1759365451020,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/shared/index.ts",
+    "method": "GET",
+    "timestamp": 1759365451020,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/aiService.ts",
+    "method": "GET",
+    "timestamp": 1759365451022,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/repositories/index.ts",
+    "method": "GET",
+    "timestamp": 1759365451022,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/shared/Modal.tsx",
+    "method": "GET",
+    "timestamp": 1759365451022,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/DesignMatrix.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451022,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectHeader.tsx",
+    "method": "GET",
+    "timestamp": 1759365451022,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/utils/csvUtils.ts",
+    "method": "GET",
+    "timestamp": 1759365451022,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/AIInsightsModal.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451022,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectCollaborators.tsx",
+    "method": "GET",
+    "timestamp": 1759365451023,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectStartupFlow.tsx",
+    "method": "GET",
+    "timestamp": 1759365451023,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/AIStarterModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365451023,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectRoadmap/ProjectRoadmap.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451023,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/FileUpload.tsx",
+    "method": "GET",
+    "timestamp": 1759365451023,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/FileManager.tsx",
+    "method": "GET",
+    "timestamp": 1759365451023,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/FileViewer.tsx",
+    "method": "GET",
+    "timestamp": 1759365451023,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/fileService.ts",
+    "method": "GET",
+    "timestamp": 1759365451023,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/shared/LoadingSpinner.tsx",
+    "method": "GET",
+    "timestamp": 1759365451023,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/aiCache.ts",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/repositories/ideaRepository.ts",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/repositories/projectRepository.ts",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/repositories/userRepository.ts",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/react-dom.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useMatrixPerformance.ts",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/InviteCollaboratorModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/ai/aiInsightsService.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/utils/pdfExportSimple.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/useAIWorker.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/hooks/shared/useAsyncOperation.ts",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/index.ts",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/config/aiStarterUtils.ts",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/config/aiStarterConstants.ts",
+    "method": "GET",
+    "timestamp": 1759365451025,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/TimelineRoadmap.tsx?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451027,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectRoadmap/RoadmapHeader.tsx",
+    "method": "GET",
+    "timestamp": 1759365451027,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectRoadmap/PhaseList.tsx",
+    "method": "GET",
+    "timestamp": 1759365451027,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectRoadmap/MilestoneTimeline.tsx",
+    "method": "GET",
+    "timestamp": 1759365451027,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/DeleteConfirmModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365451027,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/ai/openaiModelRouter.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451028,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/lib/ai/intelligentMockData.ts?t=1759365431909",
+    "method": "GET",
+    "timestamp": 1759365451028,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/jspdf.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365451028,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/node_modules/.vite/deps/chunk-D7ZASVPN.js?v=27ee24dc",
+    "method": "GET",
+    "timestamp": 1759365451028,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/AIStarterHeader.tsx",
+    "method": "GET",
+    "timestamp": 1759365451029,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/ProjectBasicsStep.tsx",
+    "method": "GET",
+    "timestamp": 1759365451029,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/ClarifyingQuestionsStep.tsx",
+    "method": "GET",
+    "timestamp": 1759365451029,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/aiStarter/ProjectReviewStep.tsx",
+    "method": "GET",
+    "timestamp": 1759365451029,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/FeatureDetailModal.tsx",
+    "method": "GET",
+    "timestamp": 1759365451029,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/utils/sampleRoadmapData.ts",
+    "method": "GET",
+    "timestamp": 1759365451029,
+    "status": 304
+  },
+  {
+    "url": "http://localhost:3003/src/components/ProjectRoadmap/EpicCard.tsx",
+    "method": "GET",
+    "timestamp": 1759365451029,
+    "status": 304
+  },
+  {
+    "url": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2",
+    "method": "GET",
+    "timestamp": 1759365451061
+  },
+  {
+    "url": "http://localhost:3003/src/assets/target.svg",
+    "method": "GET",
+    "timestamp": 1759365451061,
+    "status": 200
+  },
+  {
+    "url": "https://vfovtgtjailvrphsgafv.supabase.co/auth/v1/signup",
+    "method": "POST",
+    "timestamp": 1759365451202,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/api/auth/clear-cache",
+    "method": "POST",
+    "timestamp": 1759365451400,
+    "status": 200
+  },
+  {
+    "url": "http://localhost:3003/api/auth/user",
+    "method": "GET",
+    "timestamp": 1759365451591,
+    "status": 401
+  },
+  {
+    "url": "https://vfovtgtjailvrphsgafv.supabase.co/rest/v1/projects?select=id&owner_id=eq.db599dfe-2ef0-48b2-9f2d-86530e95df4c&limit=1",
+    "method": "HEAD",
+    "timestamp": 1759365451592,
+    "status": 200
+  },
+  {
+    "url": "https://vfovtgtjailvrphsgafv.supabase.co/auth/v1/token?grant_type=refresh_token",
+    "method": "POST",
+    "timestamp": 1759365451594,
+    "status": 200
+  }
+]

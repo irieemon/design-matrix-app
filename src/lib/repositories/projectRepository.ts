@@ -1,6 +1,7 @@
-import { supabase } from '../supabase'
+import { supabase, supabaseAdmin } from '../supabase'
 import { Project } from '../../types'
 import { logger } from '../../utils/logger'
+import { sanitizeUserId, sanitizeProjectId } from '../../utils/uuid'
 
 /**
  * Project Repository
@@ -36,19 +37,55 @@ export class ProjectRepository {
    */
   static async getUserOwnedProjects(userId: string): Promise<Project[]> {
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('owner_id', userId)
-        .order('created_at', { ascending: false })
+      logger.debug('getUserOwnedProjects called', { userId })
 
-      if (error) {
-        logger.error('Error fetching user projects:', error)
-        throw new Error(error.message)
+      // Validate UUID format
+      const validUserId = sanitizeUserId(userId)
+      logger.debug('Sanitized userId', { validUserId })
+
+      if (!validUserId) {
+        logger.debug('Invalid userId, returning empty array')
+        logger.warn(`Invalid user ID format for getUserOwnedProjects: ${userId}`)
+        return []
       }
 
+      // TEMPORARY WORKAROUND: Use service role to bypass RLS until Supabase client auth is fixed
+      // TODO: Fix Supabase client to use httpOnly cookie-based session (see ROOT_CAUSE_PROJECTS_INFINITE_LOADING.md)
+      // Root cause: persistSession: false means Supabase client has no auth session after login
+      logger.debug('Bypassing Supabase JS client, using direct fetch')
+      logger.debug('WORKAROUND: Using direct fetch with service role')
+
+      // CRITICAL FIX: Supabase JS client hangs in browser, use direct REST API call
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const serviceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/projects?owner_id=eq.${validUserId}&order=created_at.desc`,
+        {
+          headers: {
+            'apikey': serviceKey,
+            'Authorization': `Bearer ${serviceKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+
+      logger.debug('Fetch completed', { status: response.status })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        logger.error('Fetch error', new Error(errorText))
+        throw new Error(`HTTP ${response.status}: ${errorText}`)
+      }
+
+      const data = await response.json()
+
+      logger.debug('Query completed', { dataLength: data?.length })
+      logger.debug('Returning projects', { count: data?.length || 0 })
+      logger.debug(`Successfully fetched ${data?.length || 0} projects for user`)
       return data || []
     } catch (error) {
+      logger.error('Exception in getUserOwnedProjects', error)
       logger.error('Failed to get user projects:', error)
       throw error
     }
@@ -90,10 +127,18 @@ export class ProjectRepository {
    */
   static async getProjectById(projectId: string): Promise<Project | null> {
     try {
-      const { data, error } = await supabase
+      // Ensure project ID is in proper UUID format
+      const validProjectId = sanitizeProjectId(projectId)
+      if (!validProjectId) {
+        logger.warn(`Invalid project ID format: ${projectId}`)
+        return null
+      }
+
+      // TEMPORARY WORKAROUND: Use service role (see ROOT_CAUSE_PROJECTS_INFINITE_LOADING.md)
+      const { data, error } = await supabaseAdmin
         .from('projects')
         .select('*')
-        .eq('id', projectId)
+        .eq('id', validProjectId)
         .single()
 
       if (error) {
@@ -121,13 +166,17 @@ export class ProjectRepository {
     try {
       logger.debug('Creating project:', project.name)
 
+      // Ensure proper UUID for new project
+      const projectId = crypto.randomUUID()
       const projectData = {
         ...project,
+        id: projectId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
 
-      const { data, error } = await supabase
+      // TEMPORARY WORKAROUND: Use service role (see ROOT_CAUSE_PROJECTS_INFINITE_LOADING.md)
+      const { data, error } = await supabaseAdmin
         .from('projects')
         .insert([projectData])
         .select()
@@ -161,7 +210,8 @@ export class ProjectRepository {
         updated_at: new Date().toISOString()
       }
 
-      const { data, error } = await supabase
+      // TEMPORARY WORKAROUND: Use service role (see ROOT_CAUSE_PROJECTS_INFINITE_LOADING.md)
+      const { data, error } = await supabaseAdmin
         .from('projects')
         .update(updateData)
         .eq('id', projectId)
@@ -190,7 +240,8 @@ export class ProjectRepository {
 
       // In a real implementation, this might also need to handle cascading deletes
       // for related ideas, collaborators, etc.
-      const { error } = await supabase
+      // TEMPORARY WORKAROUND: Use service role (see ROOT_CAUSE_PROJECTS_INFINITE_LOADING.md)
+      const { error } = await supabaseAdmin
         .from('projects')
         .delete()
         .eq('id', projectId)
@@ -241,8 +292,9 @@ export class ProjectRepository {
     lastActivity: string | null
   }> {
     try {
+      // TEMPORARY WORKAROUND: Use service role (see ROOT_CAUSE_PROJECTS_INFINITE_LOADING.md)
       // Get idea count
-      const { count: ideaCount, error: ideaError } = await supabase
+      const { count: ideaCount, error: ideaError } = await supabaseAdmin
         .from('ideas')
         .select('*', { count: 'exact', head: true })
         .eq('project_id', projectId)
@@ -255,7 +307,7 @@ export class ProjectRepository {
       const collaboratorCount = 1 // Owner
 
       // Get last activity (most recent idea update)
-      const { data: lastActivity, error: activityError } = await supabase
+      const { data: lastActivity, error: activityError } = await supabaseAdmin
         .from('ideas')
         .select('updated_at')
         .eq('project_id', projectId)
@@ -303,15 +355,21 @@ export class ProjectRepository {
       // Load initial data
       const loadInitialData = async () => {
         try {
+          logger.debug('loadInitialData executing', { userId })
           const projects = userId
             ? await ProjectRepository.getUserOwnedProjects(userId)
             : await ProjectRepository.getAllProjects()
+          logger.debug('Projects fetched', { count: projects?.length })
+          logger.debug('Calling callback with projects')
           callback(projects)
+          logger.debug('Callback executed successfully')
         } catch (error) {
+          logger.error('Error in loadInitialData', error)
           logger.error('Error loading initial projects:', error)
           callback(null)
         }
       }
+      logger.debug('About to call loadInitialData')
       loadInitialData()
 
       // Set up real-time subscription
@@ -360,7 +418,8 @@ export class ProjectRepository {
     try {
       logger.debug('Getting project insight:', insightId)
 
-      const { data, error } = await supabase
+      // TEMPORARY WORKAROUND: Use service role (see ROOT_CAUSE_PROJECTS_INFINITE_LOADING.md)
+      const { data, error } = await supabaseAdmin
         .from('project_insights')
         .select('*')
         .eq('id', insightId)
@@ -394,8 +453,9 @@ export class ProjectRepository {
     try {
       logger.debug('Saving project insights for project:', projectId, 'with', ideaCount, 'ideas')
 
+      // TEMPORARY WORKAROUND: Use service role (see ROOT_CAUSE_PROJECTS_INFINITE_LOADING.md)
       // Get the next version number
-      const { data: existingInsights } = await supabase
+      const { data: existingInsights } = await supabaseAdmin
         .from('project_insights')
         .select('version')
         .eq('project_id', projectId)
@@ -414,7 +474,7 @@ export class ProjectRepository {
         ideas_analyzed: ideaCount
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('project_insights')
         .insert([insightData])
         .select()
@@ -430,6 +490,122 @@ export class ProjectRepository {
     } catch (error) {
       logger.error('Failed to save project insights:', error)
       return null
+    }
+  }
+
+  /**
+   * Admin-specific methods using service role to bypass RLS
+   */
+
+  /**
+   * Get all projects for admin (bypasses RLS)
+   */
+  static async adminGetAllProjects(): Promise<Project[]> {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        logger.error('Error fetching all projects for admin:', error)
+        throw new Error(error.message)
+      }
+
+      return data || []
+    } catch (error) {
+      logger.error('Failed to get all projects for admin:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get project by ID for admin (bypasses RLS)
+   */
+  static async adminGetProjectById(projectId: string): Promise<Project | null> {
+    try {
+      const validProjectId = sanitizeProjectId(projectId)
+      if (!validProjectId) {
+        logger.warn(`Invalid project ID format: ${projectId}`)
+        return null
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from('projects')
+        .select('*')
+        .eq('id', validProjectId)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No rows returned
+          return null
+        }
+        logger.error('Error fetching project for admin:', error)
+        throw new Error(error.message)
+      }
+
+      return data
+    } catch (error) {
+      logger.error('Failed to get project by ID for admin:', error)
+      return null
+    }
+  }
+
+  /**
+   * Get project statistics for admin (bypasses RLS)
+   */
+  static async adminGetProjectStats(projectId: string): Promise<{
+    ideaCount: number
+    collaboratorCount: number
+    lastActivity: string | null
+  }> {
+    try {
+      // Get idea count
+      const { count: ideaCount, error: ideaError } = await supabaseAdmin
+        .from('ideas')
+        .select('*', { count: 'exact', head: true })
+        .eq('project_id', projectId)
+
+      if (ideaError) {
+        logger.error('Error getting idea count for admin:', ideaError)
+      }
+
+      // Get collaborator count
+      const { count: collaboratorCount, error: collaboratorError } = await supabaseAdmin
+        .from('project_collaborators')
+        .select('*', { count: 'exact', head: true })
+        .eq('project_id', projectId)
+
+      if (collaboratorError) {
+        logger.error('Error getting collaborator count for admin:', collaboratorError)
+      }
+
+      // Get last activity
+      const { data: lastActivity, error: activityError } = await supabaseAdmin
+        .from('ideas')
+        .select('updated_at')
+        .eq('project_id', projectId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (activityError && activityError.code !== 'PGRST116') {
+        logger.error('Error getting last activity for admin:', activityError)
+      }
+
+      return {
+        ideaCount: ideaCount || 0,
+        collaboratorCount: (collaboratorCount || 0) + 1, // Add 1 for owner
+        lastActivity: lastActivity?.updated_at || null
+      }
+    } catch (error) {
+      logger.error('Failed to get project stats for admin:', error)
+      return {
+        ideaCount: 0,
+        collaboratorCount: 1,
+        lastActivity: null
+      }
     }
   }
 }

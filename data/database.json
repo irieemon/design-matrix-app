@@ -1,0 +1,115 @@
+{
+  "ideas": [
+    {
+      "id": "demo-1",
+      "content": "AI-Powered Customer Insights Dashboard",
+      "details": "Implement machine learning analytics to provide real-time customer behavior insights with interactive visualizations",
+      "priority": "high",
+      "impact": "high",
+      "effort": "medium",
+      "x": 150,
+      "y": 150,
+      "matrix_position": {
+        "x": 0.2,
+        "y": 0.2
+      },
+      "created_at": "2025-09-19T01:20:07.214Z",
+      "updated_at": "2025-09-19T01:20:07.215Z",
+      "user_id": "demo-user",
+      "tags": [
+        "demo",
+        "high"
+      ],
+      "created_by": "system"
+    },
+    {
+      "id": "demo-2",
+      "content": "Automated Testing Infrastructure",
+      "details": "Set up comprehensive CI/CD pipeline with automated testing, code quality checks, and deployment automation",
+      "priority": "strategic",
+      "impact": "high",
+      "effort": "high",
+      "x": 550,
+      "y": 150,
+      "matrix_position": {
+        "x": 0.8,
+        "y": 0.2
+      },
+      "created_at": "2025-09-19T01:20:07.215Z",
+      "updated_at": "2025-09-19T01:20:07.215Z",
+      "user_id": "demo-user",
+      "tags": [
+        "demo",
+        "strategic"
+      ],
+      "created_by": "system"
+    },
+    {
+      "id": "demo-3",
+      "content": "Mobile App Dark Mode",
+      "details": "Add dark mode theme support with user preference persistence and smooth transitions",
+      "priority": "medium",
+      "impact": "medium",
+      "effort": "low",
+      "x": 250,
+      "y": 350,
+      "matrix_position": {
+        "x": 0.3,
+        "y": 0.5
+      },
+      "created_at": "2025-09-19T01:20:07.216Z",
+      "updated_at": "2025-09-19T01:20:07.216Z",
+      "user_id": "demo-user",
+      "tags": [
+        "demo",
+        "medium"
+      ],
+      "created_by": "system"
+    },
+    {
+      "id": "demo-4",
+      "content": "Legacy System Documentation",
+      "details": "Document existing legacy codebase and create migration strategy for future modernization efforts",
+      "priority": "low",
+      "impact": "low",
+      "effort": "medium",
+      "x": 450,
+      "y": 550,
+      "matrix_position": {
+        "x": 0.7,
+        "y": 0.8
+      },
+      "created_at": "2025-09-19T01:20:07.216Z",
+      "updated_at": "2025-09-19T01:20:07.216Z",
+      "user_id": "demo-user",
+      "tags": [
+        "demo",
+        "low"
+      ],
+      "created_by": "system"
+    },
+    {
+      "id": "demo-5",
+      "content": "Quick Performance Optimizations",
+      "details": "Implement image compression, lazy loading, and caching improvements for immediate performance gains",
+      "priority": "high",
+      "impact": "high",
+      "effort": "low",
+      "x": 180,
+      "y": 180,
+      "matrix_position": {
+        "x": 0.25,
+        "y": 0.25
+      },
+      "created_at": "2025-09-19T01:20:07.216Z",
+      "updated_at": "2025-09-19T01:20:07.216Z",
+      "user_id": "demo-user",
+      "tags": [
+        "demo",
+        "high"
+      ],
+      "created_by": "system"
+    }
+  ],
+  "users": []
+}

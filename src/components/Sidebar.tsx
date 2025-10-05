@@ -1,13 +1,13 @@
-import { Home, User, Database, BarChart3, FolderOpen, LogOut, ChevronLeft, ChevronRight, Map, Users, Shield } from 'lucide-react'
-import { useState } from 'react'
-import { Project, User as UserType } from '../types'
+import { Home, User, Database, BarChart3, FolderOpen, LogOut, Map, Users, Shield, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { Project } from '../types'
 import { AdminService } from '../lib/adminService'
 import PrioritasLogo from './PrioritasLogo'
+import { useCurrentUser, useUserDisplay } from '../contexts/UserContext'
+import NavItem from './ui/NavItem'
 
 interface SidebarProps {
   currentPage: string
-  currentUser: string
-  currentUserObj: UserType | null
   currentProject: Project | null
   onPageChange: (page: string) => void
   onLogout: () => void
@@ -15,14 +15,67 @@ interface SidebarProps {
   onToggleCollapse: (collapsed: boolean) => void
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUserObj, currentProject, onPageChange, onLogout, onAdminAccess, onToggleCollapse }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageChange, onLogout, onAdminAccess, onToggleCollapse }) => {
+  // Use centralized user context for all user data
+  const currentUser = useCurrentUser()
+  const { displayName, email } = useUserDisplay()
   const [isCollapsed, setIsCollapsed] = useState(false)
+
+  // Animated selection indicator state
+  const navContainerRef = useRef<HTMLDivElement>(null)
+  const activeElementRef = useRef<HTMLButtonElement | null>(null)
+  const [indicatorStyle, setIndicatorStyle] = useState<React.CSSProperties>({
+    top: 0,
+    height: 0,
+    opacity: 0
+  })
+
+  // Callback for NavItem to report its position when active
+  const handleActivePositionChange = useCallback((element: HTMLButtonElement) => {
+    if (!navContainerRef.current) return
+
+    // Store reference to active element for recalculation on collapse/expand
+    activeElementRef.current = element
+
+    const containerRect = navContainerRef.current.getBoundingClientRect()
+    const elementRect = element.getBoundingClientRect()
+
+    setIndicatorStyle({
+      top: elementRect.top - containerRect.top,
+      height: elementRect.height,
+      opacity: 1,
+      transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1)'
+    })
+  }, [])
+
+  // Recalculate indicator position when sidebar collapses/expands
+  useEffect(() => {
+    if (!navContainerRef.current || !activeElementRef.current) return
+
+    // Wait for collapse/expand animation to complete
+    const timer = setTimeout(() => {
+      if (!navContainerRef.current || !activeElementRef.current) return
+
+      const containerRect = navContainerRef.current.getBoundingClientRect()
+      const elementRect = activeElementRef.current.getBoundingClientRect()
+
+      setIndicatorStyle({
+        top: elementRect.top - containerRect.top,
+        height: elementRect.height,
+        opacity: 1,
+        transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1)'
+      })
+    }, 320) // Slightly longer than the 300ms transition
+
+    return () => clearTimeout(timer)
+  }, [isCollapsed])
 
   const handleToggleCollapse = () => {
     const newCollapsedState = !isCollapsed
     setIsCollapsed(newCollapsedState)
     onToggleCollapse(newCollapsedState)
   }
+
 
   // Project tools (only shown when a project is selected)
   const projectTools = [
@@ -46,7 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
     },
     {
       id: 'reports',
-      label: 'Insights', 
+      label: 'Insights',
       icon: BarChart3,
       description: 'AI-powered insights & analytics'
     },
@@ -65,21 +118,31 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
   ]
 
   return (
-    <div className={`${
-      isCollapsed ? 'w-20' : 'w-72'
-    } bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col h-screen transition-all duration-300 ease-in-out fixed left-0 top-0 z-50 shadow-2xl border-r border-slate-700/30 backdrop-blur-sm`}>
-      
+    <div className={`${isCollapsed ? 'w-20' : 'w-72'} sidebar-clean flex flex-col h-screen transition-all duration-300 ease-in-out fixed left-0 top-0 z-50`}>
+
       {/* Header Section */}
-      <div className={`${isCollapsed ? 'p-4' : 'p-6'} border-b border-slate-700/50 transition-all duration-300`}>
+      <div
+        className={`${isCollapsed ? 'p-4' : 'p-6'} border-b transition-all duration-300`}
+        style={{ borderColor: 'var(--hairline-default)' }}
+      >
         {isCollapsed ? (
           /* Collapsed Header */
-          <div className="flex flex-col items-center space-y-4">
-            <div className="bg-gradient-to-br from-white to-slate-100 rounded-xl p-3 shadow-lg">
-              <PrioritasLogo className="text-blue-600" size={24} />
+          <div className="flex flex-col items-center space-y-3">
+            <div
+              className="rounded-2xl p-3 shadow-lg"
+              style={{
+                background: 'linear-gradient(to bottom right, var(--surface-primary), var(--graphite-100))'
+              }}
+            >
+              <div style={{ color: 'var(--sapphire-600)' }}>
+                <PrioritasLogo size={24} />
+              </div>
             </div>
             <button
               onClick={handleToggleCollapse}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95"
+              className="p-2 rounded-lg transition-colors hover:bg-graphite-100"
+              style={{ color: 'var(--graphite-600)' }}
+              aria-label="Expand sidebar"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -88,16 +151,30 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
           /* Expanded Header */
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="bg-gradient-to-br from-white to-slate-100 rounded-xl p-3 shadow-lg">
-                <PrioritasLogo className="text-blue-600" size={24} />
+              <div
+                className="rounded-2xl p-3 shadow-lg"
+                style={{
+                  background: 'linear-gradient(to bottom right, var(--surface-primary), var(--graphite-100))'
+                }}
+              >
+                <div style={{ color: 'var(--sapphire-600)' }}>
+                  <PrioritasLogo size={24} />
+                </div>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Prioritas</h2>
+                <h2
+                  className="text-xl font-bold"
+                  style={{ color: 'var(--graphite-900)' }}
+                >
+                  Prioritas
+                </h2>
               </div>
             </div>
             <button
               onClick={handleToggleCollapse}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95"
+              className="p-2 rounded-lg transition-colors hover:bg-graphite-100"
+              style={{ color: 'var(--graphite-600)' }}
+              aria-label="Collapse sidebar"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -106,92 +183,97 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
       </div>
 
       {/* Navigation Section */}
-      <nav className={`flex-1 ${isCollapsed ? 'px-3 py-6' : 'px-6 py-8'} overflow-y-auto transition-all duration-300`}>
-        
+      <nav
+        ref={navContainerRef}
+        className={`flex-1 ${isCollapsed ? 'px-3 py-6' : 'px-6 py-8'} overflow-y-auto transition-all duration-300`}
+        style={{ position: 'relative' }}
+      >
+        {/* Animated Selection Indicator */}
+        <div
+          className="absolute left-0 w-1 rounded-r-full pointer-events-none"
+          style={{
+            ...indicatorStyle,
+            backgroundColor: 'var(--graphite-900)',
+            marginLeft: isCollapsed ? '8px' : '16px'
+          }}
+        />
+
         {/* Projects Button */}
         <div className="mb-8">
-          <button
+          <NavItem
             onClick={() => onPageChange('projects')}
-            className={`group w-full flex items-center ${
-              isCollapsed ? 'justify-center p-3' : 'px-4 py-3 space-x-3'
-            } rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${
-              currentPage === 'projects'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
+            active={currentPage === 'projects'}
+            icon={<FolderOpen />}
+            collapsed={isCollapsed}
             title={isCollapsed ? 'Projects' : undefined}
+            className="font-semibold"
+            onActivePositionChange={handleActivePositionChange}
           >
-            <FolderOpen className={`${isCollapsed ? 'w-5 h-5' : 'w-5 h-5'} ${
-              currentPage === 'projects' ? 'text-white' : 'text-blue-400 group-hover:text-white'
-            }`} />
-            {!isCollapsed && <span>Projects</span>}
-          </button>
+            Projects
+          </NavItem>
         </div>
 
         {/* Current Project Section */}
         {currentProject && (
           <div className="space-y-6">
-            
+
             {/* Project Header */}
-            {isCollapsed ? (
-              <div className="flex justify-center">
-                <div 
-                  className="w-12 h-12 bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl flex items-center justify-center border border-slate-600/50 relative"
-                  title={currentProject.name}
-                >
-                  <PrioritasLogo className="text-blue-400" size={20} />
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full"></div>
-                </div>
-              </div>
-            ) : (
+            {!isCollapsed && (
               <div>
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">
+                <div
+                  className="text-xs font-semibold uppercase tracking-widest mb-3"
+                  style={{ color: 'var(--graphite-500)' }}
+                >
                   Current Project
                 </div>
-                <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-4 py-3 rounded-xl border border-slate-600/50">
-                  <div className="flex items-center space-x-2 text-white font-semibold text-sm">
-                    <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                    <span className="truncate">{currentProject.name}</span>
+                <div className="mb-3">
+                  <div
+                    className="font-bold text-base truncate"
+                    style={{ color: 'var(--graphite-900)' }}
+                  >
+                    {currentProject.name}
                   </div>
-                  <div className="text-xs text-slate-400 mt-1">Active workspace</div>
+                  <div
+                    className="text-xs"
+                    style={{ color: 'var(--graphite-500)' }}
+                  >
+                    Active workspace
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Project Tools */}
-            <div className="space-y-2">
-              {projectTools.map((tool) => (
-                <button
-                  key={tool.id}
-                  onClick={() => onPageChange(tool.id)}
-                  className={`group w-full flex items-center ${
-                    isCollapsed ? 'justify-center p-3' : 'px-4 py-3 space-x-3'
-                  } rounded-xl text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${
-                    currentPage === tool.id || (tool.id === 'matrix' && currentPage === 'home')
-                      ? 'bg-gradient-to-r from-white to-slate-50 text-slate-900 shadow-lg shadow-white/20'
-                      : 'text-slate-300 hover:text-white hover:bg-gradient-to-r hover:from-slate-800/60 hover:to-slate-700/40'
-                  }`}
-                  title={isCollapsed ? `${tool.label} - ${tool.description}` : undefined}
-                >
-                  <tool.icon className={`${isCollapsed ? 'w-5 h-5' : 'w-4 h-4'} ${
-                    currentPage === tool.id || (tool.id === 'matrix' && currentPage === 'home')
-                      ? 'text-slate-600'
-                      : 'text-slate-400 group-hover:text-blue-400'
-                  }`} />
-                  {!isCollapsed && (
-                    <div className="flex-1 text-left min-w-0">
-                      <div className="font-semibold text-sm truncate">{tool.label}</div>
-                      <div className={`text-xs truncate ${
-                        currentPage === tool.id || (tool.id === 'matrix' && currentPage === 'home')
-                          ? 'text-slate-500'
-                          : 'text-slate-500 group-hover:text-slate-400'
-                      }`}>
-                        {tool.description}
-                      </div>
-                    </div>
-                  )}
-                </button>
-              ))}
+            <div id="project-tools-section">
+              <div className="space-y-2">
+                {projectTools.map((tool) => {
+                  const isActive = currentPage === tool.id || (tool.id === 'matrix' && currentPage === 'home');
+                  return (
+                    <NavItem
+                      key={tool.id}
+                      onClick={() => onPageChange(tool.id)}
+                      active={isActive}
+                      icon={<tool.icon />}
+                      collapsed={isCollapsed}
+                      title={isCollapsed ? `${tool.label} - ${tool.description}` : undefined}
+                      className="font-medium"
+                      onActivePositionChange={handleActivePositionChange}
+                    >
+                      {!isCollapsed && (
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm truncate">{tool.label}</div>
+                          <div
+                            className="text-xs truncate"
+                            style={{ color: isActive ? 'inherit' : 'var(--graphite-500)' }}
+                          >
+                            {tool.description}
+                          </div>
+                        </div>
+                      )}
+                    </NavItem>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
@@ -199,14 +281,31 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
         {/* Empty State */}
         {!currentProject && !isCollapsed && (
           <div className="py-12 text-center">
-            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-              <div className="w-12 h-12 bg-slate-700 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <PrioritasLogo className="text-slate-400" size={24} />
+            <div
+              className="rounded-xl p-6 border"
+              style={{
+                backgroundColor: 'var(--canvas-secondary)',
+                borderColor: 'var(--hairline-default)'
+              }}
+            >
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
+                style={{ backgroundColor: 'var(--graphite-200)' }}
+              >
+                <div style={{ color: 'var(--graphite-500)' }}>
+                  <PrioritasLogo size={24} />
+                </div>
               </div>
-              <div className="text-slate-400 text-sm font-medium mb-1">
+              <div
+                className="text-sm font-medium mb-1"
+                style={{ color: 'var(--graphite-600)' }}
+              >
                 No Project Selected
               </div>
-              <div className="text-xs text-slate-500">
+              <div
+                className="text-xs"
+                style={{ color: 'var(--graphite-500)' }}
+              >
                 Choose a project to access tools
               </div>
             </div>
@@ -215,87 +314,96 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, currentUser
       </nav>
 
       {/* Footer Section */}
-      <div className={`${isCollapsed ? 'p-2' : 'p-3'} border-t border-slate-700/50 transition-all duration-300`}>
-        
-        {/* Combined User/Settings/Logout */}
+      <div
+        className={`${isCollapsed ? 'p-2' : 'p-3'} border-t transition-all duration-300`}
+        style={{ borderColor: 'var(--hairline-default)' }}
+      >
         {isCollapsed ? (
           <div className="space-y-1">
             {/* User Button - Collapsed */}
-            <button
+            <NavItem
               onClick={() => onPageChange('user')}
-              className={`group w-full transition-all duration-200 rounded-lg hover:scale-[1.01] active:scale-[0.99] ${
-                currentPage === 'user'
-                  ? 'bg-gradient-to-r from-slate-700 to-slate-600 shadow-md'
-                  : 'hover:bg-slate-800/40'
-              }`}
-              title={`${currentUser} - Settings`}
-            >
-              <div className="flex justify-center py-1">
-                <div className="w-6 h-6 bg-gradient-to-br from-slate-600 to-slate-500 rounded-lg flex items-center justify-center">
-                  <User className="w-3 h-3 text-slate-200" />
+              active={currentPage === 'user'}
+              icon={
+                <div
+                  className="w-6 h-6 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: 'var(--graphite-200)' }}
+                >
+                  <User className="w-3 h-3" style={{ color: 'inherit' }} />
                 </div>
-              </div>
-            </button>
-            
+              }
+              collapsed={isCollapsed}
+              title={`${email || displayName} - Settings`}
+              onActivePositionChange={handleActivePositionChange}
+            />
+
             {/* Admin Access Button (only for admin users) */}
-            {currentUserObj && AdminService.isAdmin(currentUserObj) && (
+            {currentUser && AdminService.isAdmin(currentUser) && (
               <button
                 onClick={onAdminAccess}
-                className="group w-full flex justify-center p-1 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-400 hover:text-orange-400 hover:bg-gradient-to-r hover:from-orange-900/20 hover:to-red-800/10"
+                className="w-full p-2 rounded-lg transition-colors hover:bg-graphite-100"
+                style={{ color: 'var(--graphite-500)' }}
                 title="Admin Portal"
               >
-                <Shield className="w-3 h-3" />
+                <Shield className="w-4 h-4 mx-auto" />
               </button>
             )}
 
             {/* Logout Button */}
             <button
               onClick={onLogout}
-              className="group w-full flex justify-center p-1 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-400 hover:text-red-400 hover:bg-gradient-to-r hover:from-red-900/20 hover:to-red-800/10"
+              className="w-full p-2 rounded-lg transition-colors hover:bg-graphite-100"
+              style={{ color: 'var(--graphite-500)' }}
               title="Sign Out"
             >
-              <LogOut className="w-3 h-3" />
+              <LogOut className="w-4 h-4 mx-auto" />
             </button>
           </div>
         ) : (
           <div className="space-y-1">
             {/* User Button with inline logout - Expanded */}
             <div className="flex items-center justify-between">
-              <button
+              <NavItem
                 onClick={() => onPageChange('user')}
-                className={`group flex-1 transition-all duration-200 rounded-lg hover:scale-[1.01] active:scale-[0.99] ${
-                  currentPage === 'user'
-                    ? 'bg-gradient-to-r from-slate-700 to-slate-600 shadow-md'
-                    : 'hover:bg-slate-800/40'
-                }`}
+                active={currentPage === 'user'}
+                icon={
+                  <div
+                    className="w-6 h-6 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--graphite-200)' }}
+                  >
+                    <User className="w-3 h-3" style={{ color: 'inherit' }} />
+                  </div>
+                }
+                collapsed={false}
+                className="flex-1"
+                onActivePositionChange={handleActivePositionChange}
               >
-                <div className="flex items-center space-x-2 px-2 py-1">
-                  <div className="w-6 h-6 bg-gradient-to-br from-slate-600 to-slate-500 rounded-lg flex items-center justify-center">
-                    <User className="w-3 h-3 text-slate-200" />
-                  </div>
-                  <div className="flex-1 text-left min-w-0">
-                    <p className="text-xs font-medium text-white truncate">{currentUser}</p>
-                  </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate" style={{ color: 'inherit' }}>
+                    {email || displayName}
+                  </p>
                 </div>
-              </button>
-              
+              </NavItem>
+
               <button
                 onClick={onLogout}
-                className="group ml-2 p-1 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-[1.05] active:scale-[0.95] text-slate-400 hover:text-red-400 hover:bg-gradient-to-r hover:from-red-900/20 hover:to-red-800/10"
+                className="ml-2 p-2 rounded-lg transition-colors hover:bg-graphite-100"
+                style={{ color: 'var(--graphite-500)' }}
                 title="Sign Out"
               >
                 <LogOut className="w-3 h-3" />
               </button>
             </div>
-            
+
             {/* Admin Access Button (only for admin users) */}
-            {currentUserObj && AdminService.isAdmin(currentUserObj) && (
+            {currentUser && AdminService.isAdmin(currentUser) && (
               <button
                 onClick={onAdminAccess}
-                className="group w-full flex items-center px-2 py-1 space-x-2 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-400 hover:text-orange-400 hover:bg-gradient-to-r hover:from-orange-900/20 hover:to-red-800/10"
+                className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors hover:bg-graphite-100"
+                style={{ color: 'var(--graphite-500)' }}
               >
-                <Shield className="w-3 h-3" />
-                <span>Admin Portal</span>
+                <Shield className="w-4 h-4" />
+                <span className="text-sm">Admin Portal</span>
               </button>
             )}
           </div>

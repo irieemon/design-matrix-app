@@ -8,8 +8,14 @@ import ProjectCollaboration from '../pages/ProjectCollaboration'
 import ProjectManagement from '../ProjectManagement'
 import ProjectRoadmap from '../ProjectRoadmap'
 import ProjectFiles from '../ProjectFiles'
+import { ButtonTestPage } from '../pages/ButtonTestPage'
+import { FormTestPage } from '../pages/FormTestPage'
+import { SkeletonTestPage } from '../pages/SkeletonTestPage'
+import MonochromaticDemo from '../demo/MonochromaticDemo'
+// import PerformanceDashboard from '../dev/PerformanceDashboard'
 import { useProjectFiles } from '../../hooks/useProjectFiles'
 import { IdeaCard } from '../../types'
+import { logger } from '../../utils/logger'
 
 interface PageRouterProps {
   currentPage: string
@@ -74,7 +80,7 @@ const PageRouter: React.FC<PageRouterProps> = ({
 
   // Handle invalid pages
   useEffect(() => {
-    const validPages = ['matrix', 'home', 'data', 'reports', 'projects', 'roadmap', 'files', 'collaboration', 'user']
+    const validPages = ['matrix', 'home', 'data', 'reports', 'projects', 'roadmap', 'files', 'collaboration', 'user', 'button-test', 'form-test', 'skeleton-test', 'performance', 'mono-demo']
     if (!validPages.includes(currentPage)) {
       onPageChange('matrix')
     }
@@ -107,17 +113,22 @@ const PageRouter: React.FC<PageRouterProps> = ({
       case 'data':
         if (!currentProject) {
           return (
-            <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--canvas-primary)' }}>
               <div className="text-center">
-                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-slate-600">{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
+                <div className="w-8 h-8 rounded-full animate-spin mx-auto mb-4" style={{
+                  borderWidth: '2px',
+                  borderStyle: 'solid',
+                  borderColor: 'var(--sapphire-500)',
+                  borderTopColor: 'transparent'
+                }}></div>
+                <p style={{ color: 'var(--graphite-600)' }}>{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
               </div>
             </div>
           )
         }
         return (
-          <div className="bg-slate-50 min-h-screen">
-            <DataManagement 
+          <div className="min-h-screen" style={{ backgroundColor: 'var(--canvas-primary)' }}>
+            <DataManagement
               ideas={ideas}
               currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
               onDataUpdated={onDataUpdated}
@@ -128,17 +139,22 @@ const PageRouter: React.FC<PageRouterProps> = ({
       case 'reports':
         if (!currentProject) {
           return (
-            <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--canvas-primary)' }}>
               <div className="text-center">
-                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-slate-600">{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
+                <div className="w-8 h-8 rounded-full animate-spin mx-auto mb-4" style={{
+                  borderWidth: '2px',
+                  borderStyle: 'solid',
+                  borderColor: 'var(--sapphire-500)',
+                  borderTopColor: 'transparent'
+                }}></div>
+                <p style={{ color: 'var(--graphite-600)' }}>{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
               </div>
             </div>
           )
         }
         return (
-          <div className="bg-slate-50 min-h-screen">
-            <ReportsAnalytics 
+          <div className="min-h-screen" style={{ backgroundColor: 'var(--canvas-primary)' }}>
+            <ReportsAnalytics
               ideas={ideas}
               currentUser={currentUser}
               currentProject={currentProject}
@@ -148,16 +164,24 @@ const PageRouter: React.FC<PageRouterProps> = ({
       
       case 'projects':
         return (
-          <div className="bg-slate-50 min-h-screen">
-            <ProjectManagement 
+          <div className="min-h-screen" style={{ backgroundColor: 'var(--canvas-primary)' }}>
+            <ProjectManagement
               currentUser={currentUser}
               currentProject={currentProject}
               onProjectSelect={onProjectSelect}
               onProjectCreated={(project, projectIdeas) => {
-                onProjectSelect(project)
+                // CRITICAL FIX: Set ideas BEFORE selecting project to avoid race condition
                 if (projectIdeas && setIdeas) {
+                  logger.debug('🎯 AI Starter: Setting', projectIdeas.length, 'ideas in state')
                   setIdeas(projectIdeas)
                 }
+
+                // Then select project
+                logger.debug('🎯 AI Starter: Selecting project:', project.name)
+                onProjectSelect(project)
+
+                // Finally navigate
+                logger.debug('🎯 AI Starter: Navigating to matrix')
                 onPageChange('matrix')
               }}
               onNavigateToMatrix={() => onPageChange('matrix')}
@@ -168,16 +192,21 @@ const PageRouter: React.FC<PageRouterProps> = ({
       case 'roadmap':
         if (!currentProject) {
           return (
-            <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--canvas-primary)' }}>
               <div className="text-center">
-                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-slate-600">{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
+                <div className="w-8 h-8 rounded-full animate-spin mx-auto mb-4" style={{
+                  borderWidth: '2px',
+                  borderStyle: 'solid',
+                  borderColor: 'var(--sapphire-500)',
+                  borderTopColor: 'transparent'
+                }}></div>
+                <p style={{ color: 'var(--graphite-600)' }}>{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
               </div>
             </div>
           )
         }
         return (
-          <div className="bg-gray-50 min-h-screen">
+          <div className="min-h-screen" style={{ backgroundColor: 'var(--canvas-primary)' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
               <ProjectRoadmap
                 currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
@@ -191,16 +220,21 @@ const PageRouter: React.FC<PageRouterProps> = ({
       case 'files':
         if (!currentProject || !currentUser) {
           return (
-            <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--canvas-primary)' }}>
               <div className="text-center">
-                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-slate-600">{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
+                <div className="w-8 h-8 rounded-full animate-spin mx-auto mb-4" style={{
+                  borderWidth: '2px',
+                  borderStyle: 'solid',
+                  borderColor: 'var(--sapphire-500)',
+                  borderTopColor: 'transparent'
+                }}></div>
+                <p style={{ color: 'var(--graphite-600)' }}>{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
               </div>
             </div>
           )
         }
         return (
-          <div className="bg-slate-50 min-h-screen">
+          <div className="min-h-screen" style={{ backgroundColor: 'var(--canvas-primary)' }}>
             <ProjectFiles
               currentProject={currentProject}
               files={getCurrentProjectFiles()}
@@ -213,16 +247,21 @@ const PageRouter: React.FC<PageRouterProps> = ({
       case 'collaboration':
         if (!currentProject || !currentUser) {
           return (
-            <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--canvas-primary)' }}>
               <div className="text-center">
-                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-slate-600">{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
+                <div className="w-8 h-8 rounded-full animate-spin mx-auto mb-4" style={{
+                  borderWidth: '2px',
+                  borderStyle: 'solid',
+                  borderColor: 'var(--sapphire-500)',
+                  borderTopColor: 'transparent'
+                }}></div>
+                <p style={{ color: 'var(--graphite-600)' }}>{isRestoringProject ? 'Loading project...' : 'Redirecting to projects...'}</p>
               </div>
             </div>
           )
         }
         return (
-          <div className="bg-slate-50 min-h-screen">
+          <div className="min-h-screen" style={{ backgroundColor: 'var(--canvas-primary)' }}>
             <ProjectCollaboration
               currentUser={currentUser}
               currentProject={currentProject}
@@ -233,15 +272,30 @@ const PageRouter: React.FC<PageRouterProps> = ({
       
       case 'user':
         return (
-          <div className="bg-slate-50 min-h-screen">
-            <UserSettings 
+          <div className="min-h-screen" style={{ backgroundColor: 'var(--canvas-primary)' }}>
+            <UserSettings
               currentUser={currentUser}
               onLogout={onLogout}
               onUserUpdate={onUserUpdate}
             />
           </div>
         )
-      
+
+      case 'button-test':
+        return <ButtonTestPage />
+
+      case 'form-test':
+        return <FormTestPage />
+
+      case 'skeleton-test':
+        return <SkeletonTestPage />
+
+      case 'mono-demo':
+        return <MonochromaticDemo />
+
+      // case 'performance':
+      //   return <PerformanceDashboard />
+
       default:
         return null
     }

@@ -6,6 +6,7 @@
  */
 
 import { createContext, useContext, useState, ReactNode } from 'react'
+import { logger } from '../lib/logging'
 
 interface NavigationContextType {
   currentPage: string
@@ -22,11 +23,15 @@ interface NavigationProviderProps {
 
 export function NavigationProvider({ children, initialPage = 'matrix' }: NavigationProviderProps) {
   const [currentPage, setCurrentPage] = useState<string>(initialPage)
+  const navLogger = logger.withContext({ component: 'NavigationContext' })
 
   // Debug wrapper for page changes
   const handlePageChange = (newPage: string) => {
-    console.log('🔄 Navigation: Page change requested:', currentPage, '->', newPage)
-    console.trace('Page change call stack')
+    navLogger.debug('Page change requested', {
+      from: currentPage,
+      to: newPage,
+      timestamp: Date.now()
+    })
     setCurrentPage(newPage)
   }
 

@@ -4,6 +4,7 @@ import { Project, ProjectType, IdeaCard, User } from '../types'
 import { DatabaseService } from '../lib/database'
 import { aiService } from '../lib/aiService'
 import { logger } from '../utils/logger'
+import { Button } from './ui/Button'
 
 interface ProjectStartupFlowProps {
   currentUser: User
@@ -134,48 +135,25 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
         ai_analysis: aiAnalysis?.projectAnalysis || undefined
       }
 
-      // Create the project (test database first, fallback to local)
-      logger.debug('🏗️ Creating project...')
-      
-      let project
-      try {
-        logger.debug('🔄 Attempting database project creation...')
-        project = await DatabaseService.createProject(projectData)
-        logger.debug('✅ Database project creation succeeded!', project?.name)
-        
-        if (!project) {
-          throw new Error('Database returned null project')
-        }
-      } catch (dbError) {
-        logger.error('❌ Database project creation failed, using local fallback:', dbError)
-        
-        // Fallback to local project object
-        project = {
-          id: crypto.randomUUID(),
-          name: projectData.name,
-          description: projectData.description,
-          project_type: projectData.project_type,
-          status: projectData.status,
-          visibility: projectData.visibility,
-          priority_level: projectData.priority_level,
-          owner_id: projectData.owner_id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          budget: projectData.budget || 0,
-          target_date: projectData.target_date || undefined,
-        }
-        logger.debug('✅ Created local fallback project:', project.name)
+      // Create the project in database
+      logger.debug('🏗️ Creating project in database...')
+
+      const project = await DatabaseService.createProject(projectData)
+
+      if (!project) {
+        throw new Error('Failed to create project in database. Please ensure you are logged in and have the necessary permissions.')
       }
 
-      let createdIdeas: IdeaCard[] = []
+      logger.debug('✅ Project created successfully!', project.name)
 
-      // Generate AI ideas if enabled (temporarily bypass database)
+      const createdIdeas: IdeaCard[] = []
+
+      // Create AI-generated ideas in database
       if (formData.enableAI && aiAnalysis?.generatedIdeas) {
-        logger.debug('🤖 Creating AI-generated ideas...')
+        logger.debug(`🤖 Creating ${aiAnalysis.generatedIdeas.length} AI-generated ideas in database...`)
+
         for (const ideaData of aiAnalysis.generatedIdeas) {
-          // Temporary fix: Create local idea objects instead of database calls
-          const newIdea = {
-            id: crypto.randomUUID().replace(/-/g, '').substring(0, 16),
+          const newIdea = await DatabaseService.createIdea({
             content: ideaData.content,
             details: ideaData.details,
             x: Math.round(ideaData.x),
@@ -183,32 +161,18 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
             priority: ideaData.priority,
             created_by: currentUser.id,
             is_collapsed: true,
-            editing_by: null,
-            editing_at: null,
-            project_id: project.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            project_id: project.id
+          })
+
+          if (newIdea && newIdea.success && newIdea.data) {
+            createdIdeas.push(newIdea.data)
+            logger.debug(`✅ Created idea: ${ideaData.content}`)
+          } else {
+            logger.warn(`⚠️ Failed to create idea: ${ideaData.content}`, newIdea?.error)
           }
-          
-          createdIdeas.push(newIdea)
-          
-          // Comment out database call for now
-          // const newIdea = await DatabaseService.createIdea({
-          //   content: ideaData.content,
-          //   details: ideaData.details,
-          //   x: Math.round(ideaData.x),
-          //   y: Math.round(ideaData.y),
-          //   priority: ideaData.priority,
-          //   created_by: currentUser.id,
-          //   is_collapsed: true,
-          //   editing_by: null,
-          //   editing_at: null,
-          //   project_id: project.id
-          // })
-          // if (newIdea) {
-          //   createdIdeas.push(newIdea)
-          // }
         }
+
+        logger.debug(`✅ Successfully created ${createdIdeas.length}/${aiAnalysis.generatedIdeas.length} ideas`)
       }
 
       logger.debug('✅ Project created successfully!', { project, ideasCount: createdIdeas.length })
@@ -264,7 +228,7 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
   const renderStep1 = () => (
     <div className="space-y-6">
       <div className="text-center mb-6">
-        <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 bg-gradient-to-r from-gray-700 to-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <Lightbulb className="w-8 h-8 text-white" />
         </div>
         <h3 className="text-xl font-bold text-slate-900 mb-2">Project Basics</h3>
@@ -435,12 +399,12 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
             placeholder="Add a tag..."
             className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
-          <button
+          <Button
             onClick={addTag}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            variant="primary"
           >
             Add
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -527,8 +491,8 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
         {/* Progress Bar */}
         <div className="px-6 py-2">
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-300"
+            <div
+              className="bg-gradient-to-r from-gray-700 to-gray-800 h-2 rounded-full transition-all duration-300"
               style={{ width: `${(step / 3) * 100}%` }}
             ></div>
           </div>
@@ -564,27 +528,24 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
           </button>
 
           {step < 3 ? (
-            <button
+            <Button
               onClick={handleNext}
               disabled={!isStepValid()}
-              className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary"
+              iconAfter={<ArrowRight className="w-4 h-4" />}
             >
-              <span>Next</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              Next
+            </Button>
           ) : (
-            <button
+            <Button
               onClick={handleCreateProject}
               disabled={isLoading}
-              className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg hover:from-green-700 hover:to-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary"
+              state={isLoading ? 'loading' : 'idle'}
+              icon={<CheckCircle className="w-4 h-4" />}
             >
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <CheckCircle className="w-4 h-4" />
-              )}
-              <span>{isLoading ? 'Creating...' : 'Create Project'}</span>
-            </button>
+              {isLoading ? 'Creating...' : 'Create Project'}
+            </Button>
           )}
         </div>
       </div>

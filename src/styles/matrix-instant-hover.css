@@ -1,0 +1,329 @@
+/**
+ * MATRIX INSTANT HOVER OPTIMIZATIONS
+ *
+ * Sub-16ms hover response system for enterprise-grade interactions
+ * Focus: Immediate visual feedback with GPU acceleration
+ */
+
+/* ===== INSTANT RESPONSE SYSTEM ===== */
+:root {
+  /* Ultra-fast timing for instant feedback */
+  --instant: cubic-bezier(1, 0, 1, 0); /* No easing, immediate response */
+  --micro-duration: 8ms; /* Half a frame at 60fps */
+  --frame-duration: 16ms; /* One frame at 60fps */
+
+  /* Pre-calculated hover transforms for zero-computation hover */
+  --hover-matrix: matrix3d(1.02, 0, 0, 0, 0, 1.02, 0, 0, 0, 0, 1, 0, 0, -2, 0, 1);
+  --hover-matrix-light: matrix3d(1.01, 0, 0, 0, 0, 1.01, 0, 0, 0, 0, 1, 0, 0, -1, 0, 1);
+  --hover-matrix-strong: matrix3d(1.05, 0, 0, 0, 0, 1.05, 0, 0, 0, 0, 1, 0, 0, -4, 0, 1);
+}
+
+/* ===== INSTANT CARD HOVER SYSTEM ===== */
+.instant-hover-card {
+  /* Pre-prime GPU layer */
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+
+  /* Instant transition - no interpolation delay */
+  transition: transform var(--micro-duration) var(--instant);
+
+  /* Force composite layer */
+  isolation: isolate;
+  backface-visibility: hidden;
+
+  /* CRITICAL FIX: Remove any borders that create L-shaped corner artifacts */
+  border: none !important;
+  outline: none !important;
+}
+
+.instant-hover-card:hover {
+  /* Pre-calculated matrix for zero computation time */
+  transform: var(--hover-matrix);
+
+  /* Immediate z-index bump without transition */
+  z-index: var(--z-card-hover);
+
+  /* CRITICAL FIX: Ensure no borders appear on hover */
+  border: none !important;
+  outline: none !important;
+}
+
+/* ===== BUTTON INSTANT FEEDBACK ===== */
+.instant-hover-button {
+  transform: translate3d(0, 0, 0);
+  will-change: transform, background-color;
+
+  /* Split transitions - transform instant, color slightly delayed */
+  transition:
+    transform var(--micro-duration) var(--instant),
+    background-color var(--frame-duration) ease-out,
+    border-color var(--frame-duration) ease-out;
+
+  /* Pre-warm GPU layer */
+  backface-visibility: hidden;
+}
+
+.instant-hover-button:hover:not([disabled]) {
+  transform: translate3d(0, -1px, 0);
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.instant-hover-button:active {
+  transform: translate3d(0, 0, 0);
+  transition-duration: var(--micro-duration);
+}
+
+/* ===== SCALE HOVER OPTIMIZATIONS ===== */
+.instant-scale-102 {
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  transition: transform var(--micro-duration) var(--instant);
+}
+
+.instant-scale-102:hover {
+  transform: var(--hover-matrix-light);
+}
+
+.instant-scale-105 {
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  transition: transform var(--micro-duration) var(--instant);
+}
+
+.instant-scale-105:hover {
+  transform: var(--hover-matrix-strong);
+}
+
+/* ===== MAGNETIC HOVER EFFECTS ===== */
+.magnetic-hover {
+  position: relative;
+  transform: translate3d(0, 0, 0);
+  transition: transform var(--micro-duration) var(--instant);
+  will-change: transform;
+}
+
+.magnetic-hover::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(45deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--frame-duration) ease-out;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.magnetic-hover:hover {
+  transform: translate3d(0, -2px, 0) scale(1.02);
+}
+
+.magnetic-hover:hover::before {
+  opacity: 1;
+}
+
+/* ===== DRAG PREVIEW INSTANT FEEDBACK ===== */
+.instant-drag-preview {
+  transform: translate3d(0, 0, 0);
+  will-change: transform, opacity;
+  transition: transform var(--micro-duration) var(--instant);
+  cursor: grabbing;
+  z-index: var(--z-card-dragging);
+}
+
+.instant-drag-preview.dragging {
+  transform: translate3d(0, -4px, 0) scale(1.05) rotate(1deg);
+  opacity: 0.9;
+}
+
+/* ===== HIGH-FREQUENCY INTERACTION OPTIMIZATION ===== */
+.high-frequency-hover {
+  /* Optimize for rapid hover on/off cycles */
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+
+  /* Use step function for instant on/off */
+  transition: transform 0ms steps(1, end);
+}
+
+.high-frequency-hover:hover {
+  transform: translate3d(0, -1px, 0) scale(1.01);
+}
+
+/* ===== TOUCH DEVICE OPTIMIZATIONS ===== */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable hover optimizations on touch devices */
+  .instant-hover-card,
+  .instant-hover-button,
+  .instant-scale-102,
+  .instant-scale-105,
+  .magnetic-hover {
+    transition: none;
+    will-change: auto;
+  }
+
+  /* Use active states instead */
+  .instant-hover-card:active {
+    transform: var(--hover-matrix-light);
+  }
+
+  .instant-hover-button:active {
+    transform: translate3d(0, -1px, 0);
+  }
+}
+
+/* ===== HOVER ZONES FOR IMPROVED UX ===== */
+.extended-hover-zone {
+  position: relative;
+}
+
+.extended-hover-zone::before {
+  content: '';
+  position: absolute;
+  inset: -8px; /* 8px hover margin */
+  pointer-events: none;
+  z-index: -1;
+}
+
+.extended-hover-zone:hover::before {
+  pointer-events: auto;
+}
+
+/* ===== PERFORMANCE MONITORING ===== */
+.hover-performance-debug {
+  /* Add timing markers for performance testing */
+  transition:
+    transform var(--micro-duration) var(--instant),
+    outline-color 1ms steps(1, start); /* Instant outline change for timing tests */
+}
+
+.hover-performance-debug:hover {
+  outline: 2px solid lime; /* Instant visual confirmation of hover trigger */
+  outline-offset: -2px;
+}
+
+/* ===== CRITICAL PERFORMANCE OVERRIDES ===== */
+.matrix-container .instant-hover-card,
+.matrix-container .instant-hover-button,
+.matrix-container .instant-scale-102,
+.matrix-container .instant-scale-105 {
+  /* Override any conflicting slow transitions */
+  transition: transform var(--micro-duration) var(--instant) !important;
+}
+
+/* Fix any inherited slow transitions */
+.matrix-container * {
+  /* Reset problematic hover transitions */
+  transition-duration: var(--frame-duration) !important;
+}
+
+.matrix-container .instant-hover-card,
+.matrix-container .instant-hover-button {
+  /* Ensure instant elements stay instant */
+  transition-duration: var(--micro-duration) !important;
+}
+
+/* ===== GPU MEMORY OPTIMIZATION ===== */
+.hover-idle {
+  /* Clean up GPU resources when not interacting */
+  will-change: auto;
+  transform: none;
+}
+
+.hover-active {
+  /* Activate GPU acceleration only when needed */
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Auto-activate based on interaction */
+.instant-hover-card:hover,
+.instant-hover-button:hover,
+.instant-scale-102:hover,
+.instant-scale-105:hover {
+  @extend .hover-active;
+}
+
+/* ===== BROWSER-SPECIFIC OPTIMIZATIONS ===== */
+@supports (transform: translate3d(0, 0, 0)) {
+  /* Modern browsers with 3D transform support */
+  .instant-hover-optimized {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@supports not (transform: translate3d(0, 0, 0)) {
+  /* Fallback for older browsers */
+  .instant-hover-optimized {
+    transform: translateY(0);
+    transition: transform var(--frame-duration) ease-out;
+  }
+}
+
+/* Chrome-specific optimizations */
+@supports (-webkit-appearance: none) {
+  .instant-hover-card {
+    -webkit-transform-style: preserve-3d;
+    -webkit-backface-visibility: hidden;
+  }
+}
+
+/* Firefox-specific optimizations */
+@supports (-moz-appearance: none) {
+  .instant-hover-card {
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+}
+
+/* ===== ACCESSIBILITY COMPLIANCE ===== */
+@media (prefers-reduced-motion: reduce) {
+  .instant-hover-card,
+  .instant-hover-button,
+  .instant-scale-102,
+  .instant-scale-105,
+  .magnetic-hover {
+    transition: none !important;
+    transform: none !important;
+  }
+
+  /* Maintain basic feedback without animation */
+  .instant-hover-card:hover {
+    outline: 2px solid rgba(59, 130, 246, 0.5);
+    outline-offset: 2px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  /* REMOVED: Outline on cards was creating visual artifacts */
+  /* Cards maintain visibility through shadows and backgrounds instead */
+  .instant-hover-button:hover {
+    outline: 3px solid ButtonText;
+    outline-offset: 1px;
+  }
+}
+
+/* ===== FINAL PERFORMANCE GUARANTEE ===== */
+.performance-guaranteed {
+  /* Final override to ensure <16ms response */
+  transition: transform 8ms cubic-bezier(1, 0, 1, 0) !important;
+  will-change: transform !important;
+  backface-visibility: hidden !important;
+  transform: translate3d(0, 0, 0) !important;
+
+  /* CRITICAL FIX: No borders */
+  border: none !important;
+  outline: none !important;
+}
+
+.performance-guaranteed:hover {
+  /* No borders on hover */
+  border: none !important;
+  outline: none !important;
+}
+
+.performance-guaranteed:hover {
+  transition-delay: 0ms !important;
+}

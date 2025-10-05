@@ -1,0 +1,452 @@
+/**
+ * Monochrome-Lux Animation Utilities
+ *
+ * Micro-animations for calm, confident, purposeful motion
+ * Reference: src/components/demo/MonochromeLuxAnimated.tsx
+ *
+ * Motion Principles:
+ * - Subtle movement: ≤6px translations, ≤4% tints
+ * - GPU-accelerated: transform, opacity, filter only
+ * - Purposeful: Every animation has a reason
+ * - Accessible: Respects prefers-reduced-motion
+ */
+
+/* ============================================
+   BUTTON ANIMATIONS
+   ============================================ */
+
+/**
+ * Button Hover Lift
+ * - Hover: -1px lift with shadow expansion
+ * - Active: Returns to baseline
+ * - Duration: 140ms fast, 120ms instant for press
+ */
+.btn-hover-lift {
+  transition: transform var(--duration-fast) var(--easing-out),
+              box-shadow var(--duration-fast) var(--easing-out),
+              background-color var(--duration-fast) var(--easing-out);
+}
+
+.btn-hover-lift:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn-hover-lift:active:not(:disabled) {
+  transform: translateY(0);
+  transition-duration: var(--duration-instant);
+  transition-timing-function: var(--easing-in);
+}
+
+/* ============================================
+   CARD ANIMATIONS
+   ============================================ */
+
+/**
+ * Card Hover Elevation
+ * - Hover: +2% tint, shadow expansion
+ * - NO translate movement (elevation only)
+ * - Duration: 160ms ease-out
+ */
+.card-hover {
+  transition: box-shadow var(--duration-fast) var(--easing-out),
+              background-color var(--duration-fast) var(--easing-out);
+}
+
+.card-hover:hover {
+  box-shadow: var(--shadow-card-hover);
+  background-color: var(--surface-secondary); /* #FEFEFE */
+}
+
+/* ============================================
+   INPUT ANIMATIONS
+   ============================================ */
+
+/**
+ * Input Focus Ring
+ * - Focus gain: Sapphire border + ring expansion (190-210ms ease-out)
+ * - Focus loss: Ring fades with ease-in (190ms)
+ * - Icon color shifts to sapphire on focus
+ */
+.input-focus {
+  transition: border-color var(--duration-base) var(--easing-out),
+              box-shadow var(--duration-base) var(--easing-glide);
+}
+
+.input-focus:focus {
+  border-color: var(--hairline-focus); /* Sapphire #3B82F6 */
+  box-shadow: var(--shadow-focus-ring);
+  outline: none;
+}
+
+.input-focus:hover:not(:focus) {
+  border-color: var(--hairline-hover);
+}
+
+/* Focus ring animation keyframes */
+@keyframes focusRingIn {
+  from {
+    opacity: 0;
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+  to {
+    opacity: 1;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  }
+}
+
+.focus-ring-animated {
+  animation: focusRingIn var(--duration-base) var(--easing-out);
+}
+
+/* ============================================
+   LINK ANIMATIONS
+   ============================================ */
+
+/**
+ * Link Underline Slide
+ * - Hover: Underline slides in left → right (140ms)
+ * - Text darkens slightly
+ */
+.link-underline {
+  position: relative;
+}
+
+.link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background-color: currentColor;
+  transition: width var(--duration-fast) var(--easing-out);
+}
+
+.link-underline:hover::after {
+  width: 100%;
+}
+
+.link-underline:hover {
+  color: var(--graphite-800);
+  transition: color var(--duration-fast) var(--easing-out);
+}
+
+/* ============================================
+   NAVIGATION ANIMATIONS
+   ============================================ */
+
+/**
+ * Nav Item Transitions
+ * - Hover: Background tint +2%, icon opacity 0.7 → 1.0
+ * - Active: Instant feedback (no transition)
+ */
+.nav-item {
+  position: relative;
+  transition: background-color var(--duration-fast) var(--easing-standard),
+              color var(--duration-fast) var(--easing-standard);
+}
+
+.nav-item svg {
+  transition: opacity var(--duration-fast) var(--easing-standard);
+}
+
+.nav-item:hover svg {
+  opacity: 1;
+}
+
+/**
+ * Nav Rail Indicator
+ * - Slides smoothly between active items (180ms glide)
+ * - 3px wide, graphite-700 color
+ */
+.nav-rail-indicator {
+  position: absolute;
+  left: 0;
+  width: 3px;
+  height: 20px;
+  background-color: var(--graphite-700);
+  border-radius: 0 2px 2px 0;
+  transition: top 180ms var(--easing-glide),
+              opacity 180ms var(--easing-glide);
+  pointer-events: none;
+}
+
+.nav-rail-indicator.hidden {
+  opacity: 0;
+}
+
+/* ============================================
+   SECTION COLLAPSE/EXPAND ANIMATIONS
+   ============================================ */
+
+/**
+ * Collapsible Section
+ * - Expand/collapse: max-height + opacity (200ms ease-out)
+ * - Smooth height transition
+ */
+.collapsible-section {
+  overflow: hidden;
+  transition: max-height 200ms var(--easing-out),
+              opacity 200ms var(--easing-out);
+}
+
+.collapsible-section.collapsed {
+  max-height: 0 !important;
+  opacity: 0;
+}
+
+/**
+ * Chevron Rotation
+ * - Expanded: 0deg
+ * - Collapsed: -90deg
+ * - Duration: 200ms ease-out
+ */
+.chevron-rotate {
+  transition: transform 200ms var(--easing-out);
+}
+
+.chevron-rotate.expanded {
+  transform: rotate(0deg);
+}
+
+.chevron-rotate.collapsed {
+  transform: rotate(-90deg);
+}
+
+/* ============================================
+   SIDEBAR COLLAPSE ANIMATIONS
+   ============================================ */
+
+/**
+ * Sidebar Horizontal Collapse
+ * - Width transition: 224px ↔ 80px (280ms glide)
+ * - Labels: Conditional rendering (no CSS animation)
+ * - Icons: Scale 1.05 on hover when collapsed
+ */
+.sidebar-container {
+  transition: width 280ms var(--easing-glide);
+  overflow: visible;
+}
+
+.sidebar-icon {
+  transition: transform 200ms var(--easing-out),
+              opacity 200ms var(--easing-out);
+  flex-shrink: 0;
+}
+
+.nav-item:hover .sidebar-icon {
+  transform: scale(1.05);
+}
+
+/**
+ * Section Headers - Fade Out Quickly
+ */
+.section-header {
+  opacity: 1;
+  transition: opacity 120ms var(--easing-in);
+  overflow: hidden;
+}
+
+.sidebar-collapsed .section-header {
+  opacity: 0;
+  max-height: 0;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+/**
+ * Keep Navigation Items Visible When Sidebar Collapsed
+ */
+.sidebar-collapsed .collapsible-section {
+  max-height: none !important;
+  opacity: 1 !important;
+  margin-top: 0.5rem !important;
+}
+
+/* ============================================
+   TOOLTIP ANIMATIONS
+   ============================================ */
+
+/**
+ * Tooltip Fade-In for Collapsed Nav Items
+ * - Appears on hover with smooth fade + slight translate
+ * - Duration: 160ms ease-out
+ */
+.nav-item-collapsed {
+  position: relative;
+}
+
+.nav-item-collapsed:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--graphite-800);
+  color: white;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  animation: tooltipFadeIn 160ms var(--easing-out) forwards;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: var(--z-tooltip);
+}
+
+.nav-item-collapsed:hover::before {
+  content: '';
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 6px solid var(--graphite-800);
+  opacity: 0;
+  animation: tooltipFadeIn 160ms var(--easing-out) forwards;
+  z-index: var(--z-tooltip);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+/* ============================================
+   LOADING SKELETON ANIMATIONS
+   ============================================ */
+
+/**
+ * Shimmer Animation
+ * - Slow, subtle linear shimmer (2s)
+ * - Disabled with prefers-reduced-motion
+ */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-animation {
+  animation: shimmer 2s linear infinite;
+  background-size: 200% 100%;
+}
+
+/* ============================================
+   MODAL ANIMATIONS
+   ============================================ */
+
+/**
+ * Modal Entrance
+ * - Scale: 0.98 → 1.0
+ * - Opacity: 0 → 1
+ * - Duration: 220ms glide
+ */
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-enter {
+  animation: modalEnter 220ms var(--easing-glide);
+}
+
+/**
+ * Modal Exit
+ * - Reverse of entrance
+ * - Duration: 190ms ease-in
+ */
+@keyframes modalExit {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.98) translateY(-8px);
+  }
+}
+
+.modal-exit {
+  animation: modalExit 190ms var(--easing-in);
+}
+
+/**
+ * Backdrop Fade
+ */
+@keyframes backdropEnter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.backdrop-enter {
+  animation: backdropEnter 220ms var(--easing-out);
+}
+
+/* ============================================
+   STATUS BADGE ANIMATIONS
+   ============================================ */
+
+/**
+ * Badge Hover
+ * - Subtle shadow on hover (120ms)
+ */
+.badge-hover {
+  transition: box-shadow var(--duration-instant) var(--easing-out);
+}
+
+.badge-hover:hover {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/**
+ * Smooth Color Transitions
+ */
+.transition-colors {
+  transition: background-color var(--duration-fast) var(--easing-out),
+              border-color var(--duration-fast) var(--easing-out),
+              color var(--duration-fast) var(--easing-out);
+}
+
+/**
+ * Smooth Transform + Shadow
+ */
+.transition-transform-shadow {
+  transition: transform var(--duration-fast) var(--easing-out),
+              box-shadow var(--duration-fast) var(--easing-out);
+}
+
+/**
+ * Smooth Opacity
+ */
+.transition-opacity {
+  transition: opacity var(--duration-base) var(--easing-out);
+}
+
+/**
+ * All Properties (use sparingly)
+ */
+.transition-all {
+  transition: all var(--duration-base) var(--easing-out);
+}

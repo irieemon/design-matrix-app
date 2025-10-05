@@ -1,0 +1,451 @@
+/**
+ * OPTIMIZED MATRIX LAYOUT SYSTEM
+ *
+ * Clean, performant matrix interface with proper z-index hierarchy,
+ * efficient animations, and professional visual design.
+ */
+
+/* ===== MATRIX CONTAINER SYSTEM ===== */
+.matrix-container {
+  /* Layout */
+  position: relative;
+  width: 100%;
+  height: 600px;
+
+  /* Professional Background */
+  background: var(--matrix-bg-gradient);
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--matrix-canvas-radius);
+
+  /* Glass Morphism Effect */
+  backdrop-filter: var(--backdrop-blur-md) var(--glass-saturate);
+
+  /* Professional Shadow */
+  box-shadow: var(--shadow-lg);
+
+  /* Performance */
+  contain: layout style paint;
+  overflow: hidden;
+
+  /* Smooth transitions */
+  transition: box-shadow var(--duration-normal) var(--ease-out);
+
+  /* CRITICAL FIX: Establish color inheritance for axis labels */
+  color: var(--color-neutral-800);
+}
+
+.matrix-container:hover {
+  box-shadow: var(--shadow-xl);
+}
+
+/* ===== MATRIX GRID SYSTEM ===== */
+.matrix-grid {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-default);
+
+  /* 4-Quadrant Grid Background */
+  background-image:
+    /* Center dividing lines */
+    linear-gradient(
+      to right,
+      transparent calc(50% - 1px),
+      var(--matrix-center-line) calc(50% - 1px),
+      var(--matrix-center-line) calc(50% + 1px),
+      transparent calc(50% + 1px)
+    ),
+    linear-gradient(
+      to bottom,
+      transparent calc(50% - 1px),
+      var(--matrix-center-line) calc(50% - 1px),
+      var(--matrix-center-line) calc(50% + 1px),
+      transparent calc(50% + 1px)
+    ),
+    /* Subtle grid pattern */
+    linear-gradient(
+      to right,
+      var(--matrix-grid-color) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      var(--matrix-grid-color) 1px,
+      transparent 1px
+    );
+
+  background-size:
+    100% 100%,
+    100% 100%,
+    40px 40px,
+    40px 40px;
+
+  background-position: 0 0, 0 0, 0 0, 0 0;
+
+  /* Performance optimization */
+  will-change: auto;
+  opacity: 0.4;
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.matrix-container:hover .matrix-grid {
+  /* FIXED: Ensure grid remains visible on hover */
+  opacity: 0.6 !important;
+}
+
+/* Ensure matrix-grid-background element maintains visibility */
+.matrix-grid-background {
+  opacity: 1 !important;
+}
+
+.matrix-container:hover .matrix-grid-background {
+  opacity: 1 !important;
+}
+
+/* ===== AXIS LABELS SYSTEM ===== */
+/* CRITICAL FIX: Remove @layer and use explicit color to force visibility */
+.matrix-axis {
+  position: absolute;
+  z-index: 10;
+
+  /* Professional styling */
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.5rem;
+
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+
+  /* BULLETPROOF FIX: Explicit hex color, no variables, highest priority */
+  color: #64748b !important;
+
+  /* Shadow for depth */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+
+  /* Performance */
+  contain: layout paint;
+}
+
+.matrix-axis-x {
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #64748b !important;
+}
+
+.matrix-axis-y {
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: center;
+  color: #64748b !important;
+}
+
+/* ===== QUADRANT LABELS ===== */
+.matrix-quadrant-label {
+  position: absolute;
+  z-index: var(--z-navigation);
+
+  /* Professional card styling */
+  background: var(--glass-background);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-card);
+
+  /* Typography */
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+
+  /* Smooth interactions */
+  transition: all var(--duration-normal) var(--ease-out);
+  cursor: pointer;
+
+  /* Performance */
+  contain: layout style paint;
+}
+
+.matrix-quadrant-label:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Quadrant Positioning */
+.matrix-quadrant-label.quick-wins {
+  top: var(--space-xl);
+  left: var(--space-xl);
+  color: var(--color-success-700);
+  border-color: var(--color-success-200);
+}
+
+.matrix-quadrant-label.strategic {
+  top: var(--space-xl);
+  right: var(--space-xl);
+  color: var(--color-strategic-700);
+  border-color: var(--color-strategic-200);
+}
+
+.matrix-quadrant-label.reconsider {
+  bottom: 80px; /* Account for axis label */
+  left: var(--space-xl);
+  color: var(--color-warning-700);
+  border-color: var(--color-warning-200);
+}
+
+.matrix-quadrant-label.avoid {
+  bottom: 80px; /* Account for axis label */
+  right: var(--space-xl);
+  color: var(--color-danger-700);
+  border-color: var(--color-danger-200);
+}
+
+/* ===== QUADRANT INDICATORS ===== */
+.matrix-quadrant-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  margin-right: var(--space-sm);
+  flex-shrink: 0;
+}
+
+.quick-wins .matrix-quadrant-indicator {
+  background-color: var(--color-success-500);
+}
+
+.strategic .matrix-quadrant-indicator {
+  background-color: var(--color-strategic-500);
+}
+
+.reconsider .matrix-quadrant-indicator {
+  background-color: var(--color-warning-500);
+}
+
+.avoid .matrix-quadrant-indicator {
+  background-color: var(--color-danger-500);
+}
+
+/* ===== CARDS CONTAINER ===== */
+.matrix-cards-container {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-card-base);
+
+  /* Allow interactions only on cards */
+  pointer-events: none;
+
+  /* Performance optimization */
+  contain: layout;
+}
+
+/* ===== MATRIX CENTER POINT ===== */
+.matrix-center-point {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+
+  background: var(--color-brand-primary);
+  box-shadow:
+    0 0 20px var(--color-brand-primary),
+    0 0 40px rgba(59, 130, 246, 0.3);
+
+  z-index: var(--z-above);
+
+  /* Subtle pulse animation */
+  animation: center-pulse 3s ease-in-out infinite;
+}
+
+@keyframes center-pulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+/* ===== EMPTY STATE ===== */
+.matrix-empty-state {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: var(--z-above);
+  pointer-events: none;
+}
+
+.matrix-empty-content {
+  text-align: center;
+  max-width: 400px;
+  padding: var(--space-2xl);
+
+  /* Glass card styling */
+  background: var(--glass-background);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.matrix-empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-lg);
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.matrix-empty-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--color-neutral-900);
+  margin-bottom: var(--space-md);
+}
+
+.matrix-empty-description {
+  font-size: var(--text-base);
+  color: var(--color-neutral-600);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-lg);
+}
+
+.matrix-empty-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+
+  padding: var(--space-sm) var(--space-md);
+
+  background: var(--color-strategic-50);
+  color: var(--color-strategic-700);
+  border-radius: var(--radius-lg);
+
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Tablet adjustments */
+@media (max-width: 1024px) {
+  .matrix-container {
+    height: 500px;
+  }
+
+  .matrix-quadrant-label {
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--text-xs);
+  }
+
+  .matrix-axis {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-xs);
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .matrix-container {
+    height: 400px;
+  }
+
+  .matrix-grid {
+    background-size:
+      100% 100%,
+      100% 100%,
+      20px 20px,
+      20px 20px;
+  }
+
+  .matrix-quadrant-label {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
+  /* Simplify on mobile */
+  .matrix-center-point {
+    width: 6px;
+    height: 6px;
+    animation: none;
+  }
+}
+
+/* ===== PERFORMANCE OPTIMIZATIONS ===== */
+
+/* Efficient GPU acceleration */
+.matrix-container,
+.matrix-quadrant-label,
+.matrix-center-point {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Reduce unnecessary repaints */
+.matrix-grid {
+  will-change: auto;
+}
+
+/* ===== ACCESSIBILITY ENHANCEMENTS ===== */
+
+/* Focus management */
+.matrix-quadrant-label:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .matrix-container,
+  .matrix-quadrant-label,
+  .matrix-center-point,
+  .matrix-empty-icon {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .matrix-container {
+    border-width: 2px;
+  }
+
+  .matrix-grid {
+    opacity: 0.8;
+  }
+
+  .matrix-quadrant-label {
+    border-width: 2px;
+    box-shadow: none;
+  }
+}
+
+/* ===== DEBUG MODE (Development Only) ===== */
+.matrix-debug .matrix-grid {
+  opacity: 1;
+}
+
+.matrix-debug .matrix-quadrant-label::after {
+  content: attr(data-quadrant);
+  position: absolute;
+  top: -20px;
+  left: 0;
+  font-size: 10px;
+  color: red;
+  font-weight: bold;
+}

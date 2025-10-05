@@ -1,5 +1,6 @@
 import React, { Component, ReactNode } from 'react'
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react'
+import { logger } from '../lib/logging'
 
 interface ErrorBoundaryState {
   hasError: boolean
@@ -41,9 +42,15 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       errorInfo
     })
 
-    // Log error for debugging
-    console.error('Error Boundary caught an error:', error, errorInfo)
-    
+    // Log error with full context
+    const errorLogger = logger.withContext({ component: 'ErrorBoundary' })
+    errorLogger.error('Component error caught', error, {
+      componentStack: errorInfo.componentStack,
+      retryCount: this.state.retryCount,
+      isRecoverable: this.isRecoverableError(error),
+      severity: this.getErrorSeverity()
+    })
+
     // Call optional error handler
     this.props.onError?.(error, errorInfo)
 

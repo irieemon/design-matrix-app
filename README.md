@@ -83,3 +83,13 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ---
 
 **Prioritas** - Making prioritization simple, visual, and collaborative.
+## ⚠️ NEVER RUN WITH SUDO
+
+**NEVER** run npm commands with sudo:
+
+❌ **WRONG**: `sudo npm run dev`
+✅ **RIGHT**: `npm run dev`
+
+Running with sudo causes 35,000+ files to become root-owned, breaking the development server.
+If you encounter permission errors, fix the underlying issue - don't use sudo to bypass it.
+

@@ -3,7 +3,7 @@ import { Grid3X3, Map } from 'lucide-react'
 import { Project, IdeaCard, ProjectRoadmap as ProjectRoadmapType } from '../../types'
 import { aiService } from '../../lib/aiService'
 import { DatabaseService } from '../../lib/database'
-import { logger } from '../../utils/logger'
+import { useLogger } from '../../lib/logging'
 import TimelineRoadmap from '../TimelineRoadmap'
 import RoadmapHeader from './RoadmapHeader'
 import PhaseList from './PhaseList'
@@ -20,6 +20,7 @@ interface ProjectRoadmapProps {
 }
 
 const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentProject, ideas }) => {
+  const logger = useLogger('ProjectRoadmap')
   const [roadmapData, setRoadmapData] = useState<RoadmapData | null>(null)
   const [state, setState] = useState<RoadmapState>({
     isLoading: false,
@@ -86,8 +87,8 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     setState(prev => ({ ...prev, isLoading: true, error: null, showConfirmModal: false }))
 
     try {
-      logger.debug('🗺️ Generating roadmap for project:', currentProject.name)
-      logger.debug('📋 Processing', (ideas || []).length, 'ideas')
+      logger.debug('🗺️ Generating roadmap for project:', { projectName: currentProject.name })
+      logger.debug('📋 Processing ideas', { ideaCount: (ideas || []).length })
 
       const data = await aiService.generateRoadmap(
         ideas,
@@ -111,7 +112,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           if (roadmapId) {
             setState(prev => ({ ...prev, selectedRoadmapId: roadmapId }))
             await loadRoadmapHistory()
-            logger.debug('✅ Roadmap saved and history updated:', roadmapId)
+            logger.debug('✅ Roadmap saved and history updated:', { roadmapId })
           }
         } catch (error) {
           logger.error('Error saving roadmap:', error)
@@ -141,7 +142,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       }
       return { ...prev, expandedPhases: newExpanded }
     })
-    logger.debug('📋 New expanded phases:', Array.from(state.expandedPhases))
+    logger.debug('📋 New expanded phases:', { expandedPhases: Array.from(state.expandedPhases) })
   }
 
   // Generate timeline features for timeline view
@@ -265,16 +266,19 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       currentMonth += phaseDuration
     })
 
-    logger.debug('✅ Generated', features.length, 'timeline features')
-    logger.debug('🎯 Feature teams:', features.map(f => ({ title: f.title, team: f.team })))
-    logger.debug('🏢 Unique teams found:', [...new Set(features.map(f => f.team))])
+    logger.debug('✅ Generated timeline features', { featureCount: features.length })
+    logger.debug('🎯 Feature teams:', { teams: features.map(f => ({ title: f.title, team: f.team })) })
+    logger.debug('🏢 Unique teams found:', { uniqueTeams: [...new Set(features.map(f => f.team))] })
 
     return features
   }
 
   const timelineFeatures = useMemo(() => {
     const features = convertToTimelineFeatures()
-    console.log('🎯 ProjectRoadmap: Timeline features generated:', features.length, features)
+    logger.debug('Timeline features generated', {
+      featureCount: features.length,
+      features: features.map(f => ({ id: f.id, title: f.title, team: f.team }))
+    })
     return features
   }, [roadmapData, currentProject?.project_type])
 
@@ -338,7 +342,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     // Debounce database save by 1 second
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        logger.debug('💾 Saving feature changes to database:', updatedFeatures.length, 'features')
+        logger.debug('💾 Saving feature changes to database:', { featureCount: updatedFeatures.length })
         await DatabaseService.updateProjectRoadmap(
           state.selectedRoadmapId!,
           updatedRoadmapData

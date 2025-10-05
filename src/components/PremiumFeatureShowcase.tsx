@@ -26,7 +26,7 @@ const PREMIUM_FEATURES: PremiumFeature[] = [
     icon: <Cpu className="w-6 h-6" />,
     title: "Web Workers Integration",
     description: "Background AI analysis without blocking the main thread",
-    color: "from-purple-500 to-pink-500",
+    color: "from-gray-500 to-gray-600",
     benefits: [
       "Non-blocking heavy computations",
       "Responsive UI during complex operations",
@@ -59,7 +59,7 @@ const PREMIUM_FEATURES: PremiumFeature[] = [
     icon: <Wand2 className="w-6 h-6" />,
     title: "AI-Powered Suggestions",
     description: "Real-time intelligent suggestions and auto-completion",
-    color: "from-indigo-500 to-purple-500",
+    color: "from-gray-700 to-gray-800",
     benefits: [
       "Context-aware auto-completion",
       "Smart pattern recognition",
@@ -127,7 +127,7 @@ const PremiumFeatureShowcase: React.FC<PremiumFeatureShowcaseProps> = ({ classNa
     <div ref={containerRef} className={`bg-gradient-to-br from-slate-50 to-blue-50 rounded-3xl p-8 ${className}`}>
       {/* Header */}
       <div ref={headerRef} className="text-center mb-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl mb-6 shadow-lg">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-gray-700 to-gray-800 rounded-2xl mb-6 shadow-lg">
           <Sparkles className="w-8 h-8 text-white" />
         </div>
         <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -189,7 +189,7 @@ const PremiumFeatureShowcase: React.FC<PremiumFeatureShowcaseProps> = ({ classNa
 
       {/* Bottom CTA */}
       <div className="text-center mt-12">
-        <div className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 cursor-pointer group">
+        <div className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-gray-700 to-gray-800 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 cursor-pointer group">
           <Sparkles className="w-5 h-5 mr-2 group-hover:animate-spin" />
           <span>Experience Premium AI Now</span>
         </div>

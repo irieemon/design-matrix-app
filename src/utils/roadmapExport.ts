@@ -1,5 +1,7 @@
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
+import DOMPurify from 'dompurify'
+import { logger } from '../lib/logging'
 
 export type ExportMode = 'overview' | 'detailed' | 'track'
 export type ExportFormat = 'pdf' | 'png'
@@ -32,6 +34,8 @@ interface ExportOptions {
 }
 
 export class RoadmapExporter {
+  private static exportLogger = logger.withContext({ component: 'RoadmapExporter' })
+
   private static async captureElement(element: HTMLElement, options: { 
     scale?: number
     useCORS?: boolean
@@ -39,13 +43,15 @@ export class RoadmapExporter {
     width?: number
     height?: number
   } = {}): Promise<HTMLCanvasElement> {
-    console.log('Capturing element with computed styles...')
-    
+    this.exportLogger.debug('Capturing element with computed styles')
+
     // Get computed styles to ensure visibility
     const computedStyle = window.getComputedStyle(element)
-    console.log('Element visibility:', computedStyle.visibility)
-    console.log('Element display:', computedStyle.display)
-    console.log('Element opacity:', computedStyle.opacity)
+    this.exportLogger.debug('Element computed styles', {
+      visibility: computedStyle.visibility,
+      display: computedStyle.display,
+      opacity: computedStyle.opacity
+    })
     
     const defaultOptions = {
       scale: 2,
@@ -70,7 +76,11 @@ export class RoadmapExporter {
       ...options
     }
 
-    console.log('html2canvas options:', defaultOptions)
+    this.exportLogger.debug('html2canvas configuration', {
+      scale: defaultOptions.scale,
+      width: defaultOptions.width,
+      height: defaultOptions.height
+    })
 
     // Wait a bit for any lazy-loaded content
     await new Promise(resolve => setTimeout(resolve, 300))
@@ -79,13 +89,16 @@ export class RoadmapExporter {
   }
 
   private static createPDF(canvas: HTMLCanvasElement, options: ExportOptions): jsPDF {
-    console.log('Creating PDF from canvas...')
-    
+    this.exportLogger.debug('Creating PDF from canvas', {
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height
+    })
+
     // Check if canvas has content by creating a temporary test
     const context = canvas.getContext('2d')
     const imageData = context?.getImageData(0, 0, canvas.width, canvas.height)
     const data = imageData?.data
-    
+
     // Check if canvas is blank (all pixels are transparent or white)
     let hasContent = false
     if (data) {
@@ -94,7 +107,7 @@ export class RoadmapExporter {
         const g = data[i + 1]
         const b = data[i + 2]
         const a = data[i + 3]
-        
+
         // If we find any non-white, non-transparent pixel
         if (a > 0 && (r !== 255 || g !== 255 || b !== 255)) {
           hasContent = true
@@ -102,12 +115,14 @@ export class RoadmapExporter {
         }
       }
     }
-    
-    console.log('Canvas has visible content:', hasContent)
-    
+
+    this.exportLogger.debug('Canvas content validation', { hasContent })
+
     const imgData = canvas.toDataURL('image/png')
-    console.log('Image data URL length:', imgData.length)
-    console.log('Image data URL preview:', imgData.substring(0, 100))
+    this.exportLogger.debug('Image data generated', {
+      dataLength: imgData.length,
+      previewLength: 100
+    })
     
     const pdf = new jsPDF({
       orientation: options.landscape ? 'landscape' : 'portrait',
@@ -132,7 +147,7 @@ export class RoadmapExporter {
     const x = (pdfWidth - imgWidth) / 2
     const y = (pdfHeight - imgHeight) / 2
 
-    console.log('Adding image to PDF:', { x, y, imgWidth, imgHeight })
+    this.exportLogger.debug('Adding image to PDF', { x, y, imgWidth, imgHeight })
     pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight)
     return pdf
   }
@@ -151,17 +166,23 @@ export class RoadmapExporter {
     options: ExportOptions
   ): Promise<void> {
     try {
-      console.log('Starting multi-page PDF export with options:', options)
+      this.exportLogger.info('Starting multi-page PDF export', {
+        exportMode: options.mode,
+        format: options.format,
+        landscape: options.landscape,
+        title: options.title
+      })
 
       // Show loading state
       const loadingOverlay = document.createElement('div')
       loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
-      loadingOverlay.innerHTML = `
+      const loadingContent = DOMPurify.sanitize(`
         <div class="bg-white rounded-lg p-6 text-center">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p class="text-gray-700">Generating Multi-Page PDF...</p>
         </div>
-      `
+      `)
+      loadingOverlay.innerHTML = loadingContent
       document.body.appendChild(loadingOverlay)
 
       // Wait for loading overlay to render
@@ -169,7 +190,7 @@ export class RoadmapExporter {
 
       // Find page sections in the element
       const pageContainers = element.querySelectorAll('.export-page, #overview-page-1, #overview-page-2, #overview-page-3')
-      console.log('Found page containers:', pageContainers.length)
+      this.exportLogger.debug('Found page containers', { pageCount: pageContainers.length })
 
       if (pageContainers.length === 0) {
         // Fallback to single page export
@@ -189,7 +210,11 @@ export class RoadmapExporter {
       // Process each page container
       for (let i = 0; i < pageContainers.length; i++) {
         const pageContainer = pageContainers[i] as HTMLElement
-        console.log(`Processing page ${i + 1}/${pageContainers.length}`)
+        this.exportLogger.debug('Processing page', {
+          currentPage: i + 1,
+          totalPages: pageContainers.length,
+          progress: `${Math.round(((i + 1) / pageContainers.length) * 100)}%`
+        })
 
         // Capture this page section
         const canvas = await this.captureElement(pageContainer, {
@@ -199,9 +224,10 @@ export class RoadmapExporter {
           backgroundColor: '#ffffff'
         })
 
-        console.log(`Page ${i + 1} canvas:`, {
-          width: canvas.width,
-          height: canvas.height
+        this.exportLogger.debug('Page canvas captured', {
+          pageIndex: i + 1,
+          canvasWidth: canvas.width,
+          canvasHeight: canvas.height
         })
 
         const imgData = canvas.toDataURL('image/png')
@@ -226,7 +252,13 @@ export class RoadmapExporter {
         }
 
         // Add image to PDF
-        console.log(`Adding page ${i + 1} to PDF:`, { x, y, imgWidth, imgHeight })
+        this.exportLogger.debug('Adding page to PDF', {
+          pageIndex: i + 1,
+          x,
+          y,
+          imgWidth,
+          imgHeight
+        })
         pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight)
       }
 
@@ -235,12 +267,19 @@ export class RoadmapExporter {
       const filename = `roadmap-${options.mode}-${timestamp}.pdf`
       pdf.save(filename)
 
-      console.log('Multi-page PDF export completed successfully')
+      this.exportLogger.info('Multi-page PDF export completed successfully', {
+        pageCount: pageContainers.length,
+        filename
+      })
 
       // Remove loading overlay
       document.body.removeChild(loadingOverlay)
     } catch (error) {
-      console.error('Multi-page PDF export failed:', error)
+      this.exportLogger.error('Multi-page PDF export failed', error, {
+        exportMode: options.mode,
+        format: options.format,
+        pageCount: element.querySelectorAll('.export-page, #overview-page-1, #overview-page-2, #overview-page-3').length
+      })
       
       // Remove loading overlay if it exists
       const overlay = document.querySelector('.fixed.inset-0.bg-black')
@@ -259,14 +298,19 @@ export class RoadmapExporter {
     options: ExportOptions
   ): Promise<void> {
     try {
-      console.log('Starting export with options:', options)
+      this.exportLogger.info('Starting export', {
+        exportMode: options.mode,
+        format: options.format,
+        landscape: options.landscape,
+        title: options.title
+      })
 
       // Check if this is a multi-page overview export
       if (options.mode === 'overview' && options.format === 'pdf') {
         return this.exportMultiPagePDF(element, options)
       }
 
-      console.log('Element dimensions:', {
+      this.exportLogger.debug('Element dimensions', {
         width: element.offsetWidth,
         height: element.offsetHeight,
         scrollWidth: element.scrollWidth,
@@ -276,19 +320,20 @@ export class RoadmapExporter {
       // Show loading state
       const loadingOverlay = document.createElement('div')
       loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
-      loadingOverlay.innerHTML = `
+      const loadingContent = DOMPurify.sanitize(`
         <div class="bg-white rounded-lg p-6 text-center">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p class="text-gray-700">Generating ${options.format.toUpperCase()}...</p>
+          <p class="text-gray-700">Generating ${DOMPurify.sanitize(options.format.toUpperCase())}...</p>
         </div>
-      `
+      `)
+      loadingOverlay.innerHTML = loadingContent
       document.body.appendChild(loadingOverlay)
 
       // Wait a bit for the loading overlay to render
       await new Promise(resolve => setTimeout(resolve, 200))
 
-      console.log('Capturing element...')
-      
+      this.exportLogger.debug('Capturing element')
+
       // Capture the element
       const canvas = await this.captureElement(element, {
         scale: options.mode === 'detailed' ? 2 : 2,
@@ -296,30 +341,38 @@ export class RoadmapExporter {
         height: Math.max(element.offsetHeight, element.scrollHeight, 1000)
       })
 
-      console.log('Canvas created:', {
-        width: canvas.width,
-        height: canvas.height
+      this.exportLogger.debug('Canvas created', {
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height
       })
 
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
       const filename = `roadmap-${options.mode}-${timestamp}`
 
-      
+
       if (options.format === 'pdf') {
-        console.log('Creating PDF...')
+        this.exportLogger.debug('Creating PDF', { filename: `${filename}.pdf` })
         const pdf = this.createPDF(canvas, options)
         pdf.save(`${filename}.pdf`)
       } else {
-        console.log('Creating PNG...')
+        this.exportLogger.debug('Creating PNG', { filename: `${filename}.png` })
         this.downloadCanvas(canvas, filename, options.format)
       }
 
-      console.log('Export completed successfully')
+      this.exportLogger.info('Export completed successfully', {
+        exportMode: options.mode,
+        format: options.format,
+        filename: `${filename}.${options.format}`
+      })
 
       // Remove loading overlay
       document.body.removeChild(loadingOverlay)
     } catch (error) {
-      console.error('Export failed:', error)
+      this.exportLogger.error('Export failed', error, {
+        exportMode: options.mode,
+        format: options.format,
+        operation: 'export'
+      })
       
       // Remove loading overlay if it exists
       const overlay = document.querySelector('.fixed.inset-0.bg-black')
@@ -391,11 +444,12 @@ export const createExportView = (
   // Header
   const header = document.createElement('div')
   header.className = 'mb-8 text-center'
-  header.innerHTML = `
-    <h1 class="text-3xl font-bold text-gray-900 mb-2">${options.title}</h1>
-    ${options.subtitle ? `<p class="text-lg text-gray-600">${options.subtitle}</p>` : ''}
-    <p class="text-sm text-gray-500 mt-2">Generated on ${new Date().toLocaleDateString()}</p>
-  `
+  const headerContent = DOMPurify.sanitize(`
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">${DOMPurify.sanitize(options.title)}</h1>
+    ${options.subtitle ? `<p class="text-lg text-gray-600">${DOMPurify.sanitize(options.subtitle)}</p>` : ''}
+    <p class="text-sm text-gray-500 mt-2">Generated on ${DOMPurify.sanitize(new Date().toLocaleDateString())}</p>
+  `)
+  header.innerHTML = headerContent
   container.appendChild(header)
 
   return container

@@ -2,10 +2,11 @@ import React, { ReactElement } from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 import { vi } from 'vitest'
 import { IdeaCard, User, Project } from '../../types'
+import { generateDemoUUID } from '../../utils/uuid'
 
 // Mock user data
 export const mockUser: User = {
-  id: 'test-user-id',
+  id: generateDemoUUID('1'),
   email: 'test@example.com',
   full_name: 'Test User',
   role: 'user',
@@ -14,7 +15,7 @@ export const mockUser: User = {
 }
 
 export const mockAdminUser: User = {
-  id: 'admin-user-id',
+  id: generateDemoUUID('9'),
   email: 'admin@prioritas.com',
   full_name: 'Admin User',
   role: 'super_admin',
@@ -24,26 +25,26 @@ export const mockAdminUser: User = {
 
 // Mock project data
 export const mockProject: Project = {
-  id: 'test-project-id',
+  id: generateDemoUUID('2'),
   name: 'Test Project',
   description: 'A test project for unit testing',
   project_type: 'Software',
   status: 'active',
-  owner_id: 'test-user-id',
+  owner_id: generateDemoUUID('1'),
   created_at: '2024-01-01T00:00:00.000Z',
   updated_at: '2024-01-01T00:00:00.000Z'
 }
 
 // Mock idea data
 export const mockIdea: IdeaCard = {
-  id: 'test-idea-id',
+  id: generateDemoUUID('3'),
   content: 'Test Idea',
   details: 'A test idea for unit testing',
   x: 200,
   y: 150,
   priority: 'high',
-  project_id: 'test-project-id',
-  created_by: 'test-user-id',
+  project_id: generateDemoUUID('2'),
+  created_by: generateDemoUUID('1'),
   created_at: '2024-01-01T00:00:00.000Z',
   updated_at: '2024-01-01T00:00:00.000Z'
 }
@@ -52,7 +53,7 @@ export const mockIdeas: IdeaCard[] = [
   mockIdea,
   {
     ...mockIdea,
-    id: 'test-idea-2',
+    id: generateDemoUUID('4'),
     content: 'Second Test Idea',
     x: 400,
     y: 300,
@@ -60,7 +61,7 @@ export const mockIdeas: IdeaCard[] = [
   },
   {
     ...mockIdea,
-    id: 'test-idea-3',
+    id: generateDemoUUID('5'),
     content: 'Third Test Idea',
     x: 100,
     y: 450,

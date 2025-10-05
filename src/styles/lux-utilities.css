@@ -1,0 +1,491 @@
+/**
+ * Lux Design System - Utility Classes
+ * Reusable patterns for consistent Lux styling across all components
+ *
+ * Usage: Apply these classes alongside component-specific styles
+ * Example: <div className="lux-card lux-hover-elevate">
+ */
+
+/* ============================================
+   ELEVATION & HOVER EFFECTS
+   ============================================ */
+
+/* Subtle hover elevation - for cards, buttons */
+.lux-hover-elevate {
+  transition: transform var(--duration-fast) var(--easing-out),
+              box-shadow var(--duration-fast) var(--easing-out);
+}
+
+.lux-hover-elevate:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Button-specific hover (matches Button component) */
+.lux-hover-lift {
+  transition: transform var(--duration-fast) var(--easing-out),
+              box-shadow var(--duration-fast) var(--easing-out);
+}
+
+.lux-hover-lift:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-button-lux-hover);
+}
+
+/* ============================================
+   MODAL & OVERLAY SYSTEM
+   ============================================ */
+
+/* Modal backdrop */
+.lux-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--canvas-overlay);
+  backdrop-filter: var(--backdrop-blur-lux);
+  z-index: var(--z-modal-backdrop);
+  animation: lux-backdrop-enter var(--duration-modal-enter) var(--easing-glide);
+}
+
+@keyframes lux-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal container */
+.lux-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-modal-lux);
+  padding: var(--modal-padding);
+  z-index: var(--z-modal);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: lux-modal-enter var(--duration-modal-enter) var(--easing-glide);
+}
+
+@keyframes lux-modal-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* ============================================
+   CARD SYSTEM
+   ============================================ */
+
+/* Standard card */
+.lux-card {
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
+  box-shadow: var(--card-shadow);
+  transition: box-shadow var(--duration-fast) var(--easing-out);
+}
+
+.lux-card:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+
+/* Compact card variant */
+.lux-card-compact {
+  background: var(--card-background);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-card);
+}
+
+/* ============================================
+   BADGE SYSTEM
+   ============================================ */
+
+/* Base badge styling */
+.lux-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  border-radius: var(--radius-full);
+  border: 1px solid;
+  transition: background-color var(--duration-fast) var(--easing-out);
+}
+
+/* Status badge variants */
+.lux-badge-pending {
+  background: var(--badge-pending);
+  color: var(--badge-pending-text);
+  border-color: var(--badge-pending-border);
+}
+
+.lux-badge-complete {
+  background: var(--badge-complete);
+  color: var(--badge-complete-text);
+  border-color: var(--badge-complete-border);
+}
+
+.lux-badge-error {
+  background: var(--badge-error);
+  color: var(--badge-error-text);
+  border-color: var(--badge-error-border);
+}
+
+.lux-badge-info {
+  background: var(--badge-info);
+  color: var(--badge-info-text);
+  border-color: var(--badge-info-border);
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+
+/* Form input (if not using Input component) */
+.lux-input {
+  width: 100%;
+  padding: var(--input-padding-y) var(--input-padding-x);
+  border: 1px solid var(--form-input-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--graphite-900);
+  background: var(--surface-primary);
+  box-shadow: var(--shadow-input-lux);
+  transition: border-color var(--duration-base) var(--easing-out),
+              box-shadow var(--duration-base) var(--easing-out);
+}
+
+.lux-input:hover:not(:disabled) {
+  border-color: var(--form-input-border-hover);
+}
+
+.lux-input:focus {
+  outline: none;
+  border-color: var(--form-input-border-focus);
+  box-shadow: var(--shadow-focus-ring-lux);
+}
+
+.lux-input:disabled {
+  background: var(--canvas-secondary);
+  color: var(--graphite-500);
+  cursor: not-allowed;
+}
+
+/* Form label */
+.lux-label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--form-label);
+  margin-bottom: var(--space-2);
+}
+
+/* Form error message */
+.lux-input-error {
+  font-size: var(--text-xs);
+  color: var(--form-input-error);
+  margin-top: var(--space-1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Form success message */
+.lux-input-success {
+  font-size: var(--text-xs);
+  color: var(--form-input-success);
+  margin-top: var(--space-1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* ============================================
+   NAVIGATION ELEMENTS
+   ============================================ */
+
+/* Navigation item */
+.lux-nav-item {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  color: var(--graphite-700);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  transition: background-color var(--duration-fast) var(--easing-out),
+              color var(--duration-fast) var(--easing-out);
+}
+
+.lux-nav-item:hover {
+  background: var(--nav-item-hover);
+  color: var(--graphite-900);
+}
+
+.lux-nav-item-active {
+  background: var(--nav-item-active);
+  color: var(--sapphire-700);
+  font-weight: var(--font-semibold);
+}
+
+/* ============================================
+   DROPDOWN & MENU SYSTEM
+   ============================================ */
+
+/* Dropdown container */
+.lux-dropdown {
+  position: absolute;
+  background: var(--surface-primary);
+  border: 1px solid var(--hairline-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-dropdown-lux);
+  overflow: hidden;
+  z-index: var(--z-dropdown);
+  animation: lux-dropdown-enter var(--duration-moderate) var(--easing-glide);
+}
+
+@keyframes lux-dropdown-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Dropdown menu item */
+.lux-menu-item {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--graphite-800);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--easing-out);
+}
+
+.lux-menu-item:hover {
+  background: var(--canvas-secondary);
+}
+
+.lux-menu-item-selected {
+  background: rgba(59, 130, 246, 0.08);
+  color: var(--sapphire-900);
+  font-weight: var(--font-medium);
+}
+
+.lux-menu-item-disabled {
+  color: var(--graphite-400);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ============================================
+   FOCUS & INTERACTION STATES
+   ============================================ */
+
+/* Focus visible styling */
+.lux-focus-visible:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus-ring-lux);
+  border-color: var(--hairline-focus);
+}
+
+/* Interactive element (clickable, hoverable) */
+.lux-interactive {
+  cursor: pointer;
+  user-select: none;
+  transition: opacity var(--duration-fast) var(--easing-out);
+}
+
+.lux-interactive:active {
+  opacity: 0.9;
+}
+
+.lux-interactive:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ============================================
+   ANIMATION UTILITIES
+   ============================================ */
+
+/* Fade in animation */
+.lux-fade-in {
+  animation: lux-fade-in var(--duration-moderate) var(--easing-out);
+}
+
+@keyframes lux-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Slide in from bottom */
+.lux-slide-in {
+  animation: lux-slide-in var(--duration-moderate) var(--easing-glide);
+}
+
+@keyframes lux-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Shimmer loading effect */
+.lux-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--canvas-secondary) 0%,
+    var(--canvas-tertiary) 50%,
+    var(--canvas-secondary) 100%
+  );
+  background-size: 200% 100%;
+  animation: lux-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes lux-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Divider */
+.lux-divider {
+  height: 1px;
+  background: var(--hairline-default);
+  border: none;
+  margin: var(--space-6) 0;
+}
+
+/* Scrollable container */
+.lux-scrollable {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Hide scrollbar (but keep functionality) */
+.lux-scrollable-no-bar {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.lux-scrollable-no-bar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* ============================================
+   ACCESSIBILITY UTILITIES
+   ============================================ */
+
+/* Screen reader only */
+.lux-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip to content link */
+.lux-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--surface-primary);
+  color: var(--sapphire-700);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  z-index: var(--z-tooltip);
+}
+
+.lux-skip-link:focus {
+  top: var(--space-4);
+}
+
+/* ============================================
+   REDUCED MOTION SUPPORT
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .lux-hover-elevate,
+  .lux-hover-lift,
+  .lux-input,
+  .lux-nav-item,
+  .lux-menu-item,
+  .lux-interactive,
+  .lux-badge {
+    transition: none;
+  }
+
+  .lux-modal-backdrop,
+  .lux-modal,
+  .lux-dropdown,
+  .lux-fade-in,
+  .lux-slide-in {
+    animation: none;
+  }
+
+  .lux-shimmer {
+    animation: none;
+    background: var(--canvas-secondary);
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  .lux-modal-backdrop {
+    display: none;
+  }
+
+  .lux-card {
+    border: 1px solid var(--graphite-400);
+    box-shadow: none;
+  }
+
+  .lux-shimmer {
+    animation: none;
+    background: var(--canvas-secondary);
+  }
+}

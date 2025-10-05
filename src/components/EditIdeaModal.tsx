@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react'
-import { Edit3, Trash2 } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Edit3, Trash2, AlertCircle } from 'lucide-react'
 import { IdeaCard, User } from '../types'
 import { IdeaRepository } from '../lib/repositories'
 import { useToast } from '../contexts/ToastContext'
 import { BaseModal } from './shared/Modal'
+import { Button } from './ui/Button'
+import { Input } from './ui/Input'
+import { Textarea } from './ui/Textarea'
+import { logger } from '../utils/logger'
 
 interface EditIdeaModalProps {
   idea: IdeaCard | null
@@ -15,7 +19,7 @@ interface EditIdeaModalProps {
 }
 
 const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser, onClose, onUpdate, onDelete }) => {
-  const { showWarning } = useToast()
+  const { showWarning, showError, showSuccess } = useToast()
   const [content, setContent] = useState(idea?.content || '')
   const [details, setDetails] = useState(idea?.details || '')
   const [x] = useState(idea?.x || 260)
@@ -23,6 +27,39 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
   const [priority, setPriority] = useState<IdeaCard['priority']>(idea?.priority || 'moderate')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [modalError, setModalError] = useState<string | null>(null)
+
+  // Enhanced error handling function
+  const handleError = useCallback((error: unknown, context: string) => {
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
+    logger.error(`EditIdeaModal ${context}:`, error)
+    setModalError(`${context}: ${errorMessage}`)
+    showError(`Failed to ${context.toLowerCase()}: ${errorMessage}`)
+  }, [showError])
+
+  // Safe modal close function with cleanup
+  const safeClose = useCallback(async () => {
+    try {
+      // Clear any errors
+      setModalError(null)
+      setShowDeleteConfirm(false)
+      setIsSubmitting(false)
+
+      // Unlock idea if needed
+      if (isLocked && idea) {
+        await IdeaRepository.unlockIdea(idea.id, currentUser?.id || '')
+        setIsLocked(false)
+      }
+
+      // Call parent close handler
+      onClose()
+    } catch (error) {
+      handleError(error, 'close modal')
+      // Still try to close even if unlock fails
+      onClose()
+    }
+  }, [isLocked, idea, currentUser, onClose, handleError])
 
   // Update form state when idea changes
   useEffect(() => {
@@ -63,37 +100,92 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!content.trim()) return
 
-    if (!idea) return
+    // Clear any previous errors
+    setModalError(null)
 
-    // Update the idea with unlock data included
-    onUpdate({
-      ...idea,
-      content: content.trim(),
-      details: details.trim(),
-      x,
-      y,
-      priority,
-      editing_by: null,
-      editing_at: null
-    })
-    
-    // Note: Cleanup function will handle unlocking when modal closes
+    try {
+      // Validation checks
+      if (!content.trim()) {
+        setModalError('Idea title is required')
+        return
+      }
+
+      if (!idea) {
+        setModalError('No idea selected for editing')
+        return
+      }
+
+      if (isSubmitting) {
+        logger.warn('EditIdeaModal: Submit already in progress, ignoring duplicate')
+        return
+      }
+
+      if (!currentUser) {
+        setModalError('User authentication required')
+        return
+      }
+
+      setIsSubmitting(true)
+
+      // Prepare updated idea data
+      const updatedIdea: IdeaCard = {
+        ...idea,
+        content: content.trim(),
+        details: details.trim(),
+        x,
+        y,
+        priority,
+        editing_by: null,
+        editing_at: null,
+        updated_at: new Date().toISOString()
+      }
+
+      logger.info('EditIdeaModal: Submitting idea update', { ideaId: idea.id, priority })
+
+      // Call parent update handler
+      await onUpdate(updatedIdea)
+
+      showSuccess('Idea updated successfully')
+
+      // Close modal after successful update
+      await safeClose()
+
+    } catch (error) {
+      handleError(error, 'update idea')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleCancel = async () => {
-    // Explicitly unlock before closing
-    if (isLocked && idea) {
-      await IdeaRepository.unlockIdea(idea.id, currentUser?.id || '')
-      setIsLocked(false)
+    try {
+      await safeClose()
+    } catch (error) {
+      handleError(error, 'cancel edit')
     }
-    onClose()
   }
 
-  const handleDelete = () => {
-    if (!idea) return
-    onDelete(idea.id)
+  const handleDelete = async () => {
+    if (!idea) {
+      setModalError('No idea selected for deletion')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      logger.info('EditIdeaModal: Deleting idea', { ideaId: idea.id })
+
+      await onDelete(idea.id)
+      showSuccess('Idea deleted successfully')
+
+      // Close modal after successful deletion
+      await safeClose()
+    } catch (error) {
+      handleError(error, 'delete idea')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (!idea) return null
@@ -105,53 +197,102 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
       title="Edit Idea"
       size="xl"
     >
-      <div className="p-6">
+      <div className="p-6" data-testid="edit-idea-modal">
         <div className="flex items-center space-x-3 mb-6">
-          <Edit3 className="w-5 h-5 text-blue-600" />
-          <p className="text-slate-600">Edit your idea details and priority</p>
+          <Edit3 className="w-5 h-5" style={{ color: 'var(--sapphire-600)' }} />
+          <p style={{ color: 'var(--graphite-600)' }}>Edit your idea details and priority</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Error Display */}
+        {modalError && (
+          <div className="mb-6 rounded-lg p-4 border" style={{
+            backgroundColor: 'var(--garnet-50)',
+            borderColor: 'var(--garnet-200)'
+          }}>
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--garnet-600)' }} />
+              <div className="text-sm" style={{ color: 'var(--garnet-800)' }}>{modalError}</div>
+            </div>
+            <Button
+              onClick={() => setModalError(null)}
+              variant="ghost"
+              size="sm"
+              className="mt-2 text-xs"
+            >
+              Dismiss
+            </Button>
+          </div>
+        )}
+
+        {/* Loading State Indicator */}
+        {isSubmitting && (
+          <div className="mb-6 rounded-lg p-4 border" style={{
+            backgroundColor: 'var(--sapphire-50)',
+            borderColor: 'var(--sapphire-200)'
+          }}>
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin w-4 h-4 border-2 rounded-full" style={{
+                borderColor: 'var(--sapphire-600)',
+                borderTopColor: 'transparent'
+              }}></div>
+              <div className="text-sm" style={{ color: 'var(--sapphire-800)' }}>Processing your request...</div>
+            </div>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6" data-testid="edit-idea-form">
 
           {/* Idea Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Idea Title
-            </label>
-            <input
-              type="text"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Brief title for your idea"
-              required
-            />
-          </div>
+          <Input
+            label="Idea Title"
+            type="text"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Brief title for your idea"
+            required
+            fullWidth
+            variant="primary"
+            size="md"
+            data-testid="edit-idea-content-input"
+          />
 
           {/* Idea Details */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Details
-            </label>
-            <textarea
-              value={details}
-              onChange={(e) => setDetails(e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Describe your idea in more detail..."
-            />
-          </div>
+          <Textarea
+            label="Details"
+            value={details}
+            onChange={(e) => setDetails(e.target.value)}
+            rows={4}
+            placeholder="Describe your idea in more detail..."
+            fullWidth
+            variant="primary"
+            size="md"
+            data-testid="edit-idea-details-input"
+          />
 
 
           {/* Priority */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--graphite-700)' }}>
               Priority Level
             </label>
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value as IdeaCard['priority'])}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2"
+              style={{
+                borderColor: 'var(--hairline-default)',
+                color: 'var(--graphite-900)',
+                backgroundColor: 'var(--surface-primary)'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'var(--sapphire-500)';
+                e.target.style.boxShadow = '0 0 0 3px var(--sapphire-100)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'var(--hairline-default)';
+                e.target.style.boxShadow = 'none';
+              }}
+              data-testid="edit-idea-priority-input"
             >
               <option value="low">🟢 Low Priority</option>
               <option value="moderate">🟡 Moderate</option>
@@ -162,67 +303,88 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
           </div>
 
           {/* Info */}
-          <div className="bg-slate-50 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-slate-700 mb-2">💡 Tip</h4>
-            <div className="text-sm text-slate-600">
+          <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--canvas-secondary)' }}>
+            <h4 className="text-sm font-medium mb-2" style={{ color: 'var(--graphite-700)' }}>💡 Tip</h4>
+            <div className="text-sm" style={{ color: 'var(--graphite-600)' }}>
               You can drag this idea on the matrix to change its value vs complexity positioning.
             </div>
           </div>
 
           {/* Delete Confirmation */}
           {showDeleteConfirm ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-red-800 mb-2">Confirm Deletion</h4>
-              <p className="text-sm text-red-600 mb-4">
+            <div className="rounded-lg p-4 border" style={{
+              backgroundColor: 'var(--garnet-50)',
+              borderColor: 'var(--garnet-200)'
+            }}>
+              <h4 className="text-sm font-medium mb-2" style={{ color: 'var(--garnet-800)' }}>Confirm Deletion</h4>
+              <p className="text-sm mb-4" style={{ color: 'var(--garnet-600)' }}>
                 Are you sure you want to delete this idea? This action cannot be undone.
               </p>
               <div className="flex space-x-3">
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm"
+                  variant="secondary"
+                  className="flex-1"
+                  data-testid="edit-idea-delete-cancel-button"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleDelete}
-                  className="flex-1 px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm"
+                  variant="danger"
+                  className="flex-1"
+                  data-testid="edit-idea-delete-button"
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-between">
-              <button
+              <Button
                 type="button"
                 onClick={() => setShowDeleteConfirm(true)}
-                className="flex items-center space-x-2 text-red-600 hover:text-red-700 transition-colors"
+                variant="ghost"
+                style={{ color: 'var(--garnet-600)' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--garnet-700)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--garnet-600)'}
               >
                 <Trash2 className="w-4 h-4" />
                 <span className="text-sm">Delete Idea</span>
-              </button>
+              </Button>
             </div>
           )}
 
           {/* Actions */}
           {!showDeleteConfirm && (
             <div className="flex space-x-3">
-              <button
+              <Button
                 type="button"
                 onClick={handleCancel}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                variant="secondary"
+                className="flex-1"
+                data-testid="edit-idea-cancel-button"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                disabled={!content.trim()}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                disabled={!content.trim() || isSubmitting}
+                variant="sapphire"
+                className="flex-1"
+                data-testid="edit-idea-save-button"
               >
-                Save Changes
-              </button>
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <span>Save Changes</span>
+                )}
+              </Button>
             </div>
           )}
         </form>

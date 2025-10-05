@@ -1,6 +1,7 @@
 import React from 'react'
 import { Sparkles, Lightbulb, Loader } from 'lucide-react'
 import type { ProjectType } from '../../types'
+import { Button } from '../ui/Button'
 
 interface ProjectBasicsStepProps {
   projectName: string
@@ -190,24 +191,23 @@ const ProjectBasicsStep: React.FC<ProjectBasicsStepProps> = ({
       </div>
 
       <div className="flex space-x-3">
-        <button
+        <Button
           onClick={onCancel}
-          className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+          variant="secondary"
+          fullWidth
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onStartAnalysis}
           disabled={!isFormValid || isLoading}
-          className="flex-1 flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2"
+          variant="sapphire"
+          state={isLoading ? 'loading' : 'idle'}
+          icon={isLoading ? <Loader className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          fullWidth
         >
-          {isLoading ? (
-            <Loader className="w-4 h-4 animate-spin" />
-          ) : (
-            <Sparkles className="w-4 h-4" />
-          )}
-          <span>{isLoading ? 'Analyzing...' : 'Start AI Analysis'}</span>
-        </button>
+          {isLoading ? 'Analyzing...' : 'Start AI Analysis'}
+        </Button>
       </div>
     </div>
   )

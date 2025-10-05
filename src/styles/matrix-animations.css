@@ -1,0 +1,383 @@
+/**
+ * PERFORMANCE-OPTIMIZED ANIMATION SYSTEM
+ *
+ * GPU-accelerated animations with minimal repaints.
+ * Respects user preferences for reduced motion and accessibility.
+ */
+
+/* ===== ANIMATION UTILITIES ===== */
+
+/* GPU Acceleration Mixin */
+.gpu-accelerated {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transform: translate3d(0, 0, 0); /* Force GPU layer */
+}
+
+/* Performance-optimized transform animations */
+.matrix-smooth-transform {
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+
+.matrix-fast-transform {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+/* ===== CARD ANIMATIONS ===== */
+
+/* Entrance animations */
+@keyframes card-fade-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.card-animate-in {
+  animation: card-fade-in var(--duration-slow) var(--ease-out) forwards;
+  animation-fill-mode: both;
+}
+
+/* Stagger entrance animations for multiple cards */
+.card-animate-in:nth-child(1) { animation-delay: 0ms; }
+.card-animate-in:nth-child(2) { animation-delay: 50ms; }
+.card-animate-in:nth-child(3) { animation-delay: 100ms; }
+.card-animate-in:nth-child(4) { animation-delay: 150ms; }
+.card-animate-in:nth-child(5) { animation-delay: 200ms; }
+.card-animate-in:nth-child(6) { animation-delay: 250ms; }
+.card-animate-in:nth-child(n+7) { animation-delay: 300ms; }
+
+/* Drag animations */
+@keyframes drag-start {
+  from {
+    transform: scale(1) rotate(0deg);
+    box-shadow: var(--shadow-card);
+  }
+  to {
+    transform: scale(1.05) rotate(2deg);
+    box-shadow: var(--shadow-2xl);
+  }
+}
+
+.card-drag-start {
+  animation: drag-start var(--duration-fast) var(--ease-bounce) forwards;
+}
+
+/* Drop animations */
+@keyframes drop-success {
+  0% {
+    transform: scale(1.05) rotate(2deg);
+    filter: brightness(1.1);
+  }
+  50% {
+    transform: scale(0.95) rotate(-1deg);
+    filter: brightness(1.2);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1);
+  }
+}
+
+.card-drop-success {
+  animation: drop-success var(--duration-slow) var(--ease-bounce) forwards;
+}
+
+/* Hover pulse for interactive elements */
+@keyframes subtle-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+.hover-pulse:hover {
+  animation: subtle-pulse 1.5s ease-in-out infinite;
+}
+
+/* ===== MATRIX GRID ANIMATIONS ===== */
+
+/* Grid line animations */
+@keyframes grid-fade {
+  from {
+    opacity: 0.2;
+  }
+  to {
+    opacity: 0.6;
+  }
+}
+
+.matrix-grid-animated {
+  animation: grid-fade var(--duration-slower) var(--ease-out) forwards;
+}
+
+/* Center point pulse */
+@keyframes center-pulse-enhanced {
+  0% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow:
+      0 0 10px var(--color-brand-primary),
+      0 0 20px rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.3);
+    box-shadow:
+      0 0 20px var(--color-brand-primary),
+      0 0 40px rgba(59, 130, 246, 0.4),
+      0 0 60px rgba(59, 130, 246, 0.2);
+  }
+  100% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow:
+      0 0 10px var(--color-brand-primary),
+      0 0 20px rgba(59, 130, 246, 0.2);
+  }
+}
+
+.matrix-center-pulse-enhanced {
+  animation: center-pulse-enhanced 4s ease-in-out infinite;
+}
+
+/* ===== QUADRANT HOVER ANIMATIONS ===== */
+
+@keyframes quadrant-highlight {
+  from {
+    background-color: var(--glass-background);
+    transform: scale(1);
+  }
+  to {
+    background-color: rgba(255, 255, 255, 0.95);
+    transform: scale(1.02);
+  }
+}
+
+.quadrant-hover-animation {
+  animation: quadrant-highlight var(--duration-normal) var(--ease-out) forwards;
+}
+
+/* ===== LOADING ANIMATIONS ===== */
+
+/* Skeleton loading for matrix */
+@keyframes matrix-skeleton-pulse {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.matrix-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-neutral-200) 0px,
+    var(--color-neutral-100) 40px,
+    var(--color-neutral-200) 80px
+  );
+  background-size: 200px 100%;
+  animation: matrix-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* Card loading placeholder */
+@keyframes card-skeleton-shimmer {
+  0% {
+    background-color: var(--color-neutral-200);
+  }
+  50% {
+    background-color: var(--color-neutral-100);
+  }
+  100% {
+    background-color: var(--color-neutral-200);
+  }
+}
+
+.card-skeleton {
+  animation: card-skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-xl);
+}
+
+/* ===== INTERACTION FEEDBACK ===== */
+
+/* Button press animation */
+@keyframes button-press {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.button-press-animation:active {
+  animation: button-press var(--duration-fast) var(--ease-out);
+}
+
+/* Success feedback */
+@keyframes success-flash {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(34, 197, 94, 0.1);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.success-flash {
+  animation: success-flash var(--duration-slower) var(--ease-out);
+}
+
+/* Error feedback */
+@keyframes error-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+.error-shake {
+  animation: error-shake var(--duration-normal) var(--ease-out);
+}
+
+/* ===== MODAL AND OVERLAY ANIMATIONS ===== */
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translate3d(0, -20px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+.modal-animate-in {
+  animation: modal-fade-in var(--duration-slow) var(--ease-out) forwards;
+}
+
+@keyframes backdrop-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.backdrop-animate-in {
+  animation: backdrop-fade-in var(--duration-normal) var(--ease-out) forwards;
+}
+
+/* ===== PERFORMANCE OPTIMIZATIONS ===== */
+
+/* Contain animations to prevent layout thrashing */
+.animation-container {
+  contain: layout style paint;
+}
+
+/* Optimize frequently animated elements */
+.frequent-animation {
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0); /* Create compositing layer */
+}
+
+/* Reset will-change after animation */
+.animation-complete {
+  will-change: auto;
+}
+
+/* ===== ACCESSIBILITY CONSIDERATIONS ===== */
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  /* Disable all animations */
+  .card-animate-in,
+  .card-drag-start,
+  .card-drop-success,
+  .hover-pulse,
+  .matrix-grid-animated,
+  .matrix-center-pulse-enhanced,
+  .quadrant-hover-animation,
+  .matrix-skeleton,
+  .card-skeleton,
+  .button-press-animation,
+  .success-flash,
+  .error-shake,
+  .modal-animate-in,
+  .backdrop-animate-in {
+    animation: none;
+    transition: none;
+  }
+
+  /* Maintain essential transitions but faster */
+  .matrix-smooth-transform,
+  .matrix-fast-transform {
+    transition: transform 50ms linear;
+  }
+
+  /* Remove will-change for better performance */
+  .gpu-accelerated,
+  .frequent-animation {
+    will-change: auto;
+    transform: none;
+  }
+}
+
+/* ===== DEVELOPMENT HELPERS ===== */
+
+/* Animation debugging (remove in production) */
+.debug-animations * {
+  animation-duration: 5s !important;
+  transition-duration: 2s !important;
+}
+
+.debug-animations::before {
+  content: "ANIMATION DEBUG MODE";
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: red;
+  color: white;
+  padding: 5px 10px;
+  z-index: 9999;
+  font-size: 12px;
+}
+
+/* Performance monitoring hints */
+.performance-hint {
+  /* These classes help identify performance issues */
+}
+
+.performance-hint::after {
+  content: "⚡";
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 10px;
+  background: yellow;
+  padding: 2px;
+  border-radius: 2px;
+}

@@ -1,0 +1,479 @@
+/**
+ * Auth Screen Custom Styling
+ *
+ * Restores the bold, high-contrast design from the original auth screen
+ * while maintaining enhanced Input and Button component functionality.
+ */
+
+/* ============================================
+   Auth Screen Light Input Styling (Reference Image Match)
+   ============================================ */
+
+/* Input Container Styling */
+.auth-screen .input-container {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+/* Input Wrapper - Make relative for absolute positioning of icons */
+.auth-screen .input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Input Field Styling */
+.auth-screen .input {
+  background: #ffffff !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
+  min-height: 56px !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 !important; /* Remove default padding */
+}
+
+.auth-screen .input:focus-within {
+  border-color: #5B8DEF !important;
+  box-shadow: 0 0 0 3px rgba(91, 141, 239, 0.1) !important;
+  background: #ffffff !important;
+}
+
+.auth-screen .input:hover:not(:focus-within) {
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+}
+
+/* Input Field Element - ENHANCED SPECIFICITY TO OVERRIDE TAILWIND */
+.auth-screen .input input,
+.auth-screen .input .input__field,
+.auth-screen input.input,
+.auth-screen input[type="email"].input,
+.auth-screen input[type="password"].input,
+.auth-screen input[type="text"].input {
+  color: #1e293b !important;
+  background: transparent !important;
+  font-weight: 400 !important;
+  padding: 16px 20px 16px 54px !important; /* Optimized left padding for proper icon spacing */
+  padding-left: 54px !important; /* Explicit left padding override */
+  font-size: 16px !important;
+  border: none !important;
+  outline: none !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 12px !important;
+}
+
+.auth-screen .input input::placeholder,
+.auth-screen .input .input__field::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+}
+
+.auth-screen .input input:-webkit-autofill,
+.auth-screen .input .input__field:-webkit-autofill {
+  box-shadow: 0 0 0 100px #ffffff inset !important;
+  -webkit-text-fill-color: #1e293b !important;
+}
+
+.auth-screen .input input:-webkit-autofill:focus,
+.auth-screen .input .input__field:-webkit-autofill:focus {
+  box-shadow: 0 0 0 100px #ffffff inset !important;
+  -webkit-text-fill-color: #1e293b !important;
+}
+
+/* Input icons styling - positioned inside inputs */
+.auth-screen .input-icon,
+.auth-screen .input .input-icon,
+.auth-screen .input .input__icon {
+  color: #64748b !important;
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 10 !important;
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: none !important; /* Prevent icon from interfering with input */
+}
+
+.auth-screen .input-icon--before,
+.auth-screen .input .input-icon--before,
+.auth-screen .input .input__icon--before {
+  color: #64748b !important;
+  position: absolute !important;
+  left: 20px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 10 !important;
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: none !important; /* Prevent icon from interfering with input */
+}
+
+.auth-screen .input:focus-within .input-icon,
+.auth-screen .input:focus-within .input__icon,
+.auth-screen .input:focus-within .input-icon--before,
+.auth-screen .input:focus-within .input__icon--before {
+  color: #5B8DEF !important;
+}
+
+/* Input labels styling */
+.auth-screen .input-label,
+.auth-screen .input__label {
+  color: #374151 !important;
+  font-weight: 500 !important;
+  font-size: 16px !important;
+  margin-bottom: 8px !important;
+  display: block !important;
+}
+
+/* Password toggle button styling - positioned inside input */
+.auth-screen .input-wrapper button,
+.auth-screen .input-icon--after button,
+.auth-screen .input .input-icon--after button {
+  color: #64748b !important;
+  background: none !important;
+  border: none !important;
+  padding: 4px !important;
+  border-radius: 4px !important;
+  transition: color 0.2s ease !important;
+  cursor: pointer !important;
+  position: absolute !important;
+  right: 16px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 10 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.auth-screen .input-wrapper button:hover,
+.auth-screen .input-icon--after button:hover,
+.auth-screen .input .input-icon--after button:hover {
+  color: #1e293b !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+.auth-screen .input-icon--after,
+.auth-screen .input .input-icon--after,
+.auth-screen .input .input__icon--after {
+  color: #64748b !important;
+  position: absolute !important;
+  right: 16px !important;
+  left: auto !important; /* Override any left positioning */
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 10 !important;
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: auto !important; /* Allow interaction with buttons */
+}
+
+.auth-screen .input:focus-within .input-icon--after {
+  color: #5B8DEF !important;
+}
+
+/* Adjust padding for inputs with after icons (like password fields) - ENHANCED SPECIFICITY */
+.auth-screen .input input[type="password"],
+.auth-screen .input .input__field[type="password"],
+.auth-screen input[type="password"].input,
+.auth-screen input[type="password"].input.input--with-icon,
+.auth-screen input[type="password"].input.input--with-icon-after {
+  padding: 16px 60px 16px 54px !important; /* Optimized left padding, right padding for eye icon */
+  padding-left: 54px !important; /* Explicit left padding override */
+  padding-right: 60px !important; /* Explicit right padding override */
+}
+
+/* Adjust padding for any input that has an after icon - ENHANCED SPECIFICITY */
+.auth-screen .input:has(.input-icon--after) input,
+.auth-screen .input:has(.input-icon--after) .input__field,
+.auth-screen input.input.input--with-icon-after,
+.auth-screen .input-wrapper input.input--with-icon-after {
+  padding: 16px 60px 16px 54px !important; /* Optimized left padding, right padding for after icon */
+  padding-left: 54px !important; /* Explicit left padding override */
+  padding-right: 60px !important; /* Explicit right padding override */
+}
+
+/* ============================================
+   Auth Screen Form Styling
+   ============================================ */
+
+.auth-screen .input-container,
+.auth-screen .input__container {
+  margin-bottom: 20px;
+}
+
+.auth-screen .input-wrapper,
+.auth-screen .input__wrapper {
+  position: relative;
+}
+
+/* Ensure input wrapper is properly positioned for icons */
+.auth-screen .input {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* Icon positioning overrides - ENHANCED SPECIFICITY */
+.auth-screen .input .input-icon--before,
+.auth-screen .input .input__icon--before,
+.auth-screen .input-wrapper .input-icon--before,
+.auth-screen .input-container .input-icon--before {
+  position: absolute !important;
+  left: 20px !important; /* Consistent with other icon rules */
+  right: auto !important; /* Ensure left positioning */
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 10 !important; /* Higher z-index for visibility */
+  color: #64748b !important;
+  font-size: 18px !important; /* Consistent with other rules */
+  width: 18px !important;
+  height: 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+}
+
+/* After icon positioning overrides - ENHANCED SPECIFICITY */
+.auth-screen .input .input-icon--after,
+.auth-screen .input .input__icon--after,
+.auth-screen .input-wrapper .input-icon--after,
+.auth-screen .input-container .input-icon--after {
+  position: absolute !important;
+  right: 16px !important; /* Position on the right */
+  left: auto !important; /* Override any left positioning */
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 10 !important; /* Higher z-index for visibility */
+  color: #64748b !important;
+  font-size: 18px !important; /* Consistent with other rules */
+  width: 18px !important;
+  height: 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: auto !important; /* Allow button interaction */
+}
+
+.auth-screen .input:focus-within .input-icon--before,
+.auth-screen .input:focus-within .input__icon--before,
+.auth-screen .input-wrapper:focus-within .input-icon--before {
+  color: #5B8DEF !important;
+}
+
+.auth-screen .input:focus-within .input-icon--after,
+.auth-screen .input:focus-within .input__icon--after,
+.auth-screen .input-wrapper:focus-within .input-icon--after {
+  color: #5B8DEF !important;
+}
+
+/* Error and success states for light inputs */
+.auth-screen .input[data-state="error"] {
+  border-color: #ef4444;
+  background: #ffffff;
+}
+
+.auth-screen .input[data-state="error"]:focus-within {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.auth-screen .input[data-state="success"] {
+  border-color: #22c55e;
+  background: #ffffff;
+}
+
+.auth-screen .input[data-state="success"]:focus-within {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+/* Error/success message styling */
+.auth-screen .input-message--error {
+  color: #dc2626;
+}
+
+.auth-screen .input-message--success {
+  color: #16a34a;
+}
+
+/* ============================================
+   Auth Screen Typography Override
+   ============================================ */
+
+.auth-screen h1 {
+  color: #1e293b;
+}
+
+.auth-screen h2 {
+  color: #1e293b;
+}
+
+.auth-screen .text-primary {
+  color: #1e293b !important;
+}
+
+.auth-screen .text-secondary {
+  color: #64748b !important;
+}
+
+.auth-screen .text-muted {
+  color: #94a3b8 !important;
+}
+
+/* Link styling for light theme */
+.auth-screen .text-info-600 {
+  color: #3b82f6 !important;
+}
+
+.auth-screen .text-info-600:hover {
+  color: #2563eb !important;
+}
+
+/* ============================================
+   INPUT.CSS OVERRIDE SECTION - MAXIMUM SPECIFICITY FOR ICON POSITIONING
+   ============================================ */
+
+/* Override input.css positioning rules with maximum specificity */
+.auth-screen .input-wrapper .input-icon--before,
+.auth-screen .input-container .input-wrapper .input-icon--before,
+.auth-screen .input-container .input-wrapper .input-icon.input-icon--before {
+  position: absolute !important;
+  left: 20px !important;
+  right: auto !important;
+  margin: 0 !important;
+}
+
+.auth-screen .input-wrapper .input-icon--after,
+.auth-screen .input-container .input-wrapper .input-icon--after,
+.auth-screen .input-container .input-wrapper .input-icon.input-icon--after {
+  position: absolute !important;
+  right: 16px !important;
+  left: auto !important;
+  margin: 0 !important;
+}
+
+/* Nuclear option - Override any CSS framework positioning */
+.auth-screen .input-wrapper * .input-icon--before,
+.auth-screen .input-wrapper * .input__icon--before {
+  left: 20px !important;
+  right: auto !important;
+}
+
+.auth-screen .input-wrapper * .input-icon--after,
+.auth-screen .input-wrapper * .input__icon--after {
+  right: 16px !important;
+  left: auto !important;
+}
+
+/* ============================================
+   TAILWIND OVERRIDE SECTION - HIGHEST SPECIFICITY
+   ============================================ */
+
+/* Ultra-high specificity rules to override Tailwind px-6, py-3, etc. */
+.auth-screen input.input.bg-black[type="email"],
+.auth-screen input.input.bg-black[type="password"],
+.auth-screen input.input.bg-black[type="text"],
+.auth-screen input.input.text-white[type="email"],
+.auth-screen input.input.text-white[type="password"],
+.auth-screen input.input.text-white[type="text"] {
+  padding-left: 54px !important;
+  padding-right: 20px !important;
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+
+/* Password fields with eye icon need extra right padding */
+.auth-screen input.input.bg-black[type="password"],
+.auth-screen input.input.text-white[type="password"],
+.auth-screen input[type="password"].input.input--with-icon-after {
+  padding-right: 60px !important;
+}
+
+/* Nuclear option - if all else fails, use body context for maximum specificity */
+body .auth-screen input.input.bg-black,
+body .auth-screen input.input.text-white {
+  padding-left: 54px !important;
+}
+
+body .auth-screen input[type="password"].input.bg-black,
+body .auth-screen input[type="password"].input.text-white {
+  padding-right: 60px !important;
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+
+@media (max-width: 768px) {
+  .auth-screen .input .input__field {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 12px 16px;
+  }
+
+  .auth-screen .btn--primary {
+    font-size: 16px;
+    padding: 14px 20px;
+    min-height: 48px;
+  }
+}
+
+/* ============================================
+   Animation Enhancements
+   ============================================ */
+
+.auth-screen .input {
+  transform: translateZ(0);
+  will-change: border-color, background, box-shadow;
+}
+
+.auth-screen .btn--primary {
+  transform: translateZ(0);
+  will-change: transform, box-shadow, background;
+}
+
+/* Focus ring animations */
+.auth-screen .input:focus-within {
+  animation: focusGlow 0.3s ease-out;
+}
+
+@keyframes focusGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(91, 141, 239, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(91, 141, 239, 0.1);
+  }
+}
+
+/* Button press animation */
+.auth-screen .btn--primary:active {
+  animation: buttonPress 0.1s ease-out;
+}
+
+@keyframes buttonPress {
+  0% {
+    transform: translateY(-1px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}

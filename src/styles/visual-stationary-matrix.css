@@ -1,0 +1,141 @@
+/**
+ * Visual Stationary Matrix Solution
+ *
+ * Makes the matrix appear visually stationary during sidebar transitions
+ * while maintaining correct CSS Grid behavior.
+ */
+
+/* ============================================
+   Core Visual Stationary System
+   ============================================ */
+
+.enterprise-matrix-workspace {
+  /* Ensure smooth transitions */
+  transition: transform 300ms cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* During sidebar transition, apply compensating transform */
+.app-layout-grid.transitioning .enterprise-matrix-workspace {
+  /* Counteract the CSS Grid movement to appear stationary */
+  will-change: transform !important;
+}
+
+/* Sidebar expanding: Grid moves content from x=80 to x=350 (+270px)
+   Apply -270px transform to keep matrix visually stationary */
+.app-layout-grid.transitioning.sidebar-expanded .enterprise-matrix-workspace {
+  transform: translateX(-270px) !important;
+}
+
+/* Sidebar collapsing: Grid moves content from x=350 to x=80 (-270px)
+   Apply +270px transform to keep matrix visually stationary */
+.app-layout-grid.transitioning.sidebar-collapsed .enterprise-matrix-workspace {
+  transform: translateX(270px) !important;
+}
+
+/* After transition completes, reset transform to let CSS Grid take over */
+.app-layout-grid.static .enterprise-matrix-workspace {
+  transform: none !important;
+  will-change: auto !important;
+}
+
+/* ============================================
+   Enhanced Transition Coordination
+   ============================================ */
+
+/* Ensure sidebar and matrix transitions are perfectly synchronized */
+.app-layout-grid {
+  /* Only transition the grid template, nothing else */
+  transition: grid-template-columns 300ms cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Prevent any conflicting transitions on the main grid area */
+.app-layout-grid__main {
+  transition: none !important;
+  transform: none !important;
+}
+
+/* ============================================
+   Refined Interaction States
+   ============================================ */
+
+/* Subtle visual feedback during transition */
+.app-layout-grid.transitioning .enterprise-matrix-workspace {
+  /* Very subtle scale effect for smooth visual feedback */
+  transform-origin: center center;
+}
+
+.app-layout-grid.transitioning.sidebar-expanded .enterprise-matrix-workspace {
+  transform: translateX(-270px) scale(0.998) !important;
+}
+
+.app-layout-grid.transitioning.sidebar-collapsed .enterprise-matrix-workspace {
+  transform: translateX(270px) scale(0.998) !important;
+}
+
+/* ============================================
+   Performance Optimizations
+   ============================================ */
+
+/* Optimize for smooth animations */
+.app-layout-grid.transitioning .enterprise-matrix-workspace {
+  backface-visibility: hidden;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+/* ============================================
+   Accessibility Support
+   ============================================ */
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .enterprise-matrix-workspace {
+    transition: none !important;
+  }
+
+  .app-layout-grid.transitioning.sidebar-expanded .enterprise-matrix-workspace,
+  .app-layout-grid.transitioning.sidebar-collapsed .enterprise-matrix-workspace {
+    transform: none !important;
+  }
+}
+
+/* ============================================
+   Mobile Responsive Adjustments
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* On mobile, sidebar transitions are different - adjust accordingly */
+  .app-layout-grid.transitioning.sidebar-expanded .enterprise-matrix-workspace,
+  .app-layout-grid.transitioning.sidebar-collapsed .enterprise-matrix-workspace {
+    /* Mobile has different sidebar behavior, may need no offset */
+    transform: none;
+  }
+}
+
+/* ============================================
+   Debug Mode (Development Only)
+   ============================================ */
+
+/* Visual indicator when in transition state (development only) */
+.app-layout-grid.transitioning .enterprise-matrix-workspace::after {
+  content: attr(data-transition-state);
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: monospace;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0; /* Hidden by default */
+}
+
+/* Show debug indicator in development */
+@media (min-width: 0px) {
+  .debug-transitions .app-layout-grid.transitioning .enterprise-matrix-workspace::after {
+    opacity: 1;
+  }
+}

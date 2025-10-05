@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
-import { authenticate, checkUserRateLimit } from '../auth/middleware.js'
+import { authenticate, checkUserRateLimit } from '../auth/middleware'
 
 interface WhisperSegment {
   avg_logprob?: number;

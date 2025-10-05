@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Target, Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles, AlertCircle, CheckCircle } from 'lucide-react'
 import PrioritasLogo from '../PrioritasLogo'
 import { supabase } from '../../lib/supabase'
-import { logger } from '../../utils/logger'
+import { useLogger } from '../../lib/logging'
+import { Button, Input } from '../ui'
+import { useSecureAuthContext } from '../../contexts/SecureAuthContext'
+// EMERGENCY FIX: Removed useComponentState to eliminate state conflicts
 
 interface AuthScreenProps {
   onAuthSuccess: (user: any) => void
@@ -11,6 +14,22 @@ interface AuthScreenProps {
 type AuthMode = 'login' | 'signup' | 'forgot-password'
 
 const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
+  const logger = useLogger('AuthScreen')
+
+  // Feature flag: use new httpOnly cookie auth or old localStorage auth
+  const useNewAuth = import.meta.env.VITE_FEATURE_HTTPONLY_AUTH === 'true'
+
+  // Try to get new auth context (only available if feature flag is enabled)
+  let secureAuth: ReturnType<typeof useSecureAuthContext> | null = null
+  try {
+    if (useNewAuth) {
+      secureAuth = useSecureAuthContext()
+    }
+  } catch (e) {
+    // SecureAuthContext not available, fall back to old auth
+    logger.debug('SecureAuthContext not available, using old auth')
+  }
+
   const [mode, setMode] = useState<AuthMode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -22,106 +41,198 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
+  // Enhanced component refs
+  const emailRef = useRef<any>(null)
+  const passwordRef = useRef<any>(null)
+  const fullNameRef = useRef<any>(null)
+  const confirmPasswordRef = useRef<any>(null)
+  const submitButtonRef = useRef<any>(null)
+
+  // EMERGENCY FIX: Simplified form state - no useComponentState conflicts
+
   // Determine the correct redirect URL based on the environment
   const getRedirectUrl = () => {
     // Check for environment variable override first
     const envRedirectUrl = import.meta.env.VITE_REDIRECT_URL
     if (envRedirectUrl) {
-      console.log('🎛️ Using environment redirect URL:', envRedirectUrl)
+      logger.debug('Using environment redirect URL', { url: envRedirectUrl })
       return envRedirectUrl
     }
-    
+
     const currentOrigin = window.location.origin
     const isProduction = !currentOrigin.includes('localhost')
-    
-    console.log('🔍 Current origin for redirect:', currentOrigin)
-    console.log('🏭 Is production environment:', isProduction)
+
+    logger.debug('Determining redirect URL', {
+      currentOrigin,
+      isProduction
+    })
     
     let redirectUrl
     if (isProduction) {
       // Always use prioritas.ai for production deployments
       redirectUrl = 'https://prioritas.ai'
-      console.log('🌐 Production detected, using prioritas.ai')
+      logger.debug('Production environment detected', { redirectUrl })
     } else {
       // Use localhost for development
       redirectUrl = currentOrigin
-      console.log('🛠️ Development detected, using localhost')
+      logger.debug('Development environment detected', { redirectUrl })
     }
-    
-    console.log('🎯 Final redirect URL:', redirectUrl)
+
+    logger.info('Redirect URL configured', { redirectUrl })
     return redirectUrl
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+
+    // Enhanced form validation using component refs
+    const validateForm = () => {
+      let isValid = true
+
+      // Validate email
+      if (!emailRef.current?.validate()) {
+        isValid = false
+      }
+
+      if (mode !== 'forgot-password') {
+        // Validate password
+        if (!passwordRef.current?.validate()) {
+          isValid = false
+        }
+      }
+
+      if (mode === 'signup') {
+        // Validate full name
+        if (!fullNameRef.current?.validate()) {
+          isValid = false
+        }
+
+        // Validate confirm password
+        if (!confirmPasswordRef.current?.validate()) {
+          isValid = false
+        }
+
+        // Check password match
+        if (password !== confirmPassword) {
+          confirmPasswordRef.current?.setError('Passwords do not match')
+          isValid = false
+        }
+      }
+
+      return isValid
+    }
+
+    // Clear previous states
     setError(null)
     setSuccess(null)
 
+    // Validate form
+    if (!validateForm()) {
+      setError('Please fix the validation errors above')
+      return
+    }
+
+    // EMERGENCY FIX: Simple duplicate prevention - single loading check
+    if (loading) {
+      return
+    }
+
+    // Start loading state
+    setLoading(true)
+    submitButtonRef.current?.setState('loading')
+
     try {
-      if (mode === 'signup') {
-        // Validation
-        if (password !== confirmPassword) {
-          throw new Error('Passwords do not match')
-        }
-        if (password.length < 6) {
-          throw new Error('Password must be at least 6 characters long')
-        }
-        if (!fullName.trim()) {
-          throw new Error('Full name is required')
-        }
+      // EMERGENCY FIX: Direct Supabase calls without executeAction wrapper
+        if (mode === 'signup') {
+          const redirectUrl = getRedirectUrl()
+          const fullRedirectUrl = `${redirectUrl}`
+          logger.info('Initiating signup', {
+            redirectUrl: fullRedirectUrl,
+            hasEmail: !!email,
+            hasFullName: !!fullName
+          })
 
-        const redirectUrl = getRedirectUrl()
-        const fullRedirectUrl = `${redirectUrl}`
-        console.log('🚀 Signing up with email redirect to:', fullRedirectUrl)
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              emailRedirectTo: fullRedirectUrl,
+              data: {
+                full_name: fullName.trim(),
+              }
+            }
+          })
 
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: fullRedirectUrl,
-            data: {
-              full_name: fullName.trim(),
+          logger.info('Signup response received', {
+            userId: data?.user?.id,
+            hasError: !!error,
+            errorMessage: error?.message
+          })
+
+          if (error) throw error
+
+          if (data.user && !data.user.email_confirmed_at) {
+            setSuccess('Please check your email for a confirmation link before signing in.')
+            setMode('login')
+          } else if (data.user) {
+            onAuthSuccess(data.user)
+          }
+
+        } else if (mode === 'login') {
+          // Check which auth system to use based on feature flag
+          if (useNewAuth && secureAuth) {
+            // NEW AUTH SYSTEM: httpOnly cookies via API endpoint
+            logger.info('Using new httpOnly cookie authentication')
+            await secureAuth.login(email, password)
+            // Success! secureAuth automatically updates user state via cookies
+            // No need to call onAuthSuccess - the SecureAuthProvider handles it
+            logger.info('Login successful with httpOnly cookies')
+          } else {
+            // OLD AUTH SYSTEM: localStorage via Supabase direct
+            logger.info('Using old localStorage authentication')
+            const { data, error } = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            })
+
+            if (error) throw error
+            if (data.user) {
+              onAuthSuccess(data.user)
             }
           }
-        })
 
-        console.log('📧 Signup response:', { data: data?.user?.id, error: error?.message })
+        } else if (mode === 'forgot-password') {
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${getRedirectUrl()}/reset-password`
+          })
 
-        if (error) throw error
-
-        if (data.user && !data.user.email_confirmed_at) {
-          setSuccess('Please check your email for a confirmation link before signing in.')
+          if (error) throw error
+          setSuccess('Password reset email sent! Check your inbox.')
           setMode('login')
-        } else if (data.user) {
-          onAuthSuccess(data.user)
         }
-
-      } else if (mode === 'login') {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-
-        if (error) throw error
-        if (data.user) {
-          onAuthSuccess(data.user)
-        }
-
-      } else if (mode === 'forgot-password') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${getRedirectUrl()}/reset-password`
-        })
-
-        if (error) throw error
-        setSuccess('Password reset email sent! Check your inbox.')
-        setMode('login')
-      }
     } catch (err: any) {
       logger.error('Auth error:', err)
       setError(err.message || 'An unexpected error occurred')
+      submitButtonRef.current?.setState('error')
+
+      // Set error states on relevant fields
+      if (err.message?.includes('Invalid login credentials')) {
+        emailRef.current?.setError('Invalid email or password')
+        passwordRef.current?.setError('Invalid email or password')
+      } else if (err.message?.includes('email')) {
+        emailRef.current?.setError(err.message)
+      } else if (err.message?.includes('password')) {
+        passwordRef.current?.setError(err.message)
+      }
     } finally {
       setLoading(false)
+
+      // Reset button state after a delay for better UX
+      setTimeout(() => {
+        if (submitButtonRef.current?.state !== 'success') {
+          submitButtonRef.current?.setState('idle')
+        }
+      }, 500)
     }
   }
 
@@ -143,39 +254,39 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <div className="auth-screen min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <main className="max-w-md w-full" role="main">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-white to-slate-100 rounded-2xl mb-4 shadow-lg">
-            <PrioritasLogo className="text-blue-600" size={32} />
+        <header className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 card-clean-hover p-4 mb-4">
+            <PrioritasLogo className="text-info-500" size={32} />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Prioritas</h1>
-          <p className="text-slate-600">Smart Priority Matrix Platform</p>
-        </div>
+          <h1 className="text-3xl font-bold text-primary mb-2">Prioritas</h1>
+          <p className="text-secondary">Smart Priority Matrix Platform</p>
+        </header>
 
         {/* Auth Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-200/60 p-8">
+        <div className="card-clean p-8">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">{getTitle()}</h2>
-            <p className="text-slate-600 text-sm">{getSubtitle()}</p>
+            <h2 className="text-2xl font-bold text-primary mb-2">{getTitle()}</h2>
+            <p className="text-secondary text-sm">{getSubtitle()}</p>
           </div>
 
           {/* Error/Success Messages */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="bg-error-50 border border-error-200 rounded-lg p-4 mb-4" data-testid="auth-error-message">
               <div className="flex items-start space-x-2">
-                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <p className="text-red-700 text-sm">{error}</p>
+                <AlertCircle className="w-5 h-5 text-error-600 mt-0.5 flex-shrink-0" />
+                <p className="text-error-700 text-sm">{error}</p>
               </div>
             </div>
           )}
 
           {success && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <div className="bg-success-50 border border-success-200 rounded-lg p-4 mb-4" data-testid="auth-success-message">
               <div className="flex items-start space-x-2">
-                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <p className="text-green-700 text-sm">{success}</p>
+                <CheckCircle className="w-5 h-5 text-success-600 mt-0.5 flex-shrink-0" />
+                <p className="text-success-700 text-sm">{success}</p>
               </div>
             </div>
           )}
@@ -185,115 +296,215 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Full Name - Only for signup */}
             {mode === 'signup' && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Enter your full name"
-                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-              </div>
+              <Input
+                ref={fullNameRef}
+                label="Full Name"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Enter your full name"
+                icon={<User />}
+                variant="primary"
+                size="lg"
+                animated={true}
+                required
+                data-testid="auth-fullname-input"
+                onValidate={(value) => {
+                  if (!value.trim()) {
+                    return { isValid: false, error: 'Full name is required' }
+                  }
+                  if (value.trim().length < 2) {
+                    return { isValid: false, error: 'Full name must be at least 2 characters' }
+                  }
+                  return { isValid: true }
+                }}
+              />
             )}
 
             {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-            </div>
+            <Input
+              ref={emailRef}
+              label="Email Address"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              icon={<Mail />}
+              variant="primary"
+              size="lg"
+              animated={true}
+              required
+              data-testid="auth-email-input"
+              onValidate={(value) => {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                if (!value.trim()) {
+                  return { isValid: false, error: 'Email address is required' }
+                }
+                if (!emailRegex.test(value)) {
+                  return { isValid: false, error: 'Please enter a valid email address' }
+                }
+                return { isValid: true }
+              }}
+            />
 
             {/* Password - Not for forgot password */}
             {mode !== 'forgot-password' && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    className="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
+              <Input
+                ref={passwordRef}
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                icon={<Lock />}
+                variant="primary"
+                size="lg"
+                animated={true}
+                required
+                data-testid="auth-password-input"
+                iconAfter={
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
-                </div>
-              </div>
+                }
+                onValidate={(value) => {
+                  if (!value) {
+                    return { isValid: false, error: 'Password is required' }
+                  }
+                  if (mode === 'signup' && value.length < 6) {
+                    return { isValid: false, error: 'Password must be at least 6 characters' }
+                  }
+                  return { isValid: true }
+                }}
+              />
             )}
 
             {/* Confirm Password - Only for signup */}
             {mode === 'signup' && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm your password"
-                    className="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
+              <Input
+                ref={confirmPasswordRef}
+                label="Confirm Password"
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm your password"
+                icon={<Lock />}
+                variant="primary"
+                size="lg"
+                animated={true}
+                required
+                data-testid="auth-confirm-password-input"
+                iconAfter={
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                   >
                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
-                </div>
-              </div>
+                }
+                onValidate={(value) => {
+                  if (!value) {
+                    return { isValid: false, error: 'Please confirm your password' }
+                  }
+                  if (value !== password) {
+                    return { isValid: false, error: 'Passwords do not match' }
+                  }
+                  return { isValid: true }
+                }}
+              />
             )}
 
             {/* Submit Button */}
-            <button
+            <Button
+              ref={submitButtonRef}
               type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              variant="primary"
+              size="lg"
+              state={loading ? 'loading' : 'idle'}
+              animated={true}
+              fullWidth={true}
+              data-testid="auth-submit-button"
+              iconAfter={mode !== 'forgot-password' ? <ArrowRight /> : undefined}
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <span>
-                    {mode === 'signup' ? 'Create Account' : 
-                     mode === 'forgot-password' ? 'Send Reset Link' : 'Sign In'}
-                  </span>
-                  {mode !== 'forgot-password' && <ArrowRight className="w-4 h-4" />}
-                </>
-              )}
-            </button>
+              {mode === 'signup' ? 'Create Account' :
+               mode === 'forgot-password' ? 'Send Reset Link' : 'Sign In'}
+            </Button>
           </form>
+
+          {/* Demo Mode - For Testing */}
+          {mode === 'login' && (
+            <div className="mt-4 text-center">
+              <Button
+                type="button"
+                onClick={async () => {
+                  try {
+                    setLoading(true)
+                    setError(null)
+                    logger.info('🎭 Signing in as anonymous demo user...')
+
+                    // Use Supabase anonymous authentication
+                    const { data, error: anonError } = await supabase.auth.signInAnonymously()
+
+                    if (anonError) {
+                      logger.error('❌ Anonymous sign-in failed:', anonError)
+                      setError(`Demo user sign-in failed: ${anonError.message}`)
+                      setLoading(false)
+                      return
+                    }
+
+                    if (!data.user) {
+                      logger.error('❌ No user returned from anonymous sign-in')
+                      setError('Demo user sign-in failed: No user returned')
+                      setLoading(false)
+                      return
+                    }
+
+                    logger.info('✅ Anonymous user signed in:', {
+                      id: data.user.id,
+                      isAnonymous: data.user.is_anonymous,
+                      createdAt: data.user.created_at
+                    })
+
+                    // Create user object with Supabase anonymous user data
+                    const demoUser = {
+                      id: data.user.id, // Real Supabase user ID
+                      email: 'demo@example.com',
+                      full_name: 'Demo User',
+                      is_anonymous: true,
+                      created_at: data.user.created_at,
+                      updated_at: new Date().toISOString()
+                    }
+
+                    logger.info('✅ Demo user authenticated successfully with Supabase session')
+                    onAuthSuccess(demoUser)
+                    // Note: Don't set loading=false here - let the auth flow handle UI transition
+                  } catch (err) {
+                    logger.error('❌ Demo user error:', err)
+                    setError(`Demo user failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+                    setLoading(false)
+                  }
+                }}
+                data-testid="auth-demo-button"
+                disabled={loading}
+                variant="warning"
+                size="lg"
+                fullWidth={true}
+                animated={true}
+              >
+                {loading ? '🔄 Signing in...' : '🚀 Continue as Demo User (No Registration Required)'}
+              </Button>
+              <p className="text-xs text-slate-500 mt-2">
+                Skip registration and test with anonymous authentication
+              </p>
+            </div>
+          )}
 
           {/* Footer Links */}
           <div className="mt-6 text-center text-sm">
@@ -302,16 +513,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                 <button
                   type="button"
                   onClick={() => setMode('forgot-password')}
-                  className="text-blue-600 hover:text-blue-700 hover:underline"
+                  className="text-info-600 hover:text-info-700 hover:underline"
                 >
                   Forgot your password?
                 </button>
                 <div>
-                  <span className="text-slate-600">Don't have an account? </span>
+                  <span className="text-secondary">Don't have an account? </span>
                   <button
                     type="button"
                     onClick={() => setMode('signup')}
-                    className="text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                    data-testid="auth-mode-switcher"
+                    className="text-info-600 hover:text-info-700 font-medium hover:underline"
                   >
                     Sign up
                   </button>
@@ -321,11 +533,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
             {mode === 'signup' && (
               <div>
-                <span className="text-slate-600">Already have an account? </span>
+                <span className="text-secondary">Already have an account? </span>
                 <button
                   type="button"
                   onClick={() => setMode('login')}
-                  className="text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                  className="text-info-600 hover:text-info-700 font-medium hover:underline"
                 >
                   Sign in
                 </button>
@@ -334,11 +546,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
             {mode === 'forgot-password' && (
               <div>
-                <span className="text-slate-600">Remember your password? </span>
+                <span className="text-secondary">Remember your password? </span>
                 <button
                   type="button"
                   onClick={() => setMode('login')}
-                  className="text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                  className="text-info-600 hover:text-info-700 font-medium hover:underline"
                 >
                   Back to sign in
                 </button>
@@ -348,10 +560,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
           {/* Terms */}
           {mode === 'signup' && (
-            <div className="mt-6 text-center text-xs text-slate-500">
+            <div className="mt-6 text-center text-xs text-muted">
               By creating an account, you agree to our{' '}
-              <a href="#" className="text-blue-600 hover:underline">Terms of Service</a> and{' '}
-              <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>
+              <a href="#" className="text-info-600 hover:underline">Terms of Service</a> and{' '}
+              <a href="#" className="text-info-600 hover:underline">Privacy Policy</a>
             </div>
           )}
         </div>
@@ -363,16 +575,16 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             { icon: Sparkles, title: 'Team Collaboration', desc: 'Real-time project sharing' },
             { icon: ArrowRight, title: 'Strategic Planning', desc: 'Roadmap generation' }
           ].map((feature, index) => (
-            <div key={index} className="bg-white/50 backdrop-blur-sm rounded-xl p-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                <feature.icon className="w-5 h-5 text-blue-600" />
+            <div key={index} className="card-clean-hover p-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-info-100 to-accent-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                <feature.icon className="w-5 h-5 text-info-600" />
               </div>
-              <h3 className="font-medium text-slate-900 text-sm">{feature.title}</h3>
-              <p className="text-xs text-slate-600 mt-1">{feature.desc}</p>
+              <h3 className="font-medium text-primary text-sm">{feature.title}</h3>
+              <p className="text-xs text-secondary mt-1">{feature.desc}</p>
             </div>
           ))}
         </div>
-      </div>
+      </main>
     </div>
   )
 }

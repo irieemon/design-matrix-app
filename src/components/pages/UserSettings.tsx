@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Settings, Save, LogOut, UserCircle, Calendar, Shield } from 'lucide-react'
 import { User } from '../../types'
+import { useCurrentUser, useUserDisplay } from '../../contexts/UserContext'
 
 interface UserSettingsProps {
   currentUser: User | null
@@ -8,30 +9,34 @@ interface UserSettingsProps {
   onUserUpdate?: (updatedUser: Partial<User>) => void
 }
 
-const UserSettings: React.FC<UserSettingsProps> = ({ currentUser, onLogout, onUserUpdate }) => {
-  const [displayName, setDisplayName] = useState(currentUser?.full_name || currentUser?.email || '')
-  const [email, setEmail] = useState(currentUser?.email || '')
+const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUser, onLogout, onUserUpdate }) => {
+  // Use centralized user context as primary source
+  const contextUser = useCurrentUser()
+  const { displayName: contextDisplayName, email: contextEmail } = useUserDisplay()
+
+  // Use context user data as primary, fallback to props for backwards compatibility
+  const currentUser = contextUser || propCurrentUser
+
+  const [displayName, setDisplayName] = useState(currentUser?.full_name || currentUser?.email || contextDisplayName || '')
+  const [email, setEmail] = useState(currentUser?.email || contextEmail || '')
   const [isEditing, setIsEditing] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   const handleSaveProfile = async () => {
     setSaveStatus('saving')
-    
+
     try {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Update user name in localStorage
-      localStorage.setItem('prioritasUser', displayName)
-      
-      // Call parent update function if provided
+
+      // Call parent update function to update the centralized user context
       if (onUserUpdate) {
         onUserUpdate({ full_name: displayName })
       }
-      
+
       setIsEditing(false)
       setSaveStatus('saved')
-      
+
       // Reset save status after 2 seconds
       setTimeout(() => setSaveStatus('idle'), 2000)
     } catch (error) {
@@ -41,12 +46,12 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser, onLogout, onUs
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('prioritasUser')
+    // localStorage cleanup is handled in the centralized useAuth hook
     onLogout()
   }
 
   const userStats = {
-    joinDate: localStorage.getItem('prioritasUserJoinDate') || new Date().toISOString(),
+    joinDate: currentUser?.created_at || new Date().toISOString(),
     lastLogin: new Date().toISOString()
   }
 

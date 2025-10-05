@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, FolderOpen, Calendar, Users, DollarSign, Edit2, Trash2, Archive, MoreVertical, Search, Filter, Sparkles } from 'lucide-react'
 import { Project, IdeaCard, ProjectType, User } from '../types'
 import { ProjectRepository } from '../lib/repositories'
 import ProjectStartupFlow from './ProjectStartupFlow'
 import AIStarterModal from './AIStarterModal'
 import { logger } from '../utils/logger'
+import { Button } from './ui/Button'
 
 interface ProjectManagementProps {
   currentUser: User
@@ -56,101 +57,49 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
   const [showProjectMenu, setShowProjectMenu] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ project: Project; show: boolean }>({ project: null as any, show: false })
 
-  useEffect(() => {
-    if (currentUser?.id) {
-      loadProjects()
-    }
-    
-    // Subscribe to real-time project updates
-    const unsubscribe = ProjectRepository.subscribeToProjects(
-      (projects) => {
-        if (projects) {
-          setProjects(projects)
-        }
-      },
-      currentUser?.id
-    )
-    
-    return unsubscribe
-  }, [currentUser?.id])
+  // Extract userId to primitive to prevent object reference issues
+  const userId = currentUser?.id
 
-  const loadProjects = async () => {
-    setIsLoading(true)
+  // Wrap loadProjectsDirectly in useCallback to prevent infinite loop
+  const loadProjectsDirectly = useCallback(async () => {
+    if (!userId) {
+      logger.debug('No user ID, skipping project load')
+      setIsLoading(false)
+      return
+    }
+
     try {
-      logger.debug('📋 Loading projects for user:', currentUser.id)
-      
-      // Test both approaches: database first, then fallback to test data
-      try {
-        logger.debug('🔄 Attempting database query...')
-        const userProjects = await ProjectRepository.getUserOwnedProjects(currentUser.id)
-        logger.debug('✅ Database query succeeded! Projects:', userProjects.length)
-        
-        if (userProjects.length > 0) {
-          setProjects(userProjects)
-        } else {
-          // If no real projects, add a test project for demo
-          const testProjects = [
-            {
-              id: 'test-project-1',
-              name: 'Test Project',
-              description: 'This is a test project to verify the UI works',
-              project_type: 'software' as const,
-              status: 'active' as const,
-              visibility: 'private' as const,
-              priority_level: 'high' as const,
-              owner_id: currentUser.id,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              budget: 10000,
-              target_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            }
-          ]
-          logger.debug('📋 No database projects, using test project')
-          setProjects(testProjects)
-        }
-      } catch (dbError) {
-        logger.error('❌ Database query failed, falling back to test data:', dbError)
-        
-        // Fallback to test data if database fails
-        const testProjects = [
-          {
-            id: 'test-project-1',
-            name: 'Test Project (DB Fallback)',
-            description: 'This is a test project because database connection failed',
-            project_type: 'software' as const,
-            status: 'active' as const,
-            visibility: 'private' as const,
-            priority_level: 'high' as const,
-            owner_id: currentUser.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            budget: 10000,
-            target_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          }
-        ]
-        setProjects(testProjects)
-      }
-      
+      logger.debug('Loading projects for user', { userId })
+      const projects = await ProjectRepository.getUserOwnedProjects(userId)
+      logger.debug('Direct load received', { count: projects?.length })
+      setProjects(projects)
+      setIsLoading(false)
     } catch (error) {
-      logger.error('Error in loadProjects:', error)
-      setProjects([]) // Set empty array on error
-    } finally {
-      logger.debug('📋 Setting loading to false, projects count:', projects.length)
+      logger.error('Direct load error', error)
+      setProjects([])
       setIsLoading(false)
     }
-  }
+  }, [userId])
 
-  const handleProjectCreated = (project: Project, ideas?: IdeaCard[]) => {
+  useEffect(() => {
+    loadProjectsDirectly()
+  }, [loadProjectsDirectly])
+
+  const handleProjectCreated = useCallback((project: Project, ideas?: IdeaCard[]) => {
     setProjects(prev => [project, ...prev])
     onProjectCreated(project, ideas)
     setShowStartupFlow(false)
-  }
+  }, [onProjectCreated])
 
-  const handleAIProjectCreated = (project: Project, ideas: IdeaCard[]) => {
+  const handleAIProjectCreated = useCallback((project: Project, ideas: IdeaCard[]) => {
     setProjects(prev => [project, ...prev])
     onProjectCreated(project, ideas)
     setShowAIStarter(false)
-  }
+  }, [onProjectCreated])
+
+  const handleCloseAIStarter = useCallback(() => {
+    setShowAIStarter(false)
+  }, [])
 
   const handleProjectSelect = (project: Project) => {
     logger.debug('📂 ProjectManagement: Selecting project:', project.name, project.id)
@@ -229,9 +178,9 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
     return (
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-slate-200 rounded w-1/4"></div>
-          <div className="h-32 bg-slate-200 rounded"></div>
-          <div className="h-32 bg-slate-200 rounded"></div>
+          <div className="h-8 bg-neutral-200 rounded w-1/4"></div>
+          <div className="h-32 bg-neutral-200 rounded"></div>
+          <div className="h-32 bg-neutral-200 rounded"></div>
         </div>
       </div>
     )
@@ -242,45 +191,46 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Project Management</h1>
-          <p className="text-slate-600">Manage all your priority matrix projects</p>
+          <h1 className="text-3xl font-bold text-neutral-900 mb-2">Project Management</h1>
+          <p className="text-neutral-600">Manage all your priority matrix projects</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button
+          <Button
             onClick={() => setShowAIStarter(true)}
-            className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-colors shadow-sm"
+            variant="sapphire"
+            icon={<Sparkles className="w-5 h-5" />}
           >
-            <Sparkles className="w-5 h-5" />
-            <span className="font-medium">AI Starter</span>
-          </button>
-          <button
+            AI Starter
+          </Button>
+          <Button
             onClick={() => setShowStartupFlow(true)}
-            className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors shadow-sm"
+            data-testid="create-project-button"
+            variant="primary"
+            icon={<Plus className="w-5 h-5" />}
           >
-            <Plus className="w-5 h-5" />
-            <span className="font-medium">New Project</span>
-          </button>
+            New Project
+          </Button>
         </div>
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6 mb-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-neutral-200/60 p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
             <input
               type="text"
               placeholder="Search projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -292,7 +242,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as any)}
-            className="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Types</option>
             <option value="software">Software Development</option>
@@ -304,7 +254,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
             <option value="other">Other</option>
           </select>
 
-          <div className="flex items-center text-sm text-slate-600">
+          <div className="flex items-center text-sm text-neutral-600">
             <Filter className="w-4 h-4 mr-2" />
             {filteredProjects.length} of {projects.length} projects
           </div>
@@ -313,50 +263,51 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
 
       {/* Projects Grid */}
       {filteredProjects.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-12 text-center">
-          <FolderOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-slate-900 mb-2">No projects found</h3>
-          <p className="text-slate-600 mb-6">
-            {projects.length === 0 
-              ? "Get started by creating your first project" 
+        <div className="bg-white rounded-2xl shadow-sm border border-neutral-200/60 p-12 text-center">
+          <FolderOpen className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-neutral-900 mb-2">No projects found</h3>
+          <p className="text-neutral-600 mb-6">
+            {projects.length === 0
+              ? "Get started by creating your first project"
               : "Try adjusting your search or filters"}
           </p>
           {projects.length === 0 && (
             <div className="flex items-center justify-center space-x-3">
-              <button
+              <Button
                 onClick={() => setShowAIStarter(true)}
-                className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-colors"
+                variant="sapphire"
+                icon={<Sparkles className="w-5 h-5" />}
               >
-                <Sparkles className="w-5 h-5" />
-                <span>AI Starter</span>
-              </button>
-              <button
+                AI Starter
+              </Button>
+              <Button
                 onClick={() => setShowStartupFlow(true)}
-                className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                variant="primary"
+                icon={<Plus className="w-5 h-5" />}
               >
-                <Plus className="w-5 h-5" />
-                <span>Manual Setup</span>
-              </button>
+                Manual Setup
+              </Button>
             </div>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="project-list">
           {filteredProjects.map((project) => (
             <div
               key={project.id}
               className={`bg-white rounded-2xl shadow-sm border-2 transition-all hover:shadow-md cursor-pointer ${
-                currentProject?.id === project.id 
-                  ? 'border-blue-500 bg-blue-50/30' 
-                  : 'border-slate-200/60 hover:border-slate-300'
+                currentProject?.id === project.id
+                  ? 'border-blue-500 bg-blue-50/30'
+                  : 'border-neutral-200/60 hover:border-neutral-300'
               }`}
+              data-testid={`project-card-${project.id}`}
               onClick={(e) => {
-                logger.debug('🖱️ Project card clicked!', project.name, project.id)
-                logger.debug('🖱️ Click event:', e.target)
+                logger.debug('Project card clicked', { name: project.name, id: project.id })
+                logger.debug('Click event', { target: e.target })
                 handleProjectSelect(project)
               }}
               onDoubleClick={() => {
-                logger.debug('🖱️🖱️ Project card double-clicked!', project.name, project.id)
+                logger.debug('Project card double-clicked', { name: project.name, id: project.id })
                 handleProjectSelect(project)
               }}
             >
@@ -364,77 +315,86 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
                 {/* Project Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3 min-w-0 flex-1">
-                    <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-xl">
+                    <div className="w-12 h-12 bg-neutral-100 rounded-xl flex items-center justify-center text-xl">
                       {PROJECT_TYPE_ICONS[project.project_type]}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-slate-900 truncate">{project.name}</h3>
-                      <p className="text-sm text-slate-500 capitalize">
+                      <h3 className="font-semibold text-neutral-900 truncate">{project.name}</h3>
+                      <p className="text-sm text-neutral-500 capitalize">
                         {project.project_type.replace('_', ' ')}
                       </p>
                     </div>
                   </div>
                   
                   <div className="relative">
-                    <button
+                    <Button
                       onClick={(e) => {
                         e.stopPropagation()
                         setShowProjectMenu(showProjectMenu === project.id ? null : project.id)
                       }}
-                      className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
+                      variant="ghost"
+                      size="sm"
+                      icon={<MoreVertical className="w-4 h-4" />}
+                      className="!p-2"
+                    />
 
                     {showProjectMenu === project.id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10">
-                        <button
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-10">
+                        <Button
                           onClick={(e) => {
                             e.stopPropagation()
                             handleProjectSelect(project)
                           }}
-                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
+                          variant="ghost"
+                          size="sm"
+                          icon={<FolderOpen className="w-4 h-4" />}
+                          className="w-full !justify-start !rounded-none hover:!bg-neutral-100"
                         >
-                          <FolderOpen className="w-4 h-4" />
-                          <span>Open Project</span>
-                        </button>
-                        
+                          Open Project
+                        </Button>
+
                         <hr className="my-1" />
-                        
-                        <button
+
+                        <Button
                           onClick={(e) => {
                             e.stopPropagation()
                             handleUpdateProjectStatus(project.id, project.status === 'active' ? 'paused' : 'active')
                           }}
-                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
+                          variant="ghost"
+                          size="sm"
+                          icon={<Edit2 className="w-4 h-4" />}
+                          className="w-full !justify-start !rounded-none hover:!bg-neutral-100"
                         >
-                          <Edit2 className="w-4 h-4" />
-                          <span>{project.status === 'active' ? 'Pause' : 'Activate'}</span>
-                        </button>
-                        
-                        <button
+                          {project.status === 'active' ? 'Pause' : 'Activate'}
+                        </Button>
+
+                        <Button
                           onClick={(e) => {
                             e.stopPropagation()
                             handleUpdateProjectStatus(project.id, 'archived')
                           }}
-                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 flex items-center space-x-2"
+                          variant="ghost"
+                          size="sm"
+                          icon={<Archive className="w-4 h-4" />}
+                          className="w-full !justify-start !rounded-none hover:!bg-neutral-100"
                         >
-                          <Archive className="w-4 h-4" />
-                          <span>Archive</span>
-                        </button>
-                        
+                          Archive
+                        </Button>
+
                         <hr className="my-1" />
-                        
-                        <button
+
+                        <Button
                           onClick={(e) => {
                             e.stopPropagation()
                             handleDeleteProject(project)
                           }}
-                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                          variant="ghost"
+                          size="sm"
+                          icon={<Trash2 className="w-4 h-4" />}
+                          className="w-full !justify-start !rounded-none hover:!bg-red-50 !text-red-600"
                         >
-                          <Trash2 className="w-4 h-4" />
-                          <span>Delete</span>
-                        </button>
+                          Delete
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -457,7 +417,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
 
                 {/* Description */}
                 {project.description && (
-                  <p className="text-sm text-slate-600 mb-4 line-clamp-3">
+                  <p className="text-sm text-neutral-600 mb-4 line-clamp-3">
                     {project.description}
                   </p>
                 )}
@@ -465,21 +425,21 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
                 {/* Project Details */}
                 <div className="space-y-2">
                   {project.target_date && (
-                    <div className="flex items-center text-sm text-slate-500">
+                    <div className="flex items-center text-sm text-neutral-500">
                       <Calendar className="w-4 h-4 mr-2" />
                       <span>Target: {formatDate(project.target_date)}</span>
                     </div>
                   )}
                   
                   {project.team_size && (
-                    <div className="flex items-center text-sm text-slate-500">
+                    <div className="flex items-center text-sm text-neutral-500">
                       <Users className="w-4 h-4 mr-2" />
                       <span>Team: {project.team_size} members</span>
                     </div>
                   )}
                   
                   {project.budget && (
-                    <div className="flex items-center text-sm text-slate-500">
+                    <div className="flex items-center text-sm text-neutral-500">
                       <DollarSign className="w-4 h-4 mr-2" />
                       <span>Budget: {formatCurrency(project.budget)}</span>
                     </div>
@@ -492,13 +452,13 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
                     {project.tags.slice(0, 3).map((tag) => (
                       <span
                         key={tag}
-                        className="px-2 py-1 text-xs bg-slate-100 text-slate-700 rounded-full"
+                        className="px-2 py-1 text-xs bg-neutral-100 text-neutral-700 rounded-full"
                       >
                         {tag}
                       </span>
                     ))}
                     {project.tags.length > 3 && (
-                      <span className="px-2 py-1 text-xs bg-slate-100 text-slate-500 rounded-full">
+                      <span className="px-2 py-1 text-xs bg-neutral-100 text-neutral-500 rounded-full">
                         +{project.tags.length - 3}
                       </span>
                     )}
@@ -506,11 +466,11 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
                 )}
 
                 {/* Footer */}
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
-                  <span className="text-xs text-slate-500">
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-neutral-100">
+                  <span className="text-xs text-neutral-500">
                     Updated {formatDate(project.updated_at)}
                   </span>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-neutral-500">
                     by {
                       project.owner?.full_name || 
                       project.owner?.email || 
@@ -539,7 +499,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
       {showAIStarter && (
         <AIStarterModal
           currentUser={currentUser}
-          onClose={() => setShowAIStarter(false)}
+          onClose={handleCloseAIStarter}
           onProjectCreated={handleAIProjectCreated}
         />
       )}
@@ -554,33 +514,37 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
                   <Trash2 className="w-6 h-6 text-red-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Delete Project</h3>
-                  <p className="text-sm text-slate-500">This action cannot be undone</p>
+                  <h3 className="text-lg font-semibold text-neutral-900">Delete Project</h3>
+                  <p className="text-sm text-neutral-500">This action cannot be undone</p>
                 </div>
               </div>
               
               <div className="mb-6">
-                <p className="text-slate-700 mb-2">
+                <p className="text-neutral-700 mb-2">
                   Are you sure you want to delete <strong>"{showDeleteConfirm.project?.name}"</strong>?
                 </p>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-neutral-500">
                   This will permanently delete the project and all associated ideas, roadmaps, and data.
                 </p>
               </div>
               
               <div className="flex space-x-3">
-                <button
+                <Button
                   onClick={() => setShowDeleteConfirm({ project: null as any, show: false })}
-                  className="flex-1 px-4 py-3 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors font-medium"
+                  variant="secondary"
+                  size="md"
+                  className="flex-1"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={confirmDeleteProject}
-                  className="flex-1 px-4 py-3 text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors font-medium"
+                  variant="danger"
+                  size="md"
+                  className="flex-1"
                 >
                   Delete
-                </button>
+                </Button>
               </div>
             </div>
           </div>

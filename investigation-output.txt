@@ -1,0 +1,82 @@
+
+Running 1 test using 1 worker
+
+
+=== STARTING INVESTIGATION ===
+
+Step 1: Navigating to http://localhost:3006
+[2025-10-02T00:07:02.793Z] [DEBUG] [vite] connecting...
+[2025-10-02T00:07:02.849Z] [DEBUG] [vite] connected.
+[2025-10-02T00:07:04.269Z] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2025-10-02T00:07:04.275Z] [WARNING] Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+[2025-10-02T00:07:04.368Z] [WARNING] %cWARN %c [useCsrfToken] No CSRF token found in cookie 
+[2025-10-02T00:07:04.368Z] [WARNING] %cWARN %c [useCsrfToken] No CSRF token found in cookie 
+[2025-10-02T00:07:04.465Z] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o
+Screenshot saved: 01-initial-load.png
+
+Step 2: Checking authentication state
+No auth screen detected, proceeding...
+
+Step 3: Checking for project selection
+No project selector found - may already have a project selected
+
+Step 4: Waiting for ideas to load (10 seconds)...
+
+Step 5: Inspecting DOM for DesignMatrix and ideas
+DesignMatrix component visible: false
+Idea cards found in DOM: 0
+Empty state visible: false
+Loading state visible: false
+
+Step 6: Capturing React state from browser context
+Browser state captured: {
+  "timestamp": "2025-10-02T00:07:19.301Z",
+  "localStorage": {
+    "debugMode": "false"
+  },
+  "sessionStorage": {}
+}
+
+=== CONSOLE LOG ANALYSIS ===
+
+Total console messages: 7
+
+"Project changed effect triggered" logs: 0
+
+"Loading ideas for project" logs: 0
+
+"DIAGNOSTIC: Fetching ideas" logs: 0
+
+"DIAGNOSTIC: API response" logs: 0
+
+"DIAGNOSTIC: API returned" logs: 0
+
+Error logs: 0
+
+Warning logs: 3
+  - Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+  - %cWARN %c [useCsrfToken] No CSRF token found in cookie 
+  - %cWARN %c [useCsrfToken] No CSRF token found in cookie 
+
+=== ALL CONSOLE MESSAGES (CHRONOLOGICAL) ===
+
+1. [2025-10-02T00:07:02.793Z] [DEBUG] [vite] connecting...
+2. [2025-10-02T00:07:02.849Z] [DEBUG] [vite] connected.
+3. [2025-10-02T00:07:04.269Z] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+4. [2025-10-02T00:07:04.275Z] [WARNING] Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+5. [2025-10-02T00:07:04.368Z] [WARNING] %cWARN %c [useCsrfToken] No CSRF token found in cookie 
+6. [2025-10-02T00:07:04.368Z] [WARNING] %cWARN %c [useCsrfToken] No CSRF token found in cookie 
+7. [2025-10-02T00:07:04.465Z] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o
+
+=== INVESTIGATION COMPLETE ===
+
+Screenshots saved in screenshots/ directory
+Check the console output above for detailed analysis
+  ✓  1 tests/investigate-ideas-loading.spec.ts:3:1 › Investigate Ideas Loading Issue (17.3s)
+
+  1 passed (18.4s)
+
+To open last HTML report run:
+
+  npx playwright show-report test-results/html-report
+

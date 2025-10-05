@@ -1,0 +1,103 @@
+
+Running 1 test using 1 worker
+
+
+=== STARTING INVESTIGATION V2 ===
+
+Step 1: Navigating to http://localhost:3006
+[2025-10-02T00:08:21.359Z] [DEBUG] [vite] connecting...
+[2025-10-02T00:08:21.360Z] [DEBUG] [vite] connected.
+[2025-10-02T00:08:21.401Z] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[2025-10-02T00:08:21.404Z] [WARNING] Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+[2025-10-02T00:08:21.484Z] [WARNING] %cWARN %c [useCsrfToken] No CSRF token found in cookie 
+[2025-10-02T00:08:21.484Z] [WARNING] %cWARN %c [useCsrfToken] No CSRF token found in cookie 
+[2025-10-02T00:08:21.554Z] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o
+Screenshot saved: v2-01-initial-load.png
+
+Step 2: Clicking "Continue as Demo User" button
+[2025-10-02T00:08:23.639Z] [LOG] %cINFO %c [AuthScreen] 🎭 Signing in as anonymous demo user... 
+Demo user button clicked, waiting for navigation...
+[2025-10-02T00:08:23.882Z] [LOG] %cINFO %c [AuthScreen] ✅ Anonymous user signed in: {id: 3fa226c6-27c5-4de3-b2d3-1434e226e588, isAnonymous: true, createdAt: 2025-10-02T00:08:23.80588Z}
+[2025-10-02T00:08:23.882Z] [LOG] %cINFO %c [AuthScreen] ✅ Demo user authenticated successfully with Supabase session 
+[2025-10-02T00:08:23.882Z] [DEBUG] [AuthMigration] handleAuthSuccess called (no-op with httpOnly cookies)
+Screenshot saved: v2-02-after-demo-login.png
+Current URL: http://localhost:3006/
+
+Step 3: Waiting for app to initialize...
+Current URL after wait: http://localhost:3006/
+Screenshot saved: v2-03-app-state.png
+
+UI State Check:
+  - Project selector visible: false
+  - Create project button visible: false
+  - Design matrix visible: false
+
+Step 4: Already in project context (or matrix visible)
+
+Step 5: Waiting 15 seconds for ideas to load...
+Screenshot saved: v2-05-final-state.png
+
+Step 6: Inspecting DOM for DesignMatrix and ideas
+DesignMatrix component visible: false
+Idea cards found in DOM: 0
+Empty state visible: false
+Loading state visible: false
+
+Step 7: Checking browser state
+Browser State: {
+  "localStorage": {
+    "debugMode": "false"
+  },
+  "currentUrl": "http://localhost:3006/",
+  "currentPath": "/"
+}
+
+=== CONSOLE LOG ANALYSIS ===
+
+Total console messages: 11
+
+"Project changed effect triggered" logs: 0
+
+"Loading ideas for project" logs: 0
+
+"DIAGNOSTIC: Fetching ideas" logs: 0
+
+"DIAGNOSTIC: API response" logs: 0
+
+"DIAGNOSTIC: API returned" logs: 0
+
+Error logs: 0
+
+Warning logs: 3
+  - Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+  - %cWARN %c [useCsrfToken] No CSRF token found in cookie 
+  - %cWARN %c [useCsrfToken] No CSRF token found in cookie 
+
+=== API REQUEST ANALYSIS ===
+
+Total API requests: 0
+
+=== LAST 50 CONSOLE MESSAGES ===
+
+1. [2025-10-02T00:08:21.359Z] [DEBUG] [vite] connecting...
+2. [2025-10-02T00:08:21.360Z] [DEBUG] [vite] connected.
+3. [2025-10-02T00:08:21.401Z] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+4. [2025-10-02T00:08:21.404Z] [WARNING] Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
+5. [2025-10-02T00:08:21.484Z] [WARNING] %cWARN %c [useCsrfToken] No CSRF token found in cookie 
+6. [2025-10-02T00:08:21.484Z] [WARNING] %cWARN %c [useCsrfToken] No CSRF token found in cookie 
+7. [2025-10-02T00:08:21.554Z] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o
+8. [2025-10-02T00:08:23.639Z] [LOG] %cINFO %c [AuthScreen] 🎭 Signing in as anonymous demo user... 
+9. [2025-10-02T00:08:23.882Z] [LOG] %cINFO %c [AuthScreen] ✅ Anonymous user signed in: {id: 3fa226c6-27c5-4de3-b2d3-1434e226e588, isAnonymous: true, createdAt: 2025-10-02T00:08:23.80588Z}
+10. [2025-10-02T00:08:23.882Z] [LOG] %cINFO %c [AuthScreen] ✅ Demo user authenticated successfully with Supabase session 
+11. [2025-10-02T00:08:23.882Z] [DEBUG] [AuthMigration] handleAuthSuccess called (no-op with httpOnly cookies)
+
+=== INVESTIGATION V2 COMPLETE ===
+
+  ✓  1 tests/investigate-ideas-v2.spec.ts:3:1 › Investigate Ideas Loading - Demo User Flow (28.4s)
+
+  1 passed (29.2s)
+
+To open last HTML report run:
+
+  npx playwright show-report test-results/html-report
+

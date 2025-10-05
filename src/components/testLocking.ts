@@ -1,17 +1,20 @@
+/* eslint-disable no-console */
 /**
  * Simple browser console test functions for locking
  * Copy and paste these into browser console
  */
+
+import { logger } from '../lib/logging'
 
 // Test functions for browser console
 const testLocking = {
 
   // Check current lock states visible on page
   checkVisibleLocks() {
-    console.log('🔍 Checking visible lock states...')
+    logger.debug('Checking visible lock states')
 
     const cards = document.querySelectorAll('[class*="idea"]')
-    console.log(`Found ${cards.length} potential idea elements`)
+    logger.debug('Found potential idea elements', { count: cards.length })
 
     let foundLocks = 0
 
@@ -23,7 +26,8 @@ const testLocking = {
                               card.querySelector('[class*="edit"]')
 
       if (hasLockIndicator) {
-        console.log(`🔒 Found locked card ${index}:`, {
+        logger.debug('Found locked card', {
+          index,
           element: card,
           textContent: card.textContent?.substring(0, 100),
           classList: Array.from(card.classList)
@@ -32,7 +36,7 @@ const testLocking = {
       }
     })
 
-    console.log(`Found ${foundLocks} cards with lock indicators`)
+    logger.debug('Cards with lock indicators found', { count: foundLocks })
     return foundLocks
   },
 
@@ -43,11 +47,11 @@ const testLocking = {
                  document.querySelector('div[class*="fixed"][class*="inset-0"]')
 
     const isOpen = !!modal
-    console.log('📝 Edit modal open:', isOpen)
+    logger.debug('Edit modal open', { isOpen })
 
     if (isOpen) {
-      console.log('Modal element:', modal)
-      console.log('Modal content:', modal?.textContent?.substring(0, 200))
+      logger.debug('Modal element', { modal })
+      logger.debug('Modal content', { content: modal?.textContent?.substring(0, 200) })
     }
 
     return isOpen
@@ -55,8 +59,8 @@ const testLocking = {
 
   // Simple manual test instructions
   runManualTest() {
-    console.log(`
-🧪 MANUAL LOCKING TEST - INSTRUCTIONS:
+    logger.info(`
+MANUAL LOCKING TEST - INSTRUCTIONS:
 
 Current situation: Edit modal appears to be open in this browser.
 
@@ -67,7 +71,7 @@ Current situation: Edit modal appears to be open in this browser.
 
 Expected behavior:
 - The card being edited in THIS tab should show as locked in the OTHER tab
-- You should see a 🔒 "Someone editing" indicator
+- You should see a lock "Someone editing" indicator
 
 Let's check current state:
 `)
@@ -75,7 +79,7 @@ Let's check current state:
     this.checkModalOpen()
     this.checkVisibleLocks()
 
-    console.log(`
+    logger.info(`
 Next steps:
 1. Open second browser tab
 2. Run: testLocking.checkVisibleLocks() in the second tab

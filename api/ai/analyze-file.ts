@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
-import { authenticate, checkUserRateLimit } from '../auth/middleware.js'
+import { authenticate, checkUserRateLimit } from '../auth/middleware'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -31,26 +31,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'File ID and Project ID are required' })
     }
     
-    // Initialize Supabase client
+    // Initialize Supabase client with service role key for admin access
     const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY
-    
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY
+
+    // Use service role key if available (bypasses RLS), otherwise use anon key
+    const supabaseKey = supabaseServiceKey || supabaseAnonKey
+
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase configuration missing' })
     }
+
+    console.log('🔑 Using Supabase key type:', supabaseServiceKey ? 'service_role (admin)' : 'anon (user)')
+
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    })
     
-    const supabase = createClient(supabaseUrl, supabaseKey)
-    
-    // Get the file record
-    const { data: fileRecord, error: fileError } = await supabase
-      .from('project_files')
-      .select('*')
-      .eq('id', fileId)
-      .eq('project_id', projectId)
-      .single()
-    
+    // Get the file record with retry logic (handle race conditions)
+    let fileRecord = null
+    let fileError = null
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const { data, error } = await supabase
+        .from('project_files')
+        .select('*')
+        .eq('id', fileId)
+        .eq('project_id', projectId)
+        .single()
+
+      if (!error && data) {
+        fileRecord = data
+        break
+      }
+
+      fileError = error
+
+      if (attempt < 3) {
+        console.log(`⏳ File not found on attempt ${attempt}, retrying in ${attempt * 500}ms...`)
+        await new Promise(resolve => setTimeout(resolve, attempt * 500))
+      }
+    }
+
     if (fileError || !fileRecord) {
-      console.error('❌ File not found:', fileError)
+      console.error('❌ File not found after 3 attempts:', fileError)
       return res.status(404).json({ error: 'File not found' })
     }
     

@@ -1,0 +1,260 @@
+/**
+ * ENTERPRISE DESIGN TOKENS
+ *
+ * Comprehensive design system for professional matrix interface.
+ * All values are optimized for accessibility, performance, and visual hierarchy.
+ */
+
+:root {
+  /* ===== COLOR SYSTEM ===== */
+
+  /* Brand Colors - Professional Blue Palette */
+  --color-brand-primary: #3b82f6;       /* Blue 500 */
+  --color-brand-secondary: #1e40af;     /* Blue 700 */
+  --color-brand-accent: #60a5fa;        /* Blue 400 */
+  --color-brand-light: #dbeafe;         /* Blue 100 */
+  --color-brand-surface: #eff6ff;       /* Blue 50 */
+
+  /* CRITICAL: Core Brand Surface Variable (used by cards) */
+  --brand-surface: #ffffff;             /* White background for cards */
+
+  /* Matrix Quadrant Colors - WCAG AAA Compliant */
+  --color-success-50: #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+
+  --color-strategic-50: #eff6ff;
+  --color-strategic-100: #dbeafe;
+  --color-strategic-500: #3b82f6;
+  --color-strategic-600: #2563eb;
+  --color-strategic-700: #1d4ed8;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+
+  /* Neutral System - Enhanced Contrast */
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1e293b;
+  --color-neutral-900: #0f172a;
+
+  /* CRITICAL: Short-hand neutral variables (used by components) */
+  --neutral-50: #f9fafb;
+  --neutral-100: #f3f4f6;
+  --neutral-200: #e5e7eb;
+  --neutral-300: #d1d5db;
+  --neutral-500: #6b7280;
+  --neutral-700: #374151;
+  --neutral-800: #1f2937;
+
+  /* CRITICAL: Status colors (used by card components) */
+  --status-pending: #f59e0b;
+  --status-pending-bg: #fef3c7;
+  --status-overdue: #ef4444;
+  --status-overdue-bg: #fee2e2;
+  --status-upcoming: #10b981;
+  --status-upcoming-bg: #d1fae5;
+  --status-priority: #8b5cf6;
+  --status-priority-bg: #ede9fe;
+
+  /* CRITICAL: Semantic colors (used by components) */
+  --semantic-error: #dc2626;
+  --semantic-error-bg: #fef2f2;
+  --semantic-info: #2563eb;
+  --semantic-info-bg: #dbeafe;
+
+  /* CRITICAL: Interactive colors (used by components) */
+  --interactive-focus: #3b82f6;
+
+  /* ===== SPACING SCALE ===== */
+  --space-xs: 0.25rem;    /* 4px */
+  --space-sm: 0.5rem;     /* 8px */
+  --space-md: 1rem;       /* 16px */
+  --space-lg: 1.5rem;     /* 24px */
+  --space-xl: 2rem;       /* 32px */
+  --space-2xl: 3rem;      /* 48px */
+  --space-3xl: 4rem;      /* 64px */
+
+  /* CRITICAL: Numeric Spacing Variables (used by card components) */
+  --space-1: 0.25rem;     /* 4px */
+  --space-2: 0.5rem;      /* 8px */
+  --space-3: 0.75rem;     /* 12px */
+  --space-4: 1rem;        /* 16px */
+  --space-6: 1.5rem;      /* 24px */
+  --space-8: 2rem;        /* 32px */
+
+  /* ===== TYPOGRAPHY SCALE ===== */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.875rem;    /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg: 1.125rem;    /* 18px */
+  --text-xl: 1.25rem;     /* 20px */
+  --text-2xl: 1.5rem;     /* 24px */
+  --text-3xl: 1.875rem;   /* 30px */
+
+  /* Font Weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Line Heights */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  /* ===== BORDER RADIUS SYSTEM ===== */
+  --radius-sm: 0.375rem;   /* 6px */
+  --radius-md: 0.5rem;     /* 8px */
+  --radius-lg: 0.75rem;    /* 12px */
+  --radius-xl: 1rem;       /* 16px */
+  --radius-2xl: 1.5rem;    /* 24px */
+  --radius-full: 9999px;
+
+  /* CRITICAL: Card-specific radius (used by components) */
+  --radius-card: 0.75rem;  /* 12px - matches radius-lg */
+
+  /* ===== SHADOW SYSTEM ===== */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+  /* Interactive Shadows */
+  --shadow-card: var(--shadow-sm);
+  --shadow-card-hover: var(--shadow-lg);
+  --shadow-card-active: var(--shadow-xl);
+
+  /* CRITICAL: Additional shadow definitions (used by components) */
+  --shadow-focus: 0 0 0 2px rgba(59, 130, 246, 0.2);
+
+  /* ===== Z-INDEX HIERARCHY ===== */
+  --z-behind: -1;
+  --z-default: 0;
+  --z-above: 1;
+  --z-navigation: 10;
+  --z-card-base: 100;
+  --z-card-hover: 200;
+  --z-card-active: 300;
+  --z-overlay: 1000;
+  --z-modal: 2000;
+  --z-tooltip: 3000;
+  --z-notification: 4000;
+
+  /* ===== ANIMATION SYSTEM ===== */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 350ms;
+  --duration-slower: 500ms;
+
+  /* CRITICAL: Numeric duration variables (used by components) */
+  --duration-150: 150ms;
+  --duration-200: 200ms;
+
+  /* Easing Functions */
+  --ease-out: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0.0, 1, 1);
+  --ease-in-out: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* ===== GLASS MORPHISM SYSTEM ===== */
+  --glass-background: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-blur: blur(16px);
+  --glass-saturate: saturate(140%);
+
+  /* ===== INTERACTION STATES ===== */
+  --hover-scale: 1.02;
+  --active-scale: 0.98;
+  --focus-ring: 2px solid var(--color-brand-primary);
+  --focus-offset: 2px;
+
+  /* ===== BACKDROP SYSTEM ===== */
+  --backdrop-blur-sm: blur(4px);
+  --backdrop-blur-md: blur(8px);
+  --backdrop-blur-lg: blur(16px);
+  --backdrop-blur-xl: blur(24px);
+
+  /* ===== CARD SYSTEM ===== */
+  --card-padding: var(--space-lg);
+  --card-radius: var(--radius-xl);
+  --card-border: 1px solid var(--color-neutral-200);
+  --card-background: var(--color-neutral-0);
+
+  /* ===== MATRIX SPECIFIC TOKENS ===== */
+  --matrix-grid-color: var(--color-neutral-300);
+  --matrix-center-line: var(--color-neutral-400);
+  --matrix-quadrant-padding: var(--space-xl);
+  --matrix-card-gap: var(--space-md);
+  --matrix-canvas-radius: var(--radius-2xl);
+
+  /* Matrix Background Gradient */
+  --matrix-bg-gradient: linear-gradient(135deg,
+    rgba(248, 250, 252, 0.95) 0%,
+    rgba(239, 246, 255, 0.9) 25%,
+    rgba(238, 242, 255, 0.85) 50%,
+    rgba(241, 245, 249, 0.9) 75%,
+    rgba(248, 250, 252, 0.95) 100%
+  );
+}
+
+/* ===== DARK MODE SUPPORT ===== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Adjust colors for dark mode while maintaining contrast ratios */
+    --color-neutral-0: #0f172a;
+    --color-neutral-50: #1e293b;
+    --color-neutral-100: #334155;
+    --color-neutral-900: #f8fafc;
+
+    --glass-background: rgba(15, 23, 42, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.1);
+
+    --matrix-bg-gradient: linear-gradient(135deg,
+      rgba(15, 23, 42, 0.95) 0%,
+      rgba(30, 41, 59, 0.9) 25%,
+      rgba(51, 65, 85, 0.85) 50%,
+      rgba(30, 41, 59, 0.9) 75%,
+      rgba(15, 23, 42, 0.95) 100%
+    );
+  }
+}
+
+/* ===== REDUCED MOTION SUPPORT ===== */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-normal: 0ms;
+    --duration-slow: 0ms;
+    --duration-slower: 0ms;
+  }
+}
+
+/* ===== HIGH CONTRAST MODE ===== */
+@media (prefers-contrast: high) {
+  :root {
+    --shadow-card: none;
+    --shadow-card-hover: 0 0 0 2px var(--color-brand-primary);
+    --glass-background: var(--color-neutral-0);
+    --glass-border: var(--color-neutral-900);
+  }
+}

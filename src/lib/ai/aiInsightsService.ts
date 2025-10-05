@@ -1,9 +1,12 @@
 import { IdeaCard } from '../../types'
-import { logger } from '../../utils/logger'
+import { logger as newLogger } from '../logging'
 import { aiCache, AICache } from '../aiCache'
 import { FileService } from '../fileService'
 import { OpenAIModelRouter, TaskContext, AITaskType, OpenAIModel } from './openaiModelRouter'
 import { IntelligentMockDataService } from './intelligentMockData'
+
+// Create scoped logger for AI insights service
+const logger = newLogger.withContext({ component: 'AIInsightsService' })
 
 interface ProjectContext {
   name?: string
@@ -101,7 +104,7 @@ export class AIInsightsService {
       // In a real implementation, get actual auth token
       headers['Authorization'] = 'Bearer placeholder-token'
     } catch (error) {
-      logger.warn('Failed to get auth headers:', error)
+      logger.warn('Failed to get auth headers:', { error: error instanceof Error ? error.message : String(error) })
     }
 
     return headers
@@ -118,7 +121,7 @@ export class AIInsightsService {
     currentProject?: any,
     preferredModel?: OpenAIModel
   ): Promise<InsightsReport> {
-    logger.debug('🔍 Generating insights for', (ideas || []).length, 'ideas')
+    logger.debug('🔍 Generating insights', { ideaCount: (ideas || []).length })
 
     // Build context for intelligent model selection
     const context = await this.buildInsightsContext(projectId, currentProject)
@@ -147,7 +150,7 @@ export class AIInsightsService {
 
     // Override with preferred model if specified by user
     if (preferredModel) {
-      logger.debug('🎛️ User selected model override:', preferredModel)
+      logger.debug('🎛️ User selected model override:', { model: preferredModel })
       modelSelection = {
         ...modelSelection,
         model: preferredModel,
@@ -280,7 +283,7 @@ export class AIInsightsService {
         tags: currentProject.tags,
         aiAnalysis: currentProject.ai_analysis
       }
-      logger.debug('📋 Project context extracted:', projectContext.name, projectContext.type)
+      logger.debug('📋 Project context extracted:', { name: projectContext.name, type: projectContext.type })
     }
 
     if (projectId) {
@@ -300,7 +303,7 @@ export class AIInsightsService {
         documentContext = await this.buildDocumentContext(projectId)
 
       } catch (error) {
-        logger.warn('Could not fetch additional project context:', error)
+        logger.warn('Could not fetch additional project context:', { error: error instanceof Error ? error.message : String(error) })
       }
     }
 
@@ -346,7 +349,7 @@ export class AIInsightsService {
       return documentContext
 
     } catch (error) {
-      logger.warn('Could not load project files from backend:', error)
+      logger.warn('Could not load project files from backend:', { error: error instanceof Error ? error.message : String(error) })
       return []
     }
   }
@@ -615,9 +618,11 @@ export class AIInsightsService {
       textDocs: textFiles.length
     })
 
-    logger.debug('📄 All file types being analyzed:', documentContext.map(doc => doc.type).join(', '))
+    logger.debug('All file types being analyzed', {
+      fileTypes: documentContext.map(doc => doc.type).join(', ')
+    })
 
-    console.log('🎯 AI INSIGHTS SERVICE: ALL FILES loaded:', {
+    logger.info('All files loaded for analysis', {
       totalFiles: documentContext.length,
       imageFiles: imageFiles.length,
       audioVideoFiles: audioFiles.length,
@@ -859,7 +864,7 @@ export class AIInsightsService {
     projectId?: string,
     currentProject?: any
   ): Promise<{ risks: string[], mitigations: string[] }> {
-    logger.debug('🛡️ Generating comprehensive risk assessment for', (ideas || []).length, 'ideas')
+    logger.debug('🛡️ Generating comprehensive risk assessment', { ideaCount: (ideas || []).length })
 
     // Build context for intelligent model selection
     const context = await this.buildInsightsContext(projectId, currentProject)

@@ -1,0 +1,82 @@
+{
+  "summary": {
+    "totalTests": 21,
+    "passedTests": 13,
+    "failedTests": 8,
+    "successRate": "62%"
+  },
+  "securityScore": 40,
+  "issues": {
+    "critical": 1,
+    "high": 4,
+    "medium": 0
+  },
+  "details": [
+    {
+      "severity": "CRITICAL",
+      "category": "Environment Variables",
+      "description": "Server-side code using client-side environment variables (VITE_*)",
+      "location": "api/auth/middleware.ts",
+      "recommendation": "Separate client and server environment variables",
+      "timestamp": "2025-09-23T01:12:28.999Z"
+    },
+    {
+      "severity": "HIGH",
+      "category": "Token Security",
+      "description": "Token cache stores sensitive data without encryption",
+      "location": "api/auth/middleware.ts",
+      "recommendation": "Implement encrypted token storage or use secure session management",
+      "timestamp": "2025-09-23T01:12:28.999Z"
+    },
+    {
+      "severity": "HIGH",
+      "category": "CSRF Protection",
+      "description": "No CSRF protection mechanisms implemented",
+      "location": "api/auth/middleware.ts",
+      "recommendation": "Implement CSRF tokens or double-submit cookie pattern",
+      "timestamp": "2025-09-23T01:12:28.999Z"
+    },
+    {
+      "severity": "HIGH",
+      "category": "Access Control",
+      "description": "Admin roles hardcoded in source code",
+      "location": "api/auth/roles.ts",
+      "recommendation": "Move role management to database with proper audit trail",
+      "timestamp": "2025-09-23T01:12:29.000Z"
+    },
+    {
+      "severity": "HIGH",
+      "category": "Access Control",
+      "description": "Role assignment logic present in client-side code",
+      "location": "src/hooks/useAuth.ts",
+      "recommendation": "Move all role assignment to server-side only",
+      "timestamp": "2025-09-23T01:12:29.000Z"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "IMMEDIATE",
+      "action": "Fix environment variable inconsistencies",
+      "timeline": "1-2 days",
+      "impact": "Prevents authentication failures in production"
+    },
+    {
+      "priority": "HIGH",
+      "action": "Implement secure token caching",
+      "timeline": "3-7 days",
+      "impact": "Prevents session fixation and token reuse attacks"
+    },
+    {
+      "priority": "HIGH",
+      "action": "Add CSRF protection mechanisms",
+      "timeline": "5-10 days",
+      "impact": "Prevents cross-site request forgery attacks"
+    },
+    {
+      "priority": "HIGH",
+      "action": "Migrate role management to database",
+      "timeline": "1-2 weeks",
+      "impact": "Prevents privilege escalation and improves maintainability"
+    }
+  ]
+}

@@ -1,0 +1,564 @@
+/**
+ * Matrix Layout Performance Optimizations
+ *
+ * Specialized CSS for optimized matrix layout transitions,
+ * reduced layout thrashing, and smooth sidebar expansion behavior.
+ */
+
+/* ============================================
+   Core Matrix Container Optimizations
+   ============================================ */
+
+.matrix-container-optimized {
+  /* GPU acceleration and containment */
+  contain: layout style paint;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: width, height;
+
+  /* Optimize for layout transitions */
+  isolation: isolate;
+
+  /* Prevent layout thrashing during transitions */
+  overflow: hidden;
+
+  /* Smooth transitions for dimension changes */
+  transition:
+    width 300ms cubic-bezier(0.4, 0.0, 0.2, 1),
+    height 300ms cubic-bezier(0.4, 0.0, 0.2, 1),
+    transform 300ms cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Optimized state during layout calculations */
+.matrix-container-optimized.calculating {
+  /* Temporarily disable transitions during rapid calculations */
+  transition: none;
+  pointer-events: none;
+}
+
+/* Transitioning state with enhanced performance */
+.matrix-container-optimized.transitioning {
+  /* Enhanced GPU acceleration during transitions */
+  transform: translateZ(0);
+  will-change: width, height, transform;
+
+  /* Optimize for smooth transitions */
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* ============================================
+   Sidebar Expansion Animation Coordination
+   ============================================ */
+
+/* Root container for sidebar-aware layout */
+.matrix-workspace-root {
+  /* Coordinate layout across the entire workspace */
+  contain: layout;
+  isolation: isolate;
+
+  /* No transitions - CSS Grid handles layout smoothly */
+  transition: none;
+}
+
+/* Sidebar collapsed state coordination */
+.matrix-workspace-root.sidebar-collapsed {
+  /* Synchronized margin adjustment */
+  margin-left: 80px;
+}
+
+/* Sidebar expanded state coordination */
+.matrix-workspace-root.sidebar-expanded {
+  /* Synchronized margin adjustment */
+  margin-left: 350px;
+}
+
+/* Matrix canvas during sidebar transitions */
+.matrix-canvas-during-sidebar-transition {
+  /* Prevent reflow during sidebar animation */
+  transform: translateZ(0);
+  will-change: transform;
+
+  /* Coordinate with sidebar timing */
+  transition: transform 300ms cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* ============================================
+   Idea Card Performance During Layout Changes
+   ============================================ */
+
+/* Optimize idea cards during matrix transitions */
+.idea-card-layout-optimized {
+  /* GPU acceleration for position changes */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+
+  /* Contain layout to prevent reflow propagation */
+  contain: layout style paint;
+
+  /* Only set will-change during actual transitions */
+  will-change: auto;
+
+  /* Optimized transition - faster for better responsiveness */
+  transition: transform 200ms cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Cards during rapid sidebar toggles */
+.idea-card-layout-optimized.rapid-transition {
+  /* Temporarily disable expensive effects */
+  box-shadow: none;
+  filter: none;
+  backdrop-filter: none;
+
+  /* Prioritize transform performance only during transition */
+  will-change: transform;
+  transition-duration: 150ms; /* Faster during rapid changes */
+}
+
+/* Cards in static state (no ongoing transitions) */
+.idea-card-layout-optimized.static {
+  /* Reset will-change to optimize memory */
+  will-change: auto;
+
+  /* Re-enable visual effects with optimized transitions */
+  transition:
+    transform 180ms cubic-bezier(0.4, 0.0, 0.2, 1),
+    box-shadow 180ms cubic-bezier(0.4, 0.0, 0.2, 1);
+  /* Remove filter transition to prevent conflicts */
+}
+
+/* ============================================
+   Viewport Change Performance
+   ============================================ */
+
+/* Optimized resize behavior */
+.matrix-during-viewport-change {
+  /* Minimize reflow during resize */
+  contain: strict;
+
+  /* GPU acceleration for smooth scaling */
+  transform: translateZ(0);
+  will-change: width, height;
+
+  /* Coordinate resize timing */
+  transition:
+    width 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    height 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ============================================
+   Reduced Motion Support
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .matrix-container-optimized,
+  .matrix-workspace-root,
+  .matrix-canvas-during-sidebar-transition,
+  .idea-card-layout-optimized,
+  .matrix-during-viewport-change {
+    /* Instant transitions for accessibility */
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================
+   High Refresh Rate Display Optimizations
+   ============================================ */
+
+@media (min-resolution: 120dpi) and (min-refresh-rate: 90hz) {
+  .matrix-container-optimized {
+    /* Shorter transition for high refresh displays */
+    transition-duration: 200ms;
+  }
+
+  .idea-card-layout-optimized {
+    /* More responsive cards on high refresh */
+    transition-duration: 150ms;
+  }
+}
+
+/* ============================================
+   Mobile Performance Optimizations
+   ============================================ */
+
+@media (max-width: 768px) {
+  .matrix-container-optimized {
+    /* Simplified transitions for mobile */
+    transition: width 200ms ease-out, height 200ms ease-out;
+
+    /* Aggressive containment for mobile performance */
+    contain: strict;
+  }
+
+  .idea-card-layout-optimized {
+    /* Minimal transitions on mobile */
+    transition: transform 150ms ease-out;
+  }
+
+  /* Disable expensive effects on mobile during transitions */
+  .matrix-container-optimized.transitioning .idea-card-layout-optimized {
+    box-shadow: none;
+    backdrop-filter: none;
+    filter: none;
+  }
+}
+
+/* ============================================
+   Layout Shift Optimization
+   ============================================ */
+
+/* Prevent layout shifts during dimension changes */
+.matrix-layout-stable {
+  /* Reserve space to prevent CLS */
+  min-height: 400px;
+  min-width: 600px;
+
+  /* Stable positioning */
+  position: relative;
+
+  /* Prevent unexpected dimension changes */
+  box-sizing: border-box;
+}
+
+/* Content visibility optimization for off-screen elements */
+.matrix-content-optimized {
+  /* Optimize rendering of off-screen content */
+  content-visibility: auto;
+  contain-intrinsic-size: 800px 600px;
+}
+
+/* ============================================
+   Composite Layer Optimizations
+   ============================================ */
+
+/* Force composite layer for matrix elements */
+.matrix-composite-layer {
+  /* Create dedicated composite layer */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+
+  /* Optimize layer creation */
+  isolation: isolate;
+  transform-style: preserve-3d;
+
+  /* Hint for GPU acceleration */
+  will-change: transform, opacity;
+}
+
+/* Optimize layer stacking during transitions */
+.matrix-transition-layers {
+  /* Z-index optimization during transitions */
+  z-index: var(--z-index-matrix-transition);
+
+  /* Layer isolation */
+  isolation: isolate;
+
+  /* Prevent layer creation conflicts */
+  position: relative;
+}
+
+/* ============================================
+   Animation Coordination Classes
+   ============================================ */
+
+/* Coordinated sidebar expansion animation */
+@keyframes sidebar-expansion-matrix-adjust {
+  from {
+    transform: translateX(-160px); /* 240px - 80px sidebar difference */
+    width: calc(100vw - 80px);
+  }
+  to {
+    transform: translateX(0);
+    width: calc(100vw - 240px);
+  }
+}
+
+/* Coordinated sidebar collapse animation */
+@keyframes sidebar-collapse-matrix-adjust {
+  from {
+    transform: translateX(0);
+    width: calc(100vw - 240px);
+  }
+  to {
+    transform: translateX(-176px);
+    width: calc(100vw - 80px);
+  }
+}
+
+/* Apply coordinated animations */
+.matrix-sidebar-expanding {
+  animation: sidebar-expansion-matrix-adjust 300ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+.matrix-sidebar-collapsing {
+  animation: sidebar-collapse-matrix-adjust 300ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+/* ============================================
+   CSS Grid Layout System for Sidebar/Content
+   ============================================ */
+
+/* Root application grid container */
+.app-layout-grid {
+  display: grid;
+  min-height: 100vh;
+  width: 100vw;
+  /* Two-column grid: sidebar | main content */
+  grid-template-columns: var(--sidebar-width, 350px) 1fr;
+  grid-template-areas: "sidebar main";
+  /* No gaps between sidebar and main content */
+  gap: 0;
+
+  /* Optimized transition - only animate grid columns for smooth resizing */
+  transition: grid-template-columns 250ms cubic-bezier(0.4, 0.0, 0.2, 1);
+
+  /* Performance optimizations */
+  contain: layout;
+  isolation: isolate;
+
+  /* Ensure proper positioning and prevent viewport clipping */
+  position: relative;
+  left: 0;
+  top: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* Collapsed sidebar state */
+.app-layout-grid.sidebar-collapsed {
+  grid-template-columns: var(--sidebar-width, 80px) 1fr;
+}
+
+/* Expanded sidebar state */
+.app-layout-grid.sidebar-expanded {
+  grid-template-columns: var(--sidebar-width, 350px) 1fr;
+}
+
+/* Sidebar grid area */
+.app-layout-grid__sidebar {
+  grid-area: sidebar;
+  /* Ensure sidebar stays in its grid area */
+  overflow: visible; /* Changed from hidden to visible to prevent clipping */
+
+  /* Performance optimizations */
+  contain: layout style;
+  transform: translateZ(0);
+
+  /* Background and styling */
+  background-color: var(--brand-background, #FAFAFA);
+  border-right: 1px solid var(--neutral-200, #E4E4E7);
+
+  /* Ensure full width and proper positioning */
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  left: 0;
+  top: 0;
+}
+
+/* Sidebar navigation component styles */
+.sidebar-nav {
+  /* Remove width and position overrides - let CSS Grid control layout */
+  width: 100% !important;
+  height: 100vh;
+  transition: none; /* Remove transitions that conflict with grid transitions */
+  animation: none; /* Remove animations that conflict with grid layout */
+  position: static !important; /* Let CSS Grid control positioning */
+  flex-shrink: 0;
+  contain: layout style; /* Optimize rendering performance */
+}
+
+/* State classes for sidebar (no layout changes, just for internal content) */
+.sidebar-nav.sidebar-collapsed {
+  /* Content-specific changes only - no layout changes */
+}
+
+.sidebar-nav.sidebar-expanded {
+  /* Content-specific changes only - no layout changes */
+}
+
+/* Main content grid area */
+.app-layout-grid__main {
+  grid-area: main;
+  /* Allow content to fill available space */
+  min-width: 0;
+  width: 100%;
+
+  /* Performance optimizations */
+  contain: layout;
+  transform: translateZ(0);
+
+  /* Ensure full height usage */
+  min-height: 100vh;
+
+  /* Critical: Remove any margins or positioning that might interfere with CSS Grid */
+  margin: 0;
+  padding: 0;
+  position: static; /* Ensure grid controls positioning */
+  left: auto; /* Reset any absolute positioning */
+  right: auto;
+
+  /* Background fills the full width */
+  background-color: var(--brand-surface, #FFFFFF);
+}
+
+/* Enhanced transition states */
+.app-layout-grid.transitioning {
+  /* Enhanced GPU acceleration during transitions */
+  transform: translateZ(0);
+  will-change: grid-template-columns;
+
+  /* Optimize for smooth transitions */
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Static state after transitions complete */
+.app-layout-grid.static {
+  /* Reset will-change to optimize memory */
+  will-change: auto;
+
+  /* Ensure proper composite layer handling */
+  transform: translateZ(0);
+}
+
+/* Matrix workspace within the main grid area */
+.app-layout-grid__main .matrix-workspace {
+  /* Full dimensions within the grid area */
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+
+  /* Remove any positioning that might interfere */
+  position: relative;
+
+  /* Ensure background covers full area */
+  background-color: inherit;
+
+  /* Performance optimizations */
+  contain: layout style;
+  overflow: hidden;
+}
+
+/* DndContext container within grid */
+.app-layout-grid__main .dnd-context-container {
+  /* Full dimensions */
+  width: 100%;
+  height: 100vh;
+
+  /* Flexbox for internal layout */
+  display: flex;
+  flex-direction: column;
+
+  /* Performance optimizations */
+  contain: layout;
+}
+
+/* ============================================
+   Responsive Grid Behavior
+   ============================================ */
+
+@media (max-width: 768px) {
+  .app-layout-grid {
+    /* Stack on mobile - sidebar above content */
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "sidebar"
+      "main";
+  }
+
+  .app-layout-grid.sidebar-collapsed,
+  .app-layout-grid.sidebar-expanded {
+    /* Same grid layout on mobile regardless of sidebar state */
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .app-layout-grid__sidebar {
+    /* Remove border on mobile */
+    border-right: none;
+    border-bottom: 1px solid var(--neutral-200, #E4E4E7);
+  }
+
+  .app-layout-grid__main {
+    /* Ensure proper height on mobile */
+    min-height: calc(100vh - var(--mobile-sidebar-height, 60px));
+  }
+}
+
+/* ============================================
+   Reduced Motion Support for Grid
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .app-layout-grid {
+    /* Instant transitions for accessibility */
+    transition-duration: 0.01ms !important;
+  }
+
+  .app-layout-grid.transitioning {
+    /* No transition animations */
+    will-change: auto;
+    animation: none;
+  }
+}
+
+/* ============================================
+   Performance Monitoring Integration
+   ============================================ */
+
+/* Visual indicator for performance monitoring */
+.matrix-performance-indicator {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: var(--z-index-performance-monitor);
+  font-size: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.matrix-performance-indicator.warning {
+  background: rgba(255, 165, 0, 0.7);
+}
+
+.matrix-performance-indicator.error {
+  background: rgba(255, 0, 0, 0.7);
+}
+
+/* ============================================
+   Browser-Specific Optimizations
+   ============================================ */
+
+/* Chrome/Edge optimizations */
+@supports (-webkit-appearance: none) {
+  .matrix-container-optimized {
+    /* Enable hardware acceleration in Webkit */
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+  }
+}
+
+/* Firefox optimizations */
+@supports (-moz-appearance: none) {
+  .matrix-container-optimized {
+    /* Optimize for Firefox's rendering engine */
+    will-change: transform;
+  }
+}
+
+/* Safari optimizations */
+@supports (-webkit-overflow-scrolling: touch) {
+  .matrix-container-optimized {
+    /* Optimize for Safari's touch handling */
+    -webkit-overflow-scrolling: touch;
+    -webkit-transform: translateZ(0);
+  }
+}

@@ -1,0 +1,102 @@
+[
+  {
+    "type": "debug",
+    "text": "[vite] connecting...",
+    "timestamp": 1759365096301
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+    "timestamp": 1759365096317
+  },
+  {
+    "type": "warning",
+    "text": "Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.",
+    "timestamp": 1759365096322
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected.",
+    "timestamp": 1759365096404
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting...",
+    "timestamp": 1759365096473
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected.",
+    "timestamp": 1759365096473
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+    "timestamp": 1759365096518
+  },
+  {
+    "type": "warning",
+    "text": "Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.",
+    "timestamp": 1759365096518
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+    "timestamp": 1759365096665
+  },
+  {
+    "type": "log",
+    "text": "%cINFO %c [AuthScreen] 🎭 Signing in as anonymous demo user... ",
+    "timestamp": 1759365096692
+  },
+  {
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "timestamp": 1759365097150
+  },
+  {
+    "type": "error",
+    "text": "[ERROR] ❌ Error fetching user profile: Error: Profile fetch failed: 500\n    at http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:209:17\n    at async getCachedUserProfile (http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:222:22)\n    at async Promise.allSettled (index 0)\n    at async http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:277:57\n    at async http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:386:7\n    at async Object.callback (http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:584:9)\n    at async http://localhost:3003/node_modules/.vite/deps/@supabase_supabase-js.js?v=27ee24dc:7356:11\n    at async Promise.all (index 1)\n    at async SupabaseAuthClient._notifyAllSubscribers (http://localhost:3003/node_modules/.vite/deps/@supabase_supabase-js.js?v=27ee24dc:7361:7)\n    at async SupabaseAuthClient.signInAnonymously (http://localhost:3003/node_modules/.vite/deps/@supabase_supabase-js.js?v=27ee24dc:5906:9)",
+    "timestamp": 1759365097151
+  },
+  {
+    "type": "error",
+    "text": "[ERROR] ❌ Error fetching user profile, using fallback: Error: Profile fetch failed: 500\n    at http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:209:17\n    at async getCachedUserProfile (http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:222:22)\n    at async Promise.allSettled (index 0)\n    at async http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:277:57\n    at async http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:386:7\n    at async Object.callback (http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:584:9)\n    at async http://localhost:3003/node_modules/.vite/deps/@supabase_supabase-js.js?v=27ee24dc:7356:11\n    at async Promise.all (index 1)\n    at async SupabaseAuthClient._notifyAllSubscribers (http://localhost:3003/node_modules/.vite/deps/@supabase_supabase-js.js?v=27ee24dc:7361:7)\n    at async SupabaseAuthClient.signInAnonymously (http://localhost:3003/node_modules/.vite/deps/@supabase_supabase-js.js?v=27ee24dc:5906:9)",
+    "timestamp": 1759365097302
+  },
+  {
+    "type": "log",
+    "text": "%cINFO %c [AuthScreen] ✅ Anonymous user signed in: {id: a0fabef1-bf5b-4e02-8137-e2376918a5a0, isAnonymous: true, createdAt: 2025-10-02T00:31:36.937188Z}",
+    "timestamp": 1759365097304
+  },
+  {
+    "type": "log",
+    "text": "%cINFO %c [AuthScreen] ✅ Demo user authenticated successfully with Supabase session ",
+    "timestamp": 1759365097304
+  },
+  {
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+    "timestamp": 1759365097409
+  },
+  {
+    "type": "error",
+    "text": "[ERROR] ❌ Error fetching user profile: Error: Profile fetch failed: 500\n    at http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:209:17\n    at async getCachedUserProfile (http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:222:22)\n    at async Promise.allSettled (index 0)\n    at async http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:277:57\n    at async http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:386:7",
+    "timestamp": 1759365097409
+  },
+  {
+    "type": "error",
+    "text": "[ERROR] ❌ Error fetching user profile, using fallback: Error: Profile fetch failed: 500\n    at http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:209:17\n    at async getCachedUserProfile (http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:222:22)\n    at async Promise.allSettled (index 0)\n    at async http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:277:57\n    at async http://localhost:3003/src/hooks/useAuth.ts?t=1759364996915:386:7",
+    "timestamp": 1759365097409
+  },
+  {
+    "type": "log",
+    "text": "%c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit",
+    "timestamp": 1759365097416
+  },
+  {
+    "type": "log",
+    "text": "%c[Vercel Web Analytics]%c [pageview] http://localhost:3003/ color: rgb(120, 120, 120) color: inherit {o: http://localhost:3003/, sv: 0.1.3, sdkn: @vercel/analytics/react, sdkv: 1.5.0, ts: 1759365097416}",
+    "timestamp": 1759365097417
+  }
+]

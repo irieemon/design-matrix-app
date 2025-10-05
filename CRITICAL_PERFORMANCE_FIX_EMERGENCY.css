@@ -1,0 +1,142 @@
+/**
+ * EMERGENCY PERFORMANCE FIX - IMMEDIATE IMPLEMENTATION
+ *
+ * Critical fixes for 533ms-8309ms hover delays and 0fps frame rate drops
+ * Target: <16ms hover response, 60fps sustained
+ */
+
+/* ===== EMERGENCY OVERRIDE - DISABLE ALL SLOW TRANSITIONS ===== */
+.matrix-container *,
+.matrix-container * *,
+.idea-card-wrapper,
+.idea-card-wrapper *,
+.instant-hover-card,
+.instant-hover-card * {
+  /* EMERGENCY: Override ALL slow transitions immediately */
+  transition-duration: 8ms !important; /* Sub-frame timing */
+  transition-timing-function: steps(1, end) !important; /* No interpolation */
+}
+
+/* ===== CRITICAL GPU ACCELERATION EMERGENCY ===== */
+.matrix-container,
+.idea-card-wrapper,
+.instant-hover-card,
+.performance-guaranteed {
+  /* FORCE immediate GPU layer creation */
+  transform: translate3d(0, 0, 0) !important;
+  will-change: transform !important;
+  backface-visibility: hidden !important;
+
+  /* Disable ALL expensive effects immediately */
+  backdrop-filter: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+/* ===== EMERGENCY HOVER RESPONSE SYSTEM ===== */
+.instant-hover-card:hover,
+.idea-card-wrapper:hover,
+.performance-guaranteed:hover {
+  /* IMMEDIATE transform - no computation delay */
+  transform: translate3d(0, -2px, 0) !important;
+
+  /* Disable all expensive hover effects */
+  backdrop-filter: none !important;
+  filter: none !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; /* Minimal shadow only */
+
+  /* Instant response timing */
+  transition: transform 8ms steps(1, end) !important;
+}
+
+/* ===== EMERGENCY DISABLE COMPLEX BACKGROUNDS ===== */
+.matrix-container::before,
+.matrix-container::after,
+.matrix-canvas::before,
+.matrix-canvas::after {
+  /* DISABLE all pseudo-elements causing repaints */
+  display: none !important;
+}
+
+.matrix-container {
+  /* Emergency simplified background */
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* ===== EMERGENCY DISABLE ANIMATIONS ===== */
+@keyframes none {
+  0%, 100% { opacity: 1; }
+}
+
+.matrix-center-pulse,
+.sophisticated-ambient-glow,
+.grid-pulse,
+.matrix-glow,
+*[class*="pulse"],
+*[class*="glow"],
+*[class*="animate"] {
+  /* DISABLE all animations immediately */
+  animation: none !important;
+  animation-duration: 0ms !important;
+}
+
+/* ===== EMERGENCY HOVER ZONE OPTIMIZATION ===== */
+.extended-hover-zone::before,
+.magnetic-hover::before {
+  /* Disable expensive pseudo-element hover zones */
+  display: none !important;
+}
+
+/* ===== EMERGENCY PAINT COMPLEXITY REDUCTION ===== */
+.matrix-canvas {
+  /* Ultra-simple canvas background */
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0 !important;
+  backdrop-filter: none !important;
+}
+
+/* ===== EMERGENCY CARD SIMPLIFICATION ===== */
+.idea-card-wrapper {
+  /* Remove all expensive card effects */
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+}
+
+/* ===== EMERGENCY RESPONSIVE FIXES ===== */
+@media (max-width: 768px) {
+  .matrix-container,
+  .matrix-canvas,
+  .idea-card-wrapper {
+    /* Ultra-fast mobile performance */
+    backdrop-filter: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ===== EMERGENCY ACCESSIBILITY PRESERVATION ===== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    /* Complete animation shutdown for accessibility */
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+  }
+}
+
+/* ===== EMERGENCY DEBUG INDICATORS ===== */
+.performance-guaranteed {
+  /* Visual indicator that emergency fixes are applied */
+  outline: 1px solid lime;
+  outline-offset: -1px;
+}
+
+.performance-guaranteed:hover {
+  outline-color: red;
+}

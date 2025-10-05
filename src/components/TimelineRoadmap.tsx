@@ -1,8 +1,10 @@
-import React, { useState, lazy, Suspense } from 'react'
+import React, { useState, lazy, Suspense, useMemo } from 'react'
 import { useAsyncOperation } from '../hooks/shared/useAsyncOperation'
 import { Users, Monitor, Smartphone, TrendingUp, Settings, BarChart3, Plus, Database, Loader, Grid3X3, Map } from 'lucide-react'
 import FeatureDetailModal from './FeatureDetailModal'
 import { sampleMarketingRoadmap, sampleSoftwareRoadmap, sampleEventRoadmap } from '../utils/sampleRoadmapData'
+import { useLogger } from '../lib/logging'
+import { Button } from './ui/Button'
 
 // Lazy load the RoadmapExportModal to reduce bundle size
 const RoadmapExportModal = lazy(() => import('./RoadmapExportModal'))
@@ -53,6 +55,9 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
   viewMode = 'timeline',
   onViewModeChange
 }) => {
+  // Create scoped logger for this component
+  const logger = useLogger('TimelineRoadmap')
+
   // Modal state management with useAsyncOperation
   const modalOperation = useAsyncOperation(
     async (feature?: RoadmapFeature | null) => {
@@ -142,9 +147,9 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
 
   const handleLoadSampleData = () => {
     let sampleData: RoadmapFeature[]
-    
-    console.log('Loading sample data for project type:', projectType)
-    
+
+    logger.debug('Loading sample data', { projectType })
+
     // Choose sample data based on project type
     switch (projectType) {
       case 'marketing':
@@ -159,12 +164,19 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
       default:
         sampleData = sampleMarketingRoadmap // Default to marketing for current case
     }
-    
-    console.log('Sample data to load:', sampleData)
-    
+
+    logger.debug('Sample data selected', {
+      projectType,
+      featureCount: sampleData.length,
+      sampleType: projectType
+    })
+
     featuresOperation.execute(sampleData)
-    
-    console.log('Sample data loaded, features count:', sampleData.length)
+
+    logger.info('Sample data loaded successfully', {
+      featureCount: sampleData.length,
+      projectType
+    })
   }
 
   // Drag and drop handlers
@@ -438,13 +450,25 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
     }
   }
 
-  const teamLanes = getContextualTeamLanes()
-  
+  // Memoize teamLanes to prevent infinite render loops
+  const teamLanes = useMemo(() => {
+    return getContextualTeamLanes()
+  }, [projectType, featuresOperation.state.data])
+
+  // Memoize availableTeams for FeatureDetailModal to prevent infinite render loops
+  const availableTeams = useMemo(() => {
+    return teamLanes.map(team => team.id)
+  }, [teamLanes])
+
   // Debug: Log all features and their teams
   React.useEffect(() => {
     const currentFeatures = featuresOperation.state.data || []
-    console.log('🎯 All features:', currentFeatures.map((f: RoadmapFeature) => ({ id: f.id, title: f.title, team: f.team })))
-    console.log('🏢 Available teams:', teamLanes.map(t => ({ id: t.id, name: t.name })))
+    logger.debug('Features and teams state', {
+      featureCount: currentFeatures.length,
+      features: currentFeatures.map((f: RoadmapFeature) => ({ id: f.id, title: f.title, team: f.team })),
+      teamCount: teamLanes.length,
+      teams: teamLanes.map(t => ({ id: t.id, name: t.name }))
+    })
   }, [featuresOperation.state.data, teamLanes])
   
 
@@ -613,46 +637,46 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
             {/* View Mode Toggle */}
             {onViewModeChange && (
               <div className="flex space-x-1 bg-slate-700/50 rounded-lg p-1 border border-slate-600">
-                <button
+                <Button
                   onClick={() => onViewModeChange('timeline')}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'timeline'
-                      ? 'bg-slate-600 text-white shadow-sm'
-                      : 'text-slate-300 hover:text-white'
-                  }`}
+                  variant={viewMode === 'timeline' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="flex items-center space-x-2"
                 >
                   <Grid3X3 className="w-4 h-4" />
                   <span>Timeline</span>
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => onViewModeChange('detailed')}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'detailed'
-                      ? 'bg-slate-600 text-white shadow-sm'
-                      : 'text-slate-300 hover:text-white'
-                  }`}
+                  variant={viewMode === 'detailed' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="flex items-center space-x-2"
                 >
                   <Map className="w-4 h-4" />
                   <span>Detailed</span>
-                </button>
+                </Button>
               </div>
             )}
 
-            <button
+            <Button
               onClick={handleCreateFeature}
-              className="flex items-center space-x-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 rounded-xl text-white transition-all shadow-sm hover:shadow-md text-sm font-medium"
+              variant="primary"
+              size="md"
+              className="flex items-center space-x-2"
             >
               <Plus className="w-4 h-4" />
               <span>Add Feature</span>
-            </button>
+            </Button>
             {(featuresOperation.state.data?.length === 0) && (
-              <button
+              <Button
                 onClick={handleLoadSampleData}
-                className="flex items-center space-x-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 rounded-xl text-white transition-all shadow-sm hover:shadow-md text-sm font-medium"
+                variant="primary"
+                size="md"
+                className="flex items-center space-x-2"
               >
                 <Database className="w-4 h-4" />
                 <span>Load Sample Data</span>
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -830,7 +854,7 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
         onDelete={handleDeleteFeature}
         startDate={startDate}
         mode={(modalOperation.state.data as any)?.selectedFeature ? 'edit' : 'create'}
-        availableTeams={teamLanes.map(team => team.id)}
+        availableTeams={availableTeams}
         projectType={projectType}
       />
 

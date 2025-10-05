@@ -9,6 +9,9 @@ import { ReactNode } from 'react'
 import { NavigationProvider } from './NavigationContext'
 import { ProjectProvider } from './ProjectContext'
 import { ModalProvider } from './ModalContext'
+import { ComponentStateProvider } from './ComponentStateProvider'
+import { AdminProvider } from './AdminContext'
+import { AuthMigrationProvider } from './AuthMigration'
 
 interface AppProvidersProps {
   children: ReactNode
@@ -16,12 +19,18 @@ interface AppProvidersProps {
 
 export function AppProviders({ children }: AppProvidersProps) {
   return (
-    <NavigationProvider>
-      <ProjectProvider>
-        <ModalProvider>
-          {children}
-        </ModalProvider>
-      </ProjectProvider>
-    </NavigationProvider>
+    <ComponentStateProvider>
+      <AuthMigrationProvider>
+        <AdminProvider>
+          <NavigationProvider>
+            <ProjectProvider>
+              <ModalProvider>
+                {children}
+              </ModalProvider>
+            </ProjectProvider>
+          </NavigationProvider>
+        </AdminProvider>
+      </AuthMigrationProvider>
+    </ComponentStateProvider>
   )
 }

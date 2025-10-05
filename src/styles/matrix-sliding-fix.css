@@ -1,0 +1,135 @@
+/* ===== CRITICAL MATRIX SLIDING FIX ===== */
+/* Direct fix to prevent matrix from sliding horizontally when sidebar toggles */
+
+/* Force all matrix-related containers to stay in place */
+.enterprise-matrix-workspace,
+.matrix-workspace-layout,
+.enterprise-matrix-canvas,
+.matrix-container,
+.matrix-canvas,
+.dnd-context-container {
+  /* Critical: Force static positioning to prevent sliding */
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+
+  /* Ensure width adapts to container without horizontal movement */
+  width: 100% !important;
+  max-width: none !important;
+
+  /* Prevent any transitions that could cause sliding */
+  transition: none !important;
+}
+
+/* Ensure the main content area within CSS Grid behaves correctly */
+.app-layout-grid__main {
+  /* Force grid positioning */
+  position: static !important;
+  left: auto !important;
+  transform: none !important;
+
+  /* Ensure content fills grid area without sliding */
+  width: 100% !important;
+  min-width: 0 !important;
+
+  /* No horizontal margins that could cause positioning issues */
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Override any absolute positioning that might be applied */
+.enterprise-matrix-workspace * {
+  /* Reset any absolute positioning in children */
+  position: static !important;
+  left: auto !important;
+  transform: none !important;
+}
+
+/* Special handling for drag overlay - should not affect main positioning */
+.dnd-context-container > *:not([data-overlay]) {
+  position: static !important;
+  left: auto !important;
+  transform: none !important;
+}
+
+/* Ensure CSS Grid transition works smoothly without affecting content positioning */
+.app-layout-grid {
+  /* Only grid-template-columns should transition, nothing else */
+  transition: grid-template-columns 250ms cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+}
+
+/* Reset any margins or positioning that could interfere with grid layout */
+.app-layout-grid > * {
+  margin: 0 !important;
+  position: static !important;
+}
+
+/* Specific fix for matrix containers nested within the grid */
+.app-layout-grid .enterprise-matrix-workspace {
+  /* Ensure the workspace fills the grid area completely */
+  height: 100vh !important;
+  width: 100% !important;
+  position: static !important;
+  left: auto !important;
+  transform: none !important;
+}
+
+/* Critical: Prevent any transforms on sidebar state changes */
+.sidebar-collapsed .enterprise-matrix-workspace,
+.sidebar-expanded .enterprise-matrix-workspace {
+  position: static !important;
+  left: auto !important;
+  transform: none !important;
+  margin-left: 0 !important;
+}
+
+/* Ensure matrix content adapts to width changes without sliding */
+.enterprise-matrix-canvas {
+  /* Let flexbox handle the layout, no positioning overrides */
+  position: static !important;
+  left: auto !important;
+  transform: none !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Explicitly exclude modal containers from any positioning overrides */
+.modal-overlay-container,
+.modal-overlay-container *,
+[data-portal="modal"],
+[data-portal="modal"] *,
+.modal-content,
+.modal-content * {
+  /* Preserve modal positioning and transforms */
+  position: revert !important;
+  transform: revert !important;
+  left: revert !important;
+  top: revert !important;
+}
+
+/* Override any JavaScript-applied styles that might cause sliding - ONLY within matrix containers */
+.enterprise-matrix-workspace [style*="left:"],
+.matrix-workspace-layout [style*="left:"],
+.enterprise-matrix-canvas [style*="left:"],
+.matrix-container [style*="left:"],
+.matrix-canvas [style*="left:"],
+.dnd-context-container [style*="left:"],
+.enterprise-matrix-workspace [style*="transform:"],
+.matrix-workspace-layout [style*="transform:"],
+.enterprise-matrix-canvas [style*="transform:"],
+.matrix-container [style*="transform:"],
+.matrix-canvas [style*="transform:"],
+.dnd-context-container [style*="transform:"],
+.enterprise-matrix-workspace [style*="position: absolute"],
+.matrix-workspace-layout [style*="position: absolute"],
+.enterprise-matrix-canvas [style*="position: absolute"],
+.matrix-container [style*="position: absolute"],
+.matrix-canvas [style*="position: absolute"],
+.dnd-context-container [style*="position: absolute"] {
+  position: static !important;
+  left: auto !important;
+  transform: none !important;
+}

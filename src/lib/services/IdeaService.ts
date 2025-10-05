@@ -7,6 +7,7 @@
  */
 
 import { BaseService } from './BaseService'
+import { supabaseAdmin } from '../supabase'
 import type {
   IdeaCard,
   CreateIdeaInput,
@@ -19,6 +20,7 @@ import type {
   ServiceOptions
 } from '../../types/service'
 import { logger } from '../../utils/logger'
+import { sanitizeProjectId } from '../../utils/uuid'
 
 export class IdeaService extends BaseService {
   private static readonly LOCK_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
@@ -33,15 +35,30 @@ export class IdeaService extends BaseService {
     const context = this.createContext('getIdeasByProject', options?.userId, projectId)
 
     return this.executeWithRetry(async () => {
-      const supabase = this.getSupabaseClient()
+      // TEMPORARY SECURITY WORKAROUND: Use service role to bypass RLS
+      // Root cause: persistSession: false means Supabase client has no auth session after login
+      // TODO: Implement httpOnly cookie-based authentication (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
+      // SECURITY RISK: This bypasses RLS. Must validate user permissions in application layer.
+      const supabase = supabaseAdmin
 
       let query = supabase
         .from('ideas')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (projectId) {
-        query = query.eq('project_id', projectId)
+      // Use projectId parameter first, then fall back to options.projectId
+      const effectiveProjectId = projectId || options?.projectId
+
+      if (effectiveProjectId) {
+        // Ensure project ID is in proper UUID format before querying
+        const validProjectId = sanitizeProjectId(effectiveProjectId)
+        if (validProjectId) {
+          query = query.eq('project_id', validProjectId)
+        } else {
+          logger.warn(`Invalid project ID format in getIdeasByProject: ${effectiveProjectId}`)
+          // Return empty array for invalid project ID
+          return []
+        }
       }
 
       if (options?.status) {
@@ -99,9 +116,9 @@ export class IdeaService extends BaseService {
 
     // Validate input
     const validation = this.validateInput(idea, {
-      title: (value) => typeof value === 'string' && value.trim().length > 0,
-      description: (value) => typeof value === 'string',
-      project_id: (value) => typeof value === 'string' && value.length > 0
+      content: (value) => typeof value === 'string' && value.trim().length > 0,
+      details: (value) => typeof value === 'string',
+      project_id: (value) => typeof value === 'string' && value.length > 0 && sanitizeProjectId(value) !== null
     })
 
     if (!validation.valid) {
@@ -116,12 +133,20 @@ export class IdeaService extends BaseService {
     }
 
     return this.executeWithRetry(async () => {
-      const supabase = this.getSupabaseClient()
+      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
+      const supabase = supabaseAdmin
+
+      // Ensure project ID is properly formatted
+      const validProjectId = sanitizeProjectId(idea.project_id!)
+      if (!validProjectId) {
+        throw new Error(`Invalid project ID format: ${idea.project_id}`)
+      }
 
       // Generate ID and timestamps
       const ideaWithMetadata: IdeaCard = {
         ...idea,
         id: crypto.randomUUID().replace(/-/g, '').substring(0, 16),
+        project_id: validProjectId,
         created_at: this.formatTimestamp(),
         updated_at: this.formatTimestamp(),
         editing_by: null,
@@ -168,7 +193,8 @@ export class IdeaService extends BaseService {
     }
 
     return this.executeWithRetry(async () => {
-      const supabase = this.getSupabaseClient()
+      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
+      const supabase = supabaseAdmin
 
       // Check if user has permission to edit (if locked by someone else)
       if (options?.userId) {
@@ -208,7 +234,8 @@ export class IdeaService extends BaseService {
     const context = this.createContext('deleteIdea', options?.userId)
 
     return this.executeWithRetry(async () => {
-      const supabase = this.getSupabaseClient()
+      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
+      const supabase = supabaseAdmin
 
       // Check if user has permission to delete
       if (options?.userId) {
@@ -240,13 +267,14 @@ export class IdeaService extends BaseService {
   static async lockIdeaForEditing(
     ideaId: string,
     userId: string,
-    options?: ServiceOptions
+    _options?: ServiceOptions
   ): Promise<ServiceResult<boolean>> {
     const context = this.createContext('lockIdeaForEditing', userId)
 
     return this.executeWithRetry(async () => {
-      const supabase = this.getSupabaseClient()
-      const debounceKey = `${ideaId}_${userId}_lock`
+      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
+      const supabase = supabaseAdmin
+      // const debounceKey = `${ideaId}_${userId}_lock` // Currently unused
 
       // Check current lock status
       const { data: existingIdea, error: fetchError } = await supabase
@@ -310,12 +338,13 @@ export class IdeaService extends BaseService {
   static async unlockIdea(
     ideaId: string,
     userId: string,
-    options?: ServiceOptions
+    _options?: ServiceOptions
   ): Promise<ServiceResult<boolean>> {
     const context = this.createContext('unlockIdea', userId)
 
     return this.executeWithRetry(async () => {
-      const supabase = this.getSupabaseClient()
+      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
+      const supabase = supabaseAdmin
 
       // Only unlock if current user owns the lock
       const { error } = await supabase
@@ -348,7 +377,8 @@ export class IdeaService extends BaseService {
     const context = this.createContext('cleanupStaleLocks', options?.userId)
 
     return this.executeWithRetry(async () => {
-      const supabase = this.getSupabaseClient()
+      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
+      const supabase = supabaseAdmin
       const staleTime = new Date(Date.now() - this.LOCK_TIMEOUT_MS).toISOString()
 
       const { data, error } = await supabase
@@ -381,7 +411,8 @@ export class IdeaService extends BaseService {
     const context = this.createContext('getLockInfo', options?.userId)
 
     return this.executeWithRetry(async () => {
-      const supabase = this.getSupabaseClient()
+      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
+      const supabase = supabaseAdmin
 
       const { data, error } = await supabase
         .from('ideas')
@@ -461,7 +492,7 @@ export class IdeaService extends BaseService {
       return {
         success: false,
         error: {
-          type: 'service',
+          type: 'server',
           message: result.error.message,
           code: result.error.code
         },

@@ -1,3 +1,41 @@
+/* ===== ENTERPRISE DESIGN SYSTEM IMPORTS ===== */
+
+/* Core Design System */
+@import './styles/design-tokens.css';        /* Design tokens and CSS custom properties */
+
+/* ANIMATED LUX DESIGN SYSTEM */
+@import './styles/monochrome-lux-tokens.css';      /* Lux color, motion, shadow tokens */
+@import './styles/monochrome-lux-animations.css';  /* Lux micro-animations & utilities */
+@import './styles/lux-utilities.css';              /* Lux utility classes & patterns */
+
+/* Accessibility & Standards */
+@import './styles/accessibility.css';        /* WCAG 2.1 AA compliance styles */
+
+/* Matrix System - Professional Interface */
+@import './styles/matrix-optimized.css';     /* Core matrix layout system */
+@import './styles/matrix-cards.css';         /* Professional card interactions */
+@import './styles/matrix-animations.css';    /* Performance-optimized animations */
+@import './styles/matrix-responsive.css';    /* Mobile-first responsive design */
+
+/* EMERGENCY PERFORMANCE FIX - IMMEDIATE LOAD */
+@import '../CRITICAL_PERFORMANCE_FIX_EMERGENCY.css';  /* <16ms emergency response system */
+
+/* High-Performance Matrix Optimizations */
+@import './styles/matrix-performance-optimized.css';  /* GPU acceleration & 60fps optimizations */
+@import './styles/matrix-instant-hover.css';          /* Sub-16ms hover response system */
+
+/* CRITICAL FIX: Remove green/red corner brackets */
+@import './styles/fix-corner-brackets.css';           /* Remove corner bracket artifacts */
+
+/* Enhanced Component Systems */
+@import './styles/button.css';               /* Enhanced button components */
+@import './styles/input.css';                /* Enhanced input components */
+@import './styles/textarea.css';             /* Enhanced form components */
+@import './styles/select.css';               /* Enhanced select components */
+@import './styles/skeleton.css';             /* Enhanced skeleton loading */
+@import './styles/auth.css';                 /* Auth screen styling */
+@import './styles/sidebar.css';              /* Sidebar collapsible sections */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,52 +44,299 @@
   * {
     font-family: 'Inter', sans-serif;
   }
-  
+
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-white text-neutral-800 antialiased;
+  }
+
+  /* Enhanced focus states for accessibility */
+  *:focus {
+    @apply outline-none;
+  }
+
+  *:focus-visible {
+    @apply ring-2 ring-info-500 ring-offset-2;
+  }
+
+  /* Improved selection colors */
+  ::selection {
+    @apply bg-info-100 text-info-800;
   }
 }
 
 @layer components {
-  .matrix-grid-background {
-    background-image: 
-      linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
-    background-size: 20px 20px;
+  /* Enhanced sidebar component styles matching auth design */
+  .sidebar-clean {
+    @apply bg-white/80 backdrop-blur-sm border-r border-slate-200/60 shadow-xl;
   }
 
-  /* Custom slider styles */
+  .sidebar-item {
+    @apply flex items-center px-4 py-3 text-slate-600 hover:text-slate-900 hover:bg-blue-50/50 transition-all duration-200 rounded-xl mx-2;
+  }
+
+  .sidebar-item.active {
+    @apply bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-900 font-medium border border-blue-200/50;
+  }
+
+  /* Enhanced card components matching auth design */
+  .card-clean {
+    @apply bg-white border border-slate-200/60 rounded-2xl shadow-xl;
+  }
+
+  .card-clean-hover {
+    @apply card-clean hover:shadow-2xl hover:border-blue-200/60 transition-all duration-300;
+  }
+
+  /* Enhanced button system with states */
+  .btn-primary {
+    @apply bg-brand-primary text-white px-4 py-2 rounded-md font-medium shadow-button hover:shadow-button-hover transition-all duration-200;
+  }
+
+  .btn-primary:disabled {
+    @apply bg-disabled-bg text-disabled-text border-disabled-border cursor-not-allowed shadow-none;
+  }
+
+  .btn-primary.loading {
+    @apply bg-loading-bg text-loading-text cursor-wait;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-neutral-700 border border-neutral-300 px-4 py-2 rounded-md font-medium hover:bg-neutral-50 transition-all duration-200;
+  }
+
+  .btn-secondary:disabled {
+    @apply bg-disabled-bg text-disabled-text border-disabled-border cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 px-3 py-2 rounded-md transition-all duration-200;
+  }
+
+  .btn-ghost:disabled {
+    @apply text-disabled-text hover:text-disabled-text hover:bg-transparent cursor-not-allowed;
+  }
+
+  /* Button size variants */
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-lg;
+  }
+
+  /* Enhanced input styles with states */
+  .input-clean {
+    @apply bg-white border border-neutral-300 px-3 py-2 rounded-md text-neutral-900 placeholder-neutral-400 focus:border-info-500 focus:ring-1 focus:ring-info-500 transition-all duration-200;
+  }
+
+  .input-clean:disabled {
+    @apply bg-disabled-bg text-disabled-text border-disabled-border cursor-not-allowed;
+  }
+
+  .input-clean.error {
+    @apply border-error-500 focus:border-error-500 focus:ring-error-500;
+  }
+
+  .input-clean.success {
+    @apply border-success-500 focus:border-success-500 focus:ring-success-500;
+  }
+
+  /* Status badge styles */
+  .badge-success {
+    @apply bg-success-50 text-success-700 px-2 py-1 rounded-md text-sm font-medium;
+  }
+
+  .badge-info {
+    @apply bg-info-50 text-info-700 px-2 py-1 rounded-md text-sm font-medium;
+  }
+
+  .badge-warning {
+    @apply bg-warning-50 text-warning-700 px-2 py-1 rounded-md text-sm font-medium;
+  }
+
+  .badge-error {
+    @apply bg-error-50 text-error-700 px-2 py-1 rounded-md text-sm font-medium;
+  }
+
+  .badge-accent {
+    @apply bg-accent-50 text-accent-700 px-2 py-1 rounded-md text-sm font-medium;
+  }
+
+  /* 4-Quadrant Matrix Background */
+  .matrix-grid-background {
+    background-image:
+      /* Main quadrant dividers - thick lines at center */
+      linear-gradient(to right, transparent calc(50% - 1px), rgba(0,0,0,0.15) calc(50% - 1px), rgba(0,0,0,0.15) calc(50% + 1px), transparent calc(50% + 1px)),
+      linear-gradient(to bottom, transparent calc(50% - 1px), rgba(0,0,0,0.15) calc(50% - 1px), rgba(0,0,0,0.15) calc(50% + 1px), transparent calc(50% + 1px)),
+      /* Subtle grid lines within quadrants */
+      linear-gradient(to right, rgba(0,0,0,0.02) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.02) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+    background-position: 0 0, 0 0, 0 0, 0 0;
+  }
+
+  /* Clean progress indicators */
+  .progress-bar {
+    @apply bg-neutral-200 rounded-full overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply bg-brand-primary h-full transition-all duration-300;
+  }
+
+  /* Enhanced loading states */
+  .skeleton {
+    @apply bg-neutral-200 animate-pulse rounded;
+  }
+
+  .loading-spinner {
+    @apply inline-block w-4 h-4 border-2 border-loading-accent border-t-transparent rounded-full animate-spin;
+  }
+
+  .loading-overlay {
+    @apply absolute inset-0 bg-loading-bg bg-opacity-50 flex items-center justify-center;
+  }
+
+  /* Enhanced dividers and layout utilities */
+  .divider-horizontal {
+    @apply border-b border-neutral-200;
+  }
+
+  .divider-vertical {
+    @apply border-r border-neutral-200;
+  }
+
+  /* Focus management for accessibility */
+  .focus-outline {
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-component-focus;
+  }
+
+  /* Component spacing utilities */
+  .component-padding {
+    @apply p-component-md;
+  }
+
+  .component-gap {
+    @apply gap-component-sm;
+  }
+
+  /* Dropdown and modal clean styles */
+  .dropdown-clean {
+    @apply bg-white border border-neutral-200 rounded-lg shadow-dropdown;
+  }
+
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/20 backdrop-blur-sm;
+  }
+
+  .modal-content {
+    @apply bg-white rounded-lg shadow-modal;
+  }
+
+  /* Custom slider styles - updated for clean theme */
   .slider::-webkit-slider-thumb {
     appearance: none;
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #9333ea, #3b82f6);
+    background: linear-gradient(135deg, #A28CFF, #5B8DEF);
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     border: 2px solid white;
+    transition: all 0.2s ease;
+  }
+
+  .slider::-webkit-slider-thumb:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    transform: scale(1.05);
   }
 
   .slider::-moz-range-thumb {
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #9333ea, #3b82f6);
+    background: linear-gradient(135deg, #A28CFF, #5B8DEF);
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     border: 2px solid white;
+    transition: all 0.2s ease;
   }
 
   .slider::-webkit-slider-track {
-    background: #e2e8f0;
+    background: #E5E7EB;
     border-radius: 10px;
     height: 6px;
   }
 
   .slider::-moz-range-track {
-    background: #e2e8f0;
+    background: #E5E7EB;
     border-radius: 10px;
     height: 6px;
     border: none;
   }
+
+  /* Text color utilities for hierarchy */
+  .text-primary {
+    @apply text-neutral-900;
+  }
+
+  .text-secondary {
+    @apply text-neutral-600;
+  }
+
+  .text-tertiary {
+    @apply text-neutral-500;
+  }
+
+  .text-muted {
+    @apply text-neutral-400;
+  }
+}
+
+/* ===== CRITICAL VISUAL FIXES ===== */
+/* REMOVED: These transparent rules were hiding the grid lines on hover */
+/* Grid lines are maintained by .matrix-grid-background element */
+
+/* Preserve matrix grid background pattern */
+.matrix-grid-background {
+  background: #ffffff !important;
+  background-image: linear-gradient(to right, transparent calc(50% - 2px), #e2e8f0 calc(50% - 2px), #e2e8f0 calc(50% + 2px), transparent calc(50% + 2px)), linear-gradient(to bottom, transparent calc(50% - 2px), #e2e8f0 calc(50% - 2px), #e2e8f0 calc(50% + 2px), transparent calc(50% + 2px)) !important;
+  background-size: 100% 100%, 100% 100% !important;
+  background-position: 0 0, 0 0 !important;
+}
+
+.matrix-grid-background:hover {
+  background: #ffffff !important;
+  background-image: linear-gradient(to right, transparent calc(50% - 2px), #e2e8f0 calc(50% - 2px), #e2e8f0 calc(50% + 2px), transparent calc(50% + 2px)), linear-gradient(to bottom, transparent calc(50% - 2px), #e2e8f0 calc(50% - 2px), #e2e8f0 calc(50% + 2px), transparent calc(50% + 2px)) !important;
+  background-size: 100% 100%, 100% 100% !important;
+  background-position: 0 0, 0 0 !important;
+}
+
+/* CRITICAL FIX: Prevent grey hover on matrix elements but preserve grid */
+/* Exclude both .matrix-grid AND .matrix-grid-background to protect grid pattern */
+.matrix-container > div:not(.matrix-grid):not(.matrix-grid-background):hover,
+.matrix-viewport > div:not(.matrix-grid):not(.matrix-grid-background):hover {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* EMERGENCY FIX: Force axis label color with maximum specificity */
+.matrix-container .matrix-axis,
+.matrix-container .matrix-axis-x,
+.matrix-container .matrix-axis-y {
+  color: #64748b !important;
+}
+
+/* Additional failsafe for direct axis selectors */
+div.matrix-axis {
+  color: #64748b !important;
+}
+
+div.matrix-axis-x {
+  color: #64748b !important;
+}
+
+div.matrix-axis-y {
+  color: #64748b !important;
 }

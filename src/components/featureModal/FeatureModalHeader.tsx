@@ -88,7 +88,7 @@ const FeatureModalHeader: React.FC<FeatureModalHeaderProps> = ({
   }
 
   return (
-    <div className="bg-gray-200 border-b border-slate-200 p-6">
+    <div className="bg-gray-200 border-b border-neutral-200 p-6">
       <div className="flex items-start justify-between gap-6">
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-3 mb-4">
@@ -100,11 +100,11 @@ const FeatureModalHeader: React.FC<FeatureModalHeaderProps> = ({
                 type="text"
                 value={currentFeature.title}
                 onChange={(e) => updateFeature({ title: e.target.value })}
-                className="text-2xl font-bold bg-transparent border-0 border-b-2 border-slate-300 focus:border-blue-500 focus:outline-none text-slate-900 placeholder-slate-400 flex-1 pb-1 min-w-0"
+                className="text-2xl font-bold bg-transparent border-0 border-b-2 border-neutral-300 focus:border-blue-500 focus:outline-none text-neutral-900 placeholder-neutral-400 flex-1 pb-1 min-w-0"
                 placeholder="Feature title"
               />
             ) : (
-              <h2 className="text-2xl font-bold text-slate-900 leading-tight truncate">{currentFeature.title}</h2>
+              <h2 className="text-2xl font-bold text-neutral-900 leading-tight truncate">{currentFeature.title}</h2>
             )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -114,37 +114,37 @@ const FeatureModalHeader: React.FC<FeatureModalHeaderProps> = ({
                   <select
                     value={currentFeature.priority}
                     onChange={(e) => updateFeature({ priority: e.target.value as 'high' | 'medium' | 'low' })}
-                    className="appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 pr-8 text-sm font-medium text-slate-700 focus:border-blue-500 focus:outline-none focus:bg-white cursor-pointer min-w-[140px]"
+                    className="appearance-none bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 pr-8 text-sm font-medium text-neutral-700 focus:border-blue-500 focus:outline-none focus:bg-white cursor-pointer min-w-[140px]"
                   >
                     <option value="high">High Priority</option>
                     <option value="medium">Medium Priority</option>
                     <option value="low">Low Priority</option>
                   </select>
-                  <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
                 </div>
                 <div className="relative">
                   <select
                     value={currentFeature.status}
                     onChange={(e) => updateFeature({ status: e.target.value as 'planned' | 'in-progress' | 'completed' })}
-                    className="appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 pr-8 text-sm font-medium text-slate-700 focus:border-blue-500 focus:outline-none focus:bg-white cursor-pointer min-w-[120px]"
+                    className="appearance-none bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 pr-8 text-sm font-medium text-neutral-700 focus:border-blue-500 focus:outline-none focus:bg-white cursor-pointer min-w-[120px]"
                   >
                     <option value="planned">Planned</option>
                     <option value="in-progress">In Progress</option>
                     <option value="completed">Completed</option>
                   </select>
-                  <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
                 </div>
                 <div className="relative">
                   <select
                     value={currentFeature.team}
                     onChange={(e) => updateFeature({ team: e.target.value })}
-                    className="appearance-none bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 pr-8 text-sm font-medium text-slate-700 focus:border-blue-500 focus:outline-none focus:bg-white cursor-pointer min-w-[140px]"
+                    className="appearance-none bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 pr-8 text-sm font-medium text-neutral-700 focus:border-blue-500 focus:outline-none focus:bg-white cursor-pointer min-w-[140px]"
                   >
                     {availableTeams.map(team => (
                       <option key={team} value={team}>{getTeamDisplayName(team)}</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-neutral-400 pointer-events-none" />
                 </div>
               </>
             ) : (
@@ -179,7 +179,7 @@ const FeatureModalHeader: React.FC<FeatureModalHeaderProps> = ({
                   </button>
                   <button
                     onClick={onCancel}
-                    className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors font-medium text-sm"
+                    className="px-4 py-2 bg-neutral-100 text-neutral-600 rounded-lg hover:bg-neutral-200 transition-colors font-medium text-sm"
                   >
                     Cancel
                   </button>
@@ -206,7 +206,7 @@ const FeatureModalHeader: React.FC<FeatureModalHeaderProps> = ({
           )}
           <button
             onClick={onClose}
-            className="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-500 hover:text-slate-700"
+            className="p-2 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors text-neutral-500 hover:text-neutral-700"
           >
             <X className="w-4 h-4" />
           </button>

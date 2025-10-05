@@ -91,38 +91,41 @@ const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = ({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}>
+      <div className="rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--surface-primary)' }}>
         {/* Header */}
-        <div className="relative bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-t-2xl">
+        <div className="relative text-white p-6 rounded-t-2xl" style={{ background: 'linear-gradient(to right, var(--sapphire-500), var(--sapphire-600))' }}>
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
+            className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+            style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
           >
             <X className="w-5 h-5" />
           </button>
-          
+
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
               <UserPlus className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-xl font-bold">Invite Collaborator</h2>
-              <p className="text-blue-100 text-sm">to "{projectName}"</p>
+              <p className="text-sm" style={{ color: 'var(--sapphire-100)' }}>to "{projectName}"</p>
             </div>
           </div>
         </div>
 
         {/* Success State */}
         {success && (
-          <div className="p-6 bg-green-50 border-b border-green-200">
-            <div className="flex items-center gap-3 text-green-800">
-              <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center">
+          <div className="p-6 border-b" style={{ backgroundColor: 'var(--success-50)', borderColor: 'var(--success-200)' }}>
+            <div className="flex items-center gap-3" style={{ color: 'var(--success-800)' }}>
+              <div className="w-8 h-8 text-white rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--success-500)' }}>
                 <Check className="w-5 h-5" />
               </div>
               <div>
                 <p className="font-semibold">Invitation sent successfully!</p>
-                <p className="text-sm text-green-600">An email invitation has been sent to the collaborator.</p>
+                <p className="text-sm" style={{ color: 'var(--success-600)' }}>An email invitation has been sent to the collaborator.</p>
               </div>
             </div>
           </div>
@@ -132,18 +135,32 @@ const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6">
           {/* Email Input */}
           <div className="mb-6">
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="email" className="block text-sm font-semibold mb-2" style={{ color: 'var(--graphite-700)' }}>
               Email Address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" style={{ color: 'var(--graphite-400)' }} />
               <input
                 type="email"
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="colleague@company.com"
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full pl-10 pr-4 py-3 border rounded-xl transition-all"
+                style={{
+                  borderColor: 'var(--hairline-default)',
+                  color: 'var(--graphite-900)',
+                  backgroundColor: 'var(--surface-primary)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--sapphire-500)';
+                  e.target.style.boxShadow = '0 0 0 3px var(--sapphire-100)';
+                  e.target.style.outline = 'none';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--hairline-default)';
+                  e.target.style.boxShadow = 'none';
+                }}
                 required
                 disabled={isLoading || success}
               />
@@ -152,7 +169,7 @@ const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = ({
 
           {/* Role Selection */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
+            <label className="block text-sm font-semibold mb-3" style={{ color: 'var(--graphite-700)' }}>
               <Shield className="inline w-4 h-4 mr-1" />
               Access Level
             </label>
@@ -160,30 +177,44 @@ const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = ({
               {roles.map((role) => (
                 <div
                   key={role.value}
-                  className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all ${
-                    selectedRole === role.value
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  className="relative border-2 rounded-xl p-4 cursor-pointer transition-all"
+                  style={{
+                    borderColor: selectedRole === role.value ? 'var(--sapphire-500)' : 'var(--hairline-default)',
+                    backgroundColor: selectedRole === role.value ? 'var(--sapphire-50)' : 'transparent'
+                  }}
                   onClick={() => !isLoading && !success && setSelectedRole(role.value)}
+                  onMouseEnter={(e) => {
+                    if (selectedRole !== role.value) {
+                      e.currentTarget.style.borderColor = 'var(--graphite-300)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedRole !== role.value) {
+                      e.currentTarget.style.borderColor = 'var(--hairline-default)';
+                    }
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     <div className="text-2xl">{role.icon}</div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">{role.label}</h3>
+                        <h3 className="font-semibold" style={{ color: 'var(--graphite-900)' }}>{role.label}</h3>
                         {selectedRole === role.value && (
-                          <div className="w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center">
+                          <div className="w-5 h-5 text-white rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--sapphire-500)' }}>
                             <Check className="w-3 h-3" />
                           </div>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{role.description}</p>
+                      <p className="text-sm mb-2" style={{ color: 'var(--graphite-600)' }}>{role.description}</p>
                       <div className="flex flex-wrap gap-1">
                         {role.permissions.map((permission, index) => (
                           <span
                             key={index}
-                            className="inline-flex text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full"
+                            className="inline-flex text-xs px-2 py-1 rounded-full"
+                            style={{
+                              backgroundColor: 'var(--canvas-secondary)',
+                              color: 'var(--graphite-700)'
+                            }}
                           >
                             {permission}
                           </span>
@@ -207,7 +238,7 @@ const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = ({
 
           {/* Error Message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700">
+            <div className="mb-4 p-3 border rounded-xl flex items-center gap-2" style={{ backgroundColor: 'var(--error-50)', borderColor: 'var(--error-200)', color: 'var(--error-700)' }}>
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <p className="text-sm">{error}</p>
             </div>
@@ -219,18 +250,40 @@ const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = ({
               type="button"
               onClick={handleClose}
               disabled={isLoading}
-              className="flex-1 py-3 px-4 border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="flex-1 py-3 px-4 border font-semibold rounded-xl transition-colors disabled:opacity-50"
+              style={{
+                borderColor: 'var(--hairline-default)',
+                color: 'var(--graphite-700)',
+                backgroundColor: 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoading) {
+                  e.currentTarget.style.backgroundColor = 'var(--canvas-secondary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading || success || !email.trim()}
-              className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 py-3 px-4 text-white font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(to right, var(--sapphire-500), var(--sapphire-600))' }}
+              onMouseEnter={(e) => {
+                if (!isLoading && !success && email.trim()) {
+                  e.currentTarget.style.background = 'linear-gradient(to right, var(--sapphire-600), var(--sapphire-700))';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(to right, var(--sapphire-500), var(--sapphire-600))';
+              }}
             >
               {isLoading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(255, 255, 255, 0.3)', borderTopColor: 'white' }}></div>
                   Sending...
                 </>
               ) : success ? (
@@ -250,12 +303,12 @@ const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = ({
 
         {/* Footer */}
         <div className="px-6 pb-6 pt-0">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="border rounded-xl p-4" style={{ backgroundColor: 'var(--sapphire-50)', borderColor: 'var(--sapphire-200)' }}>
             <div className="flex items-start gap-3">
-              <Users className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-800">
+              <Users className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--sapphire-600)' }} />
+              <div className="text-sm" style={{ color: 'var(--sapphire-800)' }}>
                 <p className="font-semibold mb-1">Email Invitations:</p>
-                <ul className="space-y-1 text-blue-700">
+                <ul className="space-y-1" style={{ color: 'var(--sapphire-700)' }}>
                   <li>• A real email invitation will be sent to the collaborator</li>
                   <li>• They'll receive project details and access instructions</li>
                   <li>• You can change roles or remove access anytime</li>

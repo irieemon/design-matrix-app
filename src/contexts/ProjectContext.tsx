@@ -5,10 +5,11 @@
  * Handles current project state, project selection, and restoration from URL.
  */
 
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { Project } from '../types'
 import { DatabaseService } from '../lib/database'
 import { logger } from '../utils/logger'
+import { useCurrentUser } from './UserContext'
 
 interface ProjectContextType {
   currentProject: Project | null
@@ -27,6 +28,15 @@ interface ProjectProviderProps {
 export function ProjectProvider({ children }: ProjectProviderProps) {
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
   const [isRestoringProject, setIsRestoringProject] = useState(false)
+  const currentUser = useCurrentUser()
+
+  // Clear project when user changes (logout/login)
+  useEffect(() => {
+    if (!currentUser) {
+      logger.debug('🔄 User logged out, clearing current project')
+      setCurrentProject(null)
+    }
+  }, [currentUser])
 
   const handleProjectSelect = (project: Project | null) => {
     if (project) {
@@ -42,19 +52,46 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
     try {
       setIsRestoringProject(true)
       logger.debug('🔄 Project: Restoring project from URL:', projectId)
-      const project = await DatabaseService.getProjectById(projectId)
+
+      // CRITICAL FIX: Coordinated timeout aligned with browser history (5s to finish before browser history 6s timeout)
+      const restorationPromise = DatabaseService.getProjectById(projectId)
+      const timeoutPromise = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error('Project restoration timeout after 5 seconds')), 5000)
+      )
+
+      const project = await Promise.race([restorationPromise, timeoutPromise])
+
       if (project) {
         logger.debug('✅ Project: Project restored successfully:', project.name)
-        console.log('🎯 Project: Setting currentProject to:', project)
+        logger.info('Setting current project', {
+          projectId: project.id,
+          projectName: project.name,
+          ownerId: project.owner_id
+        })
         setCurrentProject(project)
       } else {
         logger.warn('⚠️ Project: Project not found or no access:', projectId)
-        console.log('❌ Project: Project restoration failed for:', projectId)
+        logger.warn('Project restoration failed', {
+          projectId,
+          reason: 'not_found_or_no_access'
+        })
         // Don't clear current project if restoration fails - user might not have access
       }
     } catch (error) {
-      logger.error('❌ Project: Error restoring project:', error)
-      console.log('💥 Project: Project restoration error:', error)
+      if (error instanceof Error && error.message.includes('Project restoration timeout')) {
+        logger.error('🚨 Project: Restoration timeout for project:', projectId)
+        logger.error('Project restoration timed out', error, {
+          projectId,
+          timeout: 5000,
+          reason: 'timeout'
+        })
+      } else {
+        logger.error('❌ Project: Error restoring project:', error)
+        logger.error('Project restoration error', error as Error, {
+          projectId,
+          operation: 'restore'
+        })
+      }
     } finally {
       setIsRestoringProject(false)
     }
