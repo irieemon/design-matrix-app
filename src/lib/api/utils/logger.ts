@@ -10,7 +10,7 @@
  */
 
 import { VercelRequest } from '@vercel/node'
-import { logger as baseLogger } from '../../src/lib/logging'
+import { logger as baseLogger } from '../../logging'
 
 // Track cold starts for performance monitoring
 let isColdStart = true

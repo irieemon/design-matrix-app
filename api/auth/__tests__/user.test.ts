@@ -16,7 +16,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { VercelRequest, VercelResponse } from '@vercel/node'
 
 // Mock dependencies
-vi.mock('../middleware', () => ({
+vi.mock('../../../src/lib/api/middleware', () => ({
   authenticate: vi.fn(),
   securityMiddleware: vi.fn()
 }))
@@ -25,7 +25,7 @@ vi.mock('../roles', () => ({
   getUserProfile: vi.fn()
 }))
 
-vi.mock('../../utils/performanceMonitor', () => ({
+vi.mock('../../../src/lib/api/utils/performanceMonitor', () => ({
   finishAuthSession: vi.fn(),
   recordAuthMetric: vi.fn()
 }))
@@ -37,7 +37,7 @@ process.env.SUPABASE_ANON_KEY = 'test-anon-key'
 
 // Import after mocks
 import handler from '../user'
-import { authenticate, securityMiddleware } from '../middleware'
+import { authenticate, securityMiddleware } from '../../../src/lib/api/middleware'
 import { getUserProfile } from '../roles'
 
 describe('User Endpoint', () => {

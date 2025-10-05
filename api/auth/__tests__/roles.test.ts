@@ -27,11 +27,11 @@ vi.mock('@supabase/supabase-js', () => ({
   }))
 }))
 
-vi.mock('../middleware', () => ({
+vi.mock('../../../src/lib/api/middleware', () => ({
   authenticate: vi.fn()
 }))
 
-vi.mock('../../utils/queryOptimizer', () => ({
+vi.mock('../../../src/lib/api/utils/queryOptimizer', () => ({
   optimizedGetUserProfile: vi.fn()
 }))
 
@@ -53,8 +53,8 @@ import {
   requireRole,
   UserRole
 } from '../roles'
-import { optimizedGetUserProfile } from '../../utils/queryOptimizer'
-import { authenticate } from '../middleware'
+import { optimizedGetUserProfile } from '../../../src/lib/api/utils/queryOptimizer'
+import { authenticate } from '../../../src/lib/api/middleware'
 
 describe('Roles and Authorization', () => {
   beforeEach(() => {

@@ -20,25 +20,21 @@ import {
   generateCSRFToken,
   getCookie,
   COOKIE_NAMES,
-  withStrictRateLimit,
-  withOriginValidation,
   withRateLimit,
   withAuth,
   withCSRF,
   compose,
   type AuthenticatedRequest,
-} from './middleware'
-import { optimizedGetUserProfile } from './utils/queryOptimizer'
-
-type UserRole = 'super_admin' | 'admin' | 'user'
+} from '../src/lib/api/middleware'
+import { optimizedGetUserProfile } from '../src/lib/api/utils/queryOptimizer'
 
 // Alias for compatibility
 const getUserProfile = optimizedGetUserProfile
-import { finishAuthSession, recordAuthMetric } from './utils/performanceMonitor'
-import { createPerformanceLogger, createRequestLogger } from './utils/logger'
-import { getPerformanceMonitor } from './utils/performanceMonitor'
-import { getConnectionPool } from './utils/connectionPool'
-import { getQueryOptimizer } from './utils/queryOptimizer'
+import { finishAuthSession, recordAuthMetric } from '../src/lib/api/utils/performanceMonitor'
+import { createPerformanceLogger, createRequestLogger } from '../src/lib/api/utils/logger'
+import { getPerformanceMonitor } from '../src/lib/api/utils/performanceMonitor'
+import { getConnectionPool } from '../src/lib/api/utils/connectionPool'
+import { getQueryOptimizer } from '../src/lib/api/utils/queryOptimizer'
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL!
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!

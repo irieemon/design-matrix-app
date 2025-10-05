@@ -12,7 +12,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
-import { InputValidator, commonRules } from './utils/validation'
+import { InputValidator, commonRules } from '../src/lib/api/utils/validation'
 
 // ============================================================================
 // GENERATE IDEAS HANDLER
@@ -1982,7 +1982,7 @@ async function analyzeImageWithGPT4V(
       return {
         type: analysisType,
         description: content,
-        extractedText: extractPotentialText(content),
+        extractedText: content,
         insights: extractImageInsights(content, projectContext),
         relevance: assessImageProjectRelevance(content, projectContext)
       }
