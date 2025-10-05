@@ -20,7 +20,7 @@ import {
   withAuth,
   compose,
   type AuthenticatedRequest,
-} from './_lib/middleware'
+} from './_lib/middleware/index'
 
 // Create a DOMPurify instance for server-side use
 const window = new JSDOM('').window as any

@@ -25,7 +25,7 @@ import {
   withCSRF,
   compose,
   type AuthenticatedRequest,
-} from './_lib/middleware'
+} from './_lib/middleware/index'
 import { optimizedGetUserProfile } from './_lib/utils/queryOptimizer'
 
 // Alias for compatibility
