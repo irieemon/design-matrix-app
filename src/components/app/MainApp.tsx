@@ -98,7 +98,7 @@ export default function MainApp({
     return (
       <AdminPortal
         currentUser={effectiveUser}
-        onBackToApp={closeAdminPortal}
+        onBackToApp={async () => { closeAdminPortal() }}
         onLogout={onLogout}
       />
     )

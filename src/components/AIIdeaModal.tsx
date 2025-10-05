@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Sparkles, Wand2, Lightbulb, Target, RefreshCw } from 'lucide-react'
+import { X, Sparkles, Wand2, Target, RefreshCw } from 'lucide-react'
 import { IdeaCard, Project, User } from '../types'
 import { aiService } from '../lib/aiService'
 import { logger } from '../utils/logger'
@@ -119,12 +119,7 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
         <div className="p-6 space-y-6">
           {/* Title Input */}
           <Input
-            label={
-              <span>
-                <Lightbulb className="w-4 h-4 inline mr-1" />
-                Brief Idea Title
-              </span>
-            }
+            label="Brief Idea Title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}

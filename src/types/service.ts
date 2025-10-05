@@ -17,6 +17,8 @@ export type ServiceErrorCode =
   | 'CONCURRENT_MODIFICATION'
   | 'OPERATION_TIMEOUT'
   | 'DEPENDENCY_ERROR'
+  | 'CONNECTION_ERROR'
+  | 'DATABASE_ERROR'
 
 // Service-specific error interface
 export interface ServiceError extends Omit<DatabaseError, 'code'> {

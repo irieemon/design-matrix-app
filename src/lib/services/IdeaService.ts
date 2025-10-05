@@ -46,13 +46,16 @@ export class IdeaService extends BaseService {
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (projectId) {
+      // Use projectId parameter first, then fall back to options.projectId
+      const effectiveProjectId = projectId || options?.projectId
+
+      if (effectiveProjectId) {
         // Ensure project ID is in proper UUID format before querying
-        const validProjectId = sanitizeProjectId(projectId)
+        const validProjectId = sanitizeProjectId(effectiveProjectId)
         if (validProjectId) {
           query = query.eq('project_id', validProjectId)
         } else {
-          logger.warn(`Invalid project ID format in getIdeasByProject: ${projectId}`)
+          logger.warn(`Invalid project ID format in getIdeasByProject: ${effectiveProjectId}`)
           // Return empty array for invalid project ID
           return []
         }
@@ -264,7 +267,7 @@ export class IdeaService extends BaseService {
   static async lockIdeaForEditing(
     ideaId: string,
     userId: string,
-    _options?: ServiceOptions // Currently unused
+    _options?: ServiceOptions
   ): Promise<ServiceResult<boolean>> {
     const context = this.createContext('lockIdeaForEditing', userId)
 
@@ -335,7 +338,7 @@ export class IdeaService extends BaseService {
   static async unlockIdea(
     ideaId: string,
     userId: string,
-    _options?: ServiceOptions // Currently unused
+    _options?: ServiceOptions
   ): Promise<ServiceResult<boolean>> {
     const context = this.createContext('unlockIdea', userId)
 

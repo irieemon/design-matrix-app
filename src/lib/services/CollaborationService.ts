@@ -29,7 +29,7 @@ export interface AddCollaboratorInput {
   inviterEmail?: string
 }
 
-export interface CollaboratorWithUser extends Omit<ProjectCollaborator, 'user'> {
+export interface CollaboratorWithUser extends ProjectCollaborator {
   user: {
     id: string
     email: string
@@ -39,6 +39,7 @@ export interface CollaboratorWithUser extends Omit<ProjectCollaborator, 'user'> 
       full_name: string
     }
   }
+  status?: 'active' | 'pending'
 }
 
 export class CollaborationService extends BaseService {
@@ -48,7 +49,7 @@ export class CollaborationService extends BaseService {
    */
   static async addProjectCollaborator(
     input: AddCollaboratorInput,
-    _options?: ServiceOptions // Currently unused
+    _options?: ServiceOptions
   ): Promise<ServiceResult<boolean>> {
     const context = this.createContext('addProjectCollaborator', input.invitedBy, input.projectId)
 
@@ -214,9 +215,12 @@ export class CollaborationService extends BaseService {
 
         const result: CollaboratorWithUser = {
           ...collaborator,
+          invited_at: collaborator.invited_at || new Date().toISOString(),
           user: {
             id: collaborator.user_id,
             email: actualEmail,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
             raw_user_meta_data: {
               full_name: userName.charAt(0).toUpperCase() + userName.slice(1)
             }
@@ -361,7 +365,7 @@ export class CollaborationService extends BaseService {
   static async getUserProjectRole(
     projectId: string,
     userId: string,
-    _options?: ServiceOptions // Currently unused
+    _options?: ServiceOptions
   ): Promise<ServiceResult<ProjectRole | null>> {
     const context = this.createContext('getUserProjectRole', userId, projectId)
 
@@ -421,8 +425,6 @@ export class CollaborationService extends BaseService {
     userId: string,
     options?: ServiceOptions
   ): Promise<ServiceResult<boolean>> {
-    // const context = this.createContext('canUserAccessProject', userId, projectId) // Currently unused
-
     const roleResult = await this.getUserProjectRole(projectId, userId, options)
     if (!roleResult.success) {
       return roleResult as ServiceResult<boolean>

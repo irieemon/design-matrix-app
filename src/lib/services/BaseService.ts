@@ -16,7 +16,6 @@ import type {
   ValidationResult,
   ServiceMetrics
 } from '../../types/service'
-// import type { DatabaseError } from '../../types' // Currently unused
 
 export abstract class BaseService {
   // Service configuration with sensible defaults
@@ -254,8 +253,8 @@ export abstract class BaseService {
   protected static async checkPermissions(
     userId: string,
     resourceId: string,
-    _resourceType: string, // Currently unused
-    _requiredPermission: 'read' | 'write' | 'delete' | 'share' // Currently unused
+    _resourceType?: string, // Optional for future use
+    _requiredPermission?: 'read' | 'write' | 'delete' | 'share' // Optional for future use
   ): Promise<boolean> {
     try {
       // Implementation depends on your authorization system

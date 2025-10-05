@@ -4,7 +4,6 @@ import { Project } from '../types'
 import { AdminService } from '../lib/adminService'
 import PrioritasLogo from './PrioritasLogo'
 import { useCurrentUser, useUserDisplay } from '../contexts/UserContext'
-import Button from './ui/Button'
 import NavItem from './ui/NavItem'
 
 interface SidebarProps {
