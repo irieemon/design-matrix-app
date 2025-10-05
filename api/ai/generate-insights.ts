@@ -694,7 +694,8 @@ function getSupabaseClient() {
   return createClient(supabaseUrl, supabaseKey)
 }
 
-// Get signed URL for image file
+// Get signed URL for image file (currently unused)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function _getSignedImageUrl(filePath: string): Promise<string | null> {
   const supabase = getSupabaseClient()
   if (!supabase) {

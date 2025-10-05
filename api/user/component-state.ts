@@ -23,8 +23,8 @@ import {
 } from '../middleware'
 
 // Create a DOMPurify instance for server-side use
-const window = new JSDOM('').window
-const purify = DOMPurify(window as unknown as Window)
+const window = new JSDOM('').window as any
+const purify = DOMPurify(window)
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL!
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!

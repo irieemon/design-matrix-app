@@ -27,10 +27,12 @@ import { withAuth, withAdmin } from './withAuth'
 export function compose(...middlewares: MiddlewareWrapper[]): MiddlewareWrapper {
   return (handler) => {
     // Apply middleware in reverse order so they execute left-to-right
-    return middlewares.reduceRight(
+    const composedHandler = middlewares.reduceRight(
       (wrapped, middleware) => middleware(wrapped),
       handler
     )
+    // Ensure the return type matches MiddlewareWrapper
+    return async (req, res) => composedHandler(req as any, res)
   }
 }
 

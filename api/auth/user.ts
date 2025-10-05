@@ -16,7 +16,7 @@ async function handler(req: AuthenticatedRequest, res: VercelResponse) {
     }
 
     // PERFORMANCE: Reduced logging overhead in production
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' && req.user) {
       logger.debug('Processing request', {
         userAgent: req.headers['user-agent']?.substring(0, 30),
         userId: req.user.id

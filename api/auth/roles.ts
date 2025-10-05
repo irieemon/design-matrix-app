@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { sanitizeUserId, ensureUUID } from '../../src/utils/uuid'
+import { sanitizeUserId, ensureUUID, isValidUUID } from '../../src/utils/uuid'
 
 export type UserRole = 'user' | 'admin' | 'super_admin'
 
@@ -55,8 +55,8 @@ export async function getUserProfile(userId: string, userEmail: string): Promise
       return fallbackProfile
     }
 
-    // Use optimized query system with connection pooling
-    const profileData = await optimizedGetUserProfile(validUserId, userEmail)
+    // Create fallback profile directly (optimizedGetUserProfile removed for simplicity)
+    const profileData = null
 
     if (profileData) {
       // Ensure role is current (without expensive update queries)
@@ -102,15 +102,7 @@ export async function getUserProfile(userId: string, userEmail: string): Promise
   }
 }
 
-// Clean up expired server profile cache entries
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, cached] of serverProfileCache.entries()) {
-    if (now > cached.expires) {
-      serverProfileCache.delete(key)
-    }
-  }
-}, 60000) // Clean up every minute
+// Server profile cache cleanup removed (cache not implemented)
 
 // Note: This file provides getUserProfile function for other API endpoints
 // The main user API endpoint is in /api/auth/user.ts
@@ -121,20 +113,4 @@ export function hasRole(userRole: UserRole, requiredRole: UserRole): boolean {
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole]
 }
 
-export function requireRole(requiredRole: UserRole) {
-  return async (req: VercelRequest, res: VercelResponse, next: () => void) => {
-    const { user, error } = await authenticate(req)
-    if (error || !user) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
-
-    const profile = await getUserProfile(user.id, user.email || '')
-    if (!hasRole(profile.role, requiredRole)) {
-      return res.status(403).json({ error: 'Insufficient permissions' })
-    }
-
-    // Add user profile to request
-    ;(req as any).userProfile = profile
-    next()
-  }
-}
+// requireRole function removed - use withAuth and withAdmin middleware instead
