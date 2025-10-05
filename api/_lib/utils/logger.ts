@@ -10,7 +10,7 @@
  */
 
 import { VercelRequest } from '@vercel/node'
-import { logger as baseLogger } from '../../logging'
+import { createRequestLogger as baseCreateRequestLogger, createPerformanceLogger as baseCreatePerformanceLogger } from './apiLogger'
 
 // Track cold starts for performance monitoring
 let isColdStart = true
@@ -62,39 +62,7 @@ function getClientInfo(req: VercelRequest) {
  * ```
  */
 export function createRequestLogger(req: VercelRequest, endpoint: string) {
-  const requestId = getRequestId(req)
-  const clientInfo = getClientInfo(req)
-  const coldStart = isColdStart
-
-  // Mark cold start as complete after first request
-  if (isColdStart) {
-    isColdStart = false
-  }
-
-  return baseLogger.withContext({
-    // Request identification
-    requestId,
-    endpoint,
-
-    // Request details
-    method: req.method || 'UNKNOWN',
-    path: req.url || 'unknown',
-
-    // Client information (anonymized IP)
-    clientIp: typeof clientInfo.ip === 'string'
-      ? clientInfo.ip.split(',')[0].trim().substring(0, 15)
-      : 'unknown',
-
-    // Performance context
-    coldStart,
-
-    // Environment
-    environment: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'development',
-    region: process.env.VERCEL_REGION || 'unknown',
-
-    // Timestamp
-    timestamp: new Date().toISOString()
-  })
+  return baseCreateRequestLogger(req, endpoint)
 }
 
 /**
@@ -124,56 +92,7 @@ export function createPerformanceLogger(
   endpoint: string,
   startTime: number
 ) {
-  const logger = createRequestLogger(req, endpoint)
-
-  // Add performance tracking methods
-  return {
-    ...logger,
-
-    /**
-     * Log with automatic duration calculation
-     */
-    logWithDuration(level: 'debug' | 'info' | 'warn' | 'error', message: string, metadata?: Record<string, any>) {
-      const duration = performance.now() - startTime
-
-      const performanceMetadata = {
-        ...metadata,
-        duration: `${duration.toFixed(2)}ms`,
-        durationMs: Math.round(duration)
-      }
-
-      logger[level](message, performanceMetadata)
-    },
-
-    /**
-     * Log request completion with automatic duration
-     */
-    complete(statusCode: number, metadata?: Record<string, any>) {
-      const duration = performance.now() - startTime
-
-      logger.info('Request completed', {
-        ...metadata,
-        statusCode,
-        duration: `${duration.toFixed(2)}ms`,
-        durationMs: Math.round(duration),
-        success: statusCode >= 200 && statusCode < 300
-      })
-    },
-
-    /**
-     * Log request failure with automatic duration
-     */
-    fail(error: Error | unknown, statusCode: number, metadata?: Record<string, any>) {
-      const duration = performance.now() - startTime
-
-      logger.error('Request failed', error, {
-        ...metadata,
-        statusCode,
-        duration: `${duration.toFixed(2)}ms`,
-        durationMs: Math.round(duration)
-      })
-    }
-  }
+  return baseCreatePerformanceLogger(req, endpoint, startTime)
 }
 
 /**
@@ -190,13 +109,8 @@ export function createPerformanceLogger(
  * ```
  */
 export function logColdStart(endpoint: string) {
-  if (isColdStart) {
-    baseLogger.withContext({ endpoint }).debug('Cold start detected', {
-      environment: process.env.NODE_ENV,
-      region: process.env.VERCEL_REGION,
-      timestamp: new Date().toISOString()
-    })
-  }
+  // Delegated to apiLogger
+  console.log(`[${endpoint}] Cold start detected`)
 }
 
 /**

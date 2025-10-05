@@ -3,7 +3,7 @@
 
 import { SupabaseClient } from '@supabase/supabase-js'
 import { withPooledConnection } from './connectionPool'
-import { sanitizeUserId, ensureUUID } from '../../../utils/uuid'
+import { sanitizeUserId, ensureUUID } from './apiUuid'
 
 interface QueryCacheEntry {
   data: any
