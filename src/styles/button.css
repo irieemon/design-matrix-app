@@ -206,7 +206,7 @@
   background: var(--graphite-700);
   color: #ffffff;
   border-color: var(--graphite-700);
-  box-shadow: var(--shadow-button-lux);
+  box-shadow: var(--shadow-button);
 }
 
 .btn--primary:hover:not(:disabled) {
@@ -218,7 +218,7 @@
 
 .btn--primary:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: var(--shadow-button-lux);
+  box-shadow: var(--shadow-button);
   transition-duration: var(--duration-instant);
   transition-timing-function: var(--easing-in);
 }
@@ -233,7 +233,7 @@
   background: var(--surface-primary);
   color: var(--graphite-700);
   border-color: var(--hairline-default);
-  box-shadow: var(--shadow-button-lux);
+  box-shadow: var(--shadow-button);
 }
 
 .btn--secondary:hover:not(:disabled) {
@@ -280,24 +280,25 @@
   outline: none;
 }
 
-/* Danger Variant - ANIMATED LUX */
+/* Danger Variant - ANIMATED LUX (Updated to use Lux tokens) */
 .btn--danger {
-  background: #DC2626;
+  background: var(--garnet-700);
   color: #ffffff;
-  border-color: #DC2626;
-  box-shadow: var(--shadow-button-lux);
+  border-color: var(--garnet-700);
+  box-shadow: var(--shadow-button);
 }
 
 .btn--danger:hover:not(:disabled) {
-  background: var(--garnet-700);
-  border-color: var(--garnet-700);
+  background: #991b1b; /* garnet-800 equivalent */
+  border-color: #991b1b;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(185, 28, 28, 0.15);
 }
 
 .btn--danger:active:not(:disabled) {
+  background: #7f1d1d; /* garnet-900 equivalent */
   transform: translateY(0);
-  box-shadow: var(--shadow-button-lux);
+  box-shadow: var(--shadow-button);
   transition-duration: var(--duration-instant);
   transition-timing-function: var(--easing-in);
 }
@@ -307,28 +308,32 @@
   outline: none;
 }
 
-/* Success Variant */
+/* Success Variant - ANIMATED LUX (Updated to use Lux tokens) */
 .btn--success {
-  background: #059669;
+  background: var(--emerald-700);
   color: #ffffff;
-  border-color: #059669;
+  border-color: var(--emerald-700);
+  box-shadow: var(--shadow-button);
 }
 
 .btn--success:hover:not(:disabled) {
-  background: #047857;
-  border-color: #047857;
+  background: #065f46; /* emerald-800 equivalent */
+  border-color: #065f46;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+  box-shadow: 0 2px 8px rgba(4, 120, 87, 0.15);
 }
 
 .btn--success:active:not(:disabled) {
+  background: #064e3b; /* emerald-900 equivalent */
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
+  box-shadow: var(--shadow-button);
+  transition-duration: var(--duration-instant);
+  transition-timing-function: var(--easing-in);
 }
 
 .btn--success:focus-visible {
-  outline: 2px solid #059669;
-  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(4, 120, 87, 0.1);
+  outline: none;
 }
 
 /* Ghost Variant - ANIMATED LUX */
@@ -352,6 +357,62 @@
 
 .btn--ghost:focus-visible {
   box-shadow: var(--shadow-focus-ring-lux);
+  outline: none;
+}
+
+/* Sapphire Variant - ANIMATED LUX (NEW - AI/Interactive/Information) */
+.btn--sapphire {
+  background: var(--sapphire-500);
+  color: #ffffff;
+  border-color: var(--sapphire-500);
+  box-shadow: var(--shadow-button);
+}
+
+.btn--sapphire:hover:not(:disabled) {
+  background: #2563eb; /* sapphire-600 equivalent */
+  border-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.btn--sapphire:active:not(:disabled) {
+  background: var(--sapphire-700);
+  transform: translateY(0);
+  box-shadow: var(--shadow-button);
+  transition-duration: var(--duration-instant);
+  transition-timing-function: var(--easing-in);
+}
+
+.btn--sapphire:focus-visible {
+  box-shadow: var(--shadow-focus-ring-lux);
+  outline: none;
+}
+
+/* Warning Variant - ANIMATED LUX (NEW - Demo/Caution) */
+.btn--warning {
+  background: var(--amber-700);
+  color: #ffffff;
+  border-color: var(--amber-700);
+  box-shadow: var(--shadow-button);
+}
+
+.btn--warning:hover:not(:disabled) {
+  background: #92400e; /* amber-800 equivalent */
+  border-color: #92400e;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(180, 83, 9, 0.15);
+}
+
+.btn--warning:active:not(:disabled) {
+  background: #78350f; /* amber-900 equivalent */
+  transform: translateY(0);
+  box-shadow: var(--shadow-button);
+  transition-duration: var(--duration-instant);
+  transition-timing-function: var(--easing-in);
+}
+
+.btn--warning:focus-visible {
+  box-shadow: 0 0 0 4px rgba(180, 83, 9, 0.1);
   outline: none;
 }
 

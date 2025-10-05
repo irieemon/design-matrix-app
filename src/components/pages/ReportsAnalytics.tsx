@@ -5,6 +5,7 @@ import { DatabaseService } from '../../lib/database'
 import AIInsightsModal from '../AIInsightsModal'
 import { OpenAIModel } from '../../lib/ai/openaiModelRouter'
 import { logger } from '../../utils/logger'
+import { Button } from '../ui/Button'
 
 interface ReportsAnalyticsProps {
   ideas: IdeaCard[]
@@ -231,19 +232,33 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
             </div>
 
             {/* Prominent AI Insights Button */}
-            <button
-              onClick={handleGenerateNewInsight}
-              disabled={ideas.length === 0}
-              className="flex items-center space-x-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-4 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 group"
-            >
-              <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-                <Sparkles className="w-6 h-6" />
+            <div className="rounded-xl border p-6" style={{
+              backgroundColor: 'var(--canvas-secondary)',
+              borderColor: 'var(--hairline-default)'
+            }}>
+              <div className="flex items-start space-x-4">
+                <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--sapphire-100)' }}>
+                  <Sparkles className="w-8 h-8" style={{ color: 'var(--sapphire-600)' }} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--graphite-900)' }}>
+                    Generate AI Insights
+                  </h3>
+                  <p className="text-sm mb-4" style={{ color: 'var(--graphite-600)' }}>
+                    Get strategic analysis & recommendations based on your ideas
+                  </p>
+                  <Button
+                    onClick={handleGenerateNewInsight}
+                    disabled={ideas.length === 0}
+                    variant="sapphire"
+                    size="lg"
+                    icon={<Sparkles className="w-5 h-5" />}
+                  >
+                    Generate Insights
+                  </Button>
+                </div>
               </div>
-              <div className="text-left">
-                <div className="font-bold text-lg">Generate AI Insights</div>
-                <div className="text-sm text-purple-100 font-medium">Strategic analysis & recommendations</div>
-              </div>
-            </button>
+            </div>
           </div>
         </div>
         

@@ -2,6 +2,7 @@ import '@testing-library/jest-dom'
 import { beforeAll, afterEach, afterAll, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import { server } from './mocks/server'
+import './utils/custom-matchers'  // Load custom matchers
 
 // Start the MSW server before all tests
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
@@ -55,3 +56,15 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: vi.fn(),
   })),
 })
+
+// Polyfill stopImmediatePropagation for JSDOM
+// JSDOM doesn't implement this method, but some components use it
+if (typeof Event !== 'undefined' && !Event.prototype.stopImmediatePropagation) {
+  Event.prototype.stopImmediatePropagation = function() {
+    this.stopPropagation()
+    Object.defineProperty(this, 'immediatePropagationStopped', {
+      value: true,
+      configurable: true
+    })
+  }
+}

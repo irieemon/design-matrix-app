@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
+import { useLogger } from '../lib/logging'
 
 // Animation configurations
 export interface AnimationConfig {
@@ -125,6 +126,7 @@ const PREMIUM_ANIMATIONS = {
 }
 
 export const usePremiumAnimations = () => {
+  const logger = useLogger('usePremiumAnimations')
   const [isAnimationEnabled, setIsAnimationEnabled] = useState(true)
   const animationRefs = useRef<Map<string, Animation>>(new Map())
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -141,46 +143,63 @@ export const usePremiumAnimations = () => {
 
     const animation = PREMIUM_ANIMATIONS[animationName]
     if (!animation) {
-      console.warn(`Animation '${animationName}' not found`)
+      logger.warn('Animation not found', { animationName })
       return null
     }
 
-    const config = { ...animation.config, ...customConfig }
-    const webAnimation = element.animate(animation.keyframes, config)
-    
-    // Store animation reference
-    const animationId = `${animationName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    animationRefs.current.set(animationId, webAnimation)
+    try {
+      const config = { ...animation.config, ...customConfig }
+      const webAnimation = element.animate(animation.keyframes, config)
 
-    // Cleanup when animation finishes
-    webAnimation.addEventListener('finish', () => {
-      animationRefs.current.delete(animationId)
-    })
+      // Store animation reference
+      const animationId = `${animationName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      animationRefs.current.set(animationId, webAnimation)
 
-    return webAnimation
+      // Cleanup when animation finishes or is cancelled
+      const cleanup = () => {
+        animationRefs.current.delete(animationId)
+      }
+
+      webAnimation.addEventListener('finish', cleanup)
+      webAnimation.addEventListener('cancel', cleanup)
+
+      return webAnimation
+    } catch (error) {
+      logger.warn('Failed to create animation', { animationName, error })
+      return null
+    }
   }, [isAnimationEnabled])
 
   // Custom keyframe animation
   const animateCustom = useCallback((element: HTMLElement, keyframes: Keyframe[], config: AnimationConfig = {}) => {
     if (!isAnimationEnabled || !element) return null
 
-    const defaultConfig = {
-      duration: 300,
-      easing: 'ease',
-      fillMode: 'both' as const
+    try {
+      const defaultConfig = {
+        duration: 300,
+        easing: 'ease',
+        fillMode: 'both' as const
+      }
+
+      const webAnimation = element.animate(keyframes, { ...defaultConfig, ...config })
+
+      const animationId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      animationRefs.current.set(animationId, webAnimation)
+
+      // Cleanup when animation finishes or is cancelled
+      const cleanup = () => {
+        animationRefs.current.delete(animationId)
+      }
+
+      webAnimation.addEventListener('finish', cleanup)
+      webAnimation.addEventListener('cancel', cleanup)
+
+      return webAnimation
+    } catch (error) {
+      logger.warn('Failed to create custom animation', { error })
+      return null
     }
-
-    const webAnimation = element.animate(keyframes, { ...defaultConfig, ...config })
-    
-    const animationId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    animationRefs.current.set(animationId, webAnimation)
-
-    webAnimation.addEventListener('finish', () => {
-      animationRefs.current.delete(animationId)
-    })
-
-    return webAnimation
-  }, [isAnimationEnabled])
+  }, [isAnimationEnabled, logger])
 
   // Spring-based animation (simplified)
   const animateSpring = useCallback((element: HTMLElement, targetState: Partial<CSSStyleDeclaration>, springConfig: SpringConfig = {}) => {

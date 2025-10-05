@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Map, Download, History, Sparkles, Loader, ChevronDown } from 'lucide-react'
 import { Project, ProjectRoadmap as ProjectRoadmapType } from '../../types'
 import { RoadmapData } from './types'
+import { Button } from '../ui/Button'
 
 interface RoadmapHeaderProps {
   currentProject: Project | null
@@ -65,34 +66,28 @@ const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({
 
         <div className="flex items-center gap-3 flex-shrink-0">
           {/* Generate/Regenerate Button */}
-          <button
+          <Button
             onClick={onGenerateRoadmap}
             disabled={isLoading}
-            className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+            variant="sapphire"
+            size="lg"
+            state={isLoading ? 'loading' : 'idle'}
+            icon={isLoading ? <Loader className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
           >
-            {isLoading ? (
-              <>
-                <Loader className="w-5 h-5 animate-spin" />
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-5 h-5" />
-                <span>{roadmapData ? 'Regenerate' : 'Generate'} Roadmap</span>
-              </>
-            )}
-          </button>
+            {isLoading ? 'Generating...' : `${roadmapData ? 'Regenerate' : 'Generate'} Roadmap`}
+          </Button>
 
           {/* Export Button */}
           {roadmapData && (
-            <button
+            <Button
               onClick={onExportClick}
-              className="flex items-center space-x-2 bg-slate-100 text-slate-700 px-4 py-3 rounded-xl hover:bg-slate-200 transition-colors"
+              variant="secondary"
+              size="lg"
+              icon={<Download className="w-5 h-5" />}
               title="Export roadmap"
             >
-              <Download className="w-5 h-5" />
               <span className="hidden sm:inline">Export</span>
-            </button>
+            </Button>
           )}
 
           {/* History Dropdown */}

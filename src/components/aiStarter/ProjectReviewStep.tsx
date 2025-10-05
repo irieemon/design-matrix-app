@@ -2,6 +2,7 @@ import React from 'react'
 import { Lightbulb, Loader } from 'lucide-react'
 import type { ProjectAnalysis } from '../../hooks/aiStarter'
 import type { ProjectType } from '../../types'
+import { Button } from '../ui/Button'
 
 interface ProjectReviewStepProps {
   analysis: ProjectAnalysis
@@ -128,24 +129,23 @@ const ProjectReviewStep: React.FC<ProjectReviewStepProps> = ({
       </div>
 
       <div className="flex space-x-3">
-        <button
+        <Button
           onClick={onBack}
-          className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+          variant="secondary"
+          fullWidth
         >
           Back
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onCreateProject}
           disabled={isLoading || !analysis?.generatedIdeas.length}
-          className="flex-1 flex items-center justify-center space-x-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2"
+          variant="success"
+          state={isLoading ? 'loading' : 'idle'}
+          icon={isLoading ? <Loader className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
+          fullWidth
         >
-          {isLoading ? (
-            <Loader className="w-4 h-4 animate-spin" />
-          ) : (
-            <Lightbulb className="w-4 h-4" />
-          )}
-          <span>{isLoading ? 'Creating...' : `Create Project & ${analysis?.generatedIdeas.length || 0} Ideas`}</span>
-        </button>
+          {isLoading ? 'Creating...' : `Create Project & ${analysis?.generatedIdeas.length || 0} Ideas`}
+        </Button>
       </div>
     </div>
   )

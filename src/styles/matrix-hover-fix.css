@@ -1,0 +1,213 @@
+/**
+ * MATRIX CLEAN HOVER FIX CSS
+ *
+ * Minimal, targeted hover fixes for matrix components.
+ * This file replaces the previous "nuclear option" approach with surgical fixes.
+ *
+ * PHILOSOPHY: Fix only what's broken, preserve what works.
+ */
+
+/* ===== TARGETED HOVER FIXES ===== */
+
+/* Fix specific problematic hover states without breaking all functionality */
+.matrix-container .hover\:bg-gray-50:hover,
+.matrix-container .hover\:bg-gray-100:hover,
+.matrix-container .hover\:bg-neutral-50:hover,
+.matrix-container .hover\:bg-neutral-100:hover {
+  /* Only override problematic gray backgrounds, not all backgrounds */
+  background-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Prevent unwanted background changes on matrix axis labels and UI elements */
+.matrix-container .absolute.top-6.left-6:hover,
+.matrix-container .absolute.top-6.right-6:hover,
+.matrix-container .absolute.bottom-20.left-6:hover,
+.matrix-container .absolute.bottom-20.right-6:hover {
+  /* Preserve quadrant label hover states but prevent gray artifacts */
+  background-color: inherit !important;
+}
+
+/* Fix card hover interactions without disabling them entirely */
+.matrix-container .idea-card-wrapper:hover {
+  /* Allow normal card hover effects to work properly */
+  transform: scale(1.02) !important;
+  z-index: 200 !important;
+  /* Prevent unwanted background bleeding */
+  isolation: isolate;
+}
+
+/* Prevent matrix background interference during interactions */
+.matrix-container:hover {
+  /* Preserve the matrix background, don't force transparent */
+  background: linear-gradient(135deg,
+    rgba(248, 250, 252, 0.95) 0%,
+    rgba(239, 246, 255, 0.9) 25%,
+    rgba(238, 242, 255, 0.85) 50%,
+    rgba(241, 245, 249, 0.9) 75%,
+    rgba(248, 250, 252, 0.95) 100%
+  ) !important;
+}
+
+/* Fix drag and drop visual feedback */
+.matrix-container .drag-preview {
+  /* Ensure drag previews remain visible */
+  opacity: 1 !important;
+  transform: scale(1.05) rotate(2deg) !important;
+  z-index: 1000 !important;
+}
+
+/* Targeted fix for button hover states in matrix context */
+.matrix-container button:hover:not([disabled]):not(.no-hover) {
+  /* Allow buttons to have proper hover states */
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Fix edit mode indicator visibility */
+.matrix-container .absolute.top-2.right-2 {
+  /* Ensure edit indicators remain visible */
+  opacity: 1 !important;
+  z-index: 10 !important;
+}
+
+/* Restore smooth transitions for important interactions */
+.matrix-container .idea-card-wrapper,
+.matrix-container button:not([disabled]),
+.matrix-container .hover\:scale-102,
+.matrix-container .hover\:scale-105 {
+  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+}
+
+/* Fix double-click hint visibility */
+.matrix-container .idea-card-wrapper:hover .absolute.bottom-2.left-1\/2 {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Ensure priority badges remain visible and styled correctly */
+.matrix-container .text-xs.font-semibold.px-3.py-1\\.5 {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(4px) !important;
+  opacity: 1 !important;
+}
+
+/* CRITICAL: Allow normal card backgrounds to function properly */
+.matrix-container .bg-white,
+.matrix-container .bg-slate-50,
+.matrix-container .bg-blue-50,
+.matrix-container .bg-emerald-50,
+.matrix-container .bg-amber-50,
+.matrix-container .bg-red-50,
+.matrix-container .bg-purple-50 {
+  /* Restore proper backgrounds for cards and UI elements */
+  background-color: inherit !important;
+  opacity: 1 !important;
+}
+
+/* Fix quadrant guide cards at bottom */
+.matrix-container .grid.grid-cols-1 .bg-emerald-50,
+.matrix-container .grid.grid-cols-1 .bg-blue-50,
+.matrix-container .grid.grid-cols-1 .bg-amber-50,
+.matrix-container .grid.grid-cols-1 .bg-red-50 {
+  /* Preserve quadrant colors */
+  background-color: inherit !important;
+  border-color: inherit !important;
+}
+
+/* Allow scale transforms to work properly */
+.matrix-container .hover\:scale-102:hover {
+  transform: scale(1.02) !important;
+}
+
+.matrix-container .hover\:scale-105:hover {
+  transform: scale(1.05) !important;
+}
+
+/* Restore shadow effects for depth */
+.matrix-container .hover\:shadow-md:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.matrix-container .hover\:shadow-lg:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Fix center dividing lines visibility */
+.matrix-container .absolute.top-0.bottom-0.left-1\/2,
+.matrix-container .absolute.left-0.right-0.top-1\/2 {
+  background: rgba(148, 163, 184, 0.4) !important;
+  opacity: 1 !important;
+}
+
+/* PERFORMANCE: Use efficient selectors and reduce paint operations */
+.matrix-container * {
+  /* Enable GPU acceleration for smooth interactions */
+  will-change: auto;
+  backface-visibility: hidden;
+}
+
+/* ACCESSIBILITY: Ensure focus states remain visible */
+.matrix-container *:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.8) !important;
+  outline-offset: 2px !important;
+}
+
+/* RESPONSIVE: Maintain functionality across screen sizes */
+@media (max-width: 768px) {
+  .matrix-container .idea-card-wrapper:hover {
+    transform: scale(1.05) !important;
+  }
+
+  .matrix-container .hover\:scale-102:hover,
+  .matrix-container .hover\:scale-105:hover {
+    transform: scale(1.02) !important;
+  }
+}
+
+/* CLEAN UP: Remove only truly problematic elements without breaking core functionality */
+.matrix-container .transition-none {
+  transition: all 0.2s ease !important;
+}
+
+.matrix-container [style*="display: none"]:not(.sr-only):not([aria-hidden="true"]) {
+  display: block !important;
+}
+
+/* FINAL FIX: Ensure matrix grid background shows properly */
+.matrix-grid-background {
+  background: #ffffff !important;
+  background-image: linear-gradient(to right, transparent calc(50% - 2px), #e2e8f0 calc(50% - 2px), #e2e8f0 calc(50% + 2px), transparent calc(50% + 2px)), linear-gradient(to bottom, transparent calc(50% - 2px), #e2e8f0 calc(50% - 2px), #e2e8f0 calc(50% + 2px), transparent calc(50% + 2px)) !important;
+  background-size: 100% 100%, 100% 100% !important;
+  background-position: 0 0, 0 0 !important;
+}
+
+/* COMPREHENSIVE GREY HOVER PREVENTION - SURGICAL OPTION FOR GRID */
+/* REMOVED: These transparent rules were hiding the grid lines on hover */
+/* The matrix-grid-background element needs to maintain its background-image for grid lines */
+
+/* Force matrix background pattern to remain visible */
+.matrix-grid-background:hover {
+  /* Override any hover states that might turn the grid grey */
+  background: #ffffff !important;
+  background-image: linear-gradient(to right, transparent calc(50% - 2px), #e2e8f0 calc(50% - 2px), #e2e8f0 calc(50% + 2px), transparent calc(50% + 2px)), linear-gradient(to bottom, transparent calc(50% - 2px), #e2e8f0 calc(50% - 2px), #e2e8f0 calc(50% + 2px), transparent calc(50% + 2px)) !important;
+  background-size: 100% 100%, 100% 100% !important;
+  background-position: 0 0, 0 0 !important;
+}
+
+/* CRITICAL: Override any Tailwind hover utilities that might cause grey backgrounds */
+.matrix-container .hover\:bg-gray-200:hover,
+.matrix-container .hover\:bg-gray-300:hover,
+.matrix-container .hover\:bg-slate-100:hover,
+.matrix-container .hover\:bg-slate-200:hover,
+.matrix-container .hover\:bg-slate-300:hover {
+  background-color: transparent !important;
+}
+
+/* Prevent hover states on specific matrix structural elements but preserve grid background */
+.matrix-container > div:hover:not(.matrix-grid-background),
+.matrix-viewport > div:hover:not(.matrix-grid-background) {
+  background-color: inherit !important;
+  background: inherit !important;
+}

@@ -1,0 +1,224 @@
+/**
+ * Transition Coordination CSS
+ *
+ * Optimized CSS for coordinating transitions with React state updates
+ * and preventing visual conflicts between different animation systems.
+ */
+
+/* ============================================
+   State-Based Transition Coordination
+   ============================================ */
+
+/* Disable transitions during React state updates to prevent conflicts */
+.react-state-updating {
+  transition: none !important;
+  animation: none !important;
+}
+
+.react-state-updating * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Re-enable optimized transitions after state updates complete */
+.react-state-stable {
+  transition: transform 0.18s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* ============================================
+   Matrix Layout Coordination
+   ============================================ */
+
+/* Prevent layout thrashing during sidebar transitions */
+.matrix-layout-transitioning .idea-card-optimized {
+  transition-duration: 0.1s; /* Faster during layout changes */
+  will-change: transform;
+}
+
+.matrix-layout-stable .idea-card-optimized {
+  transition-duration: 0.18s; /* Normal speed when stable */
+  will-change: auto;
+}
+
+/* Coordinate sidebar expansion with matrix resizing */
+.sidebar-expanding .enterprise-matrix-canvas {
+  transition: none; /* Disable transitions during expansion */
+  contain: layout;
+}
+
+.sidebar-stable .enterprise-matrix-canvas {
+  transition: width 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* ============================================
+   Drag and Drop Coordination
+   ============================================ */
+
+/* Optimize all elements during drag operations */
+.dnd-active {
+  pointer-events: none; /* Prevent interference during drag */
+}
+
+.dnd-active .idea-card-optimized:not(.dragging) {
+  transition-duration: 0.1s; /* Faster transitions for non-dragging cards */
+  opacity: 0.8; /* Visual feedback for valid drop targets */
+}
+
+.dnd-overlay-active {
+  transition: none; /* No transitions for overlay elements */
+}
+
+/* ============================================
+   Performance-Based Transition Management
+   ============================================ */
+
+/* Disable expensive transitions on low-end devices */
+@media (max-width: 768px) and (max-resolution: 150dpi) {
+  .idea-card-optimized {
+    transition: transform 0.15s ease-out;
+  }
+
+  .idea-card-optimized:hover {
+    transform: none; /* Disable hover effects on mobile */
+  }
+
+  .btn:hover {
+    transform: none; /* Disable button hover effects */
+  }
+}
+
+/* Optimize for high-performance devices */
+@media (min-width: 1200px) and (min-resolution: 144dpi) {
+  .idea-card-optimized {
+    transition-duration: 0.12s; /* Faster on high-end devices */
+  }
+}
+
+/* ============================================
+   Memory Management for Transitions
+   ============================================ */
+
+/* Clean up will-change properties automatically */
+.transition-cleanup {
+  will-change: auto !important;
+}
+
+/* Apply will-change only during active transitions */
+.transitioning {
+  will-change: transform;
+}
+
+.transitioning.finished {
+  will-change: auto;
+}
+
+/* ============================================
+   Error State Transitions
+   ============================================ */
+
+/* Handle transition conflicts gracefully */
+.transition-error {
+  transition: none !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+.transition-recovery {
+  transition: all 0.2s ease-out;
+}
+
+/* ============================================
+   Focus and Accessibility Coordination
+   ============================================ */
+
+/* Ensure focus transitions don't conflict with other animations */
+.focus-transitioning {
+  transition: outline-color 0.15s ease-out;
+}
+
+.focus-transitioning * {
+  transition-delay: 0.05s; /* Slight delay to prevent conflicts */
+}
+
+/* ============================================
+   Animation Queuing System
+   ============================================ */
+
+/* Prevent multiple simultaneous animations on same element */
+.animation-queue-1 {
+  animation-delay: 0ms;
+}
+
+.animation-queue-2 {
+  animation-delay: 100ms;
+}
+
+.animation-queue-3 {
+  animation-delay: 200ms;
+}
+
+/* ============================================
+   Browser-Specific Optimizations
+   ============================================ */
+
+/* Chrome/Edge optimizations */
+@supports (-webkit-appearance: none) {
+  .idea-card-optimized {
+    -webkit-transform: translateZ(0);
+    -webkit-transition: -webkit-transform 0.18s cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+}
+
+/* Firefox optimizations */
+@supports (-moz-appearance: none) {
+  .idea-card-optimized {
+    transition-timing-function: ease-out; /* Firefox performs better with ease-out */
+  }
+}
+
+/* Safari optimizations */
+@supports (-webkit-overflow-scrolling: touch) {
+  .idea-card-optimized {
+    -webkit-overflow-scrolling: touch;
+    -webkit-transform: translateZ(0);
+  }
+}
+
+/* ============================================
+   Development and Debug Helpers
+   ============================================ */
+
+/* Visual indicator for transition debugging */
+.debug-transitions .transitioning {
+  outline: 2px solid rgba(255, 0, 0, 0.5);
+}
+
+.debug-transitions .react-state-updating {
+  outline: 2px solid rgba(255, 165, 0, 0.5);
+}
+
+.debug-transitions .dnd-active {
+  outline: 2px solid rgba(0, 255, 0, 0.5);
+}
+
+/* Performance monitoring */
+.perf-monitor {
+  position: fixed;
+  top: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-family: monospace;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.perf-monitor.warning {
+  background: rgba(255, 165, 0, 0.8);
+}
+
+.perf-monitor.critical {
+  background: rgba(255, 0, 0, 0.8);
+}

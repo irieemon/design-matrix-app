@@ -1,0 +1,284 @@
+/**
+ * Prioritas Revolutionary Design System
+ *
+ * A unique spatial-data visualization design language that breaks away from
+ * generic SaaS patterns. Based on strategic thinking and decision-making psychology.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+:root {
+  /* ===== STRATEGIC COLOR PSYCHOLOGY SYSTEM ===== */
+
+  /* High-Impact Decision Colors - Deep, commanding attention */
+  --impact-critical: #1a0f2e;      /* Deep strategic purple */
+  --impact-critical-bg: #2d1b4e;
+  --impact-critical-accent: #4c3570;
+  --impact-critical-light: #6b4e8c;
+
+  /* Quick Wins - Energetic, action-oriented */
+  --quickwin-primary: #0d4f3c;     /* Deep forest green */
+  --quickwin-primary-bg: #155e4a;
+  --quickwin-accent: #26a17b;
+  --quickwin-light: #34d89a;
+  --quickwin-bright: #4ade80;
+
+  /* Strategic Long-term - Sophisticated, thoughtful */
+  --strategic-primary: #0f2847;    /* Deep ocean blue */
+  --strategic-primary-bg: #1e3a5f;
+  --strategic-accent: #3b82f6;
+  --strategic-light: #60a5fa;
+  --strategic-bright: #93c5fd;
+
+  /* Reconsider/Low Priority - Intentionally muted */
+  --reconsider-primary: #44403c;   /* Warm gray */
+  --reconsider-bg: #57534e;
+  --reconsider-accent: #78716c;
+  --reconsider-light: #a8a29e;
+
+  /* Avoid/Red Zone - Warning without being alarming */
+  --avoid-primary: #7c2d12;        /* Deep burnt orange */
+  --avoid-bg: #9a3412;
+  --avoid-accent: #ea580c;
+  --avoid-light: #fb923c;
+
+  /* ===== SPATIAL DEPTH SYSTEM ===== */
+
+  /* Surface Elevations - Creating visual weight hierarchy */
+  --surface-base: #fafafa;
+  --surface-raised: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-floating: #ffffff;
+
+  /* Depth Shadows - Physics-based shadow system */
+  --shadow-close: 0 1px 3px 0 rgba(15, 40, 71, 0.08);
+  --shadow-near: 0 4px 6px -1px rgba(15, 40, 71, 0.08), 0 2px 4px -1px rgba(15, 40, 71, 0.06);
+  --shadow-medium: 0 10px 15px -3px rgba(15, 40, 71, 0.1), 0 4px 6px -2px rgba(15, 40, 71, 0.05);
+  --shadow-far: 0 20px 25px -5px rgba(15, 40, 71, 0.12), 0 10px 10px -5px rgba(15, 40, 71, 0.08);
+  --shadow-distant: 0 25px 50px -12px rgba(15, 40, 71, 0.15);
+
+  /* ===== TYPOGRAPHY SCALE - STRATEGIC IMPORTANCE ===== */
+
+  /* Variable font weights that adapt to content importance */
+  --text-weight-low: 300;          /* Less important content */
+  --text-weight-normal: 400;       /* Standard content */
+  --text-weight-important: 500;    /* Important decisions */
+  --text-weight-critical: 600;     /* Critical decisions */
+  --text-weight-strategic: 700;    /* Strategic headers */
+
+  /* Strategic text sizes - reflecting decision hierarchy */
+  --text-xs: 0.75rem;     /* 12px - Supporting details */
+  --text-sm: 0.875rem;    /* 14px - Secondary information */
+  --text-base: 1rem;      /* 16px - Standard content */
+  --text-md: 1.125rem;    /* 18px - Important content */
+  --text-lg: 1.25rem;     /* 20px - Section headers */
+  --text-xl: 1.5rem;      /* 24px - Major decisions */
+  --text-2xl: 1.875rem;   /* 30px - Strategic priorities */
+  --text-3xl: 2.25rem;    /* 36px - Critical decisions */
+  --text-4xl: 3rem;       /* 48px - Major strategic elements */
+
+  /* Line heights optimized for strategic content */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* ===== SPATIAL MEASUREMENTS ===== */
+
+  /* Physics-based spacing system */
+  --space-xs: 0.25rem;    /* 4px - Tight connections */
+  --space-sm: 0.5rem;     /* 8px - Close relationships */
+  --space-md: 1rem;       /* 16px - Standard separation */
+  --space-lg: 1.5rem;     /* 24px - Clear distinction */
+  --space-xl: 2rem;       /* 32px - Strong separation */
+  --space-2xl: 3rem;      /* 48px - Major boundaries */
+  --space-3xl: 4rem;      /* 64px - Section breaks */
+
+  /* Border radius for spatial objects */
+  --radius-sm: 0.375rem;  /* 6px - Tight objects */
+  --radius-md: 0.5rem;    /* 8px - Standard objects */
+  --radius-lg: 0.75rem;   /* 12px - Important objects */
+  --radius-xl: 1rem;      /* 16px - Major elements */
+  --radius-full: 9999px;  /* Circular elements */
+
+  /* ===== INTERACTION STATES ===== */
+
+  /* Hover states with spatial feedback */
+  --hover-lift: translateY(-2px);
+  --hover-shadow: var(--shadow-medium);
+
+  /* Active states with physics */
+  --active-press: translateY(1px);
+  --active-shadow: var(--shadow-close);
+
+  /* Focus states for accessibility */
+  --focus-outline: 2px solid var(--strategic-accent);
+  --focus-offset: 2px;
+
+  /* ===== ANIMATION TIMING ===== */
+
+  /* Physics-based timing functions */
+  --timing-sharp: cubic-bezier(0.4, 0.0, 0.6, 1);          /* Quick, decisive */
+  --timing-smooth: cubic-bezier(0.4, 0.0, 0.2, 1);         /* Standard ease */
+  --timing-gentle: cubic-bezier(0.25, 0.46, 0.45, 0.94);   /* Soft, organic */
+  --timing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);  /* Playful feedback */
+
+  /* Duration scales */
+  --duration-instant: 100ms;
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-deliberate: 800ms;
+}
+
+/* ===== TYPOGRAPHY CLASSES ===== */
+
+.text-strategic {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: var(--text-weight-strategic);
+  color: var(--impact-critical);
+  letter-spacing: -0.025em;
+}
+
+.text-decision {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: var(--text-weight-important);
+  color: var(--strategic-primary);
+}
+
+.text-supporting {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: var(--text-weight-normal);
+  color: var(--reconsider-primary);
+}
+
+.text-code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-variant-ligatures: common-ligatures;
+}
+
+/* ===== SPATIAL OBJECT CLASSES ===== */
+
+.spatial-object {
+  position: relative;
+  transition: all var(--duration-normal) var(--timing-smooth);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-close);
+}
+
+.spatial-object:hover {
+  transform: var(--hover-lift);
+  box-shadow: var(--hover-shadow);
+}
+
+.spatial-object:active {
+  transform: var(--active-press);
+  box-shadow: var(--active-shadow);
+}
+
+.spatial-object--floating {
+  box-shadow: var(--shadow-far);
+  background: var(--surface-floating);
+}
+
+.spatial-object--critical {
+  background: linear-gradient(135deg, var(--impact-critical-bg), var(--impact-critical));
+  color: white;
+  box-shadow: var(--shadow-medium);
+}
+
+.spatial-object--quickwin {
+  background: linear-gradient(135deg, var(--quickwin-primary-bg), var(--quickwin-primary));
+  color: white;
+  box-shadow: 0 0 20px rgba(26, 161, 123, 0.2), var(--shadow-near);
+}
+
+.spatial-object--strategic {
+  background: linear-gradient(135deg, var(--strategic-primary-bg), var(--strategic-primary));
+  color: white;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.2), var(--shadow-near);
+}
+
+/* ===== PRIORITY WEIGHT SYSTEM ===== */
+
+.weight-critical {
+  font-weight: var(--text-weight-critical);
+  font-size: var(--text-xl);
+  transform: scale(1.05);
+}
+
+.weight-important {
+  font-weight: var(--text-weight-important);
+  font-size: var(--text-lg);
+}
+
+.weight-normal {
+  font-weight: var(--text-weight-normal);
+  font-size: var(--text-base);
+}
+
+.weight-low {
+  font-weight: var(--text-weight-low);
+  font-size: var(--text-sm);
+  opacity: 0.8;
+}
+
+/* ===== FOCUS STATES FOR ACCESSIBILITY ===== */
+
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
+  border-radius: var(--radius-md);
+}
+
+/* ===== MOTION PREFERENCES ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== PHYSICS-BASED UTILITIES ===== */
+
+.physics-drag {
+  cursor: grab;
+  user-select: none;
+}
+
+.physics-drag:active {
+  cursor: grabbing;
+}
+
+.physics-bounce {
+  animation: physics-bounce var(--duration-normal) var(--timing-bounce);
+}
+
+@keyframes physics-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.magnetic-field {
+  position: relative;
+}
+
+.magnetic-field::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(45deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  border-radius: var(--radius-lg);
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--timing-smooth);
+}
+
+.magnetic-field:hover::before {
+  opacity: 1;
+}

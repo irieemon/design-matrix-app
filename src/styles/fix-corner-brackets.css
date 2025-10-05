@@ -1,0 +1,57 @@
+/**
+ * FIX: Remove Green/Red Corner Brackets on Idea Cards
+ *
+ * These classes (idea-card--overdue, idea-card--upcoming, idea-card--priority)
+ * are being styled somewhere to add corner bracket decorations.
+ * This file removes those decorations.
+ */
+
+/* CRITICAL FIX: Remove any ::before or ::after pseudo-elements on idea-card classes */
+.idea-card--overdue::before,
+.idea-card--overdue::after,
+.idea-card--upcoming::before,
+.idea-card--upcoming::after,
+.idea-card--priority::before,
+.idea-card--priority::after {
+  display: none !important;
+  content: none !important;
+  border: none !important;
+  background: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* CRITICAL FIX: Remove any borders or outlines on the containers themselves */
+.idea-card--overdue,
+.idea-card--upcoming,
+.idea-card--priority {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* CRITICAL FIX: Ensure no Tailwind ring utilities are applied */
+.idea-card--overdue,
+.idea-card--upcoming,
+.idea-card--priority {
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000) !important;
+}
+
+/* CRITICAL FIX: Remove any potential corner bracket elements */
+[class*="idea-card--"]::before,
+[class*="idea-card--"]::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* CRITICAL FIX: Remove hover state changes for these classes */
+.idea-card--overdue:hover::before,
+.idea-card--overdue:hover::after,
+.idea-card--upcoming:hover::before,
+.idea-card--upcoming:hover::after,
+.idea-card--priority:hover::before,
+.idea-card--priority:hover::after {
+  display: none !important;
+  content: none !important;
+}

@@ -1,0 +1,651 @@
+/**
+ * Enhanced Textarea Component Styles - ANIMATED LUX
+ *
+ * Complete conversion from Tailwind @apply to standard CSS with Lux design tokens.
+ * Monochromatic design with graphite neutrals + gem-tone accents.
+ */
+
+/* ============================================
+   Base Textarea Container
+   ============================================ */
+
+.textarea-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.textarea-container--full-width {
+  width: 100%;
+}
+
+/* Component compatibility */
+.textarea__container {
+  position: relative;
+  width: 100%;
+}
+
+/* ============================================
+   Textarea Label
+   ============================================ */
+
+.textarea-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--graphite-700);
+  margin-bottom: 8px;
+  transition: color var(--duration-fast) var(--easing-out);
+}
+
+.textarea-label__required {
+  color: var(--garnet-600);
+  margin-left: 4px;
+}
+
+/* Component compatibility */
+.textarea__label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--graphite-700);
+  margin-bottom: 8px;
+  transition: color var(--duration-fast) var(--easing-out);
+}
+
+.textarea__label--required {
+  color: var(--garnet-600);
+  margin-left: 2px;
+}
+
+/* ============================================
+   Textarea Wrapper
+   ============================================ */
+
+.textarea-wrapper {
+  position: relative;
+}
+
+/* Component compatibility */
+.textarea__wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* ============================================
+   Base Textarea Styles
+   ============================================ */
+
+/* Component compatibility - when .textarea is applied to actual textarea element */
+textarea.textarea {
+  /* Layout */
+  width: 100%;
+  padding: 10px 12px;
+
+  /* Border and Background */
+  border: 1px solid var(--hairline-default);
+  border-radius: 8px;
+  background: var(--surface-primary) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+
+  /* Typography */
+  font-family: inherit;
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--graphite-800);
+
+  /* Sizing */
+  min-height: 80px;
+  resize: none;
+
+  /* ANIMATED LUX: Smooth transitions */
+  transition: border-color var(--duration-base) var(--easing-out),
+              box-shadow var(--duration-base) var(--easing-glide),
+              background-color var(--duration-base) var(--easing-out);
+
+  /* Performance */
+  transform: translateZ(0);
+  will-change: border-color, box-shadow;
+}
+
+textarea.textarea::placeholder {
+  color: var(--graphite-400);
+  font-weight: 400;
+}
+
+textarea.textarea:hover:not(:disabled):not(:focus) {
+  border-color: var(--hairline-hover);
+  background: var(--surface-primary) !important;
+}
+
+textarea.textarea:focus {
+  outline: none;
+  border-color: var(--hairline-focus);
+  box-shadow: var(--shadow-focus-ring-lux);
+  background: var(--surface-primary) !important;
+}
+
+textarea.textarea:disabled {
+  background-color: var(--canvas-secondary);
+  color: var(--graphite-400);
+  cursor: not-allowed;
+  border-color: var(--hairline-default);
+  opacity: 0.6;
+}
+
+/* Original .textarea as container (for BEM structure) */
+.textarea {
+  /* Layout */
+  width: 100%;
+  padding: 10px 12px;
+
+  /* Border and Background */
+  border: 1px solid var(--hairline-default);
+  border-radius: 8px;
+  background: var(--surface-primary);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+
+  /* Typography */
+  font-family: inherit;
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--graphite-800);
+
+  /* Sizing */
+  min-height: 80px;
+  resize: none;
+
+  /* ANIMATED LUX: Smooth transitions */
+  transition: border-color var(--duration-base) var(--easing-out),
+              box-shadow var(--duration-base) var(--easing-glide),
+              background-color var(--duration-base) var(--easing-out);
+
+  /* Performance */
+  transform: translateZ(0);
+  will-change: border-color, box-shadow;
+}
+
+.textarea::placeholder {
+  color: var(--graphite-400);
+  font-weight: 400;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--hairline-focus);
+  box-shadow: var(--shadow-focus-ring-lux);
+}
+
+.textarea:hover:not(:disabled):not(:focus) {
+  border-color: var(--hairline-hover);
+}
+
+.textarea:disabled {
+  background-color: var(--canvas-secondary);
+  color: var(--graphite-400);
+  cursor: not-allowed;
+  border-color: var(--hairline-default);
+  opacity: 0.6;
+}
+
+.textarea--full-width {
+  width: 100%;
+}
+
+.textarea--auto-resize {
+  overflow-y: hidden;
+}
+
+/* ============================================
+   Size Variants
+   ============================================ */
+
+.textarea--xs {
+  padding: 6px 8px;
+  font-size: 0.75rem;
+  min-height: 60px;
+}
+
+.textarea--sm {
+  padding: 8px 10px;
+  font-size: 0.875rem;
+  min-height: 70px;
+}
+
+.textarea--md {
+  padding: 10px 12px;
+  font-size: 0.875rem;
+  min-height: 80px;
+}
+
+.textarea--lg {
+  padding: 12px 14px;
+  font-size: 1rem;
+  min-height: 90px;
+}
+
+.textarea--xl {
+  padding: 14px 16px;
+  font-size: 1.125rem;
+  min-height: 100px;
+}
+
+/* ============================================
+   Variant Styles - ANIMATED LUX
+   ============================================ */
+
+/* Primary Variant */
+.textarea--primary {
+  border-color: var(--hairline-default);
+  background: var(--surface-primary);
+}
+
+.textarea--primary:focus {
+  border-color: var(--hairline-focus);
+  box-shadow: var(--shadow-focus-ring-lux);
+}
+
+.textarea--primary:hover:not(:disabled):not(:focus) {
+  border-color: var(--hairline-hover);
+}
+
+/* Secondary Variant */
+.textarea--secondary {
+  border-color: var(--hairline-default);
+  background: var(--canvas-secondary);
+}
+
+.textarea--secondary:focus {
+  border-color: var(--hairline-focus);
+  background: var(--surface-primary);
+  box-shadow: var(--shadow-focus-ring-lux);
+}
+
+.textarea--secondary:hover:not(:disabled):not(:focus) {
+  border-color: var(--hairline-hover);
+  background: var(--surface-primary);
+}
+
+/* Tertiary Variant */
+.textarea--tertiary {
+  border-color: transparent;
+  border-bottom: 1px solid var(--hairline-default);
+  border-radius: 0;
+  background: transparent;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.textarea--tertiary:focus {
+  border-bottom-color: var(--hairline-focus);
+  box-shadow: none;
+}
+
+.textarea--tertiary:hover:not(:disabled):not(:focus) {
+  border-bottom-color: var(--hairline-hover);
+}
+
+/* Danger Variant */
+.textarea--danger {
+  border-color: var(--garnet-500);
+}
+
+.textarea--danger:focus {
+  border-color: var(--garnet-500);
+  box-shadow: var(--shadow-focus-ring-lux);
+}
+
+.textarea--danger:hover:not(:disabled):not(:focus) {
+  border-color: var(--garnet-600);
+}
+
+/* Success Variant */
+.textarea--success {
+  border-color: var(--emerald-500);
+}
+
+.textarea--success:focus {
+  border-color: var(--emerald-500);
+  box-shadow: var(--shadow-focus-ring-lux);
+}
+
+.textarea--success:hover:not(:disabled):not(:focus) {
+  border-color: var(--emerald-600);
+}
+
+/* Ghost Variant */
+.textarea--ghost {
+  border-color: transparent;
+  background: transparent;
+}
+
+.textarea--ghost:focus {
+  border-color: var(--hairline-focus);
+  background: var(--surface-primary);
+  box-shadow: var(--shadow-focus-ring-lux);
+}
+
+.textarea--ghost:hover:not(:disabled):not(:focus) {
+  border-color: var(--hairline-default);
+  background: var(--canvas-secondary);
+}
+
+/* ============================================
+   State Styles - ANIMATED LUX
+   ============================================ */
+
+.textarea[data-state="idle"] {
+  /* Default styles already applied */
+}
+
+.textarea[data-state="loading"] {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.textarea[data-state="error"] {
+  border-color: var(--garnet-500);
+  animation: shake 0.3s ease-in-out;
+}
+
+.textarea[data-state="error"]:focus {
+  border-color: var(--garnet-500);
+  box-shadow: var(--shadow-focus-ring-lux);
+}
+
+.textarea[data-state="success"] {
+  border-color: var(--emerald-500);
+  animation: successPulse 0.4s ease-out;
+}
+
+.textarea[data-state="success"]:focus {
+  border-color: var(--emerald-500);
+  box-shadow: var(--shadow-focus-ring-lux);
+}
+
+.textarea[data-state="disabled"] {
+  background-color: var(--canvas-secondary);
+  color: var(--graphite-400);
+  cursor: not-allowed;
+  border-color: var(--hairline-default);
+  opacity: 0.6;
+}
+
+.textarea[data-state="pending"] {
+  border-color: var(--amber-500);
+}
+
+.textarea[data-state="pending"]:focus {
+  border-color: var(--amber-500);
+  box-shadow: var(--shadow-focus-ring-lux);
+}
+
+/* ============================================
+   Loading Spinner
+   ============================================ */
+
+.textarea-loading {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  display: flex;
+  align-items: center;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--graphite-200);
+  border-top: 2px solid var(--sapphire-500);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ============================================
+   Character Count
+   ============================================ */
+
+.textarea-character-count {
+  font-size: 0.75rem;
+  color: var(--graphite-500);
+  text-align: right;
+  margin-top: 4px;
+  transition: color var(--duration-fast) var(--easing-out);
+}
+
+.textarea-character-count--error {
+  color: var(--garnet-600);
+}
+
+/* Component compatibility */
+.textarea__character-count {
+  font-size: 0.75rem;
+  color: var(--graphite-500);
+  text-align: right;
+  margin-top: 4px;
+  transition: color var(--duration-fast) var(--easing-out);
+}
+
+.textarea__character-count--error {
+  color: var(--garnet-600);
+}
+
+/* ============================================
+   Messages
+   ============================================ */
+
+.textarea-message {
+  font-size: 0.75rem;
+  margin-top: 4px;
+  transition: all var(--duration-fast) var(--easing-out);
+}
+
+.textarea-message--error {
+  color: var(--garnet-600);
+  display: flex;
+  align-items: center;
+}
+
+.textarea-message--success {
+  color: var(--emerald-600);
+  display: flex;
+  align-items: center;
+}
+
+.textarea-message--helper {
+  color: var(--graphite-500);
+}
+
+/* Component compatibility */
+.textarea__message {
+  font-size: 0.75rem;
+  margin-top: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.textarea__message--error {
+  color: var(--garnet-600);
+}
+
+.textarea__message--success {
+  color: var(--emerald-600);
+}
+
+.textarea__message--helper {
+  color: var(--graphite-500);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+@keyframes successPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   Dark Mode Support
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  .textarea {
+    background-color: var(--graphite-900);
+    border-color: var(--hairline-default);
+    color: var(--graphite-200);
+  }
+
+  .textarea::placeholder {
+    color: var(--graphite-500);
+  }
+
+  .textarea:focus {
+    background-color: var(--graphite-900);
+    border-color: var(--hairline-focus);
+  }
+
+  .textarea:disabled {
+    background-color: var(--graphite-900);
+    color: var(--graphite-500);
+    border-color: var(--hairline-default);
+  }
+
+  .textarea-label {
+    color: var(--graphite-300);
+  }
+
+  .textarea-message--helper {
+    color: var(--graphite-400);
+  }
+
+  .textarea-character-count {
+    color: var(--graphite-400);
+  }
+
+  /* Secondary variant dark mode */
+  .textarea--secondary {
+    background-color: var(--graphite-800);
+    border-color: var(--hairline-default);
+  }
+
+  .textarea--secondary:focus {
+    background-color: var(--graphite-900);
+    border-color: var(--hairline-focus);
+  }
+
+  /* Ghost variant dark mode */
+  .textarea--ghost:hover:not(:disabled):not(:focus) {
+    background-color: var(--graphite-800);
+    border-color: var(--hairline-default);
+  }
+
+  .textarea--ghost:focus {
+    background-color: var(--graphite-900);
+    border-color: var(--hairline-focus);
+  }
+}
+
+/* ============================================
+   High Contrast Mode Support
+   ============================================ */
+
+@media (prefers-contrast: high) {
+  .textarea {
+    border-width: 2px;
+  }
+
+  .textarea:focus {
+    box-shadow: 0 0 0 4px var(--sapphire-500);
+  }
+
+  .textarea[data-state="error"] {
+    border-width: 2px;
+    border-color: var(--garnet-600);
+  }
+
+  .textarea[data-state="success"] {
+    border-width: 2px;
+    border-color: var(--emerald-600);
+  }
+}
+
+/* ============================================
+   Reduced Motion Support
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .textarea {
+    transition: none;
+  }
+
+  .textarea-message {
+    transition: none;
+  }
+
+  .textarea-character-count {
+    transition: none;
+  }
+
+  .textarea[data-state="error"] {
+    animation: none;
+  }
+
+  .textarea[data-state="success"] {
+    animation: none;
+  }
+
+  .textarea-loading {
+    animation: none;
+  }
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+  .textarea {
+    border: 1px solid var(--graphite-400);
+    background: transparent;
+  }
+
+  .textarea-loading {
+    display: none;
+  }
+}
+
+/* ============================================
+   Performance Optimizations
+   ============================================ */
+
+/* Layer promotion for smooth animations */
+.textarea:focus,
+.textarea:hover,
+.textarea[data-state="loading"],
+.textarea[data-state="error"],
+.textarea[data-state="success"] {
+  will-change: border-color, box-shadow;
+}
+
+/* Optimize repaints during state transitions */
+.textarea-loading {
+  will-change: transform;
+}
+
+/* Clean up will-change after animations */
+.textarea:not(:focus):not(:hover):not([data-state="loading"]):not([data-state="error"]):not([data-state="success"]) {
+  will-change: auto;
+}

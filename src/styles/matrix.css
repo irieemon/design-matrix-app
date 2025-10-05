@@ -1,0 +1,758 @@
+/**
+ * Matrix System CSS
+ *
+ * Clean z-index hierarchy and optimized styling for the matrix system.
+ * No more conflicting z-index values or invisible cards.
+ */
+
+/* ===== Z-INDEX HIERARCHY ===== */
+:root {
+  /* Background layers */
+  --z-matrix-background: -1;
+  --z-matrix-grid: 0;
+
+  /* Base interface layers */
+  --z-matrix-axes: 10;
+  --z-quadrant-labels: 20;
+
+  /* Card layers (main content) */
+  --z-card-base: 100;
+  --z-card-hover: 200;
+  --z-card-editing: 300;
+
+  /* Interaction layers */
+  --z-card-dragging: 1000;
+  --z-drop-indicators: 1100;
+
+  /* UI overlays */
+  --z-tooltips: 2000;
+  --z-modals: 3000;
+  --z-notifications: 4000;
+}
+
+/* ===== MATRIX CONTAINER ===== */
+.matrix-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  /* Match the auth screen sophisticated gradient */
+  background: linear-gradient(135deg,
+    rgba(248, 250, 252, 0.95) 0%,
+    rgba(239, 246, 255, 0.9) 25%,
+    rgba(238, 242, 255, 0.85) 50%,
+    rgba(241, 245, 249, 0.9) 75%,
+    rgba(248, 250, 252, 0.95) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+
+  /* Professional backdrop blur and borders */
+  backdrop-filter: blur(8px) saturate(105%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow:
+    0 6px 28px rgba(71, 85, 105, 0.08),
+    0 2px 12px rgba(71, 85, 105, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* ===== IMMERSIVE VIEWPORT WRAPPER ===== */
+.matrix-viewport-wrapper {
+  transition: all 400ms cubic-bezier(0.4, 0.0, 0.2, 1);
+  will-change: transform, filter;
+}
+
+.matrix-viewport-wrapper:hover {
+  /* Completely remove transform to prevent rendering artifacts */
+  /* transform: scale(1.002); -- REMOVED */
+}
+
+.matrix-header {
+  padding: 1.5rem 2rem;
+  position: relative;
+  z-index: var(--z-quadrant-labels);
+  background: rgba(248, 250, 252, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+/* ===== MATRIX CANVAS ===== */
+.matrix-canvas-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.matrix-canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  transition: all 400ms cubic-bezier(0.4, 0.0, 0.2, 1);
+
+  /* Enhanced glass-morphism for canvas */
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 4px 24px rgba(71, 85, 105, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* 4-Quadrant Priority Matrix Background - Classic Clean Design */
+.matrix-grid-background {
+  /* Clean white background */
+  background: #ffffff;
+
+  /* 4-Quadrant structure with clear center dividing lines */
+  background-image:
+    /* Main quadrant dividers - thick lines at center */
+    linear-gradient(to right, transparent calc(50% - 2px), #e2e8f0 calc(50% - 2px), #e2e8f0 calc(50% + 2px), transparent calc(50% + 2px)),
+    linear-gradient(to bottom, transparent calc(50% - 2px), #e2e8f0 calc(50% - 2px), #e2e8f0 calc(50% + 2px), transparent calc(50% + 2px));
+
+  background-size: 100% 100%, 100% 100%;
+  background-position: 0 0, 0 0;
+
+  z-index: var(--z-matrix-grid);
+}
+
+@keyframes sophisticated-pulse {
+  0% {
+    filter: brightness(1.0) saturate(100%);
+    transform: scale(1.0);
+  }
+  100% {
+    filter: brightness(1.02) saturate(105%);
+    transform: scale(1.001);
+  }
+}
+
+@keyframes grid-pulse {
+  0% { opacity: 0.6; }
+  100% { opacity: 0.8; }
+}
+
+.matrix-depth-field {
+  background:
+    /* Sophisticated glass-morphism base */
+    rgba(255, 255, 255, 0.4),
+    /* Subtle center radial accent */
+    radial-gradient(ellipse at center, rgba(59, 130, 246, 0.03) 0%, transparent 60%);
+  position: relative;
+  backdrop-filter: blur(20px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 8px 32px rgba(71, 85, 105, 0.08),
+    0 4px 16px rgba(71, 85, 105, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.matrix-depth-field::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 25%,
+    transparent 75%,
+    rgba(71, 85, 105, 0.02) 100%
+  );
+  pointer-events: none;
+  z-index: var(--z-matrix-background);
+  border-radius: inherit;
+}
+
+/* ===== MATRIX AXES ===== */
+.matrix-axes {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-matrix-axes);
+  pointer-events: none;
+}
+
+.matrix-axis-labels {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-quadrant-labels);
+  pointer-events: none;
+}
+
+/* ===== MATRIX QUADRANTS ===== */
+.matrix-quadrants {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-quadrant-labels);
+  pointer-events: none;
+}
+
+/* ===== MATRIX CARDS ===== */
+.matrix-cards-container {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-card-base);
+  pointer-events: none; /* Allow clicks to pass through to individual cards */
+}
+
+.idea-card-wrapper {
+  position: absolute;
+  z-index: var(--z-card-base);
+  transition: all 200ms ease-out;
+  pointer-events: auto; /* Enable interactions on individual cards */
+  opacity: 1 !important; /* Force visibility */
+  visibility: visible !important; /* Force visibility */
+}
+
+.idea-card-wrapper:hover {
+  z-index: var(--z-card-hover);
+}
+
+/* ===== OPTIMIZED IDEA CARD STYLES ===== */
+.physics-drag {
+  cursor: grab;
+  user-select: none;
+  will-change: transform;
+}
+
+.physics-drag:active {
+  cursor: grabbing;
+}
+
+/* Enhanced hover effects for better visual feedback */
+.hover\:scale-102:hover {
+  transform: scale(1.02);
+}
+
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}
+
+.drag-preview {
+  cursor: grabbing;
+  user-select: none;
+  transform-origin: center;
+  z-index: var(--z-card-dragging) !important;
+  pointer-events: none;
+}
+
+/* Card z-index states */
+.card-base { z-index: var(--z-card-base); }
+.card-hover { z-index: var(--z-card-hover); }
+.card-editing { z-index: var(--z-card-editing); }
+.card-dragging { z-index: var(--z-card-dragging); }
+
+/* ===== PRIORITY VISUAL SYSTEM ===== */
+.weight-low {
+  font-weight: var(--text-weight-low);
+  font-size: var(--text-sm);
+  opacity: 0.8;
+  transform: scale(0.9);
+}
+
+.weight-normal {
+  font-weight: var(--text-weight-normal);
+  font-size: var(--text-base);
+  transform: scale(0.95);
+}
+
+.weight-important {
+  font-weight: var(--text-weight-important);
+  font-size: var(--text-lg);
+  transform: scale(1.0);
+}
+
+.weight-critical {
+  font-weight: var(--text-weight-critical);
+  font-size: var(--text-xl);
+  transform: scale(1.05);
+}
+
+/* ===== MAGNETIC FIELD EFFECTS ===== */
+.magnetic-field {
+  position: relative;
+}
+
+.magnetic-field::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(45deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  border-radius: var(--radius-lg);
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--timing-smooth);
+  z-index: -1;
+}
+
+.magnetic-field:hover::before {
+  opacity: 1;
+}
+
+/* ===== FLOATING INTERFACE ELEMENTS ===== */
+.floating-panel {
+  backdrop-filter: blur(20px) saturate(140%);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 8px 32px rgba(15, 40, 71, 0.12),
+    0 4px 16px rgba(15, 40, 71, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border-radius: 1rem;
+  position: relative;
+  transition: all 300ms cubic-bezier(0.4, 0.0, 0.2, 1);
+  z-index: var(--z-tooltips);
+}
+
+.floating-panel:hover {
+  transform: var(--hover-lift);
+  box-shadow: var(--hover-shadow);
+}
+
+.contextual-tooltip {
+  backdrop-filter: blur(16px) saturate(180%);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    var(--shadow-far),
+    0 0 40px rgba(15, 40, 71, 0.1);
+  border-radius: var(--radius-md);
+  position: relative;
+  transition: all var(--duration-normal) var(--timing-smooth);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-sm);
+  font-weight: var(--text-weight-normal);
+  color: var(--strategic-primary);
+  max-width: 200px;
+  z-index: var(--z-tooltips);
+  pointer-events: none;
+}
+
+/* ===== FOCUS STATES FOR ACCESSIBILITY ===== */
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
+  border-radius: var(--radius-md);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes matrix-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.matrix-center-pulse {
+  animation: matrix-pulse 2s ease-in-out infinite;
+}
+
+/* ===== RESPONSIVE OPTIMIZATIONS FOR IMMERSIVE EXPERIENCE ===== */
+
+/* Large tablets and small laptops */
+@media (max-width: 1024px) {
+  .matrix-container {
+    padding: 0.75rem;
+  }
+
+  .matrix-viewport-wrapper {
+    min-width: 700px !important;
+    min-height: 600px !important;
+    max-width: 90vw !important;
+    max-height: 85vh !important;
+  }
+
+  .matrix-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .matrix-header h2 {
+    font-size: 2rem;
+  }
+
+  .floating-panel {
+    backdrop-filter: blur(16px) saturate(130%);
+  }
+}
+
+/* Tablets */
+@media (max-width: 768px) {
+  .matrix-container {
+    padding: 0.5rem;
+  }
+
+  .matrix-viewport-wrapper {
+    min-width: 600px !important;
+    min-height: 500px !important;
+    max-width: 95vw !important;
+    max-height: 80vh !important;
+  }
+
+  .matrix-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .matrix-header h2 {
+    font-size: 1.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .matrix-header p {
+    font-size: 0.875rem;
+  }
+
+  .idea-card-wrapper {
+    transform: scale(0.9);
+  }
+
+  .matrix-quadrants .spatial-object {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .floating-panel {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    backdrop-filter: blur(12px) saturate(120%);
+  }
+
+  .matrix-grid-background {
+    background-size: 30px 30px, 60px 60px, 90px 90px, 30px 30px, 30px 30px;
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 640px) {
+  .matrix-container {
+    padding: 0.25rem;
+  }
+
+  .matrix-viewport-wrapper {
+    min-width: 350px !important;
+    min-height: 350px !important;
+    max-width: 98vw !important;
+    max-height: 70vh !important;
+  }
+
+  .matrix-header h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .matrix-header p {
+    font-size: 0.8rem;
+    display: none; /* Hide subtitle on small screens */
+  }
+
+  .idea-card-wrapper {
+    transform: scale(0.8);
+  }
+
+  .matrix-axis-labels {
+    font-size: 0.75rem;
+  }
+
+  .floating-panel {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.7rem;
+    backdrop-filter: blur(10px) saturate(110%);
+  }
+
+  .matrix-grid-background {
+    background-size: 20px 20px, 40px 40px, 60px 60px, 20px 20px, 20px 20px;
+    opacity: 0.5;
+  }
+
+  /* Simplify center point on mobile */
+  .matrix-canvas .absolute.top-1\/2.left-1\/2 {
+    width: 6px !important;
+    height: 6px !important;
+  }
+}
+
+/* Ultra-wide screen optimizations for ultimate immersion */
+@media (min-width: 1920px) {
+  .matrix-viewport-wrapper {
+    max-width: 1800px;
+    max-height: 1400px;
+    min-width: 1400px;
+    min-height: 1200px;
+  }
+
+  .matrix-header h2 {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .matrix-header p {
+    font-size: 1.25rem;
+  }
+
+  .matrix-grid-background {
+    background-size: 50px 50px, 100px 100px, 150px 150px, 50px 50px, 50px 50px;
+  }
+
+  .floating-panel {
+    backdrop-filter: blur(28px) saturate(160%);
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  /* Enhanced center point for ultra-wide */
+  .matrix-canvas .absolute.top-1\/2.left-1\/2 {
+    width: 10px !important;
+    height: 10px !important;
+  }
+
+  /* Enhanced animations for ultra-wide */
+  .ambient-glow {
+    animation-duration: 15s;
+  }
+
+  .grid-pulse {
+    animation-duration: 10s;
+  }
+}
+
+/* Large desktop optimizations for maximum immersion */
+@media (min-width: 1440px) {
+  .matrix-viewport-wrapper {
+    min-width: 1200px;
+    min-height: 1000px;
+  }
+
+  .matrix-header h2 {
+    font-size: 2.5rem;
+  }
+
+  .matrix-header p {
+    font-size: 1.125rem;
+  }
+
+  .floating-panel {
+    backdrop-filter: blur(24px) saturate(150%);
+    box-shadow:
+      0 12px 40px rgba(15, 40, 71, 0.15),
+      0 6px 20px rgba(15, 40, 71, 0.1),
+      0 0 0 1px rgba(255, 255, 255, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  .idea-card-wrapper {
+    transition: all 350ms cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+
+  .idea-card-wrapper:hover {
+    filter: brightness(1.03) saturate(1.15);
+    transform: scale(1.02);
+  }
+}
+
+/* High DPI display optimizations for crisp visuals */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .matrix-grid-background {
+    background-size: 20px 20px, 40px 40px, 60px 60px, 20px 20px, 20px 20px;
+  }
+
+  .idea-card-wrapper,
+  .floating-panel,
+  .matrix-header {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .matrix-viewport-wrapper {
+    border: 0.5px solid rgba(255, 255, 255, 0.8);
+  }
+
+  .floating-panel {
+    border: 0.5px solid rgba(255, 255, 255, 0.5);
+  }
+}
+
+/* ===== PERFORMANCE OPTIMIZATIONS ===== */
+.matrix-canvas,
+.idea-card-wrapper,
+.physics-drag {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+/* Reduce paint operations during drag */
+.drag-preview * {
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* ===== IMMERSIVE VISUAL ENHANCEMENTS ===== */
+.matrix-canvas::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    /* Subtle quadrant ambient lighting - REMOVED green/red gradients to fix corner bracket artifacts */
+    radial-gradient(ellipse at 75% 25%, rgba(59, 130, 246, 0.04) 0%, transparent 60%),  /* top-right: primary blue */
+    /* Professional lighting overlay */
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      transparent 30%,
+      transparent 70%,
+      transparent 100%
+    );
+  pointer-events: none;
+  z-index: var(--z-matrix-background);
+  border-radius: inherit;
+  animation: sophisticated-ambient-glow 15s ease-in-out infinite alternate;
+}
+
+@keyframes sophisticated-ambient-glow {
+  0% {
+    opacity: 0.9;
+    filter: brightness(1.0) saturate(100%);
+    transform: scale(1) rotate(0deg);
+  }
+  33% {
+    opacity: 0.95;
+    filter: brightness(1.01) saturate(102%);
+    transform: scale(1.001) rotate(0.05deg);
+  }
+  66% {
+    opacity: 1;
+    filter: brightness(1.02) saturate(105%);
+    transform: scale(1.002) rotate(-0.05deg);
+  }
+  100% {
+    opacity: 0.95;
+    filter: brightness(1.015) saturate(103%);
+    transform: scale(1.001) rotate(0deg);
+  }
+}
+
+/* Enhanced matrix center pulse animation */
+@keyframes matrix-center-pulse {
+  0% {
+    box-shadow:
+      0 0 40px rgba(59, 130, 246, 0.6),
+      0 0 20px rgba(99, 102, 241, 0.5),
+      0 0 10px rgba(59, 130, 246, 0.8);
+  }
+  50% {
+    box-shadow:
+      0 0 60px rgba(59, 130, 246, 0.8),
+      0 0 30px rgba(99, 102, 241, 0.7),
+      0 0 15px rgba(59, 130, 246, 1);
+  }
+  100% {
+    box-shadow:
+      0 0 40px rgba(59, 130, 246, 0.6),
+      0 0 20px rgba(99, 102, 241, 0.5),
+      0 0 10px rgba(59, 130, 246, 0.8);
+  }
+}
+
+/* Optimized performance for animations */
+@media (prefers-reduced-motion: reduce) {
+  .ambient-glow,
+  .grid-pulse,
+  .matrix-center-pulse {
+    animation: none;
+  }
+
+  .matrix-viewport-wrapper {
+    transition: none;
+  }
+}
+
+/* Subtle glow effect for the matrix */
+.matrix-canvas {
+  position: relative;
+}
+
+.matrix-canvas::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0.1),
+    rgba(99, 102, 241, 0.1),
+    rgba(59, 130, 246, 0.1)
+  );
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 300ms ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Allow normal pseudo-element functionality */
+.matrix-canvas::after {
+  opacity: 0.3;
+  transition: opacity 300ms ease;
+}
+
+/* SIMPLIFIED MATRIX INTERACTION STYLES */
+.matrix-container,
+.matrix-container *,
+.idea-card-wrapper,
+.idea-card-wrapper * {
+  /* Only disable text selection where necessary */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow normal hover interactions for cards */
+.matrix-container .idea-card-wrapper {
+  /* Let the card handle its own hover states naturally */
+  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.matrix-container .idea-card-wrapper:hover {
+  /* Provide visual feedback without breaking backgrounds */
+  transform: translateY(-2px);
+  filter: brightness(1.02) saturate(1.1);
+}
+
+/* Enhanced card interaction states */
+.idea-card-wrapper {
+  transition: all 250ms cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.idea-card-wrapper:hover {
+  filter: brightness(1.02) saturate(1.1);
+}
+
+/* Smooth animations for matrix interactions */
+@keyframes matrix-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+  }
+}
+
+.matrix-center-pulse {
+  animation: matrix-glow 4s ease-in-out infinite;
+}
+
+/* ===== DEBUG HELPERS (remove in production) ===== */
+.debug-zindex .matrix-cards-container::before {
+  content: 'Cards: ' attr(data-z-index);
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  z-index: var(--z-index-debug-overlay);
+}

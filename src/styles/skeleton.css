@@ -1,0 +1,969 @@
+/**
+ * Enhanced Skeleton Component Styles
+ * Comprehensive loading skeleton system with multiple layouts and animation support
+ */
+
+/* Base skeleton animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+@keyframes wave {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Base skeleton styles */
+.skeleton-base {
+  @apply bg-gray-200 rounded;
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  background-size: 200px 100%;
+  background-repeat: no-repeat;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-base--animated {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-base--pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ===== SKELETON TEXT COMPONENT ===== */
+
+/* Container */
+.skeleton-text {
+  @apply space-y-2;
+}
+
+.skeleton-text--animated {
+  animation: none;
+}
+
+.skeleton-text--transitions {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Text lines */
+.skeleton-text-line {
+  @apply skeleton-base h-4;
+}
+
+.skeleton-text-line--animated {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-text-line--transitions {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Size variants */
+.skeleton-text--xs .skeleton-text-line {
+  @apply h-2;
+}
+
+.skeleton-text--sm .skeleton-text-line {
+  @apply h-3;
+}
+
+.skeleton-text--md .skeleton-text-line {
+  @apply h-4;
+}
+
+.skeleton-text--lg .skeleton-text-line {
+  @apply h-5;
+}
+
+.skeleton-text--xl .skeleton-text-line {
+  @apply h-6;
+}
+
+/* Line variants */
+.skeleton-text-line--xs {
+  @apply h-2;
+}
+
+.skeleton-text-line--sm {
+  @apply h-3;
+}
+
+.skeleton-text-line--md {
+  @apply h-4;
+}
+
+.skeleton-text-line--lg {
+  @apply h-5;
+}
+
+.skeleton-text-line--xl {
+  @apply h-6;
+}
+
+/* ===== SKELETON CARD COMPONENT ===== */
+
+/* Container */
+.skeleton-card {
+  @apply bg-white rounded-lg border border-gray-200 p-4;
+  min-height: 200px;
+}
+
+.skeleton-card--animated {
+  animation: none;
+}
+
+.skeleton-card--transitions {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Size variants */
+.skeleton-card--xs {
+  @apply p-2;
+  min-height: 120px;
+}
+
+.skeleton-card--sm {
+  @apply p-3;
+  min-height: 160px;
+}
+
+.skeleton-card--md {
+  @apply p-4;
+  min-height: 200px;
+}
+
+.skeleton-card--lg {
+  @apply p-6;
+  min-height: 240px;
+}
+
+.skeleton-card--xl {
+  @apply p-8;
+  min-height: 280px;
+}
+
+/* Basic layout */
+.skeleton-card--basic .skeleton-card-content {
+  @apply space-y-3;
+}
+
+.skeleton-card-title {
+  @apply skeleton-base h-6 w-3/4;
+}
+
+.skeleton-card-line {
+  @apply skeleton-base h-4;
+}
+
+.skeleton-card-line--short {
+  @apply w-2/3;
+}
+
+.skeleton-card-button {
+  @apply skeleton-base h-10 w-24 rounded-md;
+}
+
+/* Avatar */
+.skeleton-card-avatar {
+  @apply flex justify-center mb-4;
+}
+
+.skeleton-card-avatar-circle {
+  @apply skeleton-base w-12 h-12 rounded-full;
+}
+
+/* Media layout */
+.skeleton-card--media {
+  @apply p-0 overflow-hidden;
+}
+
+.skeleton-card-image {
+  @apply skeleton-base h-48 w-full rounded-t-lg;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.skeleton-card-image--article {
+  @apply h-32;
+}
+
+.skeleton-card-image--product {
+  @apply h-40;
+}
+
+.skeleton-card--media .skeleton-card-content {
+  @apply p-4 space-y-3;
+}
+
+.skeleton-card-actions {
+  @apply flex space-x-2 mt-4;
+}
+
+.skeleton-card-button--secondary {
+  @apply bg-gray-100;
+}
+
+/* Profile layout */
+.skeleton-card--profile .skeleton-card-header {
+  @apply flex items-center space-x-3 mb-4;
+}
+
+.skeleton-card-header-content {
+  @apply flex-1 space-y-2;
+}
+
+.skeleton-card-name {
+  @apply skeleton-base h-5 w-32;
+}
+
+.skeleton-card-subtitle {
+  @apply skeleton-base h-4 w-24;
+}
+
+.skeleton-card-footer {
+  @apply mt-4 pt-4 border-t border-gray-100;
+}
+
+/* Article layout */
+.skeleton-card--article .skeleton-card-category {
+  @apply skeleton-base h-4 w-16 mb-2;
+}
+
+.skeleton-card-title--large {
+  @apply h-8 w-full;
+}
+
+.skeleton-card-meta {
+  @apply flex space-x-4 mt-4;
+}
+
+.skeleton-card-meta-item {
+  @apply skeleton-base h-4 w-20;
+}
+
+/* Product layout */
+.skeleton-card-price {
+  @apply skeleton-base h-6 w-20 mb-2;
+}
+
+.skeleton-card-rating {
+  @apply flex items-center space-x-2 mb-3;
+}
+
+.skeleton-card-star {
+  @apply skeleton-base w-4 h-4 rounded-sm;
+}
+
+.skeleton-card-review-count {
+  @apply skeleton-base h-4 w-16;
+}
+
+.skeleton-card-description {
+  @apply space-y-2 mb-4;
+}
+
+.skeleton-card-button--primary {
+  @apply bg-blue-100;
+}
+
+.skeleton-card-button--icon {
+  @apply w-10 h-10 rounded-full;
+}
+
+/* ===== SKELETON MATRIX COMPONENT ===== */
+
+/* Container */
+.skeleton-matrix {
+  @apply w-full;
+}
+
+.skeleton-matrix--animated {
+  animation: none;
+}
+
+.skeleton-matrix--transitions {
+  transition: all 0.3s ease-in-out;
+}
+
+.skeleton-matrix--with-sidebar {
+  @apply flex;
+}
+
+.skeleton-matrix-sidebar {
+  @apply w-64 bg-gray-50 border-r border-gray-200 p-4 space-y-4;
+}
+
+.skeleton-matrix-sidebar-header {
+  @apply skeleton-base h-8 w-full;
+}
+
+.skeleton-matrix-sidebar-nav {
+  @apply space-y-2;
+}
+
+.skeleton-matrix-sidebar-item {
+  @apply skeleton-base h-6 w-full;
+}
+
+.skeleton-matrix-main {
+  @apply flex-1;
+}
+
+/* Spacing variants */
+.skeleton-matrix--spacing-tight {
+  gap: 0.5rem;
+}
+
+.skeleton-matrix--spacing-normal {
+  gap: 1rem;
+}
+
+.skeleton-matrix--spacing-loose {
+  gap: 1.5rem;
+}
+
+/* Grid layout */
+.skeleton-matrix-grid {
+  @apply w-full;
+}
+
+.skeleton-matrix-headers {
+  @apply grid gap-4 mb-4;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.skeleton-matrix-header {
+  @apply skeleton-base h-6;
+}
+
+.skeleton-matrix-grid-body {
+  @apply space-y-4;
+}
+
+.skeleton-matrix-row {
+  @apply grid gap-4;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.skeleton-matrix-cell {
+  @apply bg-white border border-gray-200 rounded-lg p-4;
+}
+
+.skeleton-matrix-cell-content {
+  @apply space-y-3;
+}
+
+.skeleton-matrix-cell-header {
+  @apply skeleton-base h-5 w-2/3;
+}
+
+.skeleton-matrix-cell-body {
+  @apply space-y-2;
+}
+
+.skeleton-matrix-cell-line {
+  @apply skeleton-base h-4;
+}
+
+.skeleton-matrix-cell-line--short {
+  @apply w-3/4;
+}
+
+/* Masonry layout */
+.skeleton-matrix-masonry {
+  @apply grid gap-4;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-auto-rows: min-content;
+}
+
+.skeleton-matrix-masonry-item {
+  @apply bg-white border border-gray-200 rounded-lg p-4;
+}
+
+.skeleton-matrix-masonry-content {
+  @apply space-y-3;
+}
+
+.skeleton-matrix-masonry-header {
+  @apply skeleton-base h-5 w-2/3;
+}
+
+.skeleton-matrix-masonry-body {
+  @apply space-y-2;
+}
+
+.skeleton-matrix-masonry-line {
+  @apply skeleton-base h-4;
+}
+
+/* Dashboard layout */
+.skeleton-matrix-dashboard {
+  @apply space-y-6;
+}
+
+.skeleton-matrix-dashboard-header {
+  @apply flex justify-between items-center mb-6;
+}
+
+.skeleton-matrix-dashboard-title {
+  @apply skeleton-base h-8 w-48;
+}
+
+.skeleton-matrix-dashboard-actions {
+  @apply flex space-x-2;
+}
+
+.skeleton-matrix-dashboard-action {
+  @apply skeleton-base h-10 w-24 rounded-md;
+}
+
+.skeleton-matrix-dashboard-widgets {
+  @apply space-y-6;
+}
+
+.skeleton-matrix-dashboard-metrics {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4;
+}
+
+.skeleton-matrix-metric-card {
+  @apply bg-white border border-gray-200 rounded-lg p-4 space-y-2;
+}
+
+.skeleton-matrix-metric-icon {
+  @apply skeleton-base w-8 h-8 rounded;
+}
+
+.skeleton-matrix-metric-value {
+  @apply skeleton-base h-8 w-20;
+}
+
+.skeleton-matrix-metric-label {
+  @apply skeleton-base h-4 w-16;
+}
+
+.skeleton-matrix-dashboard-charts {
+  @apply grid grid-cols-1 lg:grid-cols-3 gap-6;
+}
+
+.skeleton-matrix-chart {
+  @apply bg-white border border-gray-200 rounded-lg p-6;
+}
+
+.skeleton-matrix-chart--large {
+  @apply lg:col-span-2;
+}
+
+.skeleton-matrix-chart--medium {
+  @apply lg:col-span-1;
+}
+
+.skeleton-matrix-chart-header {
+  @apply skeleton-base h-6 w-32 mb-4;
+}
+
+.skeleton-matrix-chart-body {
+  @apply flex items-center justify-center;
+  height: 200px;
+}
+
+.skeleton-matrix-chart-placeholder {
+  @apply skeleton-base w-full h-full rounded;
+}
+
+.skeleton-matrix-chart-placeholder--pie {
+  @apply rounded-full;
+  width: 150px;
+  height: 150px;
+}
+
+.skeleton-matrix-dashboard-activity {
+  @apply bg-white border border-gray-200 rounded-lg p-6;
+}
+
+.skeleton-matrix-activity-header {
+  @apply skeleton-base h-6 w-32 mb-4;
+}
+
+.skeleton-matrix-activity-list {
+  @apply space-y-3;
+}
+
+.skeleton-matrix-activity-item {
+  @apply flex items-center space-x-3;
+}
+
+.skeleton-matrix-activity-avatar {
+  @apply skeleton-base w-8 h-8 rounded-full;
+}
+
+.skeleton-matrix-activity-content {
+  @apply flex-1 space-y-1;
+}
+
+.skeleton-matrix-activity-line {
+  @apply skeleton-base h-4;
+}
+
+.skeleton-matrix-activity-line--short {
+  @apply w-2/3;
+}
+
+.skeleton-matrix-activity-time {
+  @apply skeleton-base h-4 w-16;
+}
+
+/* Kanban layout */
+.skeleton-matrix-kanban {
+  @apply flex space-x-4 overflow-x-auto pb-4;
+}
+
+.skeleton-matrix-kanban-column {
+  @apply flex-shrink-0 w-72 bg-gray-50 rounded-lg p-4;
+}
+
+.skeleton-matrix-kanban-header {
+  @apply flex justify-between items-center mb-4;
+}
+
+.skeleton-matrix-kanban-title {
+  @apply skeleton-base h-5 w-24;
+}
+
+.skeleton-matrix-kanban-count {
+  @apply skeleton-base h-5 w-8 rounded-full;
+}
+
+.skeleton-matrix-kanban-cards {
+  @apply space-y-3;
+}
+
+.skeleton-matrix-kanban-card {
+  @apply bg-white border border-gray-200 rounded-lg p-3 space-y-2;
+}
+
+.skeleton-matrix-kanban-card-title {
+  @apply skeleton-base h-5 w-3/4;
+}
+
+.skeleton-matrix-kanban-card-body {
+  @apply space-y-2;
+}
+
+.skeleton-matrix-kanban-card-line {
+  @apply skeleton-base h-4;
+}
+
+.skeleton-matrix-kanban-card-line--short {
+  @apply w-2/3;
+}
+
+.skeleton-matrix-kanban-card-footer {
+  @apply flex justify-between items-center pt-2;
+}
+
+.skeleton-matrix-kanban-card-avatar {
+  @apply skeleton-base w-6 h-6 rounded-full;
+}
+
+.skeleton-matrix-kanban-card-date {
+  @apply skeleton-base h-4 w-16;
+}
+
+/* Timeline layout */
+.skeleton-matrix-timeline {
+  @apply space-y-4;
+}
+
+.skeleton-matrix-timeline-item {
+  @apply flex space-x-4;
+}
+
+.skeleton-matrix-timeline-marker {
+  @apply skeleton-base w-4 h-4 rounded-full mt-1;
+}
+
+.skeleton-matrix-timeline-content {
+  @apply flex-1 space-y-2;
+}
+
+.skeleton-matrix-timeline-header {
+  @apply flex justify-between items-center;
+}
+
+.skeleton-matrix-timeline-title {
+  @apply skeleton-base h-5 w-48;
+}
+
+.skeleton-matrix-timeline-time {
+  @apply skeleton-base h-4 w-20;
+}
+
+.skeleton-matrix-timeline-body {
+  @apply space-y-2;
+}
+
+.skeleton-matrix-timeline-line {
+  @apply skeleton-base h-4;
+}
+
+.skeleton-matrix-timeline-line--short {
+  @apply w-3/4;
+}
+
+/* ===== SKELETON TABLE COMPONENT ===== */
+
+/* Container */
+.skeleton-table-container {
+  @apply w-full space-y-4;
+}
+
+.skeleton-table-container--animated {
+  animation: none;
+}
+
+.skeleton-table-container--transitions {
+  transition: all 0.3s ease-in-out;
+}
+
+.skeleton-table-container--bordered {
+  @apply border border-gray-200 rounded-lg overflow-hidden;
+}
+
+/* Filters */
+.skeleton-table-filters {
+  @apply flex flex-wrap items-center justify-between gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg;
+}
+
+.skeleton-table-search {
+  @apply flex-1 max-w-sm;
+}
+
+.skeleton-table-search-input {
+  @apply skeleton-base h-10 w-full rounded-md;
+}
+
+.skeleton-table-filter-group {
+  @apply flex space-x-2;
+}
+
+.skeleton-table-filter {
+  @apply skeleton-base h-10 w-24 rounded-md;
+}
+
+.skeleton-table-actions-group {
+  @apply flex space-x-2;
+}
+
+.skeleton-table-action-button {
+  @apply skeleton-base h-10 w-20 rounded-md;
+}
+
+.skeleton-table-action-button--primary {
+  @apply bg-blue-100;
+}
+
+/* Table wrapper */
+.skeleton-table-wrapper {
+  @apply overflow-x-auto border border-gray-200 rounded-lg;
+}
+
+/* Table */
+.skeleton-table {
+  @apply w-full;
+}
+
+.skeleton-table--bordered {
+  @apply border-separate border-spacing-0;
+}
+
+.skeleton-table--striped .skeleton-table-row--striped {
+  @apply bg-gray-50;
+}
+
+/* Table head */
+.skeleton-table-head {
+  @apply bg-gray-50;
+}
+
+.skeleton-table-header-row {
+  @apply border-b border-gray-200;
+}
+
+.skeleton-table-header-cell {
+  @apply p-3 text-left;
+}
+
+.skeleton-table-header-content {
+  @apply skeleton-base h-5;
+}
+
+.skeleton-table-header-content--actions {
+  @apply w-16;
+}
+
+/* Table body */
+.skeleton-table-body {
+  @apply bg-white;
+}
+
+.skeleton-table-row {
+  @apply border-b border-gray-100;
+}
+
+.skeleton-table-row:last-child {
+  @apply border-b-0;
+}
+
+.skeleton-table-cell {
+  @apply p-3;
+}
+
+.skeleton-table-cell-content {
+  @apply skeleton-base h-5;
+}
+
+/* Cell variants */
+.skeleton-table-cell-primary {
+  @apply skeleton-base h-5 w-24 bg-blue-100;
+}
+
+.skeleton-table-cell-text {
+  @apply skeleton-base h-5;
+}
+
+.skeleton-table-cell-text--secondary {
+  @apply w-3/4;
+}
+
+.skeleton-table-cell-status {
+  @apply skeleton-base h-6 w-16 rounded-full;
+}
+
+.skeleton-table-cell-actions {
+  @apply flex space-x-1;
+}
+
+.skeleton-table-action-button {
+  @apply skeleton-base w-8 h-8 rounded;
+}
+
+.skeleton-table-action-menu {
+  @apply skeleton-base w-6 h-6 rounded;
+}
+
+/* Advanced layout */
+.skeleton-table-checkbox {
+  @apply skeleton-base w-4 h-4 rounded-sm;
+}
+
+.skeleton-table-avatar {
+  @apply skeleton-base w-8 h-8 rounded-full;
+}
+
+.skeleton-table-name-group {
+  @apply space-y-1;
+}
+
+.skeleton-table-name {
+  @apply skeleton-base h-5 w-32;
+}
+
+.skeleton-table-subtitle {
+  @apply skeleton-base h-4 w-24;
+}
+
+.skeleton-table-badge {
+  @apply skeleton-base h-6 w-20 rounded-full;
+}
+
+.skeleton-table-metric {
+  @apply space-y-1;
+}
+
+.skeleton-table-metric-value {
+  @apply skeleton-base h-6 w-16;
+}
+
+.skeleton-table-metric-label {
+  @apply skeleton-base h-3 w-12;
+}
+
+/* Compact layout */
+.skeleton-table-body--compact .skeleton-table-row--compact {
+  @apply border-b border-gray-100;
+}
+
+.skeleton-table-cell--compact {
+  @apply p-2;
+}
+
+.skeleton-table-cell-content--compact {
+  @apply h-4;
+}
+
+/* Data grid layout */
+.skeleton-table-row-number {
+  @apply skeleton-base h-4 w-8 text-center;
+}
+
+.skeleton-table-data-cell {
+  @apply skeleton-base h-4;
+}
+
+.skeleton-table-data-number {
+  @apply w-16 text-right;
+}
+
+.skeleton-table-data-text {
+  @apply w-24;
+}
+
+.skeleton-table-data-date {
+  @apply w-20;
+}
+
+/* Tree layout */
+.skeleton-table-tree-toggle {
+  @apply skeleton-base w-4 h-4 rounded-sm;
+}
+
+.skeleton-table-tree-content {
+  @apply flex items-center space-x-2;
+}
+
+.skeleton-table-tree-icon {
+  @apply skeleton-base w-4 h-4 rounded-sm;
+}
+
+.skeleton-table-tree-label {
+  @apply skeleton-base h-5 w-32;
+}
+
+/* Pagination */
+.skeleton-table-pagination {
+  @apply flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg;
+}
+
+.skeleton-table-pagination-info {
+  @apply flex-1;
+}
+
+.skeleton-table-pagination-text {
+  @apply skeleton-base h-5 w-48;
+}
+
+.skeleton-table-pagination-controls {
+  @apply flex items-center space-x-2;
+}
+
+.skeleton-table-pagination-button {
+  @apply skeleton-base h-8 w-8 rounded;
+}
+
+.skeleton-table-pagination-pages {
+  @apply flex space-x-1;
+}
+
+.skeleton-table-pagination-page {
+  @apply skeleton-base h-8 w-8 rounded;
+}
+
+.skeleton-table-pagination-page--active {
+  @apply bg-blue-100;
+}
+
+/* ===== DARK MODE SUPPORT ===== */
+@media (prefers-color-scheme: dark) {
+  .skeleton-base {
+    @apply bg-gray-700;
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+  }
+
+  .skeleton-card,
+  .skeleton-matrix-cell,
+  .skeleton-matrix-masonry-item,
+  .skeleton-matrix-metric-card,
+  .skeleton-matrix-chart,
+  .skeleton-matrix-dashboard-activity,
+  .skeleton-matrix-kanban-card,
+  .skeleton-table-body {
+    @apply bg-gray-800 border-gray-600;
+  }
+
+  .skeleton-table-head,
+  .skeleton-table-filters,
+  .skeleton-table-pagination {
+    @apply bg-gray-700 border-gray-600;
+  }
+
+  .skeleton-matrix-sidebar {
+    @apply bg-gray-700 border-gray-600;
+  }
+
+  .skeleton-matrix-kanban-column {
+    @apply bg-gray-700;
+  }
+
+  .skeleton-table-row--striped {
+    @apply bg-gray-700;
+  }
+}
+
+/* ===== REDUCED MOTION SUPPORT ===== */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-base,
+  .skeleton-text-line--animated,
+  .skeleton-card--animated,
+  .skeleton-matrix--animated,
+  .skeleton-table-container--animated {
+    animation: none;
+  }
+
+  .skeleton-base--pulse {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* ===== HIGH CONTRAST SUPPORT ===== */
+@media (prefers-contrast: high) {
+  .skeleton-base {
+    @apply border border-gray-400;
+  }
+
+  .skeleton-card,
+  .skeleton-matrix-cell,
+  .skeleton-table-wrapper {
+    @apply border-2 border-gray-400;
+  }
+}

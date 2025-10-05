@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sidebar Animated Indicator - Manual Test</title>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f9fafb;
+    }
+    .test-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #111827;
+      margin-bottom: 8px;
+    }
+    h2 {
+      color: #374151;
+      font-size: 18px;
+      margin-top: 0;
+    }
+    .instructions {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 16px;
+      margin: 16px 0;
+      border-radius: 4px;
+    }
+    .checklist {
+      list-style: none;
+      padding: 0;
+    }
+    .checklist li {
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .checklist li:before {
+      content: "☐ ";
+      color: #3b82f6;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    .success {
+      color: #10b981;
+    }
+    .link {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎯 Sidebar Animated Indicator - Manual Test</h1>
+  <p>Validate the animated blue selection indicator bar in the sidebar navigation</p>
+
+  <div class="test-card">
+    <h2>Test Setup</h2>
+    <div class="instructions">
+      <p><strong>Open the application:</strong></p>
+      <p>1. Visit <a href="http://localhost:3006" class="link" target="_blank">http://localhost:3006</a></p>
+      <p>2. Click "Demo User" to login</p>
+      <p>3. Select or create a project to see navigation items</p>
+    </div>
+  </div>
+
+  <div class="test-card">
+    <h2>Visual Validation Checklist</h2>
+    <ul class="checklist">
+      <li><strong>Indicator Presence:</strong> A thin vertical blue bar appears on the left edge of the active navigation item</li>
+      <li><strong>Color:</strong> Indicator is Sapphire blue (#3b82f6 / rgb(59, 130, 246))</li>
+      <li><strong>Width:</strong> Indicator is 4px wide (w-1)</li>
+      <li><strong>Rounded Edge:</strong> Right side of indicator has rounded corners</li>
+      <li><strong>Height Match:</strong> Indicator height matches the active nav item's height</li>
+      <li><strong>Position Alignment:</strong> Indicator aligns perfectly with the top/bottom of active nav item</li>
+    </ul>
+  </div>
+
+  <div class="test-card">
+    <h2>Animation Validation Checklist</h2>
+    <ul class="checklist">
+      <li><strong>Smooth Transition:</strong> When clicking different nav items, indicator slides smoothly (not jumps)</li>
+      <li><strong>Animation Duration:</strong> Transition takes ~300ms (noticeable but not slow)</li>
+      <li><strong>Easing Function:</strong> Movement has ease-in-out curve (starts/ends smoothly, faster in middle)</li>
+      <li><strong>No Jank:</strong> Animation is smooth at 60fps, no stuttering or frame drops</li>
+      <li><strong>Height Animation:</strong> If nav items have different heights, indicator height animates too</li>
+    </ul>
+  </div>
+
+  <div class="test-card">
+    <h2>Interaction Tests</h2>
+    <ul class="checklist">
+      <li><strong>Projects Button:</strong> Click "Projects" → indicator moves to Projects button</li>
+      <li><strong>Design Matrix:</strong> Click "Design Matrix" → indicator moves to Design Matrix</li>
+      <li><strong>File Management:</strong> Click "File Management" → indicator moves down</li>
+      <li><strong>Roadmap:</strong> Click "Roadmap" → indicator continues moving</li>
+      <li><strong>Insights:</strong> Click "Insights" → indicator moves to Insights</li>
+      <li><strong>Team Collaboration:</strong> Click "Team Collaboration" → indicator moves</li>
+      <li><strong>User Settings:</strong> Scroll down, click user button → indicator moves to footer</li>
+    </ul>
+  </div>
+
+  <div class="test-card">
+    <h2>Collapsed Sidebar Tests</h2>
+    <ul class="checklist">
+      <li><strong>Collapse Trigger:</strong> Click collapse button (chevron left icon)</li>
+      <li><strong>Indicator Visible:</strong> Blue indicator still visible in collapsed state</li>
+      <li><strong>Position Adjust:</strong> Indicator margin adjusts for collapsed width (8px margin-left)</li>
+      <li><strong>Navigation Works:</strong> Clicking icons still moves indicator</li>
+      <li><strong>Expand Test:</strong> Click expand button → indicator returns to expanded position</li>
+    </ul>
+  </div>
+
+  <div class="test-card">
+    <h2>Edge Cases</h2>
+    <ul class="checklist">
+      <li><strong>First Load:</strong> Indicator appears on initial active page (Projects or Design Matrix)</li>
+      <li><strong>Page Refresh:</strong> After refresh, indicator is on correct active item</li>
+      <li><strong>Rapid Clicking:</strong> Clicking multiple items quickly → indicator keeps up smoothly</li>
+      <li><strong>Long Labels:</strong> Items with long text → indicator still aligns correctly</li>
+      <li><strong>No Project:</strong> When no project selected → indicator only on Projects button</li>
+    </ul>
+  </div>
+
+  <div class="test-card">
+    <h2>Comparison with Lux Demo</h2>
+    <div class="instructions">
+      <p><strong>Side-by-side comparison:</strong></p>
+      <p>1. Open <a href="http://localhost:3006/#lux-animated" class="link" target="_blank">Lux Demo</a> in one window</p>
+      <p>2. Open <a href="http://localhost:3006" class="link" target="_blank">Main App</a> in another window</p>
+      <p>3. Compare indicator behavior when clicking navigation items</p>
+      <p>4. Verify visual appearance matches exactly:</p>
+      <ul>
+        <li>Same color (sapphire blue)</li>
+        <li>Same width (thin vertical bar)</li>
+        <li>Same animation speed (~300ms)</li>
+        <li>Same easing (smooth cubic-bezier)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="test-card">
+    <h2>✅ Success Criteria</h2>
+    <p><strong>All tests pass if:</strong></p>
+    <ul style="margin-top: 12px;">
+      <li>Blue indicator is always visible on active nav item</li>
+      <li>Indicator slides smoothly when switching items (not instant)</li>
+      <li>Animation takes ~300ms with ease-in-out curve</li>
+      <li>Indicator height/position matches nav item perfectly</li>
+      <li>Works correctly in both expanded and collapsed states</li>
+      <li>Matches Lux demo visual appearance and behavior</li>
+    </ul>
+  </div>
+
+  <div class="test-card" style="background: #f0fdf4; border: 2px solid #10b981;">
+    <h2 class="success">📸 Screenshot Evidence</h2>
+    <p>Take screenshots showing:</p>
+    <ul>
+      <li>Indicator on different navigation items</li>
+      <li>Mid-animation (if possible with dev tools)</li>
+      <li>Collapsed vs expanded states</li>
+      <li>Side-by-side with Lux demo</li>
+    </ul>
+  </div>
+
+  <script>
+    // Auto-open the app in a new window
+    setTimeout(() => {
+      const shouldOpen = confirm('Open the application in a new window to begin testing?');
+      if (shouldOpen) {
+        window.open('http://localhost:3006', '_blank');
+      }
+    }, 1000);
+  </script>
+</body>
+</html>

@@ -16,7 +16,7 @@ import type {
   ValidationResult,
   ServiceMetrics
 } from '../../types/service'
-import type { DatabaseError } from '../../types'
+// import type { DatabaseError } from '../../types' // Currently unused
 
 export abstract class BaseService {
   // Service configuration with sensible defaults
@@ -105,14 +105,14 @@ export abstract class BaseService {
     if (error?.code === '23505') return 'DUPLICATE_KEY'
     if (error?.code === '23503') return 'FOREIGN_KEY_VIOLATION'
     if (error?.code === '42501') return 'PERMISSION_DENIED'
-    if (error?.code === '08003') return 'CONNECTION_ERROR'
-    if (error?.code === '08006') return 'CONNECTION_ERROR'
+    if (error?.code === '08003') return 'NETWORK_ERROR'
+    if (error?.code === '08006') return 'NETWORK_ERROR'
     if (error?.code === '57014') return 'OPERATION_TIMEOUT'
     if (error?.message?.includes('timeout')) return 'OPERATION_TIMEOUT'
     if (error?.message?.includes('lock')) return 'RESOURCE_LOCKED'
     if (error?.message?.includes('conflict')) return 'CONCURRENT_MODIFICATION'
 
-    return 'DATABASE_ERROR'
+    return 'SERVICE_ERROR'
   }
 
   /**
@@ -254,8 +254,8 @@ export abstract class BaseService {
   protected static async checkPermissions(
     userId: string,
     resourceId: string,
-    resourceType: string,
-    requiredPermission: 'read' | 'write' | 'delete' | 'share'
+    _resourceType: string, // Currently unused
+    _requiredPermission: 'read' | 'write' | 'delete' | 'share' // Currently unused
   ): Promise<boolean> {
     try {
       // Implementation depends on your authorization system

@@ -3,6 +3,8 @@ import { X, Sparkles, Wand2, Lightbulb, Target, RefreshCw } from 'lucide-react'
 import { IdeaCard, Project, User } from '../types'
 import { aiService } from '../lib/aiService'
 import { logger } from '../utils/logger'
+import { Button } from './ui/Button'
+import { Input } from './ui/Input'
 
 interface AIIdeaModalProps {
   onClose: () => void
@@ -93,100 +95,100 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+      <div className="lux-modal-backdrop" onClick={onClose} />
+      <div className="lux-modal max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
+        <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--hairline-default)', backgroundColor: 'var(--canvas-secondary)' }}>
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--graphite-700)' }}>
               <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">AI Idea Assistant</h2>
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--graphite-900)' }}>AI Idea Assistant</h2>
           </div>
-          <button
+          <Button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+            variant="ghost"
+            size="sm"
+            icon={<X className="w-5 h-5" />}
+            aria-label="Close modal"
+          />
         </div>
 
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Title Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <Lightbulb className="w-4 h-4 inline mr-1" />
-              Brief Idea Title
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              placeholder="Enter a brief title for your idea..."
-              onKeyPress={(e) => e.key === 'Enter' && !isGenerating && generateIdea()}
-            />
-          </div>
+          <Input
+            label={
+              <span>
+                <Lightbulb className="w-4 h-4 inline mr-1" />
+                Brief Idea Title
+              </span>
+            }
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter a brief title for your idea..."
+            onKeyPress={(e) => e.key === 'Enter' && !isGenerating && generateIdea()}
+            fullWidth
+            variant="primary"
+            size="md"
+          />
 
           {/* Generate Button */}
           <div className="text-center">
-            <button
+            <Button
               onClick={generateIdea}
               disabled={!title.trim() || isGenerating}
-              className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              variant="sapphire"
+              size="lg"
+              icon={isGenerating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
             >
-              {isGenerating ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Generating Ideas...</span>
-                </>
-              ) : (
-                <>
-                  <Wand2 className="w-4 h-4" />
-                  <span>Generate AI Ideas</span>
-                </>
-              )}
-            </button>
+              {isGenerating ? 'Generating Ideas...' : 'Generate AI Ideas'}
+            </Button>
           </div>
 
           {/* Generated Idea Preview */}
           {generatedIdea && (
-            <div className="border border-purple-200 rounded-lg p-4 bg-gradient-to-br from-purple-50 to-blue-50">
+            <div className="border rounded-lg p-4" style={{
+              borderColor: 'var(--hairline-default)',
+              backgroundColor: 'var(--canvas-secondary)'
+            }}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <Target className="w-5 h-5 mr-2 text-purple-600" />
+                <h3 className="text-lg font-semibold flex items-center" style={{ color: 'var(--graphite-900)' }}>
+                  <Target className="w-5 h-5 mr-2" style={{ color: 'var(--sapphire-600)' }} />
                   Generated Idea
                 </h3>
-                <button
+                <Button
                   onClick={regenerateIdea}
                   disabled={isGenerating}
-                  className="flex items-center space-x-1 text-purple-600 hover:text-purple-700 text-sm"
+                  variant="ghost"
+                  size="sm"
+                  icon={<RefreshCw className={`w-3 h-3 ${isGenerating ? 'animate-spin' : ''}`} />}
                 >
-                  <RefreshCw className={`w-3 h-3 ${isGenerating ? 'animate-spin' : ''}`} />
-                  <span>Regenerate</span>
-                </button>
+                  Regenerate
+                </Button>
               </div>
 
               <div className="space-y-3">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Title:</p>
-                  <p className="text-gray-900">{generatedIdea.content}</p>
-                </div>
-                
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Details:</p>
-                  <p className="text-gray-700 text-sm leading-relaxed">{generatedIdea.details}</p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--graphite-700)' }}>Title:</p>
+                  <p style={{ color: 'var(--graphite-900)' }}>{generatedIdea.content}</p>
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Suggested Priority:</p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--graphite-700)' }}>Details:</p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--graphite-700)' }}>{generatedIdea.details}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--graphite-700)' }}>Suggested Priority:</p>
                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-                    generatedIdea.priority === 'strategic' ? 'bg-blue-100 text-blue-800' :
-                    generatedIdea.priority === 'moderate' ? 'bg-amber-100 text-amber-800' :
-                    generatedIdea.priority === 'innovation' ? 'bg-purple-100 text-purple-800' :
-                    generatedIdea.priority === 'high' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
+                    generatedIdea.priority === 'strategic' ? 'lux-badge-primary' :
+                    generatedIdea.priority === 'moderate' ? 'lux-badge-warning' :
+                    generatedIdea.priority === 'innovation' ? 'lux-badge-primary' :
+                    generatedIdea.priority === 'high' ? 'lux-badge-error' :
+                    'lux-badge-secondary'
                   }`}>
                     {generatedIdea.priority}
                   </span>
@@ -196,12 +198,15 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
           )}
 
           {/* Info */}
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4 border border-purple-200">
-            <h4 className="text-sm font-medium text-purple-800 mb-2 flex items-center">
+          <div className="rounded-lg p-4 border" style={{
+            backgroundColor: 'var(--sapphire-50)',
+            borderColor: 'var(--sapphire-200)'
+          }}>
+            <h4 className="text-sm font-medium mb-2 flex items-center" style={{ color: 'var(--sapphire-800)' }}>
               <Sparkles className="w-4 h-4 mr-1" />
               How it works
             </h4>
-            <div className="text-sm text-purple-700 space-y-1">
+            <div className="text-sm space-y-1" style={{ color: 'var(--sapphire-700)' }}>
               <p>• Enter a brief title describing your idea</p>
               <p>• AI will generate detailed descriptions and context</p>
               <p>• Review and refine the generated content</p>
@@ -211,19 +216,21 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
 
           {/* Actions */}
           <div className="flex space-x-3">
-            <button
+            <Button
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              variant="secondary"
+              fullWidth
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleSubmit}
               disabled={!generatedIdea}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-md hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              variant="sapphire"
+              fullWidth
             >
               Add AI Idea to Matrix
-            </button>
+            </Button>
           </div>
         </div>
       </div>

@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { IdeaCard, User } from '../types'
 import { BaseModal } from './shared'
+import Button from './ui/Button'
+import { Input } from './ui/Input'
+import { Textarea } from './ui/Textarea'
 
 interface AddIdeaModalProps {
   isOpen: boolean
@@ -48,52 +51,67 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ isOpen, onClose, onAdd, cur
       title="Add New Idea"
       size="xl"
     >
+      <div data-testid="add-idea-modal">
+        <div className="flex items-center space-x-3 mb-6">
+          <Plus className="w-5 h-5" style={{ color: 'var(--sapphire-600)' }} />
+          <p style={{ color: 'var(--graphite-600)' }}>Create a new idea for your priority matrix</p>
+        </div>
 
-      <div className="flex items-center space-x-3 mb-6">
-        <Plus className="w-5 h-5 text-blue-600" />
-        <p className="text-slate-600">Create a new idea for your priority matrix</p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} data-testid="add-idea-form" className="space-y-6">
           {/* Idea Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Idea Title
-            </label>
-            <input
-              type="text"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Brief title for your idea"
-              required
-            />
-          </div>
+          <Input
+            id="idea-title"
+            label="Idea Title"
+            type="text"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            data-testid="idea-content-input"
+            placeholder="Brief title for your idea"
+            required
+            fullWidth
+            variant="primary"
+            size="md"
+          />
 
           {/* Idea Details */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Details
-            </label>
-            <textarea
-              value={details}
-              onChange={(e) => setDetails(e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Describe your idea in more detail..."
-            />
-          </div>
+          <Textarea
+            id="idea-details"
+            label="Details"
+            value={details}
+            onChange={(e) => setDetails(e.target.value)}
+            data-testid="idea-description-input"
+            rows={4}
+            placeholder="Describe your idea in more detail..."
+            fullWidth
+            variant="primary"
+            size="md"
+          />
 
 
           {/* Priority */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="idea-priority" className="block text-sm font-medium mb-2" style={{ color: 'var(--graphite-700)' }}>
               Priority Level
             </label>
             <select
+              id="idea-priority"
               value={priority}
               onChange={(e) => setPriority(e.target.value as IdeaCard['priority'])}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              data-testid="idea-priority-select"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2"
+              style={{
+                borderColor: 'var(--hairline-default)',
+                color: 'var(--graphite-900)',
+                backgroundColor: 'var(--surface-primary)'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'var(--sapphire-500)';
+                e.target.style.boxShadow = '0 0 0 3px var(--sapphire-100)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'var(--hairline-default)';
+                e.target.style.boxShadow = 'none';
+              }}
             >
               <option value="low">🟢 Low Priority</option>
               <option value="moderate">🟡 Moderate</option>
@@ -104,31 +122,36 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ isOpen, onClose, onAdd, cur
           </div>
 
           {/* Info */}
-          <div className="bg-slate-50 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-slate-700 mb-2">💡 Tip</h4>
-            <div className="text-sm text-slate-600">
+          <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--canvas-secondary)' }}>
+            <h4 className="text-sm font-medium mb-2" style={{ color: 'var(--graphite-700)' }}>💡 Tip</h4>
+            <div className="text-sm" style={{ color: 'var(--graphite-600)' }}>
               After creating your idea, you can drag it to any position on the matrix to set its value vs complexity positioning.
             </div>
           </div>
 
           {/* Actions */}
           <div className="flex space-x-3">
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              variant="secondary"
+              data-testid="idea-cancel-button"
+              className="flex-1"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={!content.trim()}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              variant="sapphire"
+              data-testid="idea-save-button"
+              className="flex-1"
             >
               Add Idea
-            </button>
+            </Button>
           </div>
-      </form>
+        </form>
+      </div>
     </BaseModal>
   )
 }

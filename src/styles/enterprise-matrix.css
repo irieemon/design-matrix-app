@@ -1,0 +1,926 @@
+/* ===== ENTERPRISE MATRIX WORKSPACE SYSTEM ===== */
+/* World-class spatial interface with premium visual design */
+
+.enterprise-matrix-workspace {
+  min-height: 100vh;
+  background: linear-gradient(135deg,
+    rgba(248, 250, 252, 1) 0%,
+    rgba(241, 245, 249, 0.98) 25%,
+    rgba(248, 250, 252, 0.95) 50%,
+    rgba(241, 245, 249, 0.98) 75%,
+    rgba(248, 250, 252, 1) 100%
+  );
+  overflow: hidden;
+  position: static; /* Critical: Let CSS Grid control positioning */
+  left: auto;
+  transform: none;
+  /* No transitions - CSS Grid handles layout changes */
+  transition: none;
+}
+
+.enterprise-matrix-workspace::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    /* REMOVED green/red gradients to fix corner bracket artifacts */
+    radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.02) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== IMMERSIVE MODE TRANSFORMATIONS ===== */
+
+.immersive-mode {
+  background: linear-gradient(135deg,
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(30, 41, 59, 0.98) 50%,
+    rgba(15, 23, 42, 0.95) 100%
+  );
+}
+
+.immersive-mode::before {
+  background:
+    /* REMOVED green/red gradients to fix corner bracket artifacts */
+    radial-gradient(ellipse at 25% 25%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 75% 25%, rgba(139, 92, 246, 0.08) 0%, transparent 60%);
+}
+
+.fullscreen-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+}
+
+/* ===== CLEAN GRID-BASED LAYOUT SYSTEM ===== */
+
+.matrix-workspace-layout {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 1fr;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+/* Main workspace grid when analytics is enabled */
+.matrix-workspace-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Analytics enabled layout */
+.with-analytics .matrix-workspace-grid {
+  grid-template-columns: 1fr 280px;
+  gap: 0;
+}
+
+/* Main matrix area */
+.matrix-main-area {
+  grid-column: 1;
+  grid-row: 1;
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* Analytics sidebar */
+.analytics-sidebar {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  background: transparent;
+  padding: 12px;
+  border-left: 1px solid rgba(241, 245, 249, 0.6);
+  /* Remove transition to prevent conflicts with CSS Grid */
+  transition: none;
+}
+
+.analytics-sidebar .glass-panel {
+  padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.analytics-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(241, 245, 249, 0.8);
+}
+
+.analytics-content {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-content: start;
+}
+
+/* Files overlay panel */
+.files-overlay-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 320px;
+  max-height: 60vh;
+  z-index: var(--z-index-files-overlay);
+  animation: slide-in-right 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.files-overlay-panel .glass-panel {
+  padding: 20px;
+}
+
+.files-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(241, 245, 249, 0.8);
+}
+
+.files-content {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+/* ===== ENTERPRISE HEADER SYSTEM ===== */
+
+.enterprise-header {
+  position: relative;
+  z-index: var(--z-index-enterprise-header);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(120%);
+  border-bottom: 1px solid rgba(241, 245, 249, 0.8);
+  flex-shrink: 0;
+  padding: 8px 0;
+}
+
+.header-minimal {
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+  padding: 6px 0;
+}
+
+.header-full {
+  min-height: 64px;
+  max-height: 64px;
+}
+
+.header-minimal {
+  min-height: 48px;
+  max-height: 48px;
+}
+
+/* ===== PREMIUM CONTROL BUTTONS ===== */
+
+.control-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid;
+  backdrop-filter: blur(16px) saturate(180%);
+  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  cursor: pointer;
+  outline: none;
+  font-weight: 500;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.control-button:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.control-button:active {
+  transform: translateY(0);
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: none;
+  backdrop-filter: blur(16px) saturate(180%);
+  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  cursor: pointer;
+  outline: none;
+  font-weight: 500;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.action-button:active {
+  transform: translateY(-1px);
+}
+
+/* ===== ENTERPRISE MATRIX CANVAS ===== */
+
+.enterprise-matrix-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  /* Critical: Ensure CSS Grid controls positioning, not absolute positioning */
+  position: static !important;
+  left: auto !important;
+  transform: none !important;
+}
+
+.enterprise-matrix-canvas .matrix-container {
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.enterprise-matrix-canvas .matrix-container-enterprise {
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.enterprise-matrix-canvas .matrix-viewport-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border: none !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+
+/* ===== INTELLIGENT CONTEXTUAL OVERLAYS ===== */
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.immersive-mode .glass-panel {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(51, 65, 85, 0.3);
+  color: rgba(248, 250, 252, 0.95);
+}
+
+/* ===== LEGACY STATS PANEL (for backwards compatibility) ===== */
+
+.stats-panel {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  z-index: var(--z-index-analytics-overlay);
+  /* Optimized transition - only animate opacity for performance */
+  transition: opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  pointer-events: auto;
+}
+
+.stats-minimal {
+  bottom: 16px;
+  left: 16px;
+  right: auto;
+  width: 320px;
+}
+
+.stats-full .glass-panel {
+  padding: 24px;
+}
+
+.stats-minimal .glass-panel {
+  padding: 16px;
+}
+
+.stats-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.stats-minimal .stats-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+/* ===== IMMERSIVE MODE ANALYTICS ===== */
+
+.immersive-mode .analytics-sidebar {
+  background: rgba(15, 23, 42, 0.05);
+  border-left: 1px solid rgba(51, 65, 85, 0.3);
+}
+
+.analytics-minimal {
+  padding: 12px;
+}
+
+.analytics-minimal .analytics-content {
+  gap: 8px;
+}
+
+.analytics-full {
+  padding: 16px;
+}
+
+.stat-card {
+  padding: 12px;
+  border-radius: 10px;
+  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+  border: 1px solid;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.8;
+  margin: 0;
+}
+
+/* Stat color variations */
+.stat-slate {
+  background: rgba(248, 250, 252, 0.8);
+  border-color: rgba(148, 163, 184, 0.2);
+  color: rgb(51, 65, 85);
+}
+
+.stat-emerald {
+  background: rgba(236, 253, 245, 0.8);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: rgb(5, 150, 105);
+}
+
+.stat-blue {
+  background: rgba(239, 246, 255, 0.8);
+  border-color: rgba(59, 130, 246, 0.2);
+  color: rgb(37, 99, 235);
+}
+
+.stat-red {
+  background: rgba(254, 242, 242, 0.8);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: rgb(220, 38, 38);
+}
+
+/* ===== SMART PROJECT FILES PANEL ===== */
+
+.files-panel {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 320px;
+  max-height: 60vh;
+  z-index: var(--z-index-files-overlay);
+  /* Optimized transition - only animate opacity for performance */
+  transition: opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  pointer-events: auto;
+}
+
+.files-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ===== RESPONSIVE GRID LAYOUT ===== */
+
+@media (max-width: 1200px) {
+  .with-analytics .matrix-workspace-grid {
+    grid-template-columns: 1fr 280px;
+  }
+
+  .analytics-sidebar {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 1024px) {
+  /* Stack analytics below matrix on tablets */
+  .with-analytics .matrix-workspace-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+
+  .analytics-sidebar {
+    grid-column: 1;
+    grid-row: 2;
+    border-left: none;
+    border-top: 1px solid rgba(241, 245, 249, 0.6);
+    max-height: 200px;
+  }
+
+  .analytics-content {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .files-overlay-panel {
+    width: 280px;
+    right: 16px;
+    top: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .enterprise-header {
+    min-height: 60px;
+  }
+
+  .control-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .action-button {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+
+  /* Mobile: Hide analytics by default, show as overlay if needed */
+  .analytics-sidebar {
+    display: none;
+  }
+
+  .with-analytics.mobile-analytics .analytics-sidebar {
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-index-analytics-overlay);
+    border-top: 1px solid rgba(241, 245, 249, 0.6);
+    border-left: none;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+  }
+
+  .analytics-content {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .files-overlay-panel {
+    display: none; /* Hide files panel on mobile */
+  }
+}
+
+@media (max-width: 640px) {
+  .analytics-content {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .action-button span.hidden {
+    display: none !important; /* Icon only on mobile */
+  }
+
+  .files-overlay-panel {
+    width: calc(100vw - 32px);
+    left: 16px;
+    right: 16px;
+  }
+}
+
+/* Fix button text visibility for desktop and tablet sizes */
+@media (min-width: 641px) {
+  .action-button {
+    min-width: fit-content;
+    white-space: nowrap;
+  }
+
+  .action-button span {
+    display: inline !important;
+    flex-shrink: 0;
+  }
+}
+
+/* ===== LEGACY RESPONSIVE (for backwards compatibility) ===== */
+
+@media (max-width: 1024px) {
+  .stats-panel {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-panel {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    margin: 16px;
+    width: auto;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+/* ===== PERFORMANCE OPTIMIZATIONS ===== */
+
+.enterprise-matrix-workspace,
+.glass-panel,
+.control-button,
+.action-button,
+.stat-card,
+.matrix-canvas,
+.matrix-container-enterprise {
+  /* Hardware acceleration for smooth 60fps interactions */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform, opacity;
+}
+
+/* Force GPU acceleration for animations */
+.matrix-canvas,
+.stats-panel,
+.files-panel {
+  transform: translate3d(0, 0, 0);
+}
+
+/* Optimize for high-refresh rate displays */
+@media (min-resolution: 144dpi) {
+  .enterprise-matrix-workspace,
+  .matrix-canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+  }
+}
+
+/* Optimize for 120Hz+ displays */
+@media (prefers-reduced-motion: no-preference) {
+  .stat-card {
+    animation-duration: 2.5s;
+  }
+
+  .matrix-center-pulse {
+    animation-duration: 3s;
+  }
+
+  .enterprise-glow {
+    animation-duration: 6s;
+  }
+}
+
+/* ===== ACCESSIBILITY ENHANCEMENTS ===== */
+
+.control-button:focus-visible,
+.action-button:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.8);
+  outline-offset: 2px;
+}
+
+.immersive-mode .control-button:focus-visible,
+.immersive-mode .action-button:focus-visible {
+  outline-color: rgba(147, 197, 253, 0.8);
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .enterprise-matrix-workspace,
+  .enterprise-header,
+  .control-button,
+  .action-button,
+  .stat-card,
+  .stats-panel,
+  .files-panel {
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(0, 0, 0, 0.2);
+  }
+
+  .immersive-mode .glass-panel {
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* ===== PREMIUM ANIMATIONS SYSTEM ===== */
+
+@keyframes matrix-center-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow:
+      0 0 40px rgba(59, 130, 246, 0.6),
+      0 0 20px rgba(99, 102, 241, 0.5),
+      0 0 10px rgba(59, 130, 246, 0.8),
+      inset 0 1px 3px rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow:
+      0 0 60px rgba(59, 130, 246, 0.8),
+      0 0 30px rgba(99, 102, 241, 0.7),
+      0 0 15px rgba(59, 130, 246, 1),
+      inset 0 1px 3px rgba(255, 255, 255, 0.6);
+  }
+}
+
+@keyframes enterprise-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(59, 130, 246, 0.4),
+      0 0 40px rgba(59, 130, 246, 0.2),
+      0 0 60px rgba(59, 130, 246, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(59, 130, 246, 0.6),
+      0 0 60px rgba(59, 130, 246, 0.4),
+      0 0 90px rgba(59, 130, 246, 0.2);
+  }
+}
+
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-bottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ===== ENHANCED MATRIX CANVAS ENTERPRISE STYLES ===== */
+
+.matrix-canvas-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hide header in enterprise mode */
+.enterprise-matrix-canvas .matrix-header {
+  display: none;
+}
+
+.matrix-canvas {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  /* No transitions - prevent sliding/jumping during layout changes */
+  transition: none;
+  contain: layout;
+  /* Critical: Prevent horizontal sliding during sidebar transitions */
+  left: auto;
+  transform: none;
+}
+
+.matrix-axes {
+  pointer-events: none;
+}
+
+.matrix-axis-labels {
+  pointer-events: none;
+}
+
+/* ===== ENHANCED PANEL ANIMATIONS ===== */
+
+.analytics-sidebar {
+  animation: slide-in-right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.files-overlay-panel {
+  animation: slide-in-right 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.stat-card {
+  animation: float-gentle 3s ease-in-out infinite;
+  animation-delay: calc(var(--index, 0) * 0.1s);
+}
+
+/* Legacy animations */
+.stats-panel {
+  animation: slide-in-bottom 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.files-panel {
+  animation: slide-in-right 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ===== IMMERSIVE MODE ENHANCEMENTS ===== */
+
+.immersive-mode .enterprise-header {
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+}
+
+.immersive-mode .matrix-canvas {
+  background: linear-gradient(135deg,
+    rgba(15, 23, 42, 0.98) 0%,
+    rgba(30, 41, 59, 0.95) 50%,
+    rgba(15, 23, 42, 0.98) 100%
+  );
+}
+
+.immersive-mode .stat-card {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(51, 65, 85, 0.4);
+  color: rgba(248, 250, 252, 0.95);
+}
+
+.immersive-mode .floating-panel {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(51, 65, 85, 0.3);
+  color: rgba(248, 250, 252, 0.95);
+}
+
+/* ===== DYNAMIC GRADIENT OVERLAYS ===== */
+
+.enterprise-matrix-workspace::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg,
+    transparent 0%,
+    rgba(59, 130, 246, 0.02) 25%,
+    transparent 50%,
+    rgba(139, 92, 246, 0.02) 75%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+  animation: enterprise-glow 8s ease-in-out infinite;
+}
+
+.immersive-mode::after {
+  background: linear-gradient(45deg,
+    transparent 0%,
+    rgba(59, 130, 246, 0.08) 25%,
+    transparent 50%,
+    rgba(139, 92, 246, 0.08) 75%,
+    transparent 100%
+  );
+}
+
+/* ===== MATRIX CONTAINER ENTERPRISE OVERRIDES ===== */
+
+.matrix-container-enterprise {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.matrix-container-enterprise .matrix-canvas-wrapper {
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+
+.matrix-container-enterprise .matrix-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border: none !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+
+/* ===== MAXIMUM WORKSPACE UTILIZATION ===== */
+
+/* Ensure matrix workspace takes all available space */
+.matrix-workspace-layout > .matrix-workspace-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Force analytics to bottom without taking matrix space */
+.analytics-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-index-analytics-overlay);
+  pointer-events: auto;
+  background: transparent;
+}
+
+/* Ensure analytics don't interfere with matrix interaction */
+.analytics-bottom .glass-panel {
+  pointer-events: auto;
+}

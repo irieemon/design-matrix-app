@@ -3,6 +3,7 @@ import { Users, UserPlus, Crown, Shield, Edit3, Trash2, MoreHorizontal, Mail } f
 import { DatabaseService } from '../lib/database'
 import InviteCollaboratorModal from './InviteCollaboratorModal'
 import { logger } from '../utils/logger'
+import { Button } from './ui/Button'
 
 interface Collaborator {
   id: string
@@ -70,7 +71,7 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
       logger.debug('🔄 ProjectCollaborators: Loading collaborators for project:', projectId)
       const data = await DatabaseService.getProjectCollaborators(projectId)
       logger.debug('📋 ProjectCollaborators: Received collaborator data:', data)
-      setCollaborators(data)
+      setCollaborators(data as unknown as Collaborator[])
       logger.debug('✅ ProjectCollaborators: Updated collaborators state with', data.length, 'items')
     } catch (error) {
       logger.error('❌ ProjectCollaborators: Error loading collaborators:', error)
@@ -202,13 +203,13 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
           </h3>
           
           {canInvite && (
-            <button
+            <Button
               onClick={() => setShowInviteModal(true)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+              variant="primary"
+              icon={<UserPlus className="w-4 h-4" />}
             >
-              <UserPlus className="w-4 h-4" />
               Invite
-            </button>
+            </Button>
           )}
         </div>
 
@@ -297,24 +298,26 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
                             if (role === 'owner' || role === collaborator.role) return null
                             const Icon = config.icon
                             return (
-                              <button
+                              <Button
                                 key={role}
                                 onClick={() => handleRoleChange(collaborator.id, collaborator.user_id, role)}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 transition-colors"
+                                variant="ghost"
+                                className="w-full justify-start text-sm"
+                                icon={<Icon className="w-4 h-4 text-gray-500" />}
                               >
-                                <Icon className="w-4 h-4 text-gray-500" />
-                                <span className="text-sm">{config.label}</span>
-                              </button>
+                                {config.label}
+                              </Button>
                             )
                           })}
                           <div className="border-t border-gray-100 mt-1 pt-1">
-                            <button
+                            <Button
                               onClick={() => handleRemoveCollaborator(collaborator)}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-red-50 text-red-600 transition-colors"
+                              variant="danger"
+                              className="w-full justify-start text-sm"
+                              icon={<Trash2 className="w-4 h-4" />}
                             >
-                              <Trash2 className="w-4 h-4" />
-                              <span className="text-sm">Remove Access</span>
-                            </button>
+                              Remove Access
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -366,18 +369,20 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
               </p>
               
               <div className="flex space-x-3">
-                <button
+                <Button
                   onClick={() => setRemoveConfirm({ collaborator: null as any, show: false })}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  variant="secondary"
+                  className="flex-1"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={confirmRemoveCollaborator}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  variant="danger"
+                  className="flex-1"
                 >
                   Remove Access
-                </button>
+                </Button>
               </div>
             </div>
           </div>

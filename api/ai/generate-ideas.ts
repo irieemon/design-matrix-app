@@ -1,12 +1,38 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
-import { authenticate, checkUserRateLimit } from '../auth/middleware.js'
+import { authenticate, checkUserRateLimit, securityMiddleware, sanitizeRequest } from '../auth/middleware'
+import { InputValidator, commonRules } from '../utils/validation'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Apply security middleware
+  securityMiddleware(req, res)
+
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
-  
+
+  // Sanitize request
+  sanitizeRequest(req)
+
+  // Validate and sanitize input
+  const validation = InputValidator.validate(req.body, [
+    commonRules.title,
+    commonRules.description,
+    { ...commonRules.projectType, required: false },
+    { ...commonRules.count, required: false },
+    { ...commonRules.tolerance, required: false }
+  ])
+
+  if (!validation.isValid) {
+    return res.status(400).json({
+      error: 'Validation failed',
+      details: validation.errors
+    })
+  }
+
+  // Use sanitized data
+  const { title, description, projectType = 'other', count = 8, tolerance = 50 } = validation.sanitizedData
+
   // Authenticate user (optional - can work without auth for basic functionality)
   const { user } = await authenticate(req)
   
@@ -30,15 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       userAgent: req.headers['user-agent']
     })
     
-    const { title, description, projectType, count = 8, tolerance = 50 } = req.body
-    
-    console.log('🔍 Extracted fields:', { title, description, projectType, count, tolerance })
-    
-    // Validate required fields
-    if (!title || !description) {
-      console.error('❌ Missing required fields:', { title: !!title, description: !!description })
-      return res.status(400).json({ error: 'Title and description are required' })
-    }
+    console.log('🔍 Validated fields:', { title, description, projectType, count, tolerance })
     
     // Get API keys from environment (these are server-side only)
     const openaiKey = process.env.OPENAI_API_KEY

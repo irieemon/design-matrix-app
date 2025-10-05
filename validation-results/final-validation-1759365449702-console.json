@@ -1,0 +1,62 @@
+[
+  {
+    "type": "debug",
+    "text": "[vite] connecting...",
+    "timestamp": 1759365450827
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+    "timestamp": 1759365450838
+  },
+  {
+    "type": "warning",
+    "text": "Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.",
+    "timestamp": 1759365450843
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected.",
+    "timestamp": 1759365450919
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting...",
+    "timestamp": 1759365450983
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected.",
+    "timestamp": 1759365450983
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+    "timestamp": 1759365451030
+  },
+  {
+    "type": "warning",
+    "text": "Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.",
+    "timestamp": 1759365451030
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+    "timestamp": 1759365451176
+  },
+  {
+    "type": "log",
+    "text": "%cINFO %c [AuthScreen] 🎭 Signing in as anonymous demo user... ",
+    "timestamp": 1759365451201
+  },
+  {
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "timestamp": 1759365451593
+  },
+  {
+    "type": "warning",
+    "text": "[WARN] ⚠️ Token expired (401/403), attempting refresh...",
+    "timestamp": 1759365451593
+  }
+]

@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
-import { authenticate, checkUserRateLimit } from '../auth/middleware.js'
+import { authenticate, checkUserRateLimit } from '../auth/middleware'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {

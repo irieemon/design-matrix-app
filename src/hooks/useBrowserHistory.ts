@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { sanitizeProjectId } from '../utils/uuid'
+import { useLogger } from '../lib/logging'
 
 interface UseBrowserHistoryProps {
   currentPage: string
@@ -20,31 +22,103 @@ export const useBrowserHistory = ({
 }: UseBrowserHistoryProps): UseBrowserHistoryReturn => {
   const navigate = useNavigate()
   const location = useLocation()
+  const logger = useLogger('useBrowserHistory')
   const lastCurrentPageRef = useRef(currentPage)
   const lastLocationRef = useRef(location.pathname + location.search)
   const lastProjectIdRef = useRef(currentProject?.id)
   const [isRestoringProject, setIsRestoringProject] = useState(false)
   const hasInitializedRef = useRef(false)
   const hasCompletedInitialLoadRef = useRef(false)
+  const restorationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const failedRestorationAttemptsRef = useRef(new Set<string>())
 
-  // Check if we need to restore a project on initial load
+  // CRITICAL FIX: Enhanced project restoration with deadlock prevention and auth coordination
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search)
-    const projectIdFromUrl = urlParams.get('project')
-    
+    const rawProjectId = urlParams.get('project')
+    // Convert legacy project IDs to proper UUID format
+    const projectIdFromUrl = rawProjectId ? sanitizeProjectId(rawProjectId) : null
+
+    // Clear any existing timeout when dependencies change
+    if (restorationTimeoutRef.current) {
+      clearTimeout(restorationTimeoutRef.current)
+      restorationTimeoutRef.current = null
+    }
+
+    // DEADLOCK FIX: Remove auth waiting logic that causes circular dependency
+    const shouldWaitForAuth = () => {
+      // If URL has fresh=true, this is a fresh start, don't wait
+      if (urlParams.has('fresh')) {
+        return false
+      }
+
+      // CRITICAL: Never block on initial load - this causes deadlock with auth
+      // Let project restoration proceed independently
+      return false
+    }
+
     // If there's a project in URL but no current project, we need to restore
-    if (projectIdFromUrl && !currentProject && onProjectRestore) {
-      console.log('Setting isRestoringProject = true for project:', projectIdFromUrl)
-      setIsRestoringProject(true)
-    } else {
-      if (isRestoringProject) {
-        console.log('Clearing isRestoringProject - project restored or no project needed')
-        console.log('Marking initial load as complete - project restoration finished')
+    if (projectIdFromUrl && !currentProject && onProjectRestore && !isRestoringProject) {
+      // Check if we've already failed to restore this project
+      if (failedRestorationAttemptsRef.current.has(projectIdFromUrl)) {
+        logger.warn('Skipping restoration - already failed for project', { projectId: projectIdFromUrl })
+        logger.debug('Permanently abandoning restoration for project', { projectId: projectIdFromUrl })
         hasCompletedInitialLoadRef.current = true
+        return
+      }
+
+      // DEADLOCK FIX: Skip auth wait check - proceed with restoration immediately
+      if (shouldWaitForAuth()) {
+        logger.debug('Skipping auth wait check - proceeding with immediate restoration')
+        // Continue with restoration instead of waiting
+      }
+
+      logger.info('Starting project restoration', { projectId: projectIdFromUrl })
+      setIsRestoringProject(true)
+
+      // OPTIMIZED: Fast restoration timeout coordinated with new auth timeout (4s)
+      restorationTimeoutRef.current = setTimeout(() => {
+        logger.warn('Project restoration timeout exceeded', { projectId: projectIdFromUrl, timeout: '2s' })
+        failedRestorationAttemptsRef.current.add(projectIdFromUrl)
+        setIsRestoringProject(false)
+        hasCompletedInitialLoadRef.current = true
+        restorationTimeoutRef.current = null
+      }, 2000)
+
+      // Trigger the restoration
+      onProjectRestore(projectIdFromUrl)
+
+    } else {
+      // Clear restoration state when:
+      // 1. No project in URL
+      // 2. Project successfully restored (currentProject exists)
+      // 3. No restoration function available
+      if (isRestoringProject) {
+        logger.info('Clearing restoration state - project restored or no restoration needed')
+        logger.debug('Current restoration state', {
+          projectInUrl: !!projectIdFromUrl,
+          currentProject: !!currentProject
+        })
+        hasCompletedInitialLoadRef.current = true
+
+        // Clear timeout on successful completion
+        if (restorationTimeoutRef.current) {
+          clearTimeout(restorationTimeoutRef.current)
+          restorationTimeoutRef.current = null
+        }
       }
       setIsRestoringProject(false)
     }
-  }, [location.search, currentProject, onProjectRestore, isRestoringProject])
+  }, [location.search, currentProject, onProjectRestore])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (restorationTimeoutRef.current) {
+        clearTimeout(restorationTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Map page names to URL paths
   const pageToPath: Record<string, string> = {
@@ -99,80 +173,87 @@ export const useBrowserHistory = ({
 
   // Sync URL when page changes (programmatic navigation)
   useEffect(() => {
-    // Don't navigate until initial load is completely finished
-    if (!hasCompletedInitialLoadRef.current) {
-      console.log('Blocking programmatic navigation - initial load not complete')
-      return
-    }
-    
-    // Don't navigate if we're currently restoring a project - let the restoration complete first
-    if (isRestoringProject) {
-      console.log('Blocking programmatic navigation - project restoration in progress')
-      return
-    }
-    
+    // OPTIMIZED: Remove blocking logic that prevents navigation during auth
+    // Allow navigation to proceed normally without waiting
+    logger.debug('Allowing programmatic navigation - no blocking')
+
     const targetPath = pageToPath[currentPage] || '/'
-    
+
     // Build URL with project context
     const urlParams = new URLSearchParams(location.search)
-    const currentProjectParam = urlParams.get('project')
-    
+    const rawCurrentProjectParam = urlParams.get('project')
+    const currentProjectParam = rawCurrentProjectParam ? sanitizeProjectId(rawCurrentProjectParam) : null
+
     let targetUrl = targetPath
     if (currentProject) {
       targetUrl += `?project=${encodeURIComponent(currentProject.id)}`
     }
-    
+
     // Only navigate if the page actually changed or project context changed
     const needsNavigation = (
-      lastCurrentPageRef.current !== currentPage || 
+      lastCurrentPageRef.current !== currentPage ||
       (currentProject?.id !== currentProjectParam)
     ) && (location.pathname !== targetPath || location.search !== (currentProject ? `?project=${encodeURIComponent(currentProject.id)}` : ''))
-    
+
     if (needsNavigation) {
-      console.log('Page/project changed programmatically:', lastCurrentPageRef.current, '->', currentPage, 'with project:', currentProject?.id, 'navigating to:', targetUrl)
+      logger.debug('Page/project changed programmatically', {
+        from: lastCurrentPageRef.current,
+        to: currentPage,
+        projectId: currentProject?.id,
+        targetUrl
+      })
       navigate(targetUrl, { replace: false })
     }
-    
+
     lastCurrentPageRef.current = currentPage
     lastProjectIdRef.current = currentProject?.id
-  }, [currentPage, currentProject, navigate, location.pathname, location.search, pageToPath, isRestoringProject])
+  }, [currentPage, currentProject, navigate, pageToPath, isRestoringProject])
+  // NOTE: location.pathname and location.search intentionally excluded from deps
+  // They're used for comparison only, not as triggers (would cause infinite loop)
 
   // Sync page and project when URL changes (browser navigation or direct URL access)
   useEffect(() => {
     const currentPageFromUrl = pathToPage[location.pathname] || 'matrix'
     const urlParams = new URLSearchParams(location.search)
-    const projectIdFromUrl = urlParams.get('project')
+    const rawProjectId = urlParams.get('project')
+    // Convert legacy project IDs to proper UUID format
+    const projectIdFromUrl = rawProjectId ? sanitizeProjectId(rawProjectId) : null
     const currentFullUrl = location.pathname + location.search
     
     // Check if this is the initial load or a genuine URL change
     const isInitialLoad = !hasInitializedRef.current
     const fullUrlChanged = lastLocationRef.current !== currentFullUrl
-    
+
     if (isInitialLoad || fullUrlChanged) {
-      console.log('URL changed via browser:', lastLocationRef.current, '->', currentFullUrl)
-      
+      logger.debug('URL changed via browser', {
+        from: lastLocationRef.current,
+        to: currentFullUrl
+      })
+
       // Update page if it changed
       if (currentPageFromUrl !== currentPage) {
-        console.log('Changing page to:', currentPageFromUrl)
+        logger.debug('Changing page', { to: currentPageFromUrl })
         onPageChange(currentPageFromUrl)
       }
-      
+
       // Restore project if specified in URL and different from current
       if (projectIdFromUrl && projectIdFromUrl !== currentProject?.id && onProjectRestore) {
-        console.log('Restoring project from URL:', projectIdFromUrl)
-        console.log('Project ID length:', projectIdFromUrl.length)
-        console.log('Full URL search params:', location.search)
+        logger.info('Restoring project from URL', {
+          projectId: projectIdFromUrl,
+          projectIdLength: projectIdFromUrl.length,
+          searchParams: location.search
+        })
         setIsRestoringProject(true)
         onProjectRestore(projectIdFromUrl)
       } else if (isInitialLoad) {
         // If initial load and no project restoration needed, mark initial load as complete
-        console.log('Initial load complete - no project restoration needed')
+        logger.debug('Initial load complete - no project restoration needed')
         hasCompletedInitialLoadRef.current = true
       }
-      
+
       hasInitializedRef.current = true
     }
-    
+
     lastLocationRef.current = currentFullUrl
   }, [location.pathname, location.search, currentPage, currentProject?.id, onPageChange, onProjectRestore, pathToPage])
 

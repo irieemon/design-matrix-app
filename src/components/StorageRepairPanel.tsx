@@ -1,5 +1,7 @@
+/* eslint-disable no-console */
 import React, { useState } from 'react'
 import { AlertTriangle, CheckCircle, Settings, Upload, RefreshCw } from 'lucide-react'
+import { logger } from '../lib/logging'
 
 interface StorageRepairPanelProps {
   projectId?: string
@@ -13,10 +15,10 @@ const StorageRepairPanel: React.FC<StorageRepairPanelProps> = ({ projectId }) =>
   const runRepairAction = async (action: string, additionalData: any = {}) => {
     setIsLoading(true)
     setError(null)
-    
+
     try {
-      console.log(`🔧 Running storage repair action: ${action}`)
-      
+      logger.debug('Running storage repair action', { action })
+
       const response = await fetch('/api/debug/repair-storage', {
         method: 'POST',
         headers: {
@@ -30,7 +32,7 @@ const StorageRepairPanel: React.FC<StorageRepairPanelProps> = ({ projectId }) =>
       })
 
       const data = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(data.error || `HTTP ${response.status}`)
       }
@@ -39,13 +41,13 @@ const StorageRepairPanel: React.FC<StorageRepairPanelProps> = ({ projectId }) =>
         ...prev,
         [action]: data
       }))
-      
-      console.log(`✅ ${action} completed:`, data)
-      
+
+      logger.debug('Repair action completed', { action, data })
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(`${action} failed: ${errorMessage}`)
-      console.error(`❌ ${action} failed:`, err)
+      logger.error('Repair action failed', { action, error: err })
     } finally {
       setIsLoading(false)
     }

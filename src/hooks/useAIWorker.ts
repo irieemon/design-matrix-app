@@ -1,5 +1,6 @@
 import { useCallback, useRef, useEffect } from 'react'
 import { IdeaCard, Project } from '../types'
+import { useLogger } from '../lib/logging'
 
 // Types for worker communication
 interface AIWorkerMessage {
@@ -33,6 +34,7 @@ interface ErrorCallback {
 }
 
 export const useAIWorker = () => {
+  const logger = useLogger('useAIWorker')
   const workerRef = useRef<Worker | null>(null)
   const pendingRequests = useRef(new Map<string, {
     onProgress?: ProgressCallback
@@ -73,7 +75,7 @@ export const useAIWorker = () => {
         }
 
         workerRef.current.onerror = (error) => {
-          console.error('AI Worker error:', error)
+          logger.error('AI Worker error', error)
           // Notify all pending requests of the error
           pendingRequests.current.forEach(request => {
             request.onError?.('Worker error occurred')
@@ -81,7 +83,7 @@ export const useAIWorker = () => {
           pendingRequests.current.clear()
         }
       } catch (error) {
-        console.warn('Web Workers not supported, falling back to main thread')
+        logger.warn('Web Workers not supported, falling back to main thread', { error })
       }
     }
 

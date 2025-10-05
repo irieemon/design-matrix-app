@@ -1,0 +1,391 @@
+/* ===== PERFORMANCE OPTIMIZATION STYLES ===== */
+/* Ultra-high performance CSS for 60fps enterprise matrix interface */
+
+/* ===== GPU ACCELERATION FOUNDATION ===== */
+
+.gpu-accelerated {
+  /* Force GPU layer creation */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform, opacity;
+
+  /* Optimize for high-refresh displays */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: optimize-contrast;
+}
+
+.hardware-optimized {
+  /* CSS Containment for performance isolation */
+  contain: layout style paint;
+  isolation: isolate;
+
+  /* Subpixel rendering optimization */
+  transform-style: preserve-3d;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== MATRIX PERFORMANCE ENHANCEMENTS ===== */
+
+.matrix-container-enterprise {
+  /* Maximum performance container */
+  contain: strict;
+  isolation: isolate;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+
+  /* Optimize composite layers */
+  will-change: transform, opacity;
+  transform-style: preserve-3d;
+}
+
+.matrix-canvas-optimized {
+  /* Ultra-smooth canvas rendering */
+  contain: layout style paint;
+  isolation: isolate;
+
+  /* GPU acceleration */
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+
+  /* Optimize for animations */
+  will-change: transform, opacity, filter;
+}
+
+/* ===== CARD PERFORMANCE OPTIMIZATIONS ===== */
+
+.idea-card-optimized {
+  /* Efficient card rendering */
+  contain: layout style;
+  isolation: isolate;
+
+  /* Hardware acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+
+  /* Optimize drag operations */
+  touch-action: none;
+  user-select: none;
+
+  /* Optimized transitions - avoid multiple simultaneous animations */
+  transition: transform 0.18s cubic-bezier(0.4, 0.0, 0.2, 1);
+  /* Separate hover transitions from base transitions */
+}
+
+.idea-card-optimized:hover {
+  /* Apply box-shadow transition only on hover to reduce conflicts */
+  transition: transform 0.18s cubic-bezier(0.4, 0.0, 0.2, 1),
+              box-shadow 0.18s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+
+.idea-card-dragging {
+  /* Optimize dragging performance */
+  transform: translateZ(0) rotate(3deg) scale(1.05);
+  will-change: transform;
+  z-index: 1000;
+
+  /* Reduce paint operations during drag */
+  pointer-events: none;
+  box-shadow: none; /* Remove expensive effects during drag */
+  backdrop-filter: none;
+
+  /* No transitions during drag for maximum performance */
+  transition: none;
+}
+
+/* ===== ANIMATION PERFORMANCE ===== */
+
+@keyframes matrix-fade-in {
+  from {
+    opacity: 0;
+    transform: translateZ(0) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateZ(0) translateY(0);
+  }
+}
+
+@keyframes matrix-scale-in {
+  from {
+    opacity: 0;
+    transform: translateZ(0) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateZ(0) scale(1);
+  }
+}
+
+.animate-matrix-in {
+  animation: matrix-fade-in 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-scale-in {
+  animation: matrix-scale-in 0.2s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* ===== PANEL PERFORMANCE OPTIMIZATIONS ===== */
+
+.glass-panel-optimized {
+  /* Efficient glass morphism */
+  backdrop-filter: blur(20px) saturate(120%);
+
+  /* GPU acceleration */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+
+  /* Optimize compositing */
+  contain: layout style paint;
+  isolation: isolate;
+}
+
+.floating-panel-optimized {
+  /* Efficient floating effects */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+
+  /* Smooth animations */
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ===== RESPONSIVE PERFORMANCE ===== */
+
+/* Optimize for different screen densities */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .matrix-canvas-optimized,
+  .idea-card-optimized {
+    /* High DPI optimizations */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+  }
+}
+
+/* Mobile performance optimizations */
+@media (max-width: 768px) {
+  .matrix-container-enterprise {
+    /* Minimal effects on mobile for performance */
+    backdrop-filter: blur(8px);
+  }
+
+  .idea-card-optimized {
+    /* Simplified mobile animations - single property only */
+    transition: transform 0.15s ease-out;
+  }
+
+  .idea-card-optimized:hover {
+    /* Disable hover effects on mobile to prevent conflicts */
+    transform: none;
+    transition: none;
+  }
+
+  .glass-panel-optimized {
+    /* Minimal effects on mobile */
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* High refresh rate optimizations */
+@media (min-refresh-rate: 90Hz) {
+  .idea-card-optimized {
+    /* Smoother animations for high refresh displays */
+    transition-duration: 0.12s;
+  }
+
+  .matrix-canvas-optimized {
+    /* Optimize canvas for high refresh displays */
+    transition-duration: 0.12s;
+  }
+}
+
+/* ===== MEMORY OPTIMIZATION ===== */
+
+.memory-optimized {
+  /* Prevent memory leaks in animations */
+  animation-fill-mode: forwards;
+  animation-play-state: running;
+}
+
+.memory-optimized.paused {
+  /* Pause animations when not visible */
+  animation-play-state: paused;
+}
+
+/* ===== PAINT OPTIMIZATION ===== */
+
+.paint-optimized {
+  /* Reduce paint area */
+  contain: layout style paint;
+
+  /* Optimize repaints */
+  transform: translateZ(0);
+
+  /* Isolate paint layers */
+  isolation: isolate;
+}
+
+/* ===== SCROLL PERFORMANCE ===== */
+
+.scroll-optimized {
+  /* Smooth scrolling */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+
+  /* Optimize scroll performance */
+  contain: strict;
+  transform: translateZ(0);
+}
+
+/* ===== CRITICAL RENDERING PATH ===== */
+
+.critical-above-fold {
+  /* Prioritize above-the-fold content */
+  contain: layout style;
+  will-change: auto;
+
+  /* Fast initial render */
+  transform: translateZ(0);
+}
+
+.lazy-below-fold {
+  /* Optimize below-the-fold content */
+  contain: strict;
+  content-visibility: auto;
+  contain-intrinsic-size: 300px 200px;
+}
+
+/* ===== INTERACTION PERFORMANCE ===== */
+
+.interaction-optimized {
+  /* Smooth user interactions */
+  touch-action: manipulation;
+  user-select: none;
+
+  /* Fast response */
+  will-change: transform;
+  transition: transform 0.1s ease-out;
+}
+
+.interaction-optimized:active {
+  /* Immediate feedback */
+  transform: translateZ(0) scale(0.98);
+}
+
+/* ===== ACCESSIBILITY PERFORMANCE ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Honor user motion preferences - disable ALL animations */
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .matrix-canvas-optimized,
+  .idea-card-optimized,
+  .glass-panel-optimized,
+  .floating-panel-optimized {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .animate-matrix-in,
+  .animate-scale-in {
+    animation: none !important;
+  }
+}
+
+/* ===== FOCUS PERFORMANCE ===== */
+
+.focus-optimized:focus-visible {
+  /* Efficient focus indicators */
+  outline: 2px solid rgba(59, 130, 246, 0.8);
+  outline-offset: 2px;
+
+  /* Optimize focus transitions */
+  transition: outline-color 0.15s ease-out;
+}
+
+/* ===== ENTERPRISE THEME PERFORMANCE ===== */
+
+.enterprise-matrix-workspace.performance-mode {
+  /* Maximum performance mode */
+  contain: strict;
+  isolation: isolate;
+  transform: translateZ(0);
+
+  /* Disable expensive effects in performance mode */
+  backdrop-filter: none;
+  background-attachment: scroll;
+}
+
+.enterprise-matrix-workspace.performance-mode .glass-panel-optimized {
+  /* Simplified panels in performance mode */
+  backdrop-filter: none;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.enterprise-matrix-workspace.performance-mode .matrix-canvas-optimized {
+  /* Simplified canvas in performance mode */
+  filter: none;
+  backdrop-filter: none;
+}
+
+/* ===== DEBUG PERFORMANCE INDICATORS ===== */
+
+.performance-debug {
+  /* Visual performance indicators for development */
+  position: relative;
+}
+
+.performance-debug::after {
+  content: "🎯";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 12px;
+  opacity: 0.6;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.performance-debug.slow::after {
+  content: "⚠️";
+  color: orange;
+}
+
+.performance-debug.critical::after {
+  content: "🚨";
+  color: red;
+}
+
+/* ===== 60FPS GUARANTEE STYLES ===== */
+
+.fps-60-optimized {
+  /* Guarantee 60fps performance */
+  contain: strict;
+  transform: translateZ(0);
+  will-change: auto; /* Only set during actual transitions */
+
+  /* Optimize composite timing for 60fps */
+  transition-timing-function: cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition-duration: 0.16s; /* One frame at 60fps */
+}
+
+.fps-60-optimized.transitioning {
+  /* Only enable will-change during transitions */
+  will-change: transform;
+}
+
+.fps-60-optimized * {
+  /* Apply containment to children for performance */
+  contain: layout style;
+}

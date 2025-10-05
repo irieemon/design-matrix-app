@@ -1,5 +1,6 @@
 import React from 'react'
 import { Users, Monitor, Smartphone, TrendingUp, Settings, BarChart3 } from 'lucide-react'
+import { useLogger } from '../../lib/logging'
 
 interface RoadmapFeature {
   id: string
@@ -41,7 +42,14 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
   startDate = new Date(),
   projectType = 'software'
 }) => {
-  console.log('🏁 DetailedExportView component started with:', { featuresLength: features.length, title, projectType })
+  const logger = useLogger('DetailedExportView')
+
+  logger.debug('Component initialized', {
+    featureCount: features.length,
+    title,
+    projectType
+  })
+
   // Generate contextual team lanes based on project type and features
   const getContextualTeamLanes = (): TeamLane[] => {
     const type = projectType.toLowerCase()
@@ -112,9 +120,9 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
   const teamLanes = getContextualTeamLanes()
 
   // Debug logging
-  console.log('🔧 DetailedExportView Debug:', {
-    featuresCount: features.length,
-    teamLanesCount: teamLanes.length,
+  logger.debug('Team lanes configuration', {
+    featureCount: features.length,
+    teamLaneCount: teamLanes.length,
     projectType,
     teamLanes: teamLanes.map(t => ({ id: t.id, name: t.name })),
     features: features.map(f => ({ 
@@ -308,8 +316,10 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
           const featureRows = calculateFeatureRows(teamFeatures)
           const maxRows = Math.max(1, ...Object.values(featureRows), 0) + 1
           const laneHeight = Math.max(140, maxRows * 40 + 40)
-          
-          console.log(`🔍 Team ${team.id} (${team.name}):`, {
+
+          logger.debug('Team lane rendering', {
+            teamId: team.id,
+            teamName: team.name,
             teamFeatures: teamFeatures.map(f => ({ id: f.id, title: f.title, startMonth: f.startMonth, duration: f.duration })),
             featureRows,
             maxRows,
@@ -345,8 +355,10 @@ const DetailedExportView: React.FC<DetailedExportViewProps> = ({
                     const monthWidth = 100 / months.length
                     const left = feature.startMonth * monthWidth
                     const width = feature.duration * monthWidth
-                    
-                    console.log(`📍 Rendering feature ${feature.id} (${feature.title}):`, {
+
+                    logger.debug('Feature positioning', {
+                      featureId: feature.id,
+                      featureTitle: feature.title,
                       startMonth: feature.startMonth,
                       duration: feature.duration,
                       left: `${left}%`,

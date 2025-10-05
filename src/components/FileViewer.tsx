@@ -4,6 +4,7 @@ import { logger } from '../utils/logger'
 import { useToast } from '../contexts/ToastContext'
 import { FileService } from '../lib/fileService'
 import { useState, useEffect } from 'react'
+import PDFViewer from './PDFViewer'
 
 interface FileViewerProps {
   file: ProjectFile | null
@@ -259,25 +260,14 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
       )
     }
 
-    // For PDF files with file_data, show embedded PDF
+    // For PDF files with file_data, show CSP-compliant PDF viewer
     if (actualFileType === 'pdf' && fileUrl) {
       return (
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-4">
-            <FileText className="w-5 h-5 text-gray-600" />
-            <h4 className="text-sm font-medium text-gray-900">PDF Preview</h4>
-          </div>
-          <div className="bg-white rounded-lg border overflow-hidden">
-            <iframe
-              src={fileUrl}
-              className="w-full h-96"
-              title={file.original_name}
-              onError={() => {
-                logger.warn('Failed to load PDF preview:', file.original_name)
-              }}
-            />
-          </div>
-        </div>
+        <PDFViewer
+          fileUrl={fileUrl}
+          fileName={file.original_name}
+          onDownload={() => downloadFile(file)}
+        />
       )
     }
 

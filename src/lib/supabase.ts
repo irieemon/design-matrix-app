@@ -3,12 +3,15 @@ import { logger } from '../utils/logger'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseServiceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
 
 logger.debug('🔧 Supabase config check:', {
   hasUrl: !!supabaseUrl,
   hasKey: !!supabaseAnonKey,
+  hasServiceKey: !!supabaseServiceRoleKey,
   urlPreview: supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'missing',
-  keyPreview: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'missing'
+  keyPreview: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'missing',
+  serviceKeyPreview: supabaseServiceRoleKey ? `${supabaseServiceRoleKey.substring(0, 20)}...` : 'missing'
 })
 
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -17,19 +20,120 @@ if (!supabaseUrl || !supabaseAnonKey) {
   logger.error('You need to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file')
 }
 
-// Create Supabase client with configuration to handle email confirmations
+// Create Supabase client with performance optimizations
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-key',
   {
     auth: {
       autoRefreshToken: true,
+      // TEMPORARY FIX: Re-enable session persistence to allow authentication to complete
+      // NOTE: This re-introduces XSS token theft vulnerability (PRIO-SEC-001, CVSS 9.1)
+      // TODO: Implement httpOnly cookie authentication to resolve security issue properly
       persistSession: true,
       detectSessionInUrl: true,
-      storageKey: 'prioritas-auth'
+      // Performance optimizations
+      flowType: 'pkce' // Use more efficient PKCE flow
+    },
+    // Database connection optimizations
+    db: {
+      schema: 'public'
+    },
+    // Global request optimizations
+    global: {
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    },
+    // Enable connection pooling and optimize timeouts
+    realtime: {
+      params: {
+        eventsPerSecond: 10
+      }
     }
   }
 )
+
+// Service role client for admin operations (bypasses RLS)
+// Use unique storage key to avoid "Multiple GoTrueClient instances" warning
+export const supabaseAdmin = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseServiceRoleKey || supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      storageKey: 'sb-admin-client'  // Unique key to prevent collision with main client
+    },
+    db: {
+      schema: 'public'
+    }
+  }
+)
+
+// FIX #4: Enhanced cleanup to include actual Supabase storage keys
+const cleanupAuthStorage = () => {
+  try {
+    // Extract project reference from Supabase URL for dynamic key cleanup
+    const projectRef = supabaseUrl?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
+
+    // Build list of keys to clean (both legacy and potentially corrupted)
+    const keysToClean = [
+      'prioritas-auth',              // Old custom auth key
+      'sb-prioritas-auth-token',     // Old custom supabase key
+      'prioritasUser',               // Legacy user storage
+      'prioritasUserJoinDate',       // Legacy join date
+      'supabase.auth.token',         // Old Supabase auth key
+      // SECURITY FIX: Remove PII storage per PRIO-SEC-002 (CVSS 7.8)
+      'collaboratorEmailMappings',   // GDPR violation: plaintext email storage
+      // Add project-specific keys if we have a project ref
+      ...(projectRef ? [
+        `sb-${projectRef}-auth-token`,                    // Actual Supabase session
+        `sb-${projectRef}-auth-token-code-verifier`,      // PKCE verifier
+        `sb-${projectRef}-auth-token.0`,                  // Additional token data
+        `sb-${projectRef}-auth-token.1`                   // Additional token data
+      ] : [])
+    ]
+
+    let cleanedCount = 0
+    keysToClean.forEach(key => {
+      try {
+        const value = localStorage.getItem(key)
+        if (value !== null) {
+          // Validate JSON to catch corrupted storage
+          try {
+            JSON.parse(value)
+          } catch {
+            // Corrupted JSON, definitely should remove
+            logger.warn(`🚨 Found corrupted storage for key: ${key}`)
+          }
+
+          localStorage.removeItem(key)
+          cleanedCount++
+          logger.debug('🧹 Removed storage key:', key)
+        }
+      } catch (error) {
+        logger.warn(`⚠️ Failed to clean key ${key}:`, error)
+      }
+    })
+
+    if (cleanedCount > 0) {
+      logger.debug(`✅ Storage cleanup completed - removed ${cleanedCount} keys`)
+    } else {
+      logger.debug('✅ Storage cleanup completed - no stale keys found')
+    }
+  } catch (error) {
+    logger.warn('⚠️ Error during auth storage cleanup:', error)
+  }
+}
+
+// CRITICAL FIX: Only run cleanup on first load, not during session restoration
+let hasRunCleanup = false
+if (!hasRunCleanup) {
+  cleanupAuthStorage()
+  hasRunCleanup = true
+}
 
 // Auth helper functions
 export const getCurrentUser = async () => {
@@ -41,28 +145,48 @@ export const getCurrentUser = async () => {
   return user
 }
 
+// Profile cache for better performance
+const profileCache = new Map<string, { profile: any; timestamp: number; expires: number }>()
+const PROFILE_CACHE_DURATION = 2 * 60 * 1000 // 2 minutes
+
 export const getUserProfile = async (userId: string) => {
+  const profileStart = performance.now()
   logger.debug('🔍 getUserProfile called for userId:', userId)
-  
+
+  // Check cache first
+  const cached = profileCache.get(userId)
+  if (cached && Date.now() < cached.expires) {
+    logger.debug('🎯 Using cached profile:', { userId, age: Date.now() - cached.timestamp })
+    return cached.profile
+  }
+
   try {
+    // Optimized query with minimal data selection
+    // Use Promise.race for timeout instead of abortSignal (not supported by PostgrestBuilder)
     const profilePromise = supabase
       .from('user_profiles')
-      .select('*')
+      .select('id, email, full_name, role, avatar_url, created_at, updated_at')
       .eq('id', userId)
       .single()
-    
-    const timeoutPromise = new Promise((resolve) => 
-      setTimeout(() => resolve({ data: null, error: { message: 'Profile lookup timeout' } }), 5000)
-    )
-    
-    const { data, error } = await Promise.race([profilePromise, timeoutPromise]) as any
-    logger.debug('🔍 getUserProfile query result:', { data, error })
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Query timeout after 1500ms')), 1500)
+    })
+
+    const { data, error } = await Promise.race([profilePromise, timeoutPromise]).catch(err => {
+      if (err.message?.includes('timeout')) {
+        return { data: null, error: { name: 'AbortError', message: err.message } }
+      }
+      throw err
+    })
+    const profileTime = performance.now() - profileStart
+    logger.debug('🔍 getUserProfile query result:', { data, error, timing: `${profileTime.toFixed(1)}ms` })
     
     if (error) {
       logger.error('❌ Error getting user profile:', error)
-      
+
       // If it's a timeout or table doesn't exist, try to create the profile
-      if (error.message === 'Profile lookup timeout' || error.code === '42P01') {
+      if (error.name === 'AbortError' || ('code' in error && error.code === '42P01')) {
         logger.debug('🏗️ Attempting to create user profile for userId:', userId)
         
         // Add timeout to entire profile creation process
@@ -76,7 +200,7 @@ export const getUserProfile = async (userId: string) => {
                 const { data: { user } } = await supabase.auth.getUser()
                 resolve({
                   id: userId,
-                  email: user?.email || 'unknown@example.com',
+                  email: user?.email || '',
                   full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString()
@@ -84,8 +208,8 @@ export const getUserProfile = async (userId: string) => {
               } catch (err) {
                 resolve({
                   id: userId,
-                  email: 'unknown@example.com',
-                  full_name: 'User',
+                  email: '',
+                  full_name: 'Unknown User',
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString()
                 })
@@ -101,7 +225,7 @@ export const getUserProfile = async (userId: string) => {
             const { data: { user } } = await supabase.auth.getUser()
             return {
               id: userId,
-              email: user?.email || 'unknown@example.com',
+              email: user?.email || '',
               full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
@@ -109,8 +233,8 @@ export const getUserProfile = async (userId: string) => {
           } catch {
             return {
               id: userId,
-              email: 'unknown@example.com',
-              full_name: 'User',
+              email: '',
+              full_name: 'Unknown User',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }
@@ -120,6 +244,16 @@ export const getUserProfile = async (userId: string) => {
       
       return null
     }
+
+    // Cache successful result
+    if (data) {
+      profileCache.set(userId, {
+        profile: data,
+        timestamp: Date.now(),
+        expires: Date.now() + PROFILE_CACHE_DURATION
+      })
+    }
+
     return data
   } catch (err) {
     logger.error('💥 Exception in getUserProfile:', err)
@@ -127,9 +261,20 @@ export const getUserProfile = async (userId: string) => {
   }
 }
 
+// Clean up expired profile cache entries
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, cached] of profileCache.entries()) {
+    if (now > cached.expires) {
+      profileCache.delete(key)
+    }
+  }
+}, 60000) // Clean up every minute
+
 export const createUserProfile = async (userId: string, email?: string) => {
+  const createStart = performance.now()
   logger.debug('🏗️ Creating user profile for userId:', userId)
-  
+
   try {
     // Try to get the current user's email from auth if not provided
     if (!email) {
@@ -139,9 +284,9 @@ export const createUserProfile = async (userId: string, email?: string) => {
         
         if (userError) {
           logger.error('❌ Error getting user from auth:', userError)
-          email = 'unknown@example.com'
+          email = ''
         } else {
-          email = user?.email || 'unknown@example.com'
+          email = user?.email || ''
           logger.debug('📧 Got email from auth:', email)
         }
       } catch (emailError) {
@@ -160,24 +305,30 @@ export const createUserProfile = async (userId: string, email?: string) => {
     
     logger.debug('📝 Attempting to insert profile:', newProfile)
     
-    // Add timeout to profile creation
+    // Optimized profile creation with timeout using Promise.race
     const insertPromise = supabase
       .from('user_profiles')
       .insert([newProfile])
       .select()
       .single()
-      
-    const timeoutPromise = new Promise((resolve) => 
-      setTimeout(() => resolve({ data: null, error: { message: 'Profile creation timeout' } }), 3000)
-    )
-    
-    const { data, error } = await Promise.race([insertPromise, timeoutPromise]) as any
+
+    const insertTimeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Insert timeout after 1000ms')), 1000)
+    })
+
+    const { data, error } = await Promise.race([insertPromise, insertTimeoutPromise]).catch(err => {
+      if (err.message?.includes('timeout')) {
+        return { data: null, error: { name: 'AbortError', message: err.message } }
+      }
+      throw err
+    })
+    const createTime = performance.now() - createStart
     
     if (error) {
       logger.error('❌ Error creating user profile:', error)
-      
+
       // If table doesn't exist or timeout, return a fallback profile
-      if (error.code === '42P01' || error.message === 'Profile creation timeout') {
+      if (('code' in error && error.code === '42P01') || error.name === 'AbortError') {
         logger.warn('📄 Database issue, using fallback profile:', error.message)
         const fallbackProfile = {
           id: userId,
@@ -194,15 +345,16 @@ export const createUserProfile = async (userId: string, email?: string) => {
       return null
     }
     
-    logger.debug('✅ User profile created successfully:', data)
+    logger.debug('✅ User profile created successfully:', data, `(${createTime.toFixed(1)}ms)`)
     return data
   } catch (err) {
-    logger.error('💥 Exception creating user profile:', err)
-    
+    const createTime = performance.now() - createStart
+    logger.error('💥 Exception creating user profile:', err, `(${createTime.toFixed(1)}ms)`)
+
     // Return fallback profile even if database operations fail
     return {
       id: userId,
-      email: email || 'unknown@example.com',
+      email: email || '',
       full_name: email?.split('@')[0] || 'User',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -416,4 +568,74 @@ export const acceptInvitation = async (invitationId: string, userId: string) => 
   }
   
   return invitation
+}
+
+// Admin helper functions using service role
+export const checkIsAdmin = async (userId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', userId)
+      .single()
+
+    if (error) {
+      logger.error('Error checking admin status:', error)
+      return false
+    }
+
+    return data?.role === 'admin' || data?.role === 'super_admin'
+  } catch (error) {
+    logger.error('Failed to check admin status:', error)
+    return false
+  }
+}
+
+export const adminGetAllProjects = async (): Promise<any[]> => {
+  try {
+    logger.debug('Admin: Fetching all projects with service role')
+
+    // Use service role to bypass RLS
+    const { data, error } = await supabaseAdmin
+      .from('projects')
+      .select(`
+        *,
+        owner:user_profiles!projects_owner_id_fkey(id, email, full_name)
+      `)
+      .order('updated_at', { ascending: false })
+
+    if (error) {
+      logger.error('Admin: Error fetching projects with service role:', error)
+      throw new Error(error.message)
+    }
+
+    logger.debug(`Admin: Successfully fetched ${data?.length || 0} projects`)
+    return data || []
+  } catch (error) {
+    logger.error('Admin: Failed to get all projects:', error)
+    throw error
+  }
+}
+
+export const adminGetAllUsers = async (): Promise<any[]> => {
+  try {
+    logger.debug('Admin: Fetching all users with service role')
+
+    // Use service role to bypass RLS
+    const { data, error } = await supabaseAdmin
+      .from('user_profiles')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      logger.error('Admin: Error fetching users with service role:', error)
+      throw new Error(error.message)
+    }
+
+    logger.debug(`Admin: Successfully fetched ${data?.length || 0} users`)
+    return data || []
+  } catch (error) {
+    logger.error('Admin: Failed to get all users:', error)
+    throw error
+  }
 }

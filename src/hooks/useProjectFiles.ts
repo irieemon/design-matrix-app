@@ -38,11 +38,41 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
     }
   }
 
-  // Load files when current project changes and set up real-time subscription
+  // Load files when current project changes and set up real-time subscription + polling
   useEffect(() => {
     if (currentProject?.id) {
       loadProjectFiles(currentProject.id)
-      
+
+      // Set up polling fallback for AI analysis status updates
+      logger.debug('📊 Setting up polling for AI analysis status updates')
+      const pollInterval = setInterval(async () => {
+        try {
+          const files = await FileService.getProjectFiles(currentProject.id)
+
+          setProjectFiles(prev => {
+            const currentFiles = prev[currentProject.id] || []
+
+            // Check if any file status has changed
+            const hasStatusChanges = files.some(file => {
+              const current = currentFiles.find(f => f.id === file.id)
+              return current && current.analysis_status !== file.analysis_status
+            })
+
+            if (hasStatusChanges) {
+              logger.debug('📊 Detected AI analysis status changes, updating UI...')
+              return {
+                ...prev,
+                [currentProject.id]: files
+              }
+            }
+
+            return prev
+          })
+        } catch (error) {
+          logger.error('❌ Error polling for status updates:', error)
+        }
+      }, 5000) // Poll every 5 seconds
+
       // Set up real-time subscription for file updates
       logger.debug('🔔 Setting up real-time subscription for project files:', currentProject.id)
       
@@ -56,15 +86,21 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'project_files',
-            filter: `project_id=eq.${currentProject.id}`
+            table: 'project_files'
+            // Removed filter to prevent binding mismatch - filter in callback instead
           },
           (payload) => {
             logger.debug('🔔 Real-time file insert received:', payload)
-            
+
             // Add new file to state if it's not already there
             if (payload.new) {
               const newFile = payload.new as any
+
+              // Filter client-side to avoid binding mismatch
+              if (newFile.project_id !== currentProject.id) {
+                logger.debug('⏭️ Skipping insert for different project')
+                return
+              }
               setProjectFiles(prev => {
                 const currentFiles = prev[currentProject.id] || []
                 
@@ -90,8 +126,8 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
           {
             event: 'UPDATE',
             schema: 'public',
-            table: 'project_files',
-            filter: `project_id=eq.${currentProject.id}`
+            table: 'project_files'
+            // Removed filter to prevent binding mismatch - filter in callback instead
           },
           (payload) => {
             logger.debug('🔔 Real-time file update received:', payload)
@@ -100,10 +136,16 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
               new: payload.new,
               eventType: payload.eventType
             })
-            
+
             // Update the specific file in state
             if (payload.new) {
               const updatedFile = payload.new as any
+
+              // Filter client-side to avoid binding mismatch
+              if (updatedFile.project_id !== currentProject.id) {
+                logger.debug('⏭️ Skipping update for different project')
+                return
+              }
               logger.debug('🔔 Processing update for file:', updatedFile.id, {
                 oldStatus: payload.old?.analysis_status,
                 newStatus: updatedFile.analysis_status,
@@ -167,10 +209,11 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
         })
       }, 2000)
 
-      // Cleanup subscription on unmount or project change
+      // Cleanup subscription and polling on unmount or project change
       return () => {
-        logger.debug('🔇 Cleaning up real-time subscription for project:', currentProject.id)
+        logger.debug('🔇 Cleaning up real-time subscription and polling for project:', currentProject.id)
         subscription.unsubscribe()
+        clearInterval(pollInterval)
       }
     }
   }, [currentProject?.id])

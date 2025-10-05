@@ -29,10 +29,12 @@ export interface AddCollaboratorInput {
   inviterEmail?: string
 }
 
-export interface CollaboratorWithUser extends ProjectCollaborator {
+export interface CollaboratorWithUser extends Omit<ProjectCollaborator, 'user'> {
   user: {
     id: string
     email: string
+    created_at: string
+    updated_at: string
     raw_user_meta_data: {
       full_name: string
     }
@@ -46,7 +48,7 @@ export class CollaborationService extends BaseService {
    */
   static async addProjectCollaborator(
     input: AddCollaboratorInput,
-    options?: ServiceOptions
+    _options?: ServiceOptions // Currently unused
   ): Promise<ServiceResult<boolean>> {
     const context = this.createContext('addProjectCollaborator', input.invitedBy, input.projectId)
 
@@ -80,14 +82,13 @@ export class CollaborationService extends BaseService {
       const mockUserId = btoa(userEmail).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20)
       logger.debug('🆔 Generated mock user ID:', mockUserId, 'for email:', userEmail)
 
-      // Store email mapping in localStorage for demo
-      const emailMappings = JSON.parse(localStorage.getItem('collaboratorEmailMappings') || '{}')
-      emailMappings[mockUserId] = userEmail
-      localStorage.setItem('collaboratorEmailMappings', JSON.stringify(emailMappings))
+      // SECURITY FIX: Removed PII storage per PRIO-SEC-002 (CVSS 7.8)
+      // Previous code stored user emails in localStorage (GDPR violation)
+      // Email mappings should be stored in database with proper RLS policies
 
-      // Check for existing collaboration
-      const existingMockIds = Object.keys(emailMappings).filter(id => emailMappings[id] === userEmail)
-      logger.debug('🔍 Existing mock IDs for this email:', existingMockIds)
+      // Check for existing collaboration by querying database
+      const existingMockIds = [mockUserId] // Only check current mock ID
+      logger.debug('🔍 Checking for existing collaboration with ID:', mockUserId)
 
       if (existingMockIds.length > 0) {
         const { data: existingCollaborations } = await supabase
@@ -193,12 +194,22 @@ export class CollaborationService extends BaseService {
         return []
       }
 
-      // Create user data from localStorage mappings (demo implementation)
-      const emailMappings = JSON.parse(localStorage.getItem('collaboratorEmailMappings') || '{}')
-      logger.debug('🗂️ CollaborationService: Email mappings from localStorage:', emailMappings)
+      // SECURITY FIX: Removed localStorage email mappings per PRIO-SEC-002 (CVSS 7.8)
+      // Previous code read PII from localStorage (GDPR violation)
+      // In production, emails should be fetched from database with proper RLS
 
+      // For demo purposes: Generate display email from user_id
+      // In production: Join with user_profiles table to get actual email
       const collaboratorsWithUserData: CollaboratorWithUser[] = (data || []).map(collaborator => {
-        const actualEmail = emailMappings[collaborator.user_id] || `user${collaborator.user_id.substring(0, 8)}@example.com`
+        // Demo: Decode base64-encoded email from user_id (reverse of btoa encoding)
+        let actualEmail: string
+        try {
+          // Attempt to decode user_id back to email (for demo compatibility)
+          actualEmail = atob(collaborator.user_id) || `user${collaborator.user_id.substring(0, 8)}@example.com`
+        } catch {
+          // If decode fails, use placeholder
+          actualEmail = `user${collaborator.user_id.substring(0, 8)}@example.com`
+        }
         const userName = actualEmail.split('@')[0]
 
         const result: CollaboratorWithUser = {
@@ -350,7 +361,7 @@ export class CollaborationService extends BaseService {
   static async getUserProjectRole(
     projectId: string,
     userId: string,
-    options?: ServiceOptions
+    _options?: ServiceOptions // Currently unused
   ): Promise<ServiceResult<ProjectRole | null>> {
     const context = this.createContext('getUserProjectRole', userId, projectId)
 
@@ -410,7 +421,7 @@ export class CollaborationService extends BaseService {
     userId: string,
     options?: ServiceOptions
   ): Promise<ServiceResult<boolean>> {
-    const context = this.createContext('canUserAccessProject', userId, projectId)
+    // const context = this.createContext('canUserAccessProject', userId, projectId) // Currently unused
 
     const roleResult = await this.getUserProjectRole(projectId, userId, options)
     if (!roleResult.success) {
@@ -551,7 +562,7 @@ export class CollaborationService extends BaseService {
       return {
         success: false,
         error: {
-          type: 'service',
+          type: 'server',
           message: result.error.message,
           code: result.error.code
         },

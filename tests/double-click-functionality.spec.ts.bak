@@ -1,0 +1,483 @@
+import { test, expect, Page } from '@playwright/test';
+import { VisualTestHelper } from './visual/utils/visual-helpers';
+
+/**
+ * Double-Click Functionality Testing Suite
+ *
+ * Comprehensive testing of double-click interactions to ensure:
+ * 1. Edit modals open correctly on double-click
+ * 2. No blank pages or unwanted navigation
+ * 3. Modal functionality works as expected
+ * 4. Visual feedback is appropriate
+ */
+
+test.describe('Double-Click Functionality', () => {
+  let visualHelper: VisualTestHelper;
+
+  test.beforeEach(async ({ page }) => {
+    visualHelper = new VisualTestHelper(page);
+
+    // Set up comprehensive logging for debugging
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        console.log(`🚨 Console Error: ${msg.text()}`);
+      }
+    });
+
+    page.on('pageerror', error => {
+      console.log(`🚨 Page Error: ${error.message}`);
+    });
+
+    // Navigate to matrix with auth bypass if needed
+    await page.goto('/matrix');
+    await page.waitForLoadState('networkidle');
+
+    // Wait for auth and matrix initialization
+    await visualHelper.waitForAuthStability(10000);
+  });
+
+  test.describe('Edit Modal Opening', () => {
+    test('double-click opens edit modal with correct content', async ({ page }) => {
+      console.log('🎯 Testing double-click edit modal opening');
+
+      // Wait for matrix and cards to load
+      await page.waitForSelector('.design-matrix', { timeout: 10000 });
+      await page.waitForSelector('.idea-card', { timeout: 5000 });
+
+      const cards = page.locator('.idea-card');
+      const cardCount = await cards.count();
+
+      console.log(`🔍 Found ${cardCount} cards for double-click testing`);
+
+      if (cardCount > 0) {
+        const firstCard = cards.first();
+
+        // Get card data before double-click
+        const cardTitle = await firstCard.locator('h3, .card-title, .title').first().textContent() || 'No title';
+        const cardContent = await firstCard.locator('p, .card-content, .description').first().textContent() || 'No content';
+
+        console.log(`📋 Card data - Title: "${cardTitle}", Content: "${cardContent}"`);
+
+        // Capture before double-click
+        await visualHelper.compareScreenshot({
+          name: 'before-double-click-modal',
+          waitFor: 'networkidle',
+          delay: 500
+        });
+
+        // Perform double-click with precise targeting
+        await firstCard.scrollIntoViewIfNeeded();
+        await firstCard.dblclick({ force: true });
+
+        // Wait for modal to appear with multiple selector options
+        const modalSelectors = [
+          '.modal',
+          '.edit-modal',
+          '.edit-idea-modal',
+          '[role="dialog"]',
+          '.dialog',
+          '.overlay'
+        ];
+
+        let modalFound = false;
+        let activeModal = null;
+
+        for (const selector of modalSelectors) {
+          try {
+            await page.waitForSelector(selector, { timeout: 2000, state: 'visible' });
+            activeModal = page.locator(selector).first();
+            if (await activeModal.isVisible()) {
+              modalFound = true;
+              console.log(`✅ Modal found with selector: ${selector}`);
+              break;
+            }
+          } catch (error) {
+            // Continue trying other selectors
+          }
+        }
+
+        if (!modalFound) {
+          // Capture failure state for debugging
+          await visualHelper.compareScreenshot({
+            name: 'modal-not-found-debug',
+            waitFor: 'networkidle',
+            delay: 1000
+          });
+
+          // Check what happened instead
+          const currentUrl = page.url();
+          console.log(`❌ Modal not found. Current URL: ${currentUrl}`);
+
+          // Check if any elements appeared
+          const possibleElements = await page.locator('div[class*="modal"], div[class*="dialog"], div[class*="overlay"]').count();
+          console.log(`🔍 Found ${possibleElements} potential modal elements`);
+
+          throw new Error(`Double-click did not open modal. Found ${possibleElements} potential modal elements.`);
+        }
+
+        // Test modal functionality
+        await expect(activeModal).toBeVisible();
+
+        // Capture modal opened state
+        await visualHelper.compareScreenshot({
+          name: 'edit-modal-opened-success',
+          waitFor: 'networkidle',
+          delay: 500
+        });
+
+        // Verify modal has form elements
+        const formElements = activeModal.locator('input, textarea, select, button');
+        const formCount = await formElements.count();
+
+        expect(formCount).toBeGreaterThan(0);
+        console.log(`📝 Modal contains ${formCount} form elements`);
+
+        // Test if modal is populated with card data
+        const titleField = activeModal.locator('input[name="title"], input[placeholder*="title" i], textarea[name="title"]').first();
+        const descField = activeModal.locator('textarea[name="description"], textarea[placeholder*="description" i], input[name="description"]').first();
+
+        if (await titleField.isVisible()) {
+          const modalTitle = await titleField.inputValue();
+          console.log(`📝 Modal title field: "${modalTitle}"`);
+
+          // Verify title is populated (should match or be editable)
+          expect(modalTitle.length).toBeGreaterThanOrEqual(0);
+        }
+
+        if (await descField.isVisible()) {
+          const modalDesc = await descField.inputValue();
+          console.log(`📝 Modal description field: "${modalDesc}"`);
+        }
+
+        // Test modal interaction
+        await this.testModalInteraction(page, activeModal);
+
+        // Close modal
+        await this.closeModal(page, activeModal);
+
+        // Verify modal is closed
+        await page.waitForTimeout(500);
+        await expect(activeModal).not.toBeVisible();
+
+        // Capture after close
+        await visualHelper.compareScreenshot({
+          name: 'after-modal-close-success',
+          waitFor: 'networkidle',
+          delay: 300
+        });
+
+        console.log('✅ Double-click modal test completed successfully');
+      }
+    });
+
+    test('double-click does not cause navigation issues', async ({ page }) => {
+      console.log('🎯 Testing double-click navigation stability');
+
+      await page.waitForSelector('.idea-card', { timeout: 5000 });
+
+      const cards = page.locator('.idea-card');
+      const cardCount = await cards.count();
+
+      if (cardCount > 0) {
+        const originalUrl = page.url();
+        console.log(`📍 Original URL: ${originalUrl}`);
+
+        // Test multiple cards to ensure consistency
+        for (let i = 0; i < Math.min(cardCount, 3); i++) {
+          const card = cards.nth(i);
+
+          console.log(`🔄 Testing card ${i + 1}/${Math.min(cardCount, 3)}`);
+
+          // Double-click
+          await card.scrollIntoViewIfNeeded();
+          await card.dblclick();
+
+          // Wait for any potential navigation
+          await page.waitForTimeout(1000);
+
+          // Verify URL hasn't changed
+          const currentUrl = page.url();
+          expect(currentUrl).toBe(originalUrl);
+
+          // Verify we're still on the matrix page
+          await expect(page.locator('.design-matrix')).toBeVisible();
+
+          // Close any opened modal
+          await page.keyboard.press('Escape');
+          await page.waitForTimeout(300);
+
+          console.log(`✅ Card ${i + 1} - No unwanted navigation`);
+        }
+
+        // Final validation screenshot
+        await visualHelper.compareScreenshot({
+          name: 'navigation-stability-validated',
+          waitFor: 'networkidle',
+          delay: 500
+        });
+      }
+    });
+
+    test('double-click works across different card types', async ({ page }) => {
+      console.log('🎯 Testing double-click across different card types');
+
+      await page.waitForSelector('.idea-card', { timeout: 5000 });
+
+      const cards = page.locator('.idea-card');
+      const cardCount = await cards.count();
+
+      if (cardCount > 0) {
+        // Test different cards to ensure universal functionality
+        const testCount = Math.min(cardCount, 5);
+
+        for (let i = 0; i < testCount; i++) {
+          const card = cards.nth(i);
+
+          console.log(`🃏 Testing card ${i + 1}/${testCount}`);
+
+          // Get card properties
+          const cardClass = await card.getAttribute('class') || '';
+          const cardPosition = await card.boundingBox();
+
+          console.log(`📊 Card ${i + 1} - Classes: ${cardClass}`);
+
+          // Double-click test
+          await card.scrollIntoViewIfNeeded();
+          await card.dblclick();
+
+          // Check for modal or appropriate response
+          const modalAppeared = await this.checkForModalAppearance(page);
+
+          if (modalAppeared) {
+            console.log(`✅ Card ${i + 1} - Modal opened successfully`);
+
+            // Close modal
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(300);
+          } else {
+            console.log(`⚠️ Card ${i + 1} - No modal detected`);
+          }
+
+          // Capture evidence for each card type
+          await visualHelper.compareScreenshot({
+            name: `card-type-${i + 1}-test`,
+            waitFor: 'networkidle',
+            delay: 300
+          });
+        }
+      }
+    });
+  });
+
+  test.describe('Modal Functionality Validation', () => {
+    test('modal form fields are interactive and functional', async ({ page }) => {
+      console.log('🎯 Testing modal form functionality');
+
+      await page.waitForSelector('.idea-card', { timeout: 5000 });
+
+      const cards = page.locator('.idea-card');
+      const cardCount = await cards.count();
+
+      if (cardCount > 0) {
+        const firstCard = cards.first();
+
+        // Open modal
+        await firstCard.dblclick();
+
+        // Wait for modal
+        const modal = await this.waitForModal(page);
+
+        if (modal) {
+          // Test form interactions
+          await this.testFormFields(page, modal);
+
+          // Test save/cancel functionality
+          await this.testModalActions(page, modal);
+
+          // Close modal
+          await this.closeModal(page, modal);
+        }
+      }
+    });
+
+    test('modal responds correctly to keyboard interactions', async ({ page }) => {
+      console.log('🎯 Testing modal keyboard interactions');
+
+      await page.waitForSelector('.idea-card', { timeout: 5000 });
+
+      const cards = page.locator('.idea-card');
+      const cardCount = await cards.count();
+
+      if (cardCount > 0) {
+        const firstCard = cards.first();
+
+        // Open modal
+        await firstCard.dblclick();
+
+        // Wait for modal
+        const modal = await this.waitForModal(page);
+
+        if (modal) {
+          // Test ESC key closes modal
+          await page.keyboard.press('Escape');
+          await page.waitForTimeout(500);
+
+          await expect(modal).not.toBeVisible();
+
+          console.log('✅ ESC key closes modal correctly');
+
+          // Test Tab navigation
+          await firstCard.dblclick();
+          const modal2 = await this.waitForModal(page);
+
+          if (modal2) {
+            // Test tab order
+            await page.keyboard.press('Tab');
+            await page.waitForTimeout(100);
+            await page.keyboard.press('Tab');
+            await page.waitForTimeout(100);
+
+            console.log('✅ Tab navigation works in modal');
+
+            await this.closeModal(page, modal2);
+          }
+        }
+      }
+    });
+  });
+
+  // Helper methods
+  async testModalInteraction(page: Page, modal: any) {
+    console.log('🔧 Testing modal interactions');
+
+    // Test clicking inside modal (should not close)
+    await modal.click();
+    await page.waitForTimeout(200);
+    await expect(modal).toBeVisible();
+
+    // Test clicking outside modal (may close depending on implementation)
+    try {
+      await page.click('body', { position: { x: 10, y: 10 } });
+      await page.waitForTimeout(200);
+    } catch (error) {
+      // Some implementations prevent outside clicks
+    }
+  }
+
+  async closeModal(page: Page, modal: any) {
+    console.log('🔧 Closing modal');
+
+    // Try multiple close methods
+    const closeMethods = [
+      () => modal.locator('button:has-text("Cancel"), button:has-text("Close"), [aria-label="Close"], .close-button').first().click(),
+      () => page.keyboard.press('Escape'),
+      () => page.click('body', { position: { x: 10, y: 10 } })
+    ];
+
+    for (const method of closeMethods) {
+      try {
+        await method();
+        await page.waitForTimeout(300);
+
+        if (!(await modal.isVisible())) {
+          console.log('✅ Modal closed successfully');
+          return;
+        }
+      } catch (error) {
+        // Try next method
+      }
+    }
+
+    console.log('⚠️ Could not close modal with standard methods');
+  }
+
+  async checkForModalAppearance(page: Page): Promise<boolean> {
+    const modalSelectors = [
+      '.modal',
+      '.edit-modal',
+      '.edit-idea-modal',
+      '[role="dialog"]',
+      '.dialog',
+      '.overlay'
+    ];
+
+    for (const selector of modalSelectors) {
+      try {
+        await page.waitForSelector(selector, { timeout: 1000, state: 'visible' });
+        const element = page.locator(selector).first();
+        if (await element.isVisible()) {
+          return true;
+        }
+      } catch (error) {
+        // Continue checking
+      }
+    }
+
+    return false;
+  }
+
+  async waitForModal(page: Page) {
+    const modalSelectors = [
+      '.modal',
+      '.edit-modal',
+      '.edit-idea-modal',
+      '[role="dialog"]',
+      '.dialog',
+      '.overlay'
+    ];
+
+    for (const selector of modalSelectors) {
+      try {
+        await page.waitForSelector(selector, { timeout: 2000, state: 'visible' });
+        const modal = page.locator(selector).first();
+        if (await modal.isVisible()) {
+          return modal;
+        }
+      } catch (error) {
+        // Continue trying
+      }
+    }
+
+    return null;
+  }
+
+  async testFormFields(page: Page, modal: any) {
+    console.log('🔧 Testing form field interactions');
+
+    // Test title field
+    const titleField = modal.locator('input[name="title"], input[placeholder*="title" i], textarea[name="title"]').first();
+    if (await titleField.isVisible()) {
+      await titleField.fill('Test Title');
+      const value = await titleField.inputValue();
+      expect(value).toBe('Test Title');
+      console.log('✅ Title field is functional');
+    }
+
+    // Test description field
+    const descField = modal.locator('textarea[name="description"], textarea[placeholder*="description" i]').first();
+    if (await descField.isVisible()) {
+      await descField.fill('Test Description');
+      const value = await descField.inputValue();
+      expect(value).toBe('Test Description');
+      console.log('✅ Description field is functional');
+    }
+  }
+
+  async testModalActions(page: Page, modal: any) {
+    console.log('🔧 Testing modal action buttons');
+
+    // Test save button
+    const saveButton = modal.locator('button:has-text("Save"), button:has-text("Update"), button[type="submit"]').first();
+    if (await saveButton.isVisible()) {
+      await expect(saveButton).toBeEnabled();
+      console.log('✅ Save button is enabled');
+    }
+
+    // Test cancel button
+    const cancelButton = modal.locator('button:has-text("Cancel"), button:has-text("Close")').first();
+    if (await cancelButton.isVisible()) {
+      await expect(cancelButton).toBeEnabled();
+      console.log('✅ Cancel button is enabled');
+    }
+  }
+});

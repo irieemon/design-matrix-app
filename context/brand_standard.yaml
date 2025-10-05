@@ -1,0 +1,133 @@
+brand_standards:
+  name: "Taskboard Dashboard"
+  description: "Design system and style guide for Taskboard interface"
+
+  colors:
+    primary: "#000000"         # Text, icons, progress fills
+    secondary: "#6C6C6C"       # Muted gray text
+    background: "#FFFFFF"      # Main background
+    surface: "#F9FAFB"         # Card backgrounds
+    accent_green: "#3CCF4E"    # Priority task
+    accent_blue: "#5B8DEF"     # Upcoming task
+    accent_purple: "#A28CFF"   # Overdue task
+    accent_red: "#FF6B6B"      # Pending task
+    accent_yellow: "#FFCC00"   # Optional highlight
+
+  typography:
+    font_family: "Inter, sans-serif"
+    weights:
+      regular: 400
+      medium: 500
+      semibold: 600
+      bold: 700
+    hierarchy:
+      h1:
+        size: 24px
+        weight: semibold
+        color: "#000000"
+      h2:
+        size: 20px
+        weight: semibold
+        color: "#000000"
+      h3:
+        size: 18px
+        weight: medium
+        color: "#000000"
+      body:
+        size: 14px
+        weight: regular
+        color: "#000000"
+      caption:
+        size: 12px
+        weight: regular
+        color: "#6C6C6C"
+
+  layout:
+    grid: "12-column"
+    gutter: 16px
+    spacing_scale: [4, 8, 16, 24, 32]
+    card_radius: 12px
+    card_shadow: "0px 2px 6px rgba(0,0,0,0.05)"
+    section_padding: 16px
+    sidebar_width: 240px
+    top_nav_height: 64px
+
+  components:
+    sidebar:
+      background: "#FFFFFF"
+      icon_size: 20px
+      icon_color: "#000000"
+      text_size: 14px
+      active_item:
+        background: "#F9FAFB"
+        border_radius: 8px
+        font_weight: 600
+
+    card:
+      background: "#FFFFFF"
+      border_radius: 12px
+      padding: 16px
+      shadow: "0px 2px 6px rgba(0,0,0,0.05)"
+
+    task_status:
+      priority:
+        background: "#E9FCEB"
+        text_color: "#3CCF4E"
+      upcoming:
+        background: "#EEF3FD"
+        text_color: "#5B8DEF"
+      overdue:
+        background: "#F2EFFF"
+        text_color: "#A28CFF"
+      pending:
+        background: "#FFECEC"
+        text_color: "#FF6B6B"
+
+    progress_bar:
+      background: "#F1F1F1"
+      fill_color: "#000000"
+      height: 6px
+      border_radius: 4px
+
+    chat_item:
+      avatar_size: 40px
+      name_style:
+        size: 14px
+        weight: bold
+      message_style:
+        size: 12px
+        weight: regular
+        color: "#6C6C6C"
+      timestamp_style:
+        size: 12px
+        color: "#6C6C6C"
+
+  iconography:
+    style: "line"
+    stroke_width: 1.5px
+    colors:
+      active: "#000000"
+      inactive: "#6C6C6C"
+
+  interactions:
+    hover:
+      card_shadow: "0px 4px 10px rgba(0,0,0,0.08)"
+      button_darken: 10%
+    active:
+      sidebar_item: "accent highlight + bold text"
+    transitions:
+      default: "200ms ease-in-out"
+
+  buttons:
+    primary:
+      background: "#000000"
+      text_color: "#FFFFFF"
+      border_radius: 8px
+      padding: "10px 20px"
+      hover: "background lighten by 10%"
+
+  branding:
+    look_feel: "Minimalist, clean, modern SaaS dashboard"
+    tone: "Professional but approachable"
+    consistency: "Whitespace, rounded cards, muted grays + bold accents"
+    accessibility: "Maintain color contrast ratio > 4.5:1 for body text"

@@ -5,29 +5,40 @@
  * Uses context providers to eliminate prop drilling and manage state cleanly.
  */
 
+import { useMemo } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import AdminPortal from '../admin/AdminPortal'
 import AppLayout from '../layout/AppLayout'
 import PageRouter from '../layout/PageRouter'
+// import PerformanceOverlay from '../dev/PerformanceOverlay'
+// import TestDataInjector from '../test/TestDataInjector'
 import { User } from '../../types'
 import { useNavigation } from '../../contexts/NavigationContext'
 import { useProject } from '../../contexts/ProjectContext'
 import { useModal } from '../../contexts/ModalContext'
-import { useAuth } from '../../hooks/useAuth'
+import { useUser } from '../../contexts/UserContext'
 import { useIdeas } from '../../hooks/useIdeas'
 import { useBrowserHistory } from '../../hooks/useBrowserHistory'
 
 interface MainAppProps {
   currentUser: User
-  onLogout: () => void
+  onLogout: () => Promise<void>
   setCurrentUser: (user: User) => void
 }
 
 export default function MainApp({
-  currentUser,
-  onLogout,
-  setCurrentUser
+  currentUser: propCurrentUser,
+  onLogout
 }: MainAppProps) {
+  // Use centralized user context as the primary source of user data
+  const { currentUser, setCurrentUser } = useUser()
+
+  // Ensure we have a user (fallback to prop if context is not ready)
+  // Use useMemo to prevent creating new user reference on every render
+  const effectiveUser = useMemo(
+    () => currentUser || propCurrentUser,
+    [currentUser?.id, propCurrentUser?.id]
+  )
   // Context hooks
   const { currentPage, handlePageChange } = useNavigation()
   const { currentProject, handleProjectSelect, handleProjectRestore } = useProject()
@@ -47,7 +58,7 @@ export default function MainApp({
     openAIModal
   } = useModal()
 
-  // Ideas management with context integration
+  // Ideas management with context integration using centralized user
   const {
     ideas,
     setIdeas,
@@ -57,7 +68,7 @@ export default function MainApp({
     toggleCollapse,
     handleDragEnd
   } = useIdeas({
-    currentUser,
+    currentUser: effectiveUser,
     currentProject,
     setShowAddModal,
     setShowAIModal,
@@ -77,8 +88,8 @@ export default function MainApp({
   }
 
   const handleUserUpdate = (updatedUser: Partial<User>) => {
-    if (currentUser) {
-      setCurrentUser({ ...currentUser, ...updatedUser })
+    if (effectiveUser) {
+      setCurrentUser({ ...effectiveUser, ...updatedUser })
     }
   }
 
@@ -86,7 +97,7 @@ export default function MainApp({
   if (showAdminPortal) {
     return (
       <AdminPortal
-        currentUser={currentUser}
+        currentUser={effectiveUser}
         onBackToApp={closeAdminPortal}
         onLogout={onLogout}
       />
@@ -96,12 +107,12 @@ export default function MainApp({
   return (
     <>
       <AppLayout
-        currentUser={currentUser}
+        currentUser={effectiveUser}
         currentProject={currentProject}
         currentPage={currentPage}
         onPageChange={handlePageChange}
         onLogout={onLogout}
-        onAdminAccess={openAdminPortal}
+        onAdminAccess={async () => { openAdminPortal() }}
         activeId={activeId}
         editingIdea={editingIdea}
         showAddModal={showAddModal}
@@ -119,7 +130,7 @@ export default function MainApp({
       >
         <PageRouter
           currentPage={currentPage}
-          currentUser={currentUser}
+          currentUser={effectiveUser}
           currentProject={currentProject}
           onProjectSelect={handleProjectSelect}
           onPageChange={handlePageChange}
@@ -134,6 +145,8 @@ export default function MainApp({
         />
       </AppLayout>
       <Analytics />
+      {/* <TestDataInjector /> */}
+      {/* <PerformanceOverlay position="bottom-right" /> */}
     </>
   )
 }

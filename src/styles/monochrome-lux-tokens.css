@@ -104,9 +104,22 @@
 
   /* Modal Shadows */
   --shadow-modal: 0 4px 16px rgba(0, 0, 0, 0.08), 0 20px 48px rgba(0, 0, 0, 0.12);
+  --shadow-modal-lux: 0 4px 16px rgba(0, 0, 0, 0.08), 0 20px 48px rgba(0, 0, 0, 0.12);
+  --shadow-modal-lux-hover: 0 4px 16px rgba(0, 0, 0, 0.10), 0 24px 56px rgba(0, 0, 0, 0.15);
 
-  /* Focus Ring - Sapphire with low opacity */
+  /* Dropdown Shadows */
+  --shadow-dropdown: 0 2px 8px rgba(0, 0, 0, 0.06), 0 12px 24px rgba(0, 0, 0, 0.08);
+  --shadow-dropdown-lux: 0 2px 8px rgba(0, 0, 0, 0.06), 0 12px 24px rgba(0, 0, 0, 0.08);
+
+  /* Input Shadows */
+  --shadow-input-lux: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-input-lux-hover: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  /* Focus Rings - Sapphire with low opacity */
   --shadow-focus-ring: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  --shadow-focus-ring-lux: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  --shadow-button-lux: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-button-lux-hover: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06);
 
   /* ============================================
      TYPOGRAPHY SYSTEM
@@ -172,6 +185,98 @@
   --modal-padding: 1.5rem;        /* 24px */
   --input-padding-x: 0.75rem;     /* 12px */
   --input-padding-y: 0.625rem;    /* 10px */
+
+  /* ============================================
+     OVERLAY & BACKDROP SYSTEM (Phase 3)
+     ============================================ */
+
+  --canvas-overlay: rgba(15, 23, 42, 0.5);      /* Modal backdrop overlay */
+  --backdrop-blur-lux: blur(8px);                /* Backdrop blur effect */
+  --duration-modal-enter: var(--duration-moderate); /* 220ms modal entrance */
+  --duration-modal-exit: var(--duration-fast);      /* 140ms modal exit */
+
+  /* ============================================
+     NAVIGATION SYSTEM (Phase 4)
+     ============================================ */
+
+  --nav-background: var(--surface-primary);
+  --nav-border: var(--hairline-default);
+  --nav-item-hover: var(--canvas-secondary);
+  --nav-item-active: var(--canvas-tertiary);
+  --sidebar-width-expanded: 256px;
+  --sidebar-width-collapsed: 64px;
+  --sidebar-transition: width var(--duration-moderate) var(--easing-glide);
+  --header-height: 64px;
+  --header-shadow: var(--shadow-card);
+
+  /* ============================================
+     FORM SYSTEM (Phase 5)
+     ============================================ */
+
+  --form-label: var(--graphite-700);
+  --form-input-border: var(--hairline-default);
+  --form-input-border-hover: var(--hairline-hover);
+  --form-input-border-focus: var(--hairline-focus);
+  --form-input-error: var(--garnet-700);
+  --form-input-success: var(--emerald-700);
+  --upload-border-dash: 2px dashed var(--hairline-default);
+  --upload-hover-bg: var(--sapphire-50);
+  --upload-active-bg: var(--sapphire-100);
+
+  /* ============================================
+     CONTENT DISPLAY SYSTEM (Phase 6)
+     ============================================ */
+
+  --card-background: var(--surface-primary);
+  --card-border: var(--hairline-default);
+  --card-shadow: var(--shadow-card);
+  --card-shadow-hover: var(--shadow-card-hover);
+  --card-radius: var(--radius-lg);
+
+  /* Timeline */
+  --timeline-line: var(--hairline-default);
+  --timeline-dot-size: 12px;
+  --timeline-dot-active: var(--sapphire-500);
+  --timeline-dot-complete: var(--emerald-700);
+  --timeline-dot-pending: var(--amber-700);
+
+  /* Status Badges */
+  --badge-pending: var(--amber-50);
+  --badge-pending-text: var(--amber-700);
+  --badge-pending-border: var(--amber-700);
+  --badge-complete: var(--emerald-50);
+  --badge-complete-text: var(--emerald-700);
+  --badge-complete-border: var(--emerald-700);
+  --badge-error: var(--garnet-50);
+  --badge-error-text: var(--garnet-700);
+  --badge-error-border: var(--garnet-700);
+  --badge-info: var(--sapphire-50);
+  --badge-info-text: var(--sapphire-700);
+  --badge-info-border: var(--sapphire-700);
+
+  /* ============================================
+     ADMIN & UTILITY SYSTEM (Phase 7)
+     ============================================ */
+
+  --admin-background: var(--canvas-primary);
+  --admin-panel-bg: var(--surface-primary);
+  --admin-border: var(--hairline-default);
+  --debug-background: var(--graphite-900);
+  --debug-text: var(--graphite-100);
+  --debug-border: var(--graphite-700);
+  --utility-info: var(--sapphire-500);
+  --utility-success: var(--emerald-700);
+  --utility-warning: var(--amber-700);
+  --utility-error: var(--garnet-700);
+
+  /* ============================================
+     AUTHENTICATION SYSTEM (Phase 8)
+     ============================================ */
+
+  --auth-background: var(--canvas-primary);
+  --auth-card: var(--surface-primary);
+  --auth-logo-bg: var(--graphite-700);
+  --auth-demo-button: var(--amber-700);
 
   /* ============================================
      BORDER RADIUS

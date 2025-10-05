@@ -6,7 +6,7 @@ import handler from '../ai/generate-ideas'
 const mockAuthenticate = vi.fn()
 const mockCheckUserRateLimit = vi.fn()
 
-vi.mock('../auth/middleware.js', () => ({
+vi.mock('../auth/middleware.ts', () => ({
   authenticate: mockAuthenticate,
   checkUserRateLimit: mockCheckUserRateLimit
 }))

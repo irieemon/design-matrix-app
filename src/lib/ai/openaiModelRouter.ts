@@ -7,6 +7,11 @@
  * - Performance requirements
  */
 
+import { logger } from '../logging'
+
+// Create scoped logger for model router
+const routerLogger = logger.withContext({ component: 'OpenAIModelRouter' })
+
 export type AITaskType =
   | 'strategic-insights'    // Complex reasoning, multi-faceted analysis
   | 'idea-generation'       // Creative, rapid ideation
@@ -250,7 +255,7 @@ export class OpenAIModelRouter {
    * Log model selection decision for debugging
    */
   static logSelection(context: TaskContext, selection: ModelSelection): void {
-    console.log('🤖 OpenAI Model Router Decision:', {
+    routerLogger.debug('Model selection decision', {
       task: context.type,
       complexity: context.complexity,
       selectedModel: selection.model,

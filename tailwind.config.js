@@ -87,12 +87,12 @@ export default {
         },
 
         info: {
-          50: '#EEF3FD',           // Light info background
+          50: '#EFF6FF',           // Sapphire tint (for focus rings)
           100: '#DBEAFE',
           200: '#BFDBFE',
           300: '#93C5FD',
           400: '#60A5FA',
-          500: '#5B8DEF',          // Info primary
+          500: '#3B82F6',          // Sapphire primary (Lux focus color)
           600: '#3B82F6',
           700: '#1D4ED8',
           800: '#1E40AF',
@@ -126,16 +126,16 @@ export default {
         },
 
         accent: {
-          50: '#F2EFFF',           // Light accent background
-          100: '#E9E5FF',
-          200: '#DDD6FE',
-          300: '#C4B5FD',
-          400: '#A78BFA',
-          500: '#A28CFF',          // Accent primary
-          600: '#8B5CF6',
-          700: '#7C3AED',
-          800: '#6D28D9',
-          900: '#5B21B6',
+          50: '#F9FAFB',           // Graphite light (Lux)
+          100: '#F3F4F6',
+          200: '#E5E7EB',
+          300: '#D1D5DB',
+          400: '#9CA3AF',
+          500: '#6B7280',          // Graphite mid (Lux)
+          600: '#4B5563',
+          700: '#374151',          // Graphite dark (Lux primary button)
+          800: '#1F2937',
+          900: '#111827',
         },
 
         // Monochrome-Lux gem-tone accents
@@ -156,26 +156,55 @@ export default {
           700: '#B91C1C',          // Strong garnet foreground
         },
 
-        // Component state colors (addressing analysis gaps)
+        // Component state colors (ANIMATED LUX)
         disabled: {
-          bg: '#F3F4F6',           // Disabled background
-          text: '#9CA3AF',         // Disabled text
-          border: '#E5E7EB',       // Disabled borders
+          bg: '#F3F4F6',           // Disabled background (graphite-100)
+          text: '#9CA3AF',         // Disabled text (graphite-400)
+          border: '#E5E7EB',       // Disabled borders (graphite-200)
         },
 
         loading: {
-          bg: '#F9FAFB',           // Loading background
-          text: '#6B7280',         // Loading text
-          accent: '#3B82F6',       // Loading accent
+          bg: '#F9FAFB',           // Loading background (canvas-secondary)
+          text: '#6B7280',         // Loading text (graphite-500)
+          accent: '#3B82F6',       // Loading accent (sapphire)
         },
 
-        // Semantic component tokens (unifying design system)
+        // Semantic component tokens (ANIMATED LUX)
         component: {
           surface: '#FFFFFF',      // Component surface
-          border: '#E5E7EB',       // Component borders
-          focus: '#3B82F6',        // Focus indication
-          hover: '#F3F4F6',        // Hover states
-          active: '#E5E7EB',       // Active states
+          border: '#E8EBED',       // Component borders (hairline-default)
+          focus: '#3B82F6',        // Focus indication (sapphire)
+          hover: '#F9FAFB',        // Hover states (canvas-secondary)
+          active: '#F3F4F6',       // Active states (canvas-tertiary)
+        },
+
+        // ANIMATED LUX: Primary color mapping (most important!)
+        // This makes buttons use graphite instead of purple/blue
+        primary: {
+          50: '#F9FAFB',           // graphite-50
+          100: '#F3F4F6',          // graphite-100
+          200: '#E5E7EB',          // graphite-200
+          300: '#D1D5DB',          // graphite-300
+          400: '#9CA3AF',          // graphite-400
+          500: '#6B7280',          // graphite-500
+          600: '#4B5563',          // graphite-600
+          700: '#374151',          // graphite-700 (primary button bg)
+          800: '#1F2937',          // graphite-800
+          900: '#111827',          // graphite-900
+        },
+
+        // ANIMATED LUX: Secondary color (text/subtle)
+        secondary: {
+          50: '#F9FAFB',
+          100: '#F3F4F6',
+          200: '#E5E7EB',
+          300: '#D1D5DB',
+          400: '#9CA3AF',
+          500: '#6B7280',
+          600: '#4B5563',
+          700: '#374151',
+          800: '#1F2937',
+          900: '#111827',
         }
       },
 

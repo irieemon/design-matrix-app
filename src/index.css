@@ -6,6 +6,7 @@
 /* ANIMATED LUX DESIGN SYSTEM */
 @import './styles/monochrome-lux-tokens.css';      /* Lux color, motion, shadow tokens */
 @import './styles/monochrome-lux-animations.css';  /* Lux micro-animations & utilities */
+@import './styles/lux-utilities.css';              /* Lux utility classes & patterns */
 
 /* Accessibility & Standards */
 @import './styles/accessibility.css';        /* WCAG 2.1 AA compliance styles */

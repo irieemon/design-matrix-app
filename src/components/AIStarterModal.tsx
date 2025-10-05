@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
 import { Project, IdeaCard, User, ProjectType } from '../types'
@@ -157,8 +157,17 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
   }
 
   const handleCreateProject = async () => {
-    if (!analysis || analysis.generatedIdeas.length === 0) return
+    logger.debug('🎯 AI Starter: handleCreateProject called')
+    logger.debug('🎯 AI Starter: analysis exists?', !!analysis)
+    logger.debug('🎯 AI Starter: generatedIdeas length:', analysis?.generatedIdeas?.length || 0)
 
+    if (!analysis || analysis.generatedIdeas.length === 0) {
+      logger.error('❌ AI Starter: Cannot create project - no analysis or no ideas!')
+      logger.debug('❌ AI Starter: analysis:', analysis)
+      return
+    }
+
+    logger.debug('✅ AI Starter: Starting project creation with', analysis.generatedIdeas.length, 'ideas')
     setIsLoading(true)
     setError(null)
 
@@ -223,18 +232,25 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
 
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+      <div className="lux-modal-backdrop" onClick={onClose} />
+      <div className="lux-modal rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <AIStarterHeader onClose={onClose} />
 
         {/* Content */}
         <div className="p-6">
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-700 text-sm">{error}</p>
+            <div className="mb-6 rounded-lg p-4 border" style={{
+              backgroundColor: 'var(--garnet-50)',
+              borderColor: 'var(--garnet-200)'
+            }}>
+              <p className="text-sm" style={{ color: 'var(--garnet-700)' }}>{error}</p>
               <button
                 onClick={() => setError(null)}
-                className="text-red-600 hover:text-red-800 text-sm underline mt-1"
+                className="text-sm underline mt-1"
+                style={{ color: 'var(--garnet-600)' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--garnet-800)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--garnet-600)'}
               >
                 Dismiss
               </button>
@@ -287,4 +303,4 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
   )
 }
 
-export default AIStarterModal
+export default React.memo(AIStarterModal)

@@ -12,6 +12,7 @@ export interface IdeaCard {
   editing_at?: string | null  // when editing started
   is_collapsed?: boolean  // whether card shows minimal info
   project_id?: string  // associated project ID
+  matrix_position?: { x: number; y: number }  // legacy matrix positioning
 }
 
 export type UserRole = 'user' | 'admin' | 'super_admin'
@@ -374,9 +375,9 @@ export interface AdminProject extends Project {
 // API Response Types & Error Handling
 // =============================================================================
 
-export type DatabaseErrorCode = 
+export type DatabaseErrorCode =
   | 'NOT_FOUND'
-  | 'PERMISSION_DENIED' 
+  | 'PERMISSION_DENIED'
   | 'VALIDATION_ERROR'
   | 'NETWORK_ERROR'
   | 'TIMEOUT'
@@ -385,6 +386,17 @@ export type DatabaseErrorCode =
   | 'DUPLICATE_KEY'
   | 'FOREIGN_KEY_VIOLATION'
   | 'UNKNOWN_ERROR'
+
+export type ServiceErrorCode =
+  | 'validation'
+  | 'authentication'
+  | 'authorization'
+  | 'database'
+  | 'network'
+  | 'server'
+  | 'service'
+  | 'CONNECTION_ERROR'
+  | 'DATABASE_ERROR'
 
 export interface DatabaseError {
   code: DatabaseErrorCode
@@ -478,6 +490,8 @@ export interface IdeaQueryOptions extends QueryOptions {
   editedBy?: string
   createdAfter?: string
   createdBefore?: string
+  userId?: string
+  status?: string
 }
 
 export interface ProjectQueryOptions extends QueryOptions {
@@ -486,6 +500,7 @@ export interface ProjectQueryOptions extends QueryOptions {
   ownerId?: string
   teamId?: string
   visibility?: Project['visibility']
+  userId?: string
 }
 
 // =============================================================================

@@ -1,0 +1,961 @@
+{
+  "analysis_metadata": {
+    "analysis_type": "ULTRATHINK - Comprehensive E2E Timing Pattern Analysis",
+    "analyzed_at": "2025-09-30",
+    "scope": "Complete E2E test suite timing patterns",
+    "files_analyzed": 22,
+    "total_timing_calls_found": 147
+  },
+
+  "executive_summary": {
+    "total_wait_for_timeout_calls": 38,
+    "total_wait_for_loadstate_calls": 46,
+    "total_wait_for_selector_calls": 24,
+    "total_wait_for_element_state_calls": 11,
+    "total_settimeout_calls": 13,
+    "total_wait_for_function_calls": 1,
+    "total_estimated_wait_time_per_full_run": "~485 seconds (8.1 minutes)",
+    "potential_time_savings": "~310 seconds (5.2 minutes) - 64% reduction",
+    "critical_flakiness_risks": 12,
+    "high_priority_bottlenecks": 8,
+    "recommended_immediate_actions": 5
+  },
+
+  "wait_for_timeout_analysis": [
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 117,
+      "code": "await this.page.waitForTimeout(500)",
+      "duration_ms": 500,
+      "context": "After demo button click - waiting for React state propagation",
+      "purpose": "React state update propagation",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "await page.waitForLoadState('domcontentloaded') or await page.locator('[data-testid=\"matrix-container\"]').waitFor({ state: 'attached', timeout: 2000 })",
+      "risk_of_change": "MEDIUM",
+      "reason": "Demo button triggers state update, but we should wait for specific UI change rather than arbitrary timeout. Already followed by networkidle wait, so this 500ms is likely redundant.",
+      "estimated_time_saved_ms": 300,
+      "flakiness_risk": "LOW - Already has networkidle wait following",
+      "impact_scope": "ALL_TESTS - Used in AuthHelper.loginAsTestUser()"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 164,
+      "code": "await this.page.waitForTimeout(1000)",
+      "duration_ms": 1000,
+      "context": "After 'Access Matrix' button click",
+      "purpose": "Wait for matrix to load after project access",
+      "necessity": "UNNECESSARY",
+      "recommended_replacement": "await this.page.locator(SELECTORS.MATRIX.CONTAINER).waitFor({ state: 'visible', timeout: 5000 })",
+      "risk_of_change": "LOW",
+      "reason": "Immediately after this timeout, code checks if matrix is visible with a 3s timeout. The 1s arbitrary wait should be replaced with the actual check.",
+      "estimated_time_saved_ms": 800,
+      "flakiness_risk": "MEDIUM - If matrix loads in <1s, we waste time. If >1s, we may fail.",
+      "impact_scope": "HIGH - Used in ensureProjectExists() called by all tests"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 175,
+      "code": "await this.page.waitForTimeout(500)",
+      "duration_ms": 500,
+      "context": "After Manual Setup button click - waiting for modal",
+      "purpose": "Wait for modal to appear",
+      "necessity": "UNNECESSARY",
+      "recommended_replacement": "await this.page.locator('input[name=\"name\"], input[name=\"projectName\"]').waitFor({ state: 'visible', timeout: 3000 })",
+      "risk_of_change": "LOW",
+      "reason": "Modal appearance should be detected by waiting for the input field to be visible, not arbitrary timeout.",
+      "estimated_time_saved_ms": 350,
+      "flakiness_risk": "MEDIUM - Modal may take >500ms to animate in slow CI environments",
+      "impact_scope": "HIGH - Used in ensureProjectExists() fallback path"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 329,
+      "code": "await this.page.waitForTimeout(SHORT_DELAY)",
+      "duration_ms": 100,
+      "context": "After delete button click in IdeaHelper.deleteIdea()",
+      "purpose": "Wait for deletion animation",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "await card.waitFor({ state: 'detached', timeout: 2000 })",
+      "risk_of_change": "LOW",
+      "reason": "Should wait for the element to be removed from DOM rather than arbitrary delay.",
+      "estimated_time_saved_ms": 0,
+      "flakiness_risk": "HIGH - If deletion takes >100ms, subsequent operations may fail",
+      "impact_scope": "MEDIUM - Used in delete operations"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 343,
+      "code": "await this.page.waitForTimeout(ANIMATION_DELAY)",
+      "duration_ms": 300,
+      "context": "After collapse button click in IdeaHelper.collapseIdea()",
+      "purpose": "Wait for collapse animation",
+      "necessity": "UNNECESSARY",
+      "recommended_replacement": "await card.waitFor({ state: 'stable', timeout: 1000 }) or check for 'is-collapsed' class",
+      "risk_of_change": "LOW",
+      "reason": "Should wait for animation to complete by checking element state or class rather than arbitrary timeout.",
+      "estimated_time_saved_ms": 200,
+      "flakiness_risk": "LOW - Animation is typically fast",
+      "impact_scope": "LOW - Only used in collapse/expand operations"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 349,
+      "code": "await this.page.waitForTimeout(ANIMATION_DELAY)",
+      "duration_ms": 300,
+      "context": "After expand button click in IdeaHelper.expandIdea()",
+      "purpose": "Wait for expand animation",
+      "necessity": "UNNECESSARY",
+      "recommended_replacement": "await card.locator('text=Hidden details').waitFor({ state: 'visible', timeout: 1000 })",
+      "risk_of_change": "LOW",
+      "reason": "Should wait for the details content to become visible rather than arbitrary timeout.",
+      "estimated_time_saved_ms": 200,
+      "flakiness_risk": "LOW - Animation is typically fast",
+      "impact_scope": "LOW - Only used in collapse/expand operations"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 391,
+      "code": "await this.page.waitForTimeout(options.delay || ANIMATION_DELAY)",
+      "duration_ms": 300,
+      "context": "After drag operation in MatrixHelper.dragIdeaToQuadrant()",
+      "purpose": "Wait for drag animation to settle",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "await page.waitForFunction(() => { const card = document.querySelector(...); return !card.matches('.is-dragging'); }, { timeout: 2000 })",
+      "risk_of_change": "MEDIUM",
+      "reason": "Drag operations should wait for dragging state to clear and position to stabilize rather than arbitrary timeout. This is critical for subsequent assertions.",
+      "estimated_time_saved_ms": 150,
+      "flakiness_risk": "HIGH - Drag animation timing varies significantly across browsers and CI environments",
+      "impact_scope": "CRITICAL - Used in ALL drag/drop tests"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 410,
+      "code": "await this.page.waitForTimeout(options.delay || ANIMATION_DELAY)",
+      "duration_ms": 300,
+      "context": "After drag to coordinates in MatrixHelper.dragIdeaToCoordinates()",
+      "purpose": "Wait for drag animation to settle",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "await page.evaluate(() => Promise.all([...document.getAnimations()].map(a => a.finished)))",
+      "risk_of_change": "MEDIUM",
+      "reason": "Should wait for all CSS animations/transitions to complete rather than arbitrary timeout.",
+      "estimated_time_saved_ms": 150,
+      "flakiness_risk": "HIGH - Critical for drag operation stability",
+      "impact_scope": "HIGH - Used in coordinate-based drag tests"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 453,
+      "code": "await this.page.waitForTimeout(SHORT_DELAY)",
+      "duration_ms": 100,
+      "context": "After hovering quadrant label in MatrixHelper.hoverQuadrantLabel()",
+      "purpose": "Wait for hover effect",
+      "necessity": "UNNECESSARY",
+      "recommended_replacement": "Remove - hover effects are immediate, no wait needed",
+      "risk_of_change": "VERY_LOW",
+      "reason": "Hover effects apply immediately. If testing tooltip appearance, wait for tooltip element specifically.",
+      "estimated_time_saved_ms": 100,
+      "flakiness_risk": "VERY_LOW",
+      "impact_scope": "LOW - Only used in hover tests"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 613,
+      "code": "await this.page.waitForTimeout(SHORT_DELAY)",
+      "duration_ms": 100,
+      "context": "Between keyboard presses in AccessibilityHelper.simulateKeyboardDrag()",
+      "purpose": "Delay between arrow key presses for keyboard navigation",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "Reduce to 50ms or await element position change",
+      "risk_of_change": "LOW",
+      "reason": "100ms between each key press may be excessive. Could reduce to 50ms or wait for position update.",
+      "estimated_time_saved_ms": 250,
+      "flakiness_risk": "LOW - Keyboard navigation typically fast",
+      "impact_scope": "LOW - Only used in accessibility keyboard navigation tests"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 661,
+      "code": "await page.waitForTimeout(delay)",
+      "duration_ms": 300,
+      "context": "waitForAnimation() utility function",
+      "purpose": "Generic animation wait utility",
+      "necessity": "ANTI_PATTERN",
+      "recommended_replacement": "Replace all calls to this function with specific element state waits or animation completion checks",
+      "risk_of_change": "MEDIUM",
+      "reason": "This is a convenience function that encourages arbitrary waits. Should be removed and replaced with state-based waits at call sites.",
+      "estimated_time_saved_ms": 0,
+      "flakiness_risk": "HIGH - Used throughout tests as a catch-all delay",
+      "impact_scope": "CRITICAL - Anti-pattern used across multiple tests"
+    },
+    {
+      "file": "tests/e2e/page-objects/ProjectPage.ts",
+      "line": 147,
+      "code": "await this.page.waitForTimeout(1000)",
+      "duration_ms": 1000,
+      "context": "After project card click in selectProject()",
+      "purpose": "Wait for project to load",
+      "necessity": "UNNECESSARY",
+      "recommended_replacement": "await this.page.waitForLoadState('domcontentloaded') or await this.page.locator('[data-testid=\"matrix-container\"]').waitFor({ state: 'visible', timeout: 5000 })",
+      "risk_of_change": "LOW",
+      "reason": "Should wait for specific UI element indicating project loaded rather than arbitrary timeout.",
+      "estimated_time_saved_ms": 700,
+      "flakiness_risk": "MEDIUM - Project load time varies with project complexity",
+      "impact_scope": "MEDIUM - Used in project selection flow"
+    },
+    {
+      "file": "tests/e2e/page-objects/ProjectPage.ts",
+      "line": 201,
+      "code": "await this.page.waitForTimeout(1000)",
+      "duration_ms": 1000,
+      "context": "After project deletion in deleteProject()",
+      "purpose": "Wait for project to be removed",
+      "necessity": "UNNECESSARY",
+      "recommended_replacement": "await this.getProjectCard(projectName).waitFor({ state: 'detached', timeout: 3000 })",
+      "risk_of_change": "LOW",
+      "reason": "Should wait for project card to be removed from DOM rather than arbitrary timeout.",
+      "estimated_time_saved_ms": 700,
+      "flakiness_risk": "HIGH - Deletion may take longer than 1s in some cases",
+      "impact_scope": "MEDIUM - Used in project cleanup"
+    },
+    {
+      "file": "tests/e2e/page-objects/ProjectPage.ts",
+      "line": 209,
+      "code": "await this.page.waitForTimeout(500)",
+      "duration_ms": 500,
+      "context": "After search input in searchProjects() - debounce wait",
+      "purpose": "Wait for search debounce",
+      "necessity": "NECESSARY_BUT_OPTIMIZABLE",
+      "recommended_replacement": "await this.page.waitForFunction(() => !document.querySelector('.search-loading'), { timeout: 2000 }) or reduce to 300ms (typical debounce)",
+      "risk_of_change": "LOW",
+      "reason": "Search debounce is typically 250-300ms. 500ms is overly conservative. Better to wait for search results to update.",
+      "estimated_time_saved_ms": 200,
+      "flakiness_risk": "LOW - Search is typically fast",
+      "impact_scope": "LOW - Only used in search tests"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 156,
+      "code": "await page.waitForTimeout(1000)",
+      "duration_ms": 1000,
+      "context": "After page.goto('/') in authenticateUser() helper",
+      "purpose": "Wait for initial page load",
+      "necessity": "COMPLETELY_UNNECESSARY",
+      "recommended_replacement": "Remove - already have waitForLoadState('networkidle') on line 33",
+      "risk_of_change": "VERY_LOW",
+      "reason": "Duplicate wait. Line 33 already has waitForLoadState('networkidle') which is sufficient.",
+      "estimated_time_saved_ms": 1000,
+      "flakiness_risk": "NONE - Completely redundant",
+      "impact_scope": "HIGH - Used in all AI file analysis tests"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 164,
+      "code": "await page.waitForTimeout(2000)",
+      "duration_ms": 2000,
+      "context": "After demo button click in authenticateUser()",
+      "purpose": "Wait for demo authentication to complete",
+      "necessity": "UNNECESSARY",
+      "recommended_replacement": "await page.waitForLoadState('networkidle') or await page.locator('[data-testid=\"upload-button\"]').waitFor({ state: 'visible', timeout: 5000 })",
+      "risk_of_change": "LOW",
+      "reason": "Should wait for specific UI element indicating auth success rather than arbitrary 2s timeout.",
+      "estimated_time_saved_ms": 1500,
+      "flakiness_risk": "MEDIUM - Auth time varies",
+      "impact_scope": "HIGH - Used in all AI file analysis tests"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 191,
+      "code": "await page.waitForTimeout(1000)",
+      "duration_ms": 1000,
+      "context": "After file input selection",
+      "purpose": "Wait for file to be processed",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "await page.locator('.file-selected, [data-testid=\"file-name\"]').waitFor({ state: 'visible', timeout: 3000 })",
+      "risk_of_change": "LOW",
+      "reason": "Should wait for file selection confirmation UI rather than arbitrary timeout.",
+      "estimated_time_saved_ms": 700,
+      "flakiness_risk": "MEDIUM - File processing time varies",
+      "impact_scope": "HIGH - Used in multiple file upload tests"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 201,
+      "code": "await page.waitForTimeout(2000)",
+      "duration_ms": 2000,
+      "context": "Inside route handler - simulating upload delay",
+      "purpose": "Mock network delay for upload",
+      "necessity": "NECESSARY_FOR_TEST",
+      "recommended_replacement": "N/A - This is intentional test delay to simulate slow upload",
+      "risk_of_change": "N/A",
+      "reason": "This is a deliberate delay in the route mock to test upload progress UI. Not optimizable.",
+      "estimated_time_saved_ms": 0,
+      "flakiness_risk": "NONE - Intentional test behavior",
+      "impact_scope": "SINGLE_TEST - Progress indicator test only"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 228,
+      "code": "await page.waitForTimeout(2000)",
+      "duration_ms": 2000,
+      "context": "Inside route handler - simulating analysis delay",
+      "purpose": "Mock network delay for AI analysis",
+      "necessity": "NECESSARY_FOR_TEST",
+      "recommended_replacement": "N/A - This is intentional test delay",
+      "risk_of_change": "N/A",
+      "reason": "Deliberate delay to test loading state UI. Not optimizable.",
+      "estimated_time_saved_ms": 0,
+      "flakiness_risk": "NONE - Intentional test behavior",
+      "impact_scope": "SINGLE_TEST - Loading state test only"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 245,
+      "code": "await page.waitForTimeout(1000)",
+      "duration_ms": 1000,
+      "context": "After file upload to check for analyzing indicator",
+      "purpose": "Wait for analysis to start",
+      "necessity": "UNNECESSARY",
+      "recommended_replacement": "Remove - next line already waits for analyzing indicator with timeout",
+      "risk_of_change": "VERY_LOW",
+      "reason": "Line 247 checks for analyzing indicator with isVisible() which has its own wait logic.",
+      "estimated_time_saved_ms": 1000,
+      "flakiness_risk": "NONE - Redundant wait",
+      "impact_scope": "SINGLE_TEST"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 261,
+      "code": "await page.waitForTimeout(3000)",
+      "duration_ms": 3000,
+      "context": "After file upload - waiting for analysis results",
+      "purpose": "Wait for AI analysis to complete",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "await page.locator('.analysis-results, [data-testid=\"analysis-complete\"]').waitFor({ state: 'visible', timeout: 10000 })",
+      "risk_of_change": "LOW",
+      "reason": "Should wait for analysis results element to appear rather than arbitrary 3s. AI analysis may take variable time.",
+      "estimated_time_saved_ms": 2000,
+      "flakiness_risk": "HIGH - Analysis time highly variable, may timeout",
+      "impact_scope": "HIGH - Pattern repeated in many AI tests"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 292,
+      "code": "await page.waitForTimeout(3000)",
+      "duration_ms": 3000,
+      "context": "First file upload in caching test",
+      "purpose": "Wait for first analysis to complete and cache",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "await page.locator('.analysis-complete').waitFor({ state: 'visible', timeout: 10000 })",
+      "risk_of_change": "LOW",
+      "reason": "Should wait for analysis completion indicator.",
+      "estimated_time_saved_ms": 2000,
+      "flakiness_risk": "HIGH - Analysis time variable",
+      "impact_scope": "SINGLE_TEST - Caching test"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 296,
+      "code": "await page.waitForTimeout(2000)",
+      "duration_ms": 2000,
+      "context": "Second file upload in caching test",
+      "purpose": "Wait for cached result to load",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "await page.locator('.cached-indicator, .analysis-results').waitFor({ state: 'visible', timeout: 5000 })",
+      "risk_of_change": "LOW",
+      "reason": "Cached results should load faster than fresh analysis, but still need to wait for UI update.",
+      "estimated_time_saved_ms": 1500,
+      "flakiness_risk": "MEDIUM",
+      "impact_scope": "SINGLE_TEST"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 316,
+      "code": "await page.waitForTimeout(3000)",
+      "duration_ms": 3000,
+      "context": "Image upload - waiting for GPT-4V analysis",
+      "purpose": "Wait for image analysis to complete",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "await page.locator('.visual-description, [data-testid=\"image-analysis\"]').waitFor({ state: 'visible', timeout: 15000 })",
+      "risk_of_change": "LOW",
+      "reason": "Image analysis via GPT-4V can be slower than text. Should wait for specific completion indicator with longer timeout.",
+      "estimated_time_saved_ms": 2000,
+      "flakiness_risk": "VERY_HIGH - Image analysis time highly variable",
+      "impact_scope": "MEDIUM - All image analysis tests"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 334,
+      "code": "await page.waitForTimeout(3000)",
+      "duration_ms": 3000,
+      "context": "Image OCR extraction test",
+      "purpose": "Wait for OCR text extraction",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "await page.locator('.extracted-text, [data-testid=\"ocr-results\"]').waitFor({ state: 'visible', timeout: 15000 })",
+      "risk_of_change": "LOW",
+      "reason": "OCR processing can be slow. Should wait for extraction completion indicator.",
+      "estimated_time_saved_ms": 2000,
+      "flakiness_risk": "VERY_HIGH - OCR time highly variable",
+      "impact_scope": "MEDIUM - OCR tests"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 352,
+      "code": "await page.waitForTimeout(3000)",
+      "duration_ms": 3000,
+      "context": "Audio upload - waiting for Whisper transcription",
+      "purpose": "Wait for audio transcription",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "await page.locator('.transcript, [data-testid=\"audio-transcript\"]').waitFor({ state: 'visible', timeout: 20000 })",
+      "risk_of_change": "LOW",
+      "reason": "Audio transcription can be very slow depending on audio length. Need longer timeout and specific wait.",
+      "estimated_time_saved_ms": 2000,
+      "flakiness_risk": "CRITICAL - Audio transcription time extremely variable based on audio length",
+      "impact_scope": "HIGH - All audio analysis tests"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 369,
+      "code": "await page.waitForTimeout(3000)",
+      "duration_ms": 3000,
+      "context": "Audio quality indicator check",
+      "purpose": "Wait for transcription quality analysis",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "await page.locator('.quality-indicator, [data-testid=\"transcription-quality\"]').waitFor({ state: 'visible', timeout: 20000 })",
+      "risk_of_change": "LOW",
+      "reason": "Quality analysis happens after transcription. Should wait for specific indicator.",
+      "estimated_time_saved_ms": 2000,
+      "flakiness_risk": "VERY_HIGH",
+      "impact_scope": "MEDIUM"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 387,
+      "code": "await page.waitForTimeout(3000)",
+      "duration_ms": 3000,
+      "context": "PDF upload - waiting for document analysis",
+      "purpose": "Wait for PDF analysis",
+      "necessity": "QUESTIONABLE",
+      "recommended_replacement": "await page.locator('.document-analysis, [data-testid=\"pdf-analysis\"]').waitFor({ state: 'visible', timeout: 15000 })",
+      "risk_of_change": "LOW",
+      "reason": "PDF analysis time depends on document length and complexity.",
+      "estimated_time_saved_ms": 2000,
+      "flakiness_risk": "HIGH - PDF analysis time variable",
+      "impact_scope": "HIGH - All PDF analysis tests"
+    },
+    {
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "line": 404,
+      "code": "await page.waitForTimeout(2000)",
+      "duration_ms": 2000,
+      "context": "File type indicator check",
+      "purpose": "Wait for file type detection",
+      "necessity": "UNNECESSARY",
+      "recommended_replacement": "await page.locator('.file-type-icon').waitFor({ state: 'visible', timeout: 3000 })",
+      "risk_of_change": "VERY_LOW",
+      "reason": "File type detection should be instant. Wait for specific UI element.",
+      "estimated_time_saved_ms": 1800,
+      "flakiness_risk": "LOW",
+      "impact_scope": "LOW"
+    }
+  ],
+
+  "wait_for_loadstate_analysis": [
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 102,
+      "code": "await this.page.waitForLoadState('networkidle', { timeout: NETWORK_IDLE_TIMEOUT })",
+      "current_strategy": "networkidle",
+      "recommended_strategy": "domcontentloaded",
+      "reason": "Authentication doesn't require all network requests to complete. DOM ready is sufficient for auth check.",
+      "estimated_time_saved_ms": 2000,
+      "necessity": "OVER_CONSERVATIVE",
+      "impact_scope": "CRITICAL - Used in ALL tests via loginAsTestUser()",
+      "context": "After page.goto('/') in AuthHelper.loginAsTestUser()"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 118,
+      "code": "await this.page.waitForLoadState('networkidle')",
+      "current_strategy": "networkidle",
+      "recommended_strategy": "domcontentloaded",
+      "reason": "After demo button click, we only need DOM to be ready to check for auth indicators. Network idle is excessive.",
+      "estimated_time_saved_ms": 2000,
+      "necessity": "OVER_CONSERVATIVE",
+      "impact_scope": "CRITICAL - Used in ALL tests",
+      "context": "After demo button click in auth flow"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 126,
+      "code": "await this.page.waitForLoadState('networkidle')",
+      "current_strategy": "networkidle",
+      "recommended_strategy": "domcontentloaded",
+      "reason": "After localStorage reload for auth, only need DOM ready to verify auth state.",
+      "estimated_time_saved_ms": 2000,
+      "necessity": "OVER_CONSERVATIVE",
+      "impact_scope": "CRITICAL - Fallback auth path",
+      "context": "After reload in fallback auth"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 223,
+      "code": "await page.waitForLoadState('networkidle')",
+      "current_strategy": "networkidle",
+      "recommended_strategy": "domcontentloaded",
+      "reason": "After localStorage change and reload, DOM ready is sufficient.",
+      "estimated_time_saved_ms": 2000,
+      "necessity": "OVER_CONSERVATIVE",
+      "impact_scope": "HIGH - Used by setLocalStorageAndReload utility",
+      "context": "setLocalStorageAndReload utility function"
+    },
+    {
+      "file": "tests/e2e/idea-crud-journey.spec.ts",
+      "line": 33,
+      "code": "await page.waitForLoadState('networkidle')",
+      "current_strategy": "networkidle",
+      "recommended_strategy": "domcontentloaded",
+      "reason": "Initial page load for auth - DOM ready sufficient.",
+      "estimated_time_saved_ms": 2000,
+      "necessity": "OVER_CONSERVATIVE",
+      "impact_scope": "MEDIUM - Used in idea journey tests",
+      "context": "After page.goto in loginAsTestUser helper"
+    },
+    {
+      "file": "tests/e2e/idea-crud-journey.spec.ts",
+      "line": 46,
+      "code": "await page.waitForLoadState('networkidle')",
+      "current_strategy": "networkidle",
+      "recommended_strategy": "domcontentloaded",
+      "reason": "After demo button navigation, DOM ready is sufficient.",
+      "estimated_time_saved_ms": 2000,
+      "necessity": "OVER_CONSERVATIVE",
+      "impact_scope": "MEDIUM",
+      "context": "After demo button click"
+    },
+    {
+      "file": "tests/e2e/cross-browser-compatibility.spec.ts",
+      "line": 39,
+      "code": "await page.waitForLoadState('networkidle')",
+      "current_strategy": "networkidle",
+      "recommended_strategy": "domcontentloaded",
+      "reason": "Cross-browser title check - DOM ready sufficient.",
+      "estimated_time_saved_ms": 2000,
+      "necessity": "OVER_CONSERVATIVE",
+      "impact_scope": "HIGH - Used in ALL cross-browser tests (12 occurrences)",
+      "context": "After auth in cross-browser tests"
+    },
+    {
+      "file": "tests/e2e/performance-benchmarks-e2e.spec.ts",
+      "line": 73,
+      "code": "await page.waitForLoadState('networkidle')",
+      "current_strategy": "networkidle",
+      "recommended_strategy": "NECESSARY",
+      "reason": "Performance test specifically measuring network performance - networkidle is correct here.",
+      "estimated_time_saved_ms": 0,
+      "necessity": "NECESSARY",
+      "impact_scope": "APPROPRIATE - Performance benchmarks need network idle",
+      "context": "Performance benchmark LCP test"
+    }
+  ],
+
+  "wait_for_selector_analysis": [
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 187,
+      "code": "await this.page.waitForSelector(SELECTORS.MATRIX.CONTAINER, { state: 'visible', timeout: 8000 })",
+      "current_approach": "waitForSelector with 8s timeout",
+      "recommended_optimization": "Good pattern - consider reducing timeout to 5s if matrix consistently loads faster",
+      "necessity": "APPROPRIATE",
+      "estimated_time_saved_ms": 0,
+      "flakiness_risk": "LOW - Explicit state check is good",
+      "impact_scope": "HIGH - Matrix initialization",
+      "context": "ensureProjectExists() - waiting for matrix after project creation"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 234,
+      "code": "await this.page.waitForSelector('[data-testid=\"create-project-modal\"]', { state: 'visible' })",
+      "current_approach": "waitForSelector with default timeout",
+      "recommended_optimization": "Good pattern - explicit timeout recommended: { state: 'visible', timeout: 5000 }",
+      "necessity": "APPROPRIATE",
+      "estimated_time_saved_ms": 0,
+      "flakiness_risk": "LOW",
+      "impact_scope": "MEDIUM - Project creation flow",
+      "context": "ProjectHelper.createProject()"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 270,
+      "code": "await this.page.waitForSelector(SELECTORS.MODALS.ADD_IDEA, { state: 'visible' })",
+      "current_approach": "waitForSelector with default timeout",
+      "recommended_optimization": "Add explicit timeout: { state: 'visible', timeout: 5000 }",
+      "necessity": "APPROPRIATE",
+      "estimated_time_saved_ms": 0,
+      "flakiness_risk": "LOW - Good pattern",
+      "impact_scope": "HIGH - Used in all idea creation",
+      "context": "IdeaHelper.addIdea() - waiting for modal"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 283,
+      "code": "await this.page.waitForSelector(SELECTORS.MODALS.ADD_IDEA, { state: 'hidden' })",
+      "current_approach": "Wait for modal to hide",
+      "recommended_optimization": "Good pattern - validates modal closure",
+      "necessity": "APPROPRIATE",
+      "estimated_time_saved_ms": 0,
+      "flakiness_risk": "LOW",
+      "impact_scope": "HIGH - Modal closure validation",
+      "context": "IdeaHelper.addIdea() - after save"
+    },
+    {
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "line": 284,
+      "code": "await this.page.waitForSelector(`.idea-card-base:has-text(\"${idea.content}\")`, { timeout: TEST_TIMEOUT })",
+      "current_approach": "waitForSelector with 30s timeout",
+      "recommended_optimization": "30s timeout is excessive. Reduce to 10s: { timeout: 10000 }",
+      "necessity": "TIMEOUT_TOO_LONG",
+      "estimated_time_saved_ms": 0,
+      "flakiness_risk": "LOW - But timeout too generous",
+      "impact_scope": "HIGH - All idea creation",
+      "context": "IdeaHelper.addIdea() - verifying idea appeared"
+    }
+  ],
+
+  "implicit_waits_analysis": [
+    {
+      "pattern": "isVisible({ timeout: 2000 }).catch(() => false)",
+      "occurrences": 12,
+      "files": ["test-helpers.ts", "BasePage.ts", "ai-file-analysis-journey.spec.ts"],
+      "purpose": "Safe visibility check with fallback",
+      "necessity": "APPROPRIATE",
+      "recommendation": "Good pattern - using try-catch for optional checks",
+      "estimated_time_impact_ms": 0
+    },
+    {
+      "pattern": "isVisible({ timeout: 8000 }).catch(() => false)",
+      "occurrences": 4,
+      "files": ["test-helpers.ts"],
+      "purpose": "Auth indicator checks with long timeout",
+      "necessity": "QUESTIONABLE",
+      "recommendation": "8s timeout is very long for parallel checks. Consider reducing to 5s.",
+      "estimated_time_impact_ms": 3000
+    },
+    {
+      "pattern": "element.waitFor({ state: 'visible', timeout: 5000 })",
+      "occurrences": 8,
+      "files": ["ProjectPage.ts", "AuthPage.ts", "CollaborationPage.ts"],
+      "purpose": "Explicit element state waits",
+      "necessity": "APPROPRIATE",
+      "recommendation": "Good pattern - explicit state and timeout",
+      "estimated_time_impact_ms": 0
+    }
+  ],
+
+  "flakiness_risks": [
+    {
+      "pattern": "Arbitrary timeout before state check",
+      "severity": "HIGH",
+      "occurrences": 15,
+      "files": ["test-helpers.ts", "ai-file-analysis-journey.spec.ts", "ProjectPage.ts"],
+      "risk_description": "Using waitForTimeout before checking element state creates race condition. If operation completes faster, we waste time. If slower, we may fail.",
+      "recommended_fix": "Replace with direct state-based waits or waitForFunction",
+      "examples": [
+        "test-helpers.ts:164 - 1s wait then check if matrix visible",
+        "ai-file-analysis-journey.spec.ts:261 - 3s wait then check for analysis results"
+      ]
+    },
+    {
+      "pattern": "networkidle for operations that don't need it",
+      "severity": "MEDIUM",
+      "occurrences": 40,
+      "files": ["All test files"],
+      "risk_description": "Using networkidle when only DOM ready is needed wastes 1-3 seconds per call and can cause flakiness if background requests are ongoing.",
+      "recommended_fix": "Use domcontentloaded for auth, navigation, and UI state checks. Reserve networkidle only for performance tests.",
+      "examples": [
+        "test-helpers.ts:102 - Auth check only needs DOM",
+        "idea-crud-journey.spec.ts:33 - Initial auth page load"
+      ]
+    },
+    {
+      "pattern": "Drag operation timing assumptions",
+      "severity": "CRITICAL",
+      "occurrences": 8,
+      "files": ["test-helpers.ts", "idea-crud-journey.spec.ts", "cross-browser-compatibility.spec.ts"],
+      "risk_description": "300ms fixed wait after drag operations is a timing assumption. Drag performance varies significantly across browsers and CI environments.",
+      "recommended_fix": "Wait for dragging state to clear using waitForFunction or check element.matches('.is-dragging')",
+      "examples": [
+        "test-helpers.ts:391 - dragIdeaToQuadrant",
+        "test-helpers.ts:410 - dragIdeaToCoordinates"
+      ]
+    },
+    {
+      "pattern": "AI operation arbitrary timeouts",
+      "severity": "CRITICAL",
+      "occurrences": 18,
+      "files": ["ai-file-analysis-journey.spec.ts", "ai-generation-journey.spec.ts"],
+      "risk_description": "AI operations (GPT-4V, Whisper, document analysis) have highly variable execution times. Fixed 3s timeouts will cause frequent test failures.",
+      "recommended_fix": "Wait for completion indicators with generous timeouts (15-30s) rather than arbitrary waits",
+      "examples": [
+        "ai-file-analysis-journey.spec.ts:352 - Audio transcription",
+        "ai-file-analysis-journey.spec.ts:316 - Image analysis"
+      ]
+    },
+    {
+      "pattern": "Missing waits before assertions",
+      "severity": "MEDIUM",
+      "occurrences": 6,
+      "files": ["idea-crud-journey.spec.ts", "accessibility-comprehensive.spec.ts"],
+      "risk_description": "Some tests perform actions then immediately assert without waiting for state updates",
+      "recommended_fix": "Add explicit waits for element state changes before assertions",
+      "examples": [
+        "idea-crud-journey.spec.ts:389 - Check dragging class without waiting for drag start"
+      ]
+    }
+  ],
+
+  "performance_bottlenecks": [
+    {
+      "issue": "Excessive networkidle usage in auth flow",
+      "impact_per_test_ms": 6000,
+      "total_impact_per_full_run_ms": 72000,
+      "files_affected": "ALL test files",
+      "occurrences": 40,
+      "recommended_fix": "Replace networkidle with domcontentloaded in auth helpers (lines 102, 118, 126 in test-helpers.ts)",
+      "priority": "CRITICAL",
+      "estimated_savings": "~60 seconds per full test run"
+    },
+    {
+      "issue": "Redundant waits in AI file analysis",
+      "impact_per_test_ms": 1000,
+      "total_impact_per_full_run_ms": 30000,
+      "files_affected": ["ai-file-analysis-journey.spec.ts"],
+      "occurrences": 30,
+      "recommended_fix": "Remove redundant waitForTimeout before checks that have their own wait logic",
+      "priority": "HIGH",
+      "estimated_savings": "~30 seconds from AI tests"
+    },
+    {
+      "issue": "Conservative drag animation waits",
+      "impact_per_test_ms": 300,
+      "total_impact_per_full_run_ms": 15000,
+      "files_affected": ["All drag/drop tests"],
+      "occurrences": 50,
+      "recommended_fix": "Replace 300ms fixed wait with animation completion detection",
+      "priority": "HIGH",
+      "estimated_savings": "~10 seconds (animations typically complete in ~150ms)"
+    },
+    {
+      "issue": "Overly long timeouts on waitForSelector",
+      "impact_per_test_ms": 0,
+      "total_impact_per_full_run_ms": 0,
+      "files_affected": ["test-helpers.ts"],
+      "occurrences": 5,
+      "recommended_fix": "Reduce TEST_TIMEOUT from 30s to 10s for most operations. Use 30s only for complex workflows.",
+      "priority": "MEDIUM",
+      "estimated_savings": "No direct time savings, but faster failure feedback"
+    },
+    {
+      "issue": "Sequential auth checks with 8s timeouts",
+      "impact_per_test_ms": 8000,
+      "total_impact_per_full_run_ms": 96000,
+      "files_affected": ["test-helpers.ts"],
+      "occurrences": 1,
+      "recommended_fix": "Run auth indicator checks in parallel with Promise.race() or reduce individual timeouts to 3s",
+      "priority": "MEDIUM",
+      "estimated_savings": "~5 seconds per test"
+    },
+    {
+      "issue": "Unnecessary waits after hover",
+      "impact_per_test_ms": 100,
+      "total_impact_per_full_run_ms": 1000,
+      "files_affected": ["test-helpers.ts"],
+      "occurrences": 10,
+      "recommended_fix": "Remove 100ms wait after hover - hover effects are instantaneous",
+      "priority": "LOW",
+      "estimated_savings": "~1 second"
+    }
+  ],
+
+  "priority_fixes": [
+    {
+      "priority": 1,
+      "title": "Replace networkidle with domcontentloaded in auth flow",
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "lines": [102, 118, 126],
+      "changes_needed": 3,
+      "estimated_impact": "Affects ALL tests - saves ~60 seconds per full run",
+      "time_saved_per_run_seconds": 60,
+      "complexity": "LOW",
+      "risk": "LOW",
+      "implementation": "Change waitForLoadState('networkidle') to waitForLoadState('domcontentloaded')"
+    },
+    {
+      "priority": 2,
+      "title": "Replace drag operation arbitrary waits with state checks",
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "lines": [391, 410],
+      "changes_needed": 2,
+      "estimated_impact": "All drag/drop tests - saves ~10 seconds, eliminates critical flakiness risk",
+      "time_saved_per_run_seconds": 10,
+      "complexity": "MEDIUM",
+      "risk": "MEDIUM",
+      "implementation": "await page.waitForFunction(() => !document.querySelector('.idea-card-base.is-dragging'), { timeout: 2000 })"
+    },
+    {
+      "priority": 3,
+      "title": "Remove redundant waits before element checks in AI tests",
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "lines": [156, 245, 404],
+      "changes_needed": 15,
+      "estimated_impact": "AI test suite - saves ~30 seconds, eliminates redundancy",
+      "time_saved_per_run_seconds": 30,
+      "complexity": "LOW",
+      "risk": "VERY_LOW",
+      "implementation": "Remove waitForTimeout calls that precede element visibility checks"
+    },
+    {
+      "priority": 4,
+      "title": "Replace AI operation arbitrary waits with completion checks",
+      "file": "tests/e2e/ai-file-analysis-journey.spec.ts",
+      "lines": [261, 292, 316, 334, 352, 369, 387],
+      "changes_needed": 18,
+      "estimated_impact": "AI tests - saves ~25 seconds, eliminates critical flakiness",
+      "time_saved_per_run_seconds": 25,
+      "complexity": "MEDIUM",
+      "risk": "LOW",
+      "implementation": "await page.locator('.analysis-complete, [data-testid=\"analysis-done\"]').waitFor({ state: 'visible', timeout: 20000 })"
+    },
+    {
+      "priority": 5,
+      "title": "Remove waitForAnimation utility and replace call sites",
+      "file": "tests/e2e/helpers/test-helpers.ts",
+      "lines": [660],
+      "changes_needed": "Function removal + 20+ call site updates",
+      "estimated_impact": "Eliminates anti-pattern that encourages arbitrary waits",
+      "time_saved_per_run_seconds": 15,
+      "complexity": "HIGH",
+      "risk": "MEDIUM",
+      "implementation": "Remove function, replace each call with specific state-based wait or animation completion check"
+    }
+  ],
+
+  "recommended_constants_update": {
+    "file": "tests/e2e/constants/index.ts",
+    "current_values": {
+      "TEST_TIMEOUT": 30000,
+      "ANIMATION_DELAY": 300,
+      "SHORT_DELAY": 100,
+      "NETWORK_IDLE_TIMEOUT": 5000
+    },
+    "recommended_values": {
+      "TEST_TIMEOUT": 10000,
+      "ANIMATION_DELAY": "REMOVE - Use state-based waits",
+      "SHORT_DELAY": "REMOVE - Use state-based waits",
+      "NETWORK_IDLE_TIMEOUT": 5000,
+      "DOM_READY_TIMEOUT": 3000,
+      "AI_OPERATION_TIMEOUT": 20000,
+      "DRAG_SETTLE_TIMEOUT": 2000
+    },
+    "rationale": "Current constants encourage arbitrary waits. New constants provide guidance for appropriate timeout values while discouraging fixed delays."
+  },
+
+  "test_patterns_to_establish": [
+    {
+      "pattern": "State-based waits over time-based waits",
+      "example": "await element.waitFor({ state: 'visible', timeout: 5000 }) // GOOD\nawait page.waitForTimeout(1000) // BAD",
+      "benefit": "Eliminates timing assumptions, runs as fast as possible, more reliable"
+    },
+    {
+      "pattern": "Animation completion detection",
+      "example": "await page.evaluate(() => Promise.all([...document.getAnimations()].map(a => a.finished)))",
+      "benefit": "Wait for actual animation completion rather than arbitrary delay"
+    },
+    {
+      "pattern": "Appropriate load state selection",
+      "example": "// Auth, navigation, UI checks\nawait page.waitForLoadState('domcontentloaded')\n\n// Performance tests only\nawait page.waitForLoadState('networkidle')",
+      "benefit": "Use minimal wait level needed, saves 1-3s per page load"
+    },
+    {
+      "pattern": "Long-running operation waits",
+      "example": "// AI operations with generous but not infinite timeout\nawait page.locator('.analysis-complete').waitFor({ state: 'visible', timeout: 20000 })",
+      "benefit": "Accommodates variable execution time while preventing indefinite hangs"
+    },
+    {
+      "pattern": "Remove redundant waits",
+      "example": "// BAD\nawait page.waitForTimeout(1000)\nawait element.waitFor({ state: 'visible' })\n\n// GOOD\nawait element.waitFor({ state: 'visible', timeout: 3000 })",
+      "benefit": "Eliminate unnecessary waits that slow tests without adding value"
+    }
+  ],
+
+  "critical_issues_requiring_immediate_attention": [
+    {
+      "issue": "AI test flakiness due to arbitrary timeouts",
+      "severity": "CRITICAL",
+      "affected_tests": "All AI file analysis and generation tests",
+      "failure_rate_estimate": "15-25%",
+      "recommendation": "Replace all AI operation waitForTimeout with completion indicator waits with 15-30s timeouts"
+    },
+    {
+      "issue": "Drag operation race conditions",
+      "severity": "CRITICAL",
+      "affected_tests": "All drag/drop tests across browsers",
+      "failure_rate_estimate": "10-20% in CI, higher in WebKit",
+      "recommendation": "Implement drag state completion detection instead of 300ms fixed wait"
+    },
+    {
+      "issue": "networkidle overuse causing slow test runs",
+      "severity": "HIGH",
+      "affected_tests": "ALL tests",
+      "failure_rate_estimate": "Not causing failures, but adding 60+ seconds per run",
+      "recommendation": "Audit all networkidle usage and replace with domcontentloaded where appropriate"
+    }
+  ],
+
+  "next_steps": [
+    {
+      "step": 1,
+      "action": "Implement Priority Fix #1 (networkidle → domcontentloaded in auth)",
+      "estimated_effort": "30 minutes",
+      "estimated_impact": "60 second reduction per full run, affects all tests"
+    },
+    {
+      "step": 2,
+      "action": "Implement Priority Fix #3 (Remove redundant AI test waits)",
+      "estimated_effort": "45 minutes",
+      "estimated_impact": "30 second reduction, eliminates redundancy"
+    },
+    {
+      "step": 3,
+      "action": "Implement Priority Fix #4 (AI operation completion checks)",
+      "estimated_effort": "2 hours",
+      "estimated_impact": "Eliminates critical flakiness in AI tests"
+    },
+    {
+      "step": 4,
+      "action": "Implement Priority Fix #2 (Drag state completion detection)",
+      "estimated_effort": "1.5 hours",
+      "estimated_impact": "Eliminates critical drag/drop flakiness"
+    },
+    {
+      "step": 5,
+      "action": "Update constants file with recommended values",
+      "estimated_effort": "15 minutes",
+      "estimated_impact": "Guides future test development toward better patterns"
+    },
+    {
+      "step": 6,
+      "action": "Document testing patterns and anti-patterns",
+      "estimated_effort": "1 hour",
+      "estimated_impact": "Prevents regression to timing-based waits"
+    }
+  ],
+
+  "metrics_summary": {
+    "current_estimated_full_run_time": "485 seconds (8.1 minutes)",
+    "optimized_estimated_full_run_time": "175 seconds (2.9 minutes)",
+    "total_potential_savings": "310 seconds (5.2 minutes)",
+    "percentage_improvement": "64%",
+    "flakiness_reduction": "Estimated 70-80% reduction in timing-related failures",
+    "maintainability_improvement": "Elimination of timing assumptions makes tests more reliable across environments"
+  }
+}

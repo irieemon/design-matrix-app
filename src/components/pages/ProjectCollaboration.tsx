@@ -4,6 +4,7 @@ import { User, Project } from '../../types'
 import { DatabaseService } from '../../lib/database'
 import ProjectCollaborators from '../ProjectCollaborators'
 import { logger } from '../../utils/logger'
+import { Button } from '../ui/Button'
 
 interface ProjectCollaborationProps {
   currentUser: User
@@ -65,13 +66,38 @@ const ProjectCollaboration: React.FC<ProjectCollaborationProps> = ({
     }
   }
 
-  const getRoleColor = (role: string) => {
+  const getRoleStyles = (role: string) => {
     switch (role) {
-      case 'owner': return 'bg-purple-100 text-purple-800 border-purple-200'
-      case 'admin': return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'editor': return 'bg-green-100 text-green-800 border-green-200'
-      case 'viewer': return 'bg-gray-100 text-gray-800 border-gray-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'owner':
+        return {
+          backgroundColor: 'var(--garnet-50)',
+          color: 'var(--garnet-800)',
+          borderColor: 'var(--garnet-200)'
+        }
+      case 'admin':
+        return {
+          backgroundColor: 'var(--sapphire-50)',
+          color: 'var(--sapphire-800)',
+          borderColor: 'var(--sapphire-200)'
+        }
+      case 'editor':
+        return {
+          backgroundColor: 'var(--emerald-50)',
+          color: 'var(--emerald-800)',
+          borderColor: 'var(--emerald-200)'
+        }
+      case 'viewer':
+        return {
+          backgroundColor: 'var(--graphite-100)',
+          color: 'var(--graphite-800)',
+          borderColor: 'var(--graphite-300)'
+        }
+      default:
+        return {
+          backgroundColor: 'var(--graphite-100)',
+          color: 'var(--graphite-800)',
+          borderColor: 'var(--graphite-300)'
+        }
     }
   }
 
@@ -79,9 +105,9 @@ const ProjectCollaboration: React.FC<ProjectCollaborationProps> = ({
     return (
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-slate-200 rounded w-1/3"></div>
-          <div className="h-32 bg-slate-200 rounded"></div>
-          <div className="h-64 bg-slate-200 rounded"></div>
+          <div className="h-8 rounded w-1/3" style={{ backgroundColor: 'var(--graphite-200)' }}></div>
+          <div className="h-32 rounded" style={{ backgroundColor: 'var(--graphite-200)' }}></div>
+          <div className="h-64 rounded" style={{ backgroundColor: 'var(--graphite-200)' }}></div>
         </div>
       </div>
     )
@@ -93,21 +119,21 @@ const ProjectCollaboration: React.FC<ProjectCollaborationProps> = ({
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           {onNavigateBack && (
-            <button
+            <Button
               onClick={onNavigateBack}
-              className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-slate-600" />
-            </button>
+              variant="ghost"
+              size="md"
+              icon={<ArrowLeft className="w-5 h-5" />}
+            />
           )}
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <Users className="w-5 h-5 text-white" />
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--sapphire-100)' }}>
+                <Users className="w-6 h-6" style={{ color: 'var(--sapphire-600)' }} />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">Team Collaboration</h1>
-                <p className="text-slate-600">Manage access and permissions for "{currentProject.name}"</p>
+                <h1 className="text-3xl font-bold" style={{ color: 'var(--graphite-900)' }}>Team Collaboration</h1>
+                <p style={{ color: 'var(--graphite-600)' }}>Manage access and permissions for "{currentProject.name}"</p>
               </div>
             </div>
           </div>
@@ -117,75 +143,85 @@ const ProjectCollaboration: React.FC<ProjectCollaborationProps> = ({
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* Your Role */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="rounded-xl p-6 border" style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderColor: 'var(--hairline-default)'
+        }}>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
-              <Crown className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--garnet-100)' }}>
+              <Crown className="w-5 h-5" style={{ color: 'var(--garnet-600)' }} />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Your Role</h3>
-              <p className="text-sm text-gray-600">Current access level</p>
+              <h3 className="font-semibold" style={{ color: 'var(--graphite-900)' }}>Your Role</h3>
+              <p className="text-sm" style={{ color: 'var(--graphite-600)' }}>Current access level</p>
             </div>
           </div>
           <div className="space-y-3">
-            <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium ${getRoleColor(userRole)}`}>
+            <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium" style={getRoleStyles(userRole)}>
               <Crown className="w-4 h-4" />
               {getRoleDisplayName(userRole)}
             </div>
-            <p className="text-xs text-gray-600 leading-relaxed">
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--graphite-600)' }}>
               {getRoleDescription(userRole)}
             </p>
           </div>
         </div>
 
         {/* Team Size */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="rounded-xl p-6 border" style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderColor: 'var(--hairline-default)'
+        }}>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-teal-500 rounded-xl flex items-center justify-center">
-              <Users className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--emerald-100)' }}>
+              <Users className="w-5 h-5" style={{ color: 'var(--emerald-600)' }} />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Team Size</h3>
-              <p className="text-sm text-gray-600">Active collaborators</p>
+              <h3 className="font-semibold" style={{ color: 'var(--graphite-900)' }}>Team Size</h3>
+              <p className="text-sm" style={{ color: 'var(--graphite-600)' }}>Active collaborators</p>
             </div>
           </div>
           <div className="space-y-3">
-            <div className="text-3xl font-bold text-gray-900">
+            <div className="text-3xl font-bold" style={{ color: 'var(--graphite-900)' }}>
               {collaboratorCount}
             </div>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs" style={{ color: 'var(--graphite-600)' }}>
               Including project owner and invited members
             </p>
           </div>
         </div>
 
         {/* Project Status */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="rounded-xl p-6 border" style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderColor: 'var(--hairline-default)'
+        }}>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-              <Activity className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--sapphire-100)' }}>
+              <Activity className="w-5 h-5" style={{ color: 'var(--sapphire-600)' }} />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Project Status</h3>
-              <p className="text-sm text-gray-600">Current state</p>
+              <h3 className="font-semibold" style={{ color: 'var(--graphite-900)' }}>Project Status</h3>
+              <p className="text-sm" style={{ color: 'var(--graphite-600)' }}>Current state</p>
             </div>
           </div>
           <div className="space-y-3">
-            <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
-              currentProject.status === 'active' ? 'bg-green-100 text-green-800' :
-              currentProject.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-              currentProject.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
-              <div className={`w-2 h-2 rounded-full ${
-                currentProject.status === 'active' ? 'bg-green-500' :
-                currentProject.status === 'paused' ? 'bg-yellow-500' :
-                currentProject.status === 'completed' ? 'bg-blue-500' :
-                'bg-gray-500'
-              }`}></div>
+            <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium" style={
+              currentProject.status === 'active' ? { backgroundColor: 'var(--emerald-100)', color: 'var(--emerald-800)' } :
+              currentProject.status === 'paused' ? { backgroundColor: 'var(--amber-100)', color: 'var(--amber-800)' } :
+              currentProject.status === 'completed' ? { backgroundColor: 'var(--sapphire-100)', color: 'var(--sapphire-800)' } :
+              { backgroundColor: 'var(--graphite-100)', color: 'var(--graphite-800)' }
+            }>
+              <div className="w-2 h-2 rounded-full" style={{
+                backgroundColor:
+                  currentProject.status === 'active' ? 'var(--emerald-500)' :
+                  currentProject.status === 'paused' ? 'var(--amber-500)' :
+                  currentProject.status === 'completed' ? 'var(--sapphire-500)' :
+                  'var(--graphite-500)'
+              }}></div>
               {currentProject.status}
             </div>
-            <p className="text-xs text-gray-600 capitalize">
+            <p className="text-xs capitalize" style={{ color: 'var(--graphite-600)' }}>
               {currentProject.project_type.replace('_', ' ')} project
             </p>
           </div>
@@ -193,31 +229,34 @@ const ProjectCollaboration: React.FC<ProjectCollaborationProps> = ({
       </div>
 
       {/* Permission Guidelines */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6 mb-8">
+      <div className="rounded-xl border p-6 mb-8" style={{
+        backgroundColor: 'var(--sapphire-50)',
+        borderColor: 'var(--sapphire-200)'
+      }}>
         <div className="flex items-start gap-3">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Settings className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--sapphire-600)' }}>
+            <Settings className="w-4 h-4" style={{ color: 'white' }} />
           </div>
           <div>
-            <h3 className="font-semibold text-blue-900 mb-2">Permission Levels</h3>
-            <div className="space-y-2 text-sm text-blue-800">
+            <h3 className="font-semibold mb-2" style={{ color: 'var(--sapphire-900)' }}>Permission Levels</h3>
+            <div className="space-y-2 text-sm" style={{ color: 'var(--sapphire-800)' }}>
               <div className="flex items-center gap-2">
-                <Crown className="w-4 h-4 text-purple-600" />
+                <Crown className="w-4 h-4" style={{ color: 'var(--garnet-600)' }} />
                 <span className="font-medium">Owner:</span>
                 <span>Full control, can delete project and manage all settings</span>
               </div>
               <div className="flex items-center gap-2">
-                <Settings className="w-4 h-4 text-blue-600" />
+                <Settings className="w-4 h-4" style={{ color: 'var(--sapphire-600)' }} />
                 <span className="font-medium">Admin:</span>
                 <span>Can invite/remove collaborators and change project settings</span>
               </div>
               <div className="flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-green-600" />
+                <UserPlus className="w-4 h-4" style={{ color: 'var(--emerald-600)' }} />
                 <span className="font-medium">Editor:</span>
                 <span>Can create, edit, and move ideas in the matrix</span>
               </div>
               <div className="flex items-center gap-2">
-                <Bell className="w-4 h-4 text-gray-600" />
+                <Bell className="w-4 h-4" style={{ color: 'var(--graphite-600)' }} />
                 <span className="font-medium">Viewer:</span>
                 <span>Read-only access to view project and ideas</span>
               </div>
@@ -237,29 +276,32 @@ const ProjectCollaboration: React.FC<ProjectCollaborationProps> = ({
 
       {/* AI Analysis Section (if AI generated) */}
       {currentProject.is_ai_generated && currentProject.ai_analysis && (
-        <div className="mt-8 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200 p-6">
+        <div className="mt-8 rounded-xl border p-6" style={{
+          backgroundColor: 'var(--amber-50)',
+          borderColor: 'var(--amber-200)'
+        }}>
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Activity className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--amber-600)' }}>
+              <Activity className="w-4 h-4" style={{ color: 'white' }} />
             </div>
             <div>
-              <h3 className="font-semibold text-purple-900 mb-3">AI Project Analysis</h3>
+              <h3 className="font-semibold mb-3" style={{ color: 'var(--amber-900)' }}>AI Project Analysis</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <span className="font-medium text-purple-800">Industry:</span>
-                  <p className="text-purple-700 mt-1">{currentProject.ai_analysis.industry}</p>
+                  <span className="font-medium" style={{ color: 'var(--amber-800)' }}>Industry:</span>
+                  <p className="mt-1" style={{ color: 'var(--amber-700)' }}>{currentProject.ai_analysis.industry}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-purple-800">Scope:</span>
-                  <p className="text-purple-700 mt-1">{currentProject.ai_analysis.scope}</p>
+                  <span className="font-medium" style={{ color: 'var(--amber-800)' }}>Scope:</span>
+                  <p className="mt-1" style={{ color: 'var(--amber-700)' }}>{currentProject.ai_analysis.scope}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-purple-800">Timeline:</span>
-                  <p className="text-purple-700 mt-1">{currentProject.ai_analysis.timeline}</p>
+                  <span className="font-medium" style={{ color: 'var(--amber-800)' }}>Timeline:</span>
+                  <p className="mt-1" style={{ color: 'var(--amber-700)' }}>{currentProject.ai_analysis.timeline}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-purple-800">Goals:</span>
-                  <p className="text-purple-700 mt-1">
+                  <span className="font-medium" style={{ color: 'var(--amber-800)' }}>Goals:</span>
+                  <p className="mt-1" style={{ color: 'var(--amber-700)' }}>
                     {currentProject.ai_analysis.primaryGoals?.join(', ') || 'Various objectives'}
                   </p>
                 </div>

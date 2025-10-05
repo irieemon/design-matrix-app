@@ -5,6 +5,9 @@ import DesignMatrix from '../DesignMatrix'
 import ProjectHeader from '../ProjectHeader'
 import ProjectFiles from '../ProjectFiles'
 import { useProjectFiles } from '../../hooks/useProjectFiles'
+import { logger } from '../../utils/logger'
+import { generateDemoUUID } from '../../utils/uuid'
+import { Button } from '../ui/Button'
 
 interface MatrixPageProps {
   currentUser: User
@@ -44,9 +47,16 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
 
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
   
-  // Debug logging for ideas
-  console.log('🎯 MatrixPage: Received ideas:', ideas?.length || 0, 'for project:', currentProject?.name)
-  console.log('🎯 MatrixPage: Ideas details:', ideas)
+  // Performance-optimized logging - only log significant changes
+  React.useEffect(() => {
+    const ideaCount = ideas?.length || 0
+    const projectName = currentProject?.name || 'none'
+
+    // Only log when there's a meaningful change (new project or significant idea count change)
+    if (currentProject?.id) {
+      logger.performance(`MatrixPage: ${ideaCount} ideas loaded for project: ${projectName}`)
+    }
+  }, [currentProject?.id]) // Only trigger on project changes, not idea count changes
 
   return (
     <div className="bg-slate-50 min-h-screen">
@@ -68,39 +78,69 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
               <p className="text-slate-600 mb-6">
                 Select an existing project or create a new one to start working. All tools (Design Matrix, Roadmap, etc.) are organized around your projects.
               </p>
-              <button
-                onClick={onNavigateToProjects}
-                className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-colors shadow-sm"
-              >
-                <FolderOpen className="w-5 h-5" />
-                <span>Go to Projects</span>
-              </button>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  onClick={onNavigateToProjects}
+                  variant="primary"
+                  size="lg"
+                  icon={<FolderOpen className="w-5 h-5" />}
+                >
+                  Go to Projects
+                </Button>
+                <Button
+                  onClick={() => {
+                    // Create temporary demo project for immediate matrix access
+                    const demoProject = {
+                      id: generateDemoUUID('matrix'),
+                      name: 'Demo Matrix Access',
+                      description: 'Temporary project for testing matrix functionality',
+                      project_type: 'other' as const,
+                      status: 'active' as const,
+                      priority_level: 'medium' as const,
+                      visibility: 'private' as const,
+                      owner_id: currentUser.id,
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString()
+                    }
+                    onProjectChange(demoProject)
+                    logger.debug('🎯 Demo project created for immediate matrix access')
+                  }}
+                  variant="success"
+                  size="lg"
+                  icon={<Target className="w-5 h-5" />}
+                >
+                  Access Matrix Now
+                </Button>
+              </div>
             </div>
           </div>
         ) : (
           <>
             {/* Add Idea Buttons */}
             <div className="flex justify-end gap-3 mb-6">
-              <button
+              <Button
                 onClick={() => {
                   onShowAIModal()
                   _onSetShowAIModal?.(true)
                 }}
-                className="flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-5 py-2.5 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-sm"
+                variant="sapphire"
+                size="md"
+                icon={<Sparkles className="w-4 h-4" />}
               >
-                <Sparkles className="w-4 h-4" />
-                <span className="font-medium">AI Idea</span>
-              </button>
-              <button
+                AI Idea
+              </Button>
+              <Button
                 onClick={() => {
                   onShowAddModal()
                   _onSetShowAddModal?.(true)
                 }}
-                className="flex items-center space-x-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl hover:bg-slate-800 transition-all duration-200 shadow-sm"
+                data-testid="add-idea-button"
+                variant="primary"
+                size="md"
+                icon={<Plus className="w-4 h-4" />}
               >
-                <Plus className="w-4 h-4" />
-                <span className="font-medium">Create New Idea</span>
-              </button>
+                Create New Idea
+              </Button>
             </div>
 
             <DesignMatrix 

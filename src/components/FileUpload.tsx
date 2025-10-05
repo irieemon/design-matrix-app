@@ -4,12 +4,76 @@ import { ProjectFile, Project } from '../types'
 import { logger } from '../utils/logger'
 import { FileService } from '../lib/fileService'
 import { getCurrentUser } from '../lib/supabase'
-import * as pdfjsLib from 'pdfjs-dist'
+// Dynamic import for PDF.js to avoid SSR issues
+let pdfjsLib: any = null
 
-// Configure PDF.js 2.x worker using CDN (standard approach for 2.x)
-if (typeof window !== 'undefined') {
-  // Use CDN worker for PDF.js 2.16.105 - this is the standard approach
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`
+// Lazy load PDF.js only when needed
+const loadPdfJs = async () => {
+  if (!pdfjsLib && typeof window !== 'undefined') {
+    try {
+      // Import pdfjs-dist with multiple fallback strategies
+      logger.debug('🔍 Attempting to import pdfjs-dist...')
+
+      // Strategy 1: Try namespace import (* as)
+      const module = await import('pdfjs-dist')
+
+      logger.debug('📦 Module structure:', {
+        moduleType: typeof module,
+        moduleConstructor: module?.constructor?.name,
+        moduleKeys: Object.keys(module).slice(0, 15),
+        hasDefault: 'default' in module,
+        defaultType: typeof module.default,
+        defaultConstructor: module.default?.constructor?.name,
+        defaultKeys: module.default ? Object.keys(module.default).slice(0, 15) : null
+      })
+
+      // Try multiple access patterns
+      pdfjsLib = module.default || module || (module as any).pdfjs || (window as any).pdfjsLib
+
+      logger.debug('🎯 pdfjsLib resolved:', {
+        exists: !!pdfjsLib,
+        type: typeof pdfjsLib,
+        constructor: pdfjsLib?.constructor?.name,
+        keys: pdfjsLib ? Object.keys(pdfjsLib).slice(0, 15) : null,
+        hasGlobalWorkerOptions: pdfjsLib && ('GlobalWorkerOptions' in pdfjsLib),
+        hasGetDocument: pdfjsLib && ('getDocument' in pdfjsLib),
+        // Check prototype chain
+        protoKeys: pdfjsLib ? Object.keys(Object.getPrototypeOf(pdfjsLib)).slice(0, 10) : null
+      })
+
+      if (!pdfjsLib || typeof pdfjsLib !== 'object') {
+        throw new Error(`PDF.js import failed: resolved to ${typeof pdfjsLib}. Module dump: ${JSON.stringify({
+          moduleKeys: Object.keys(module),
+          hasDefault: !!module.default,
+          windowPdfjsLib: typeof (window as any).pdfjsLib
+        })}`)
+      }
+
+      // Check for required exports
+      const hasGlobalWorkerOptions = 'GlobalWorkerOptions' in pdfjsLib
+      const hasGetDocument = 'getDocument' in pdfjsLib
+
+      if (!hasGlobalWorkerOptions || !hasGetDocument) {
+        const diagnostic = {
+          availableKeys: Object.keys(pdfjsLib).slice(0, 20),
+          prototypeKeys: Object.keys(Object.getPrototypeOf(pdfjsLib)).slice(0, 10),
+          ownPropertyNames: Object.getOwnPropertyNames(pdfjsLib).slice(0, 20),
+          hasGlobalWorkerOptions,
+          hasGetDocument
+        }
+        throw new Error(`PDF.js missing exports. Diagnostic: ${JSON.stringify(diagnostic, null, 2)}`)
+      }
+
+      // Configure worker
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`
+
+      logger.debug('✅ PDF.js loaded successfully')
+    } catch (error) {
+      logger.error('❌ Failed to load PDF.js:', error)
+      throw error
+    }
+  }
+  return pdfjsLib
 }
 
 interface FileUploadProps {
@@ -88,12 +152,15 @@ const FileUpload: React.FC<FileUploadProps> = ({
     try {
       logger.debug('🔄 Starting PDF text extraction for:', file.name)
       const arrayBuffer = await file.arrayBuffer()
-      
-      // Ensure PDF.js 2.x worker is configured properly
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`
-      
+
+      // Load PDF.js dynamically
+      const pdfjs = await loadPdfJs()
+      if (!pdfjs) {
+        throw new Error('Failed to load PDF.js library')
+      }
+
       // Simple PDF.js 2.x document loading
-      const pdf = await pdfjsLib.getDocument({
+      const pdf = await pdfjs.getDocument({
         data: arrayBuffer,
         verbosity: 0 // Suppress PDF.js warnings
       }).promise
