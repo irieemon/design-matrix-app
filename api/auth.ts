@@ -25,16 +25,16 @@ import {
   withCSRF,
   compose,
   type AuthenticatedRequest,
-} from './_lib/middleware/index'
-import { optimizedGetUserProfile } from './_lib/utils/queryOptimizer'
+} from './_lib/middleware/index.js'
+import { optimizedGetUserProfile } from './_lib/utils/queryOptimizer.js'
 
 // Alias for compatibility
 const getUserProfile = optimizedGetUserProfile
-import { finishAuthSession, recordAuthMetric } from './_lib/utils/performanceMonitor'
-import { createPerformanceLogger, createRequestLogger } from './_lib/utils/logger'
-import { getPerformanceMonitor } from './_lib/utils/performanceMonitor'
-import { getConnectionPool } from './_lib/utils/connectionPool'
-import { getQueryOptimizer } from './_lib/utils/queryOptimizer'
+import { finishAuthSession, recordAuthMetric } from './_lib/utils/performanceMonitor.js'
+import { createPerformanceLogger, createRequestLogger } from './_lib/utils/logger.js'
+import { getPerformanceMonitor } from './_lib/utils/performanceMonitor.js'
+import { getConnectionPool } from './_lib/utils/connectionPool.js'
+import { getQueryOptimizer } from './_lib/utils/queryOptimizer.js'
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL!
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!

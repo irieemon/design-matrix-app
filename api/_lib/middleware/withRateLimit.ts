@@ -6,7 +6,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import type { AuthenticatedRequest, MiddlewareHandler, MiddlewareWrapper, RateLimitConfig } from './types'
+import type { AuthenticatedRequest, MiddlewareHandler, MiddlewareWrapper, RateLimitConfig } from './types.js'
 
 /**
  * Environment detection for rate limiting configuration

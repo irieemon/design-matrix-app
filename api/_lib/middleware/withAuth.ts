@@ -7,8 +7,8 @@
 
 import { createClient } from '@supabase/supabase-js'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import type { AuthenticatedRequest, MiddlewareHandler, MiddlewareWrapper } from './types'
-import { getCookie, COOKIE_NAMES } from './cookies'
+import type { AuthenticatedRequest, MiddlewareHandler, MiddlewareWrapper } from './types.js'
+import { getCookie, COOKIE_NAMES } from './cookies.js'
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL!
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!

@@ -2,8 +2,8 @@
 // Implements aggressive caching, query batching, and performance monitoring
 
 import { SupabaseClient } from '@supabase/supabase-js'
-import { withPooledConnection } from './connectionPool'
-import { sanitizeUserId, ensureUUID } from './apiUuid'
+import { withPooledConnection } from './connectionPool.js'
+import { sanitizeUserId, ensureUUID } from './apiUuid.js'
 
 interface QueryCacheEntry {
   data: any

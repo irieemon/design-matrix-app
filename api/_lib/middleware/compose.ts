@@ -4,10 +4,10 @@
  * Compose multiple middleware functions together
  */
 
-import type { MiddlewareWrapper } from './types'
-import { withRateLimit } from './withRateLimit'
-import { withCSRF } from './withCSRF'
-import { withAuth, withAdmin } from './withAuth'
+import type { MiddlewareWrapper } from './types.js'
+import { withRateLimit } from './withRateLimit.js'
+import { withCSRF } from './withCSRF.js'
+import { withAuth, withAdmin } from './withAuth.js'
 
 /**
  * Compose middleware functions

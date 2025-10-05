@@ -10,7 +10,7 @@
  */
 
 import { VercelRequest } from '@vercel/node'
-import { createRequestLogger as baseCreateRequestLogger, createPerformanceLogger as baseCreatePerformanceLogger } from './apiLogger'
+import { createRequestLogger as baseCreateRequestLogger, createPerformanceLogger as baseCreatePerformanceLogger } from './apiLogger.js'
 
 // Track cold starts for performance monitoring
 let isColdStart = true

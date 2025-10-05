@@ -12,7 +12,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
-import { InputValidator, commonRules } from './_lib/utils/validation'
+import { InputValidator, commonRules } from './_lib/utils/validation.js'
 
 // ============================================================================
 // GENERATE IDEAS HANDLER
