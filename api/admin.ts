@@ -174,7 +174,7 @@ async function handleMigrateDatabase(req: VercelRequest, res: VercelResponse) {
 // ENABLE REALTIME HANDLER
 // ============================================================================
 
-async function handleEnableRealtime(req: VercelRequest, res: VercelResponse) {
+async function handleEnableRealtime(_req: VercelRequest, res: VercelResponse) {
   try {
     if (!supabaseUrl || !supabaseServiceKey) {
       return res.status(500).json({ error: 'Supabase service configuration missing' })
@@ -282,10 +282,10 @@ async function handleEnableRealtime(req: VercelRequest, res: VercelResponse) {
 // ENABLE REALTIME SQL HANDLER
 // ============================================================================
 
-async function handleEnableRealtimeSql(req: VercelRequest, res: VercelResponse) {
+async function handleEnableRealtimeSql(_req: VercelRequest, res: VercelResponse) {
   // This would typically execute SQL to enable realtime
   // For now, redirecting to the main realtime handler
-  return handleEnableRealtime(req, res)
+  return handleEnableRealtime(_req, res)
 }
 
 // ============================================================================

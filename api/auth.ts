@@ -28,7 +28,12 @@ import {
   compose,
   type AuthenticatedRequest,
 } from './middleware'
-import { getUserProfile, determineUserRole, type UserRole } from './auth/roles'
+import { optimizedGetUserProfile } from './utils/queryOptimizer'
+
+type UserRole = 'super_admin' | 'admin' | 'user'
+
+// Alias for compatibility
+const getUserProfile = optimizedGetUserProfile
 import { finishAuthSession, recordAuthMetric } from './utils/performanceMonitor'
 import { createPerformanceLogger, createRequestLogger } from './utils/logger'
 import { getPerformanceMonitor } from './utils/performanceMonitor'
