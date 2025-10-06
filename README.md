@@ -93,3 +93,4 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 Running with sudo causes 35,000+ files to become root-owned, breaking the development server.
 If you encounter permission errors, fix the underlying issue - don't use sudo to bypass it.
 
+# Trigger rebuild
