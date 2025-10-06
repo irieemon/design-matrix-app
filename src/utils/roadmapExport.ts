@@ -36,7 +36,63 @@ interface ExportOptions {
 export class RoadmapExporter {
   private static exportLogger = logger.withContext({ component: 'RoadmapExporter' })
 
-  private static async captureElement(element: HTMLElement, options: { 
+  /**
+   * Optimize canvas data for PDF export with intelligent quality adjustment
+   * @param canvas - The canvas element to optimize
+   * @param quality - JPEG quality (0.0 to 1.0), default 0.85
+   * @returns Optimized image data URL
+   */
+  private static optimizeCanvasForPDF(canvas: HTMLCanvasElement, quality: number = 0.85): string {
+    // Try JPEG with specified quality first (much smaller than PNG)
+    const jpegData = canvas.toDataURL('image/jpeg', quality)
+
+    // If JPEG is still huge (>5MB), reduce quality further
+    if (jpegData.length > 5_000_000) {
+      this.exportLogger.warn('Large image detected, reducing quality', {
+        originalSize: Math.round(jpegData.length / 1024 / 1024 * 100) / 100,
+        threshold: '5MB'
+      })
+      return canvas.toDataURL('image/jpeg', 0.70) // Lower quality for very large images
+    }
+
+    return jpegData
+  }
+
+  /**
+   * Estimate PDF size based on canvas dimensions
+   * @param canvas - The canvas to estimate size for
+   * @returns Estimated size in MB
+   */
+  private static estimatePDFSize(canvas: HTMLCanvasElement): number {
+    const pixels = canvas.width * canvas.height
+    // Rough estimate: JPEG @ 85% quality ≈ 3 bytes per pixel
+    const estimatedMB = (pixels * 3) / (1024 * 1024)
+    return Math.round(estimatedMB * 100) / 100
+  }
+
+  /**
+   * Calculate optimal scale factor based on element size
+   * @param element - The element to calculate scale for
+   * @returns Optimal scale factor
+   */
+  private static calculateOptimalScale(element: HTMLElement): number {
+    const pixelCount = element.offsetWidth * element.offsetHeight
+
+    // Large elements (>1M pixels) use lower scale to prevent massive file sizes
+    if (pixelCount > 1_000_000) {
+      return 1.0 // 1x scale for very large elements
+    }
+
+    // Medium elements use moderate scale
+    if (pixelCount > 500_000) {
+      return 1.2 // 1.2x scale for medium elements
+    }
+
+    // Small elements can use higher scale for quality
+    return 1.5 // 1.5x scale for smaller elements
+  }
+
+  private static async captureElement(element: HTMLElement, options: {
     scale?: number
     useCORS?: boolean
     backgroundColor?: string
@@ -52,14 +108,17 @@ export class RoadmapExporter {
       display: computedStyle.display,
       opacity: computedStyle.opacity
     })
-    
+
+    // Calculate optimal scale if not provided
+    const optimalScale = options.scale || this.calculateOptimalScale(element)
+
     const defaultOptions = {
-      scale: 2,
+      scale: optimalScale,
       useCORS: true,
       backgroundColor: '#ffffff',
       allowTaint: true,
-      foreignObjectRendering: false, // Try without this first
-      logging: true, // Enable for debugging
+      foreignObjectRendering: false,
+      logging: true,
       removeContainer: false,
       scrollX: 0,
       scrollY: 0,
@@ -69,7 +128,7 @@ export class RoadmapExporter {
       height: element.offsetHeight,
       ignoreElements: (element: Element) => {
         // Ignore certain problematic elements
-        return element.classList.contains('fixed') || 
+        return element.classList.contains('fixed') ||
                element.classList.contains('absolute') ||
                element.tagName === 'IFRAME'
       },
@@ -79,7 +138,8 @@ export class RoadmapExporter {
     this.exportLogger.debug('html2canvas configuration', {
       scale: defaultOptions.scale,
       width: defaultOptions.width,
-      height: defaultOptions.height
+      height: defaultOptions.height,
+      estimatedPixels: (defaultOptions.width * defaultOptions.scale) * (defaultOptions.height * defaultOptions.scale)
     })
 
     // Wait a bit for any lazy-loaded content
@@ -118,12 +178,24 @@ export class RoadmapExporter {
 
     this.exportLogger.debug('Canvas content validation', { hasContent })
 
-    const imgData = canvas.toDataURL('image/png')
+    // Use optimized JPEG instead of PNG
+    const imgData = this.optimizeCanvasForPDF(canvas, 0.85)
+    const estimatedSize = this.estimatePDFSize(canvas)
+
     this.exportLogger.debug('Image data generated', {
       dataLength: imgData.length,
-      previewLength: 100
+      dataSizeMB: Math.round(imgData.length / 1024 / 1024 * 100) / 100,
+      estimatedPDFSizeMB: estimatedSize
     })
-    
+
+    // Warn if estimated size is large
+    if (estimatedSize > 10) {
+      this.exportLogger.warn('Large PDF expected', {
+        estimatedSizeMB: estimatedSize,
+        recommendation: 'Consider reducing content or using lower resolution'
+      })
+    }
+
     const pdf = new jsPDF({
       orientation: options.landscape ? 'landscape' : 'portrait',
       unit: 'mm',
@@ -133,7 +205,7 @@ export class RoadmapExporter {
     const pdfWidth = pdf.internal.pageSize.getWidth()
     const pdfHeight = pdf.internal.pageSize.getHeight()
     const canvasAspectRatio = canvas.height / canvas.width
-    
+
     let imgWidth = pdfWidth
     let imgHeight = pdfWidth * canvasAspectRatio
 
@@ -148,7 +220,8 @@ export class RoadmapExporter {
     const y = (pdfHeight - imgHeight) / 2
 
     this.exportLogger.debug('Adding image to PDF', { x, y, imgWidth, imgHeight })
-    pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight)
+    // Use JPEG format in addImage for consistency
+    pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight)
     return pdf
   }
 
@@ -156,6 +229,7 @@ export class RoadmapExporter {
     if (format === 'png') {
       const link = document.createElement('a')
       link.download = `${filename}.png`
+      // PNG export can remain high quality since it's typically for single images
       link.href = canvas.toDataURL('image/png')
       link.click()
     }
@@ -206,6 +280,7 @@ export class RoadmapExporter {
 
       const pdfWidth = pdf.internal.pageSize.getWidth()
       const pdfHeight = pdf.internal.pageSize.getHeight()
+      let totalEstimatedSize = 0
 
       // Process each page container
       for (let i = 0; i < pageContainers.length; i++) {
@@ -216,23 +291,28 @@ export class RoadmapExporter {
           progress: `${Math.round(((i + 1) / pageContainers.length) * 100)}%`
         })
 
-        // Capture this page section
+        // Capture this page section with optimized scale (1.5x instead of 2x)
         const canvas = await this.captureElement(pageContainer, {
-          scale: 2,
+          scale: 1.5, // Reduced from 2.0 - saves 44% pixels
           width: 1400,
           height: 1000,
           backgroundColor: '#ffffff'
         })
 
+        const pageSize = this.estimatePDFSize(canvas)
+        totalEstimatedSize += pageSize
+
         this.exportLogger.debug('Page canvas captured', {
           pageIndex: i + 1,
           canvasWidth: canvas.width,
-          canvasHeight: canvas.height
+          canvasHeight: canvas.height,
+          estimatedPageSizeMB: pageSize
         })
 
-        const imgData = canvas.toDataURL('image/png')
+        // Use optimized JPEG instead of PNG
+        const imgData = this.optimizeCanvasForPDF(canvas, 0.85)
         const canvasAspectRatio = canvas.height / canvas.width
-        
+
         let imgWidth = pdfWidth
         let imgHeight = pdfWidth * canvasAspectRatio
 
@@ -251,7 +331,7 @@ export class RoadmapExporter {
           pdf.addPage()
         }
 
-        // Add image to PDF
+        // Add image to PDF with JPEG format
         this.exportLogger.debug('Adding page to PDF', {
           pageIndex: i + 1,
           x,
@@ -259,7 +339,21 @@ export class RoadmapExporter {
           imgWidth,
           imgHeight
         })
-        pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight)
+        pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight)
+      }
+
+      // Log final size estimation
+      this.exportLogger.info('Multi-page PDF size estimation', {
+        totalPages: pageContainers.length,
+        estimatedTotalSizeMB: Math.round(totalEstimatedSize * 100) / 100
+      })
+
+      // Warn if final PDF will be very large
+      if (totalEstimatedSize > 20) {
+        this.exportLogger.warn('Large multi-page PDF generated', {
+          estimatedSizeMB: Math.round(totalEstimatedSize * 100) / 100,
+          recommendation: 'Consider exporting fewer pages or reducing resolution'
+        })
       }
 
       // Save the PDF
@@ -269,7 +363,8 @@ export class RoadmapExporter {
 
       this.exportLogger.info('Multi-page PDF export completed successfully', {
         pageCount: pageContainers.length,
-        filename
+        filename,
+        estimatedSizeMB: Math.round(totalEstimatedSize * 100) / 100
       })
 
       // Remove loading overlay
@@ -280,13 +375,13 @@ export class RoadmapExporter {
         format: options.format,
         pageCount: element.querySelectorAll('.export-page, #overview-page-1, #overview-page-2, #overview-page-3').length
       })
-      
+
       // Remove loading overlay if it exists
       const overlay = document.querySelector('.fixed.inset-0.bg-black')
       if (overlay) {
         document.body.removeChild(overlay)
       }
-      
+
       // Show error message
       alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`)
       throw error
@@ -334,16 +429,19 @@ export class RoadmapExporter {
 
       this.exportLogger.debug('Capturing element')
 
-      // Capture the element
+      // Capture the element with optimized scale (1.5x instead of 2x)
       const canvas = await this.captureElement(element, {
-        scale: options.mode === 'detailed' ? 2 : 2,
+        scale: 1.5, // Reduced from 2.0 for both modes - saves 44% pixels
         width: Math.max(element.offsetWidth, element.scrollWidth, 1400),
         height: Math.max(element.offsetHeight, element.scrollHeight, 1000)
       })
 
+      const estimatedSize = this.estimatePDFSize(canvas)
+
       this.exportLogger.debug('Canvas created', {
         canvasWidth: canvas.width,
-        canvasHeight: canvas.height
+        canvasHeight: canvas.height,
+        estimatedSizeMB: estimatedSize
       })
 
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
@@ -351,7 +449,10 @@ export class RoadmapExporter {
 
 
       if (options.format === 'pdf') {
-        this.exportLogger.debug('Creating PDF', { filename: `${filename}.pdf` })
+        this.exportLogger.debug('Creating PDF', {
+          filename: `${filename}.pdf`,
+          estimatedSizeMB: estimatedSize
+        })
         const pdf = this.createPDF(canvas, options)
         pdf.save(`${filename}.pdf`)
       } else {
@@ -362,7 +463,8 @@ export class RoadmapExporter {
       this.exportLogger.info('Export completed successfully', {
         exportMode: options.mode,
         format: options.format,
-        filename: `${filename}.${options.format}`
+        filename: `${filename}.${options.format}`,
+        estimatedSizeMB: options.format === 'pdf' ? estimatedSize : undefined
       })
 
       // Remove loading overlay
@@ -373,13 +475,13 @@ export class RoadmapExporter {
         format: options.format,
         operation: 'export'
       })
-      
+
       // Remove loading overlay if it exists
       const overlay = document.querySelector('.fixed.inset-0.bg-black')
       if (overlay) {
         document.body.removeChild(overlay)
       }
-      
+
       // Show error message
       alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`)
       throw error
