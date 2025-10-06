@@ -892,7 +892,6 @@ export async function exportGraphicalInsightsToPDF(
       }),
 
       defaultStyle: {
-        font: 'Helvetica',
         fontSize: 11,
         color: LuxColors.graphite700
       }
