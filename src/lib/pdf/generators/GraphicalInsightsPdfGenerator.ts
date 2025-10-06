@@ -81,78 +81,8 @@ const LuxColors = {
   hairlineHover: '#D1D5DB',
 }
 
-/**
- * Premium Typography System
- */
-const LuxTypography = {
-  // Page title - Maximum impact
-  hero: {
-    fontSize: 32,
-    bold: true,
-    color: LuxColors.graphite900,
-    letterSpacing: -0.5,
-    margin: [0, 0, 0, 8] as [number, number, number, number]
-  },
-
-  // Main headings
-  h1: {
-    fontSize: 24,
-    bold: true,
-    color: LuxColors.graphite800,
-    margin: [0, 20, 0, 12] as [number, number, number, number]
-  },
-
-  // Section headers
-  h2: {
-    fontSize: 18,
-    bold: true,
-    color: LuxColors.graphite700,
-    margin: [0, 16, 0, 10] as [number, number, number, number]
-  },
-
-  // Subsection headers
-  h3: {
-    fontSize: 14,
-    bold: true,
-    color: LuxColors.graphite800,
-    margin: [0, 12, 0, 6] as [number, number, number, number]
-  },
-
-  // Body text
-  body: {
-    fontSize: 11,
-    color: LuxColors.graphite700,
-    lineHeight: 1.5
-  },
-
-  // Secondary text
-  bodySecondary: {
-    fontSize: 11,
-    color: LuxColors.graphite500,
-    lineHeight: 1.5
-  },
-
-  // Small text
-  small: {
-    fontSize: 9,
-    color: LuxColors.graphite600
-  },
-
-  // Label text
-  label: {
-    fontSize: 10,
-    color: LuxColors.graphite500,
-    bold: true,
-    letterSpacing: 0.5
-  },
-
-  // Caption text
-  caption: {
-    fontSize: 8,
-    color: LuxColors.graphite400,
-    italics: true
-  }
-}
+// Premium typography constants (used inline for pdfMake compatibility)
+// Note: Typography is applied directly in document definition to avoid font style errors
 
 /**
  * Create a premium visual header with key metrics
@@ -171,7 +101,9 @@ function createGraphicalHeader(
     // Hero title with visual impact
     {
       text: projectName || 'Strategic Insights Report',
-      ...LuxTypography.hero,
+      fontSize: 32,
+      bold: true,
+      color: LuxColors.graphite900,
       alignment: 'left',
       margin: [0, 30, 0, 8]
     },
@@ -771,7 +703,10 @@ export async function exportGraphicalInsightsToPDF(
       ...(insights.keyInsights && insights.keyInsights.length > 0 ? [
         {
           text: 'Key Strategic Insights',
-          ...LuxTypography.h1
+          fontSize: 24,
+          bold: true,
+          color: LuxColors.graphite800,
+          margin: [0, 20, 0, 12]
         },
         ...createInsightCards(insights.keyInsights)
       ] : []),
@@ -781,7 +716,10 @@ export async function exportGraphicalInsightsToPDF(
         { text: '', pageBreak: 'before' },
         {
           text: 'Implementation Roadmap',
-          ...LuxTypography.h1
+          fontSize: 24,
+          bold: true,
+          color: LuxColors.graphite800,
+          margin: [0, 20, 0, 12]
         },
         ...createRoadmapPhases(insights.suggestedRoadmap)
       ] : []),
@@ -791,7 +729,10 @@ export async function exportGraphicalInsightsToPDF(
         { text: '', pageBreak: 'before' },
         {
           text: 'Priority Recommendations',
-          ...LuxTypography.h1
+          fontSize: 24,
+          bold: true,
+          color: LuxColors.graphite800,
+          margin: [0, 20, 0, 12]
         },
         ...createPrioritySection(insights.priorityRecommendations)
       ] : []),
@@ -800,7 +741,9 @@ export async function exportGraphicalInsightsToPDF(
       ...(insights.riskAssessment ? [
         {
           text: 'Risk Assessment & Opportunities',
-          ...LuxTypography.h1,
+          fontSize: 24,
+          bold: true,
+          color: LuxColors.graphite800,
           margin: [0, 30, 0, 12]
         },
         ...(insights.riskAssessment.highRisk && insights.riskAssessment.highRisk.length > 0 ? [{
@@ -883,7 +826,9 @@ export async function exportGraphicalInsightsToPDF(
       ...(insights.nextSteps && insights.nextSteps.length > 0 ? [
         {
           text: 'Next Steps',
-          ...LuxTypography.h1,
+          fontSize: 24,
+          bold: true,
+          color: LuxColors.graphite800,
           margin: [0, 30, 0, 12]
         },
         {
@@ -947,7 +892,9 @@ export async function exportGraphicalInsightsToPDF(
       }),
 
       defaultStyle: {
-        font: 'Helvetica'
+        font: 'Helvetica',
+        fontSize: 11,
+        color: LuxColors.graphite700
       }
     }
 
