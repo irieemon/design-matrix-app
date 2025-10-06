@@ -4,7 +4,7 @@ import { IdeaCard, Project, ProjectFile } from '../types'
 import { aiInsightsService } from '../lib/ai/aiInsightsService'
 import { OpenAIModel } from '../lib/ai/openaiModelRouter'
 import { FileService } from '../lib/fileService'
-import { exportInsightsToPDFProfessional } from '../utils/pdfExportSimple'
+import { exportGraphicalInsightsToPDF } from '../utils/pdfExportSimple'
 import { useAIWorker } from '../hooks/useAIWorker'
 import { useAsyncOperation } from '../hooks/shared/useAsyncOperation'
 import { BaseModal } from './shared/Modal'
@@ -291,7 +291,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
     const insights = insightsOperation.state.data || historicalOperation.state.data
     if (insights) {
       try {
-        await exportInsightsToPDFProfessional(insights, currentProject?.name, currentProject?.project_type)
+        await exportGraphicalInsightsToPDF(insights, currentProject?.name)
       } catch (error) {
         logger.error('PDF export failed', error, {
           ideaCount: (ideas || []).length,

@@ -43,6 +43,9 @@ export { exportInsightsToPDF } from '../lib/pdf/generators/InsightsPdfGenerator'
 // Re-export professional insights PDF generation (pdfMake version)
 export { exportInsightsToPDFProfessional } from '../lib/pdf/generators/ProfessionalInsightsPdfGenerator'
 
+// Re-export graphical insights PDF generation (premium visual version)
+export { exportGraphicalInsightsToPDF } from '../lib/pdf/generators/GraphicalInsightsPdfGenerator'
+
 // Re-export PDF library loader utilities (for advanced usage)
 export {
   loadPdfMake,

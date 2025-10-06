@@ -7,3 +7,5 @@
 
 // Re-export all generator functions
 export { exportRoadmapToPDF } from './RoadmapPdfGenerator'
+export { exportInsightsToPDFProfessional } from './ProfessionalInsightsPdfGenerator'
+export { exportGraphicalInsightsToPDF } from './GraphicalInsightsPdfGenerator'
