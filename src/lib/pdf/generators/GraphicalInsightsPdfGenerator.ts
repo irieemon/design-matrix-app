@@ -432,7 +432,8 @@ function createInsightCards(insights: InsightItem[]): any[] {
         hLineColor: () => LuxColors.hairline,
         vLineColor: () => LuxColors.hairline
       },
-      margin: [0, 0, 0, 12]
+      margin: [0, 0, 0, 12],
+      unbreakable: true // Prevent page breaks within cards
     }
   })
 }
@@ -531,7 +532,8 @@ function createRoadmapPhases(phases: RoadmapPhase[]): any[] {
         hLineColor: () => LuxColors.hairline,
         vLineColor: () => LuxColors.hairline
       },
-      margin: [0, 0, 0, 16]
+      margin: [0, 0, 0, 16],
+      unbreakable: true // Prevent page breaks within phase cards
     }
   })
 }
@@ -584,7 +586,8 @@ function createPrioritySection(recommendations: PriorityRecommendations): any[] 
           ]
         }
       ],
-      margin: [0, 0, 0, 16]
+      margin: [0, 0, 0, 16],
+      unbreakable: true // Keep priority sections together
     })
   }
 
@@ -630,7 +633,8 @@ function createPrioritySection(recommendations: PriorityRecommendations): any[] 
           ]
         }
       ],
-      margin: [0, 0, 0, 16]
+      margin: [0, 0, 0, 16],
+      unbreakable: true // Keep priority sections together
     })
   }
 
@@ -676,7 +680,8 @@ function createPrioritySection(recommendations: PriorityRecommendations): any[] 
           ]
         }
       ],
-      margin: [0, 0, 0, 16]
+      margin: [0, 0, 0, 16],
+      unbreakable: true // Keep priority sections together
     })
   }
 
