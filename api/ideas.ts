@@ -23,8 +23,8 @@ export default async function handler(
   try {
     // Use service role to bypass RLS
     const supabaseAdmin = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      process.env.VITE_SUPABASE_URL!,
+      process.env.VITE_SUPABASE_SERVICE_ROLE_KEY!,
       {
         auth: {
           autoRefreshToken: false,
