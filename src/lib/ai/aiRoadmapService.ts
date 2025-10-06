@@ -132,7 +132,7 @@ export class AIRoadmapService {
         })
 
         const headers = await this.getAuthHeaders()
-        const response = await fetch(`${this.baseUrl}/api/ai/generate-roadmap-v2`, {
+        const response = await fetch(`${this.baseUrl}/api/ai?action=generate-roadmap`, {
           method: 'POST',
           headers,
           body: JSON.stringify(requestPayload)

@@ -73,7 +73,7 @@ export class AIIdeaService {
     return aiCache.getOrSet(cacheKey, async () => {
       try {
         const headers = await this.getAuthHeaders()
-        const response = await fetch(`${this.baseUrl}/api/ai/generate-ideas`, {
+        const response = await fetch(`${this.baseUrl}/api/ai?action=generate-ideas`, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -132,7 +132,7 @@ export class AIIdeaService {
     return aiCache.getOrSet(cacheKey, async () => {
       try {
         const headers = await this.getAuthHeaders()
-        const response = await fetch(`${this.baseUrl}/api/ai/generate-ideas`, {
+        const response = await fetch(`${this.baseUrl}/api/ai?action=generate-ideas`, {
           method: 'POST',
           headers,
           body: JSON.stringify({

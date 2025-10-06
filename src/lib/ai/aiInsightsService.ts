@@ -199,7 +199,7 @@ export class AIInsightsService {
         this.logInsightsRequest(requestPayload)
 
         const headers = await this.getAuthHeaders()
-        const response = await fetch(`${this.baseUrl}/api/ai/generate-insights`, {
+        const response = await fetch(`${this.baseUrl}/api/ai?action=generate-insights`, {
           method: 'POST',
           headers,
           body: JSON.stringify(requestPayload)
@@ -918,7 +918,7 @@ export class AIInsightsService {
 
     try {
       const headers = await this.getAuthHeaders()
-      const response = await fetch(`${this.baseUrl}/api/ai/generate-insights`, {
+      const response = await fetch(`${this.baseUrl}/api/ai?action=generate-insights`, {
         method: 'POST',
         headers,
         body: JSON.stringify(requestPayload)
