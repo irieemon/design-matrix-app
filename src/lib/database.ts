@@ -33,6 +33,10 @@ import { RoadmapRepository } from './database/repositories/RoadmapRepository'
 import { InsightsRepository } from './database/repositories/InsightsRepository'
 import { IdeaLockingService } from './database/services/IdeaLockingService'
 import { RealtimeSubscriptionManager } from './database/services/RealtimeSubscriptionManager'
+import { supabase } from './supabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+// ✅ SECURITY FIX: All operations now require authenticated client for RLS enforcement
 
 export class DatabaseService {
   // NOTE: All internal state and helper methods have been moved to specialized services:
@@ -45,57 +49,64 @@ export class DatabaseService {
   // ============================================================================
 
   /**
-   * Fetch ideas for a specific project (using admin client to bypass RLS)
+   * Fetch ideas for a specific project with RLS enforcement
    * DELEGATES TO: IdeaService.getIdeasByProject
    */
   static async getIdeasByProject(
     projectId?: string,
-    _options?: IdeaQueryOptions
+    _options?: IdeaQueryOptions,
+    client: SupabaseClient = supabase
   ): Promise<ApiResponse<IdeaCard[]>> {
-    const result = await IdeaService.getIdeasByProject(projectId, _options)
+    const result = await IdeaService.getIdeasByProject(projectId, _options, client)
     return IdeaService.serviceResultToApiResponse(result)
   }
 
   /**
    * Legacy method for backward compatibility
-   * DELEGATES TO: IdeaService.getAllIdeas
+   * DELEGATES TO: IdeaService.getIdeasByProject
    */
-  static async getAllIdeas(): Promise<IdeaCard[]> {
-    return await IdeaService.getAllIdeas()
+  static async getAllIdeas(client: SupabaseClient = supabase): Promise<IdeaCard[]> {
+    const result = await IdeaService.getIdeasByProject(undefined, undefined, client)
+    return result.success ? result.data : []
   }
 
   /**
    * Legacy method for backward compatibility
-   * DELEGATES TO: IdeaService.getProjectIdeas
+   * DELEGATES TO: IdeaService.getIdeasByProject
    */
-  static async getProjectIdeas(projectId?: string): Promise<IdeaCard[]> {
-    return await IdeaService.getProjectIdeas(projectId)
+  static async getProjectIdeas(projectId?: string, client: SupabaseClient = supabase): Promise<IdeaCard[]> {
+    const result = await IdeaService.getIdeasByProject(projectId, undefined, client)
+    return result.success ? result.data : []
   }
 
   /**
-   * Create a new idea
+   * Create a new idea with RLS enforcement
    * DELEGATES TO: IdeaService.createIdea
    */
-  static async createIdea(idea: CreateIdeaInput): Promise<ApiResponse<IdeaCard>> {
-    const result = await IdeaService.createIdea(idea)
+  static async createIdea(idea: CreateIdeaInput, client: SupabaseClient = supabase): Promise<ApiResponse<IdeaCard>> {
+    const result = await IdeaService.createIdea(idea, undefined, client)
     return IdeaService.serviceResultToApiResponse(result)
   }
 
   /**
-   * Update an existing idea
+   * Update an existing idea with RLS enforcement
    * DELEGATES TO: IdeaService.updateIdea
    */
-  static async updateIdea(id: string, updates: Partial<Omit<IdeaCard, 'id' | 'created_at'>>): Promise<IdeaCard | null> {
-    const result = await IdeaService.updateIdea(id, updates)
+  static async updateIdea(
+    id: string,
+    updates: Partial<Omit<IdeaCard, 'id' | 'created_at'>>,
+    client: SupabaseClient = supabase
+  ): Promise<IdeaCard | null> {
+    const result = await IdeaService.updateIdea(id, updates, undefined, client)
     return result.success ? result.data : null
   }
 
   /**
-   * Delete an idea
+   * Delete an idea with RLS enforcement
    * DELEGATES TO: IdeaService.deleteIdea
    */
-  static async deleteIdea(id: string): Promise<boolean> {
-    const result = await IdeaService.deleteIdea(id)
+  static async deleteIdea(id: string, client: SupabaseClient = supabase): Promise<boolean> {
+    const result = await IdeaService.deleteIdea(id, undefined, client)
     return result.success ? result.data : false
   }
 
@@ -148,14 +159,15 @@ export class DatabaseService {
     callback: (ideas: IdeaCard[]) => void,
     projectId?: string,
     userId?: string,
-    options?: { skipInitialLoad?: boolean }
+    options?: { skipInitialLoad?: boolean },
+    client: SupabaseClient = supabase
   ) {
     return RealtimeSubscriptionManager.subscribeToIdeas(
       async (_ideas) => {
-        // Fetch fresh ideas from IdeaService
+        // Fetch fresh ideas from IdeaService with authenticated client
         const freshIdeas = projectId
-          ? await this.getProjectIdeas(projectId)
-          : await this.getAllIdeas()
+          ? await this.getProjectIdeas(projectId, client)
+          : await this.getAllIdeas(client)
         callback(freshIdeas || [])
       },
       projectId,

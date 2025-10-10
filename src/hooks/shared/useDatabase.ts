@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { DatabaseService } from '../../lib/database'
+import { supabase } from '../../lib/supabase'
 import { useAsyncOperation } from './useAsyncOperation'
 import { IdeaCard, Project } from '../../types'
 import { logger } from '../../utils/logger'
@@ -21,7 +22,7 @@ interface UseDatabaseOptions {
 export function useProjectIdeas(projectId?: string, options: UseDatabaseOptions = {}) {
   const { state, execute, reset } = useAsyncOperation(
     async (id?: string) => {
-      return id ? DatabaseService.getProjectIdeas(id) : DatabaseService.getAllIdeas()
+      return id ? DatabaseService.getProjectIdeas(id, supabase) : DatabaseService.getAllIdeas(supabase)
     },
     {
       onSuccess: options.onSuccess,
@@ -37,7 +38,7 @@ export function useProjectIdeas(projectId?: string, options: UseDatabaseOptions 
 
   const createIdea = useAsyncOperation(
     async (idea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>) => {
-      const result = await DatabaseService.createIdea(idea)
+      const result = await DatabaseService.createIdea(idea, supabase)
       if (result.success && result.data) {
         // Auto-refresh ideas after creation if enabled
         if (options.autoRefresh) {
@@ -52,7 +53,7 @@ export function useProjectIdeas(projectId?: string, options: UseDatabaseOptions 
 
   const updateIdea = useAsyncOperation(
     async (id: string, updates: Partial<Omit<IdeaCard, 'id' | 'created_at'>>) => {
-      const result = await DatabaseService.updateIdea(id, updates)
+      const result = await DatabaseService.updateIdea(id, updates, supabase)
       if (result) {
         // Auto-refresh ideas after update if enabled
         if (options.autoRefresh) {
@@ -67,7 +68,7 @@ export function useProjectIdeas(projectId?: string, options: UseDatabaseOptions 
 
   const deleteIdea = useAsyncOperation(
     async (id: string) => {
-      const success = await DatabaseService.deleteIdea(id)
+      const success = await DatabaseService.deleteIdea(id, supabase)
       if (success) {
         // Auto-refresh ideas after deletion if enabled
         if (options.autoRefresh) {

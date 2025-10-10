@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { aiService } from '../lib/aiService'
 import { DatabaseService } from '../lib/database'
+import { supabase } from '../lib/supabase'
 import { Project, IdeaCard, User, ProjectType } from '../types'
 import { logger } from '../utils/logger'
 import {
@@ -208,7 +209,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
           created_by: currentUser.id,
           is_collapsed: true,
           project_id: project.id
-        })
+        }, supabase)
 
         if (newIdea.success && newIdea.data) {
           createdIdeas.push(newIdea.data)

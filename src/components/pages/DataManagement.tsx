@@ -3,6 +3,7 @@ import { Download, Upload, FileText, AlertCircle, CheckCircle, Database, Trash2 
 import { IdeaCard } from '../../types'
 import { exportToCSV, parseCSV, validateCSVFile } from '../../utils/csvUtils'
 import { DatabaseService } from '../../lib/database'
+import { supabase } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
 
 interface DataManagementProps {
@@ -47,7 +48,7 @@ const DataManagement: React.FC<DataManagementProps> = ({ ideas, currentUser, onD
           
           // Add all imported ideas to database
           for (const idea of importedIdeas) {
-            await DatabaseService.createIdea(idea)
+            await DatabaseService.createIdea(idea, supabase)
           }
           
           setImportStatus('success')
@@ -72,7 +73,7 @@ const DataManagement: React.FC<DataManagementProps> = ({ ideas, currentUser, onD
   const handleDeleteAll = async () => {
     try {
       for (const idea of ideas) {
-        await DatabaseService.deleteIdea(idea.id)
+        await DatabaseService.deleteIdea(idea.id, supabase)
       }
       setShowDeleteConfirm(false)
       onDataUpdated()

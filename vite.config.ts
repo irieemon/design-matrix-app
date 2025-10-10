@@ -68,13 +68,13 @@ export default defineConfig(({ mode }) => {
               }
 
               // Ensure environment variables are available in SSR context
+              // ✅ SECURITY FIX: VITE_SUPABASE_SERVICE_ROLE_KEY removed - use backend-only key
               const envVars = {
                 SUPABASE_URL: env.SUPABASE_URL || env.VITE_SUPABASE_URL,
                 VITE_SUPABASE_URL: env.VITE_SUPABASE_URL,
                 SUPABASE_ANON_KEY: env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY,
                 VITE_SUPABASE_ANON_KEY: env.VITE_SUPABASE_ANON_KEY,
-                SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY,
-                VITE_SUPABASE_SERVICE_ROLE_KEY: env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+                SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY, // Backend API only
                 OPENAI_API_KEY: env.OPENAI_API_KEY,
                 ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
                 NODE_ENV: env.NODE_ENV || 'development'

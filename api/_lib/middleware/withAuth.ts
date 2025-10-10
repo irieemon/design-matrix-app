@@ -159,7 +159,7 @@ export const withAdmin: MiddlewareWrapper = (handler: MiddlewareHandler) => {
     try {
       const supabase = createClient(
         supabaseUrl,
-        process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey
+        process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey
       )
 
       await supabase.from('admin_audit_log').insert({

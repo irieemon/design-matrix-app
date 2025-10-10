@@ -3,15 +3,15 @@ import { logger } from '../utils/logger'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-const supabaseServiceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
+
+// ✅ SECURITY FIX: Service role key removed from frontend
+// Frontend uses ONLY authenticated anon key clients with RLS enforcement
 
 logger.debug('🔧 Supabase config check:', {
   hasUrl: !!supabaseUrl,
   hasKey: !!supabaseAnonKey,
-  hasServiceKey: !!supabaseServiceRoleKey,
   urlPreview: supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'missing',
-  keyPreview: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'missing',
-  serviceKeyPreview: supabaseServiceRoleKey ? `${supabaseServiceRoleKey.substring(0, 20)}...` : 'missing'
+  keyPreview: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'missing'
 })
 
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -58,22 +58,9 @@ export const supabase = createClient(
   }
 )
 
-// Service role client for admin operations (bypasses RLS)
-// Use unique storage key to avoid "Multiple GoTrueClient instances" warning
-export const supabaseAdmin = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseServiceRoleKey || supabaseAnonKey || 'placeholder-key',
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-      storageKey: 'sb-admin-client'  // Unique key to prevent collision with main client
-    },
-    db: {
-      schema: 'public'
-    }
-  }
-)
+// ✅ SECURITY FIX: supabaseAdmin client REMOVED from frontend
+// Admin operations MUST be performed via backend API endpoints only
+// Frontend uses authenticated anon key client with RLS enforcement
 
 // SECURITY: Clean up legacy localStorage tokens (migration from insecure auth)
 // This is a one-time cleanup for users migrating from localStorage-based auth
@@ -597,51 +584,17 @@ export const checkIsAdmin = async (userId: string): Promise<boolean> => {
   }
 }
 
+// ⚠️ DEPRECATED: Admin functions should be backend-only
+// These functions are kept for backwards compatibility but will fail
+// Migrate to backend API endpoints: /api/admin/projects, /api/admin/users
 export const adminGetAllProjects = async (): Promise<any[]> => {
-  try {
-    logger.debug('Admin: Fetching all projects with service role')
-
-    // Use service role to bypass RLS
-    const { data, error } = await supabaseAdmin
-      .from('projects')
-      .select(`
-        *,
-        owner:user_profiles!projects_owner_id_fkey(id, email, full_name)
-      `)
-      .order('updated_at', { ascending: false })
-
-    if (error) {
-      logger.error('Admin: Error fetching projects with service role:', error)
-      throw new Error(error.message)
-    }
-
-    logger.debug(`Admin: Successfully fetched ${data?.length || 0} projects`)
-    return data || []
-  } catch (error) {
-    logger.error('Admin: Failed to get all projects:', error)
-    throw error
-  }
+  logger.error('❌ adminGetAllProjects called from frontend - DEPRECATED')
+  logger.error('🔒 Admin operations must use backend API: /api/admin/projects')
+  throw new Error('Admin operations must be performed via backend API endpoints')
 }
 
 export const adminGetAllUsers = async (): Promise<any[]> => {
-  try {
-    logger.debug('Admin: Fetching all users with service role')
-
-    // Use service role to bypass RLS
-    const { data, error } = await supabaseAdmin
-      .from('user_profiles')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      logger.error('Admin: Error fetching users with service role:', error)
-      throw new Error(error.message)
-    }
-
-    logger.debug(`Admin: Successfully fetched ${data?.length || 0} users`)
-    return data || []
-  } catch (error) {
-    logger.error('Admin: Failed to get all users:', error)
-    throw error
-  }
+  logger.error('❌ adminGetAllUsers called from frontend - DEPRECATED')
+  logger.error('🔒 Admin operations must use backend API: /api/admin/users')
+  throw new Error('Admin operations must be performed via backend API endpoints')
 }

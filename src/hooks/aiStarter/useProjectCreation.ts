@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { DatabaseService } from '../../lib/database'
+import { supabase } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
 import type { Project, IdeaCard, User, ProjectType } from '../../types'
 import type { ProjectAnalysis } from './useAIStarterState'
@@ -81,7 +82,7 @@ export const useProjectCreation = (): UseProjectCreationReturn => {
           created_by: currentUser.id,
           is_collapsed: true,
           project_id: projectId
-        })
+        }, supabase)
 
         if (newIdea.success && newIdea.data) {
           createdIdeas.push(newIdea.data)

@@ -7,8 +7,10 @@
  */
 
 import { BaseService } from './BaseService'
-import { supabaseAdmin } from '../supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
+
+// ✅ SECURITY FIX: supabaseAdmin removed from frontend
+// All operations MUST use authenticated client with RLS enforcement
 import type {
   IdeaCard,
   CreateIdeaInput,
@@ -31,7 +33,7 @@ export class IdeaService extends BaseService {
    *
    * @param projectId - Project ID to filter by
    * @param options - Query options including filters and sorting
-   * @param client - Authenticated Supabase client (enforces RLS) or undefined for admin access
+   * @param client - Authenticated Supabase client (REQUIRED for RLS enforcement)
    */
   static async getIdeasByProject(
     projectId?: string,
@@ -41,13 +43,11 @@ export class IdeaService extends BaseService {
     const context = this.createContext('getIdeasByProject', options?.userId, projectId)
 
     return this.executeWithRetry(async () => {
-      // SECURITY: Use authenticated client for RLS enforcement
-      // Falls back to admin client only when explicitly needed (e.g., admin operations)
-      const supabase = client || supabaseAdmin
-
+      // ✅ SECURITY FIX: Require authenticated client for RLS enforcement
       if (!client) {
-        logger.warn('⚠️ getIdeasByProject: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+        throw new Error('Authenticated Supabase client required - RLS enforcement mandatory')
       }
+      const supabase = client
 
       let query = supabase
         .from('ideas')
@@ -118,7 +118,7 @@ export class IdeaService extends BaseService {
    *
    * @param idea - Idea data to create
    * @param options - Service options
-   * @param client - Authenticated Supabase client (enforces RLS) or undefined for admin access
+   * @param client - Authenticated Supabase client (REQUIRED for RLS enforcement)
    */
   static async createIdea(
     idea: CreateIdeaInput,
@@ -146,12 +146,11 @@ export class IdeaService extends BaseService {
     }
 
     return this.executeWithRetry(async () => {
-      // SECURITY: Use authenticated client for RLS enforcement
-      const supabase = client || supabaseAdmin
-
+      // ✅ SECURITY FIX: Require authenticated client for RLS enforcement
       if (!client) {
-        logger.warn('⚠️ createIdea: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+        throw new Error('Authenticated Supabase client required - RLS enforcement mandatory')
       }
+      const supabase = client
 
       // Ensure project ID is properly formatted
       const validProjectId = sanitizeProjectId(idea.project_id!)
@@ -216,12 +215,11 @@ export class IdeaService extends BaseService {
     }
 
     return this.executeWithRetry(async () => {
-      // SECURITY: Use authenticated client for RLS enforcement
-      const supabase = client || supabaseAdmin
-
+      // ✅ SECURITY FIX: Require authenticated client for RLS enforcement
       if (!client) {
-        logger.warn('⚠️ updateIdea: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+        throw new Error('Authenticated Supabase client required - RLS enforcement mandatory')
       }
+      const supabase = client
 
       // Check if user has permission to edit (if locked by someone else)
       if (options?.userId) {
@@ -269,12 +267,11 @@ export class IdeaService extends BaseService {
     const context = this.createContext('deleteIdea', options?.userId)
 
     return this.executeWithRetry(async () => {
-      // SECURITY: Use authenticated client for RLS enforcement
-      const supabase = client || supabaseAdmin
-
+      // ✅ SECURITY FIX: Require authenticated client for RLS enforcement
       if (!client) {
-        logger.warn('⚠️ deleteIdea: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+        throw new Error('Authenticated Supabase client required - RLS enforcement mandatory')
       }
+      const supabase = client
 
       // Check if user has permission to delete
       if (options?.userId) {
@@ -317,12 +314,11 @@ export class IdeaService extends BaseService {
     const context = this.createContext('lockIdeaForEditing', userId)
 
     return this.executeWithRetry(async () => {
-      // SECURITY: Use authenticated client for RLS enforcement
-      const supabase = client || supabaseAdmin
-
+      // ✅ SECURITY FIX: Require authenticated client for RLS enforcement
       if (!client) {
-        logger.warn('⚠️ lockIdeaForEditing: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+        throw new Error('Authenticated Supabase client required - RLS enforcement mandatory')
       }
+      const supabase = client
       // const debounceKey = `${ideaId}_${userId}_lock` // Currently unused
 
       // Check current lock status
@@ -398,12 +394,11 @@ export class IdeaService extends BaseService {
     const context = this.createContext('unlockIdea', userId)
 
     return this.executeWithRetry(async () => {
-      // SECURITY: Use authenticated client for RLS enforcement
-      const supabase = client || supabaseAdmin
-
+      // ✅ SECURITY FIX: Require authenticated client for RLS enforcement
       if (!client) {
-        logger.warn('⚠️ unlockIdea: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+        throw new Error('Authenticated Supabase client required - RLS enforcement mandatory')
       }
+      const supabase = client
 
       // Only unlock if current user owns the lock
       const { error } = await supabase
@@ -442,12 +437,11 @@ export class IdeaService extends BaseService {
     const context = this.createContext('cleanupStaleLocks', options?.userId)
 
     return this.executeWithRetry(async () => {
-      // SECURITY: Use authenticated client for RLS enforcement
-      const supabase = client || supabaseAdmin
-
+      // ✅ SECURITY FIX: Require authenticated client for RLS enforcement
       if (!client) {
-        logger.warn('⚠️ cleanupStaleLocks: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+        throw new Error('Authenticated Supabase client required - RLS enforcement mandatory')
       }
+      const supabase = client
       const staleTime = new Date(Date.now() - this.LOCK_TIMEOUT_MS).toISOString()
 
       const { data, error } = await supabase
@@ -488,12 +482,11 @@ export class IdeaService extends BaseService {
     const context = this.createContext('getLockInfo', options?.userId)
 
     return this.executeWithRetry(async () => {
-      // SECURITY: Use authenticated client for RLS enforcement
-      const supabase = client || supabaseAdmin
-
+      // ✅ SECURITY FIX: Require authenticated client for RLS enforcement
       if (!client) {
-        logger.warn('⚠️ getLockInfo: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+        throw new Error('Authenticated Supabase client required - RLS enforcement mandatory')
       }
+      const supabase = client
 
       const { data, error } = await supabase
         .from('ideas')

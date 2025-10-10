@@ -1,7 +1,11 @@
 import { PlatformStats, AdminUser, AdminProject, User, ProjectFile } from '../types'
 import { logger } from '../utils/logger'
-import { supabaseAdmin, adminGetAllProjects, adminGetAllUsers, checkIsAdmin } from './supabase'
+import { checkIsAdmin } from './supabase'
 import { DatabaseService } from './database'
+
+// ✅ SECURITY FIX: supabaseAdmin removed from frontend
+// Admin operations MUST use backend API endpoints for security
+// All methods that bypass RLS are deprecated and will throw errors
 
 export class AdminService {
   // Check if user has admin privileges (client-side check)
@@ -60,8 +64,13 @@ export class AdminService {
     })
   }
 
-  // Get all users with admin metadata (using service role)
+  // ⚠️ DEPRECATED: Admin operations should be backend-only
   static async getAllUsers(page: number = 1, limit: number = 50): Promise<{users: AdminUser[], total: number}> {
+    logger.error('❌ AdminService.getAllUsers called from frontend - DEPRECATED')
+    logger.error('🔒 Admin operations must use backend API: GET /api/admin/users')
+    throw new Error('Admin operations must be performed via backend API endpoints')
+
+    /* ORIGINAL CODE REMOVED FOR SECURITY
     try {
       logger.debug('AdminService: Fetching all users with service role')
 
@@ -133,10 +142,16 @@ export class AdminService {
       // Fallback to empty result
       return { users: [], total: 0 }
     }
+    */
   }
 
-  // Get all projects with admin metadata (using service role)
+  // ⚠️ DEPRECATED: Admin operations should be backend-only
   static async getAllProjects(page: number = 1, limit: number = 20): Promise<{projects: AdminProject[], total: number}> {
+    logger.error('❌ AdminService.getAllProjects called from frontend - DEPRECATED')
+    logger.error('🔒 Admin operations must use backend API: GET /api/admin/projects')
+    throw new Error('Admin operations must be performed via backend API endpoints')
+
+    /* ORIGINAL CODE REMOVED FOR SECURITY
     try {
       logger.debug('AdminService: Fetching all projects with service role')
 
@@ -193,6 +208,7 @@ export class AdminService {
       logger.error('AdminService: Failed to get all projects:', error)
       return { projects: [], total: 0 }
     }
+    */
   }
 
   // Helper method to get project idea count using service role

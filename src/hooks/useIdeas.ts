@@ -134,7 +134,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     createIdeaOptimistic(
       ideaWithUser,
       async () => {
-        const createdIdeaResponse = await DatabaseService.createIdea(ideaWithUser)
+        const createdIdeaResponse = await DatabaseService.createIdea(ideaWithUser, supabase)
         if (createdIdeaResponse.success && createdIdeaResponse.data) {
           logger.debug('✅ Idea created successfully in database:', { data: createdIdeaResponse.data })
           return createdIdeaResponse.data
@@ -163,7 +163,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
           x: updatedIdea.x,
           y: updatedIdea.y,
           priority: updatedIdea.priority
-        })
+        }, supabase)
         if (result) {
           logger.debug('✅ Idea updated successfully in database:', { result })
           return result
@@ -183,7 +183,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     deleteIdeaOptimistic(
       ideaId,
       async () => {
-        const success = await DatabaseService.deleteIdea(ideaId)
+        const success = await DatabaseService.deleteIdea(ideaId, supabase)
         if (success) {
           logger.debug('✅ Idea deleted successfully from database:', { ideaId })
           return success
@@ -217,7 +217,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     if (newCollapsedState !== undefined) {
       await DatabaseService.updateIdea(ideaId, {
         is_collapsed: newCollapsedState
-      })
+      }, supabase)
     }
   }, []) // ✅ Empty dependencies - pure functional updates
 
@@ -281,7 +281,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
         const result = await DatabaseService.updateIdea(ideaId, {
           x: finalX,
           y: finalY
-        })
+        }, supabase)
         if (result) {
           logger.debug('✅ Idea position updated successfully in database:', { result })
           return result
@@ -357,7 +357,8 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
       },
       currentProject.id,
       currentUser.id,
-      { skipInitialLoad: true } // Skip initial load since ideas are loaded by project change effect
+      { skipInitialLoad: true }, // Skip initial load since ideas are loaded by project change effect
+      supabase
     )
 
     return () => {

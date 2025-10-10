@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X, ArrowRight, ArrowLeft, Calendar, Users, DollarSign, Tag, Sparkles, Lightbulb, CheckCircle } from 'lucide-react'
 import { Project, ProjectType, IdeaCard, User } from '../types'
 import { DatabaseService } from '../lib/database'
+import { supabase } from '../lib/supabase'
 import { aiService } from '../lib/aiService'
 import { logger } from '../utils/logger'
 import { Button } from './ui/Button'
@@ -162,7 +163,7 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
             created_by: currentUser.id,
             is_collapsed: true,
             project_id: project.id
-          })
+          }, supabase)
 
           if (newIdea && newIdea.success && newIdea.data) {
             createdIdeas.push(newIdea.data)
