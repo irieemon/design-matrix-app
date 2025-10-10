@@ -5,6 +5,7 @@ import { DatabaseService } from '../lib/database'
 import { useOptimisticUpdates } from './useOptimisticUpdates'
 import { useLogger } from '../lib/logging'
 import { useCurrentUser } from '../contexts/UserContext'
+import { supabase } from '../lib/supabase'
 
 interface UseIdeasReturn {
   ideas: IdeaCard[]
@@ -71,9 +72,21 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
         logger.debug('🔍 DIAGNOSTIC: Fetching ideas via API endpoint')
 
         // WORKAROUND: Use direct API endpoint to bypass database.ts hanging issue
-        // SECURITY: Include credentials to send httpOnly cookies with access token
+        // SECURITY: Support both httpOnly cookies (new) and localStorage auth (old)
+
+        // Get access token from localStorage (old auth) for backwards compatibility
+        const { data: { session } } = await supabase.auth.getSession()
+        const accessToken = session?.access_token
+
+        const headers: HeadersInit = {}
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`
+          logger.debug('🔑 Including Authorization header from localStorage session')
+        }
+
         const response = await fetch(`/api/ideas?projectId=${projectId}`, {
-          credentials: 'include'
+          credentials: 'include', // Send httpOnly cookies if available
+          headers
         })
         logger.debug(`🔍 DIAGNOSTIC: API response status: ${response.status}`)
 

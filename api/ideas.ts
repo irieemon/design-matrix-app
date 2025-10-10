@@ -4,39 +4,54 @@
  *
  * SECURITY: Uses authenticated Supabase client to enforce Row-Level Security (RLS)
  * Part of RLS restoration (Phase 3)
+ *
+ * BACKWARDS COMPATIBILITY: Supports both httpOnly cookies (new) and Authorization header (old)
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 
 /**
- * Extract access token from request cookies
+ * Extract access token from request cookies OR Authorization header
+ * Supports both httpOnly cookie auth (new) and localStorage auth (old)
  */
 function getAccessToken(req: VercelRequest): string | null {
-  // Try cookies object first (if middleware parsed)
+  // NEW AUTH: Try httpOnly cookies first (preferred)
   if (req.cookies && req.cookies['sb-access-token']) {
+    console.log('✅ Using httpOnly cookie authentication')
     return req.cookies['sb-access-token']
   }
 
   // Parse raw cookie header
   const cookieHeader = req.headers.cookie
-  if (!cookieHeader) {
-    return null
+  if (cookieHeader) {
+    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+      const [name, ...rest] = cookie.split('=')
+      if (name && rest.length > 0) {
+        acc[name.trim()] = rest.join('=').trim()
+      }
+      return acc
+    }, {} as Record<string, string>)
+
+    if (cookies['sb-access-token']) {
+      console.log('✅ Using httpOnly cookie authentication (from header)')
+      return cookies['sb-access-token']
+    }
   }
 
-  const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
-    const [name, ...rest] = cookie.split('=')
-    if (name && rest.length > 0) {
-      acc[name.trim()] = rest.join('=').trim()
-    }
-    return acc
-  }, {} as Record<string, string>)
+  // OLD AUTH: Fall back to Authorization header (localStorage-based auth)
+  const authHeader = req.headers.authorization
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    console.log('⚠️ Using legacy Authorization header authentication')
+    return authHeader.substring(7)
+  }
 
-  return cookies['sb-access-token'] || null
+  return null
 }
 
 /**
  * Create authenticated Supabase client from request
+ * Supports both httpOnly cookie auth and Authorization header auth
  */
 function createAuthenticatedClient(req: VercelRequest) {
   const accessToken = getAccessToken(req)
