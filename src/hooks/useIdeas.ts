@@ -71,7 +71,10 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
         logger.debug('🔍 DIAGNOSTIC: Fetching ideas via API endpoint')
 
         // WORKAROUND: Use direct API endpoint to bypass database.ts hanging issue
-        const response = await fetch(`/api/ideas?projectId=${projectId}`)
+        // SECURITY: Include credentials to send httpOnly cookies with access token
+        const response = await fetch(`/api/ideas?projectId=${projectId}`, {
+          credentials: 'include'
+        })
         logger.debug(`🔍 DIAGNOSTIC: API response status: ${response.status}`)
 
         if (!response.ok) {
