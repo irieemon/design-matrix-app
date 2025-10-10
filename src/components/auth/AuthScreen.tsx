@@ -254,7 +254,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   }
 
   return (
-    <div className="auth-screen min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="auth-screen min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--canvas-primary)' }}>
       <main className="max-w-md w-full" role="main">
         {/* Header */}
         <header className="text-center mb-8">

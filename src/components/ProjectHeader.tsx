@@ -333,7 +333,7 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
     <div
       className="rounded-2xl shadow-sm p-6 mb-6"
       style={{
-        background: 'linear-gradient(to right, var(--canvas-primary), var(--sapphire-50))',
+        backgroundColor: 'var(--surface-primary)',
         borderWidth: '1px',
         borderStyle: 'solid',
         borderColor: 'var(--hairline-default)'
