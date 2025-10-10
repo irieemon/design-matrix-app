@@ -27,6 +27,12 @@ export default function AuthenticationFlow({
   // EMERGENCY FIX: Simplified state - remove competing timeout systems
   const [showTroubleshooting, setShowTroubleshooting] = useState(false)
 
+  // PHASE 1 FIX: Detect if project is being restored from URL
+  const projectIdFromUrl = (() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    return urlParams.get('project')
+  })()
+
   // EMERGENCY FIX: Simple troubleshooting without competing timeout systems
   useEffect(() => {
     if (isLoading) {
@@ -104,7 +110,9 @@ export default function AuthenticationFlow({
 
               {/* Loading Status with Skeleton */}
               <div className="space-y-4">
-                <div className="text-sm text-slate-500 mb-4">Initializing your workspace...</div>
+                <div className="text-sm text-slate-500 mb-4">
+                  {projectIdFromUrl ? 'Loading your project...' : 'Initializing your workspace...'}
+                </div>
 
                 {/* Skeleton preview of what's loading */}
                 <div className="bg-white/50 backdrop-blur-sm rounded-xl p-6 border border-white/60 shadow-sm">
@@ -128,7 +136,7 @@ export default function AuthenticationFlow({
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span>Loading workspace</span>
+                    <span>{projectIdFromUrl ? 'Restoring project' : 'Loading workspace'}</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-2 h-2 bg-slate-300 rounded-full"></div>

@@ -76,14 +76,15 @@ export const useBrowserHistory = ({
       logger.info('Starting project restoration', { projectId: projectIdFromUrl })
       setIsRestoringProject(true)
 
-      // OPTIMIZED: Fast restoration timeout coordinated with new auth timeout (4s)
+      // PHASE 1 FIX: Increased restoration timeout to match auth timeout (8s)
+      // Allows sufficient time for database query, network latency, and RLS overhead
       restorationTimeoutRef.current = setTimeout(() => {
-        logger.warn('Project restoration timeout exceeded', { projectId: projectIdFromUrl, timeout: '2s' })
+        logger.warn('Project restoration timeout exceeded', { projectId: projectIdFromUrl, timeout: '8s' })
         failedRestorationAttemptsRef.current.add(projectIdFromUrl)
         setIsRestoringProject(false)
         hasCompletedInitialLoadRef.current = true
         restorationTimeoutRef.current = null
-      }, 2000)
+      }, 8000)
 
       // Trigger the restoration
       onProjectRestore(projectIdFromUrl)

@@ -10,6 +10,7 @@ import { Project } from '../types'
 import { DatabaseService } from '../lib/database'
 import { logger } from '../utils/logger'
 import { useCurrentUser } from './UserContext'
+import { useToast } from './ToastContext'
 
 interface ProjectContextType {
   currentProject: Project | null
@@ -29,6 +30,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
   const [isRestoringProject, setIsRestoringProject] = useState(false)
   const currentUser = useCurrentUser()
+  const { showError } = useToast()
 
   // Clear project when user changes (logout/login)
   useEffect(() => {
@@ -75,6 +77,8 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
           projectId,
           reason: 'not_found_or_no_access'
         })
+        // PHASE 1 FIX: Show user-friendly error notification
+        showError('Unable to load project. You may not have access or the project may not exist.')
         // Don't clear current project if restoration fails - user might not have access
       }
     } catch (error) {
@@ -85,12 +89,16 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
           timeout: 5000,
           reason: 'timeout'
         })
+        // PHASE 1 FIX: Show timeout error to user
+        showError('Project loading timed out. Please try refreshing the page or navigate to the Projects page.')
       } else {
         logger.error('❌ Project: Error restoring project:', error)
         logger.error('Project restoration error', error as Error, {
           projectId,
           operation: 'restore'
         })
+        // PHASE 1 FIX: Show generic error to user
+        showError('Unable to load project. Please try again from the Projects page.')
       }
     } finally {
       setIsRestoringProject(false)
