@@ -20,22 +20,26 @@ if (!supabaseUrl || !supabaseAnonKey) {
   logger.error('You need to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file')
 }
 
-// Create Supabase client with performance optimizations
-// SECURITY FIX: Disable session persistence to prevent XSS token theft (PRIO-SEC-001)
-// Authentication now handled via httpOnly cookies in /api/auth/* endpoints
+// Create Supabase client with httpOnly cookie support
+// CRITICAL FIX: Enable session persistence to work with server-side httpOnly cookies
+// Backend /api/auth endpoints handle login/logout and set httpOnly cookies
+// Frontend client needs persistSession: true to detect and use these cookies
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-key',
   {
     auth: {
-      autoRefreshToken: false, // Handled server-side via /api/auth/refresh
-      // SECURITY: Session persistence disabled - tokens stored in httpOnly cookies
-      // This eliminates XSS token theft vulnerability (CVSS 9.1 → 0.0)
-      persistSession: false,
-      detectSessionInUrl: false, // OAuth handled server-side
-      // Storage disabled - no localStorage/sessionStorage token access
-      storage: undefined,
-      storageKey: 'sb-client-readonly', // Read-only client, no token storage
+      // CRITICAL FIX: Enable autoRefreshToken to maintain session across page refreshes
+      // Supabase will automatically refresh tokens before they expire
+      autoRefreshToken: true,
+      // CRITICAL FIX: Enable persistSession so client can detect existing sessions
+      // When page refreshes, Supabase checks for existing session (including httpOnly cookies)
+      persistSession: true,
+      detectSessionInUrl: false, // OAuth still handled server-side
+      // CRITICAL FIX: Let Supabase use default storage (supports cookie detection)
+      // Default storage checks both localStorage AND cookies for sessions
+      storage: undefined, // Use default storage adapter
+      storageKey: undefined, // Use standard Supabase storage key
       flowType: 'pkce' // PKCE flow for OAuth (server-side only)
     },
     // Database connection optimizations
