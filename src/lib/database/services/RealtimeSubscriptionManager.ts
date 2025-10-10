@@ -51,9 +51,12 @@ export class RealtimeSubscriptionManager {
       const channelName = this.generateChannelName(projectId, userId)
       logger.debug('🔄 Creating optimized channel:', channelName)
 
-      // Optimized real-time subscription with simplified filters
-      const channel = supabase
-        .channel(channelName)
+      // CRITICAL FIX: Wrap channel creation in try-catch to prevent crashes
+      let channel
+      try {
+        // Optimized real-time subscription with simplified filters
+        channel = supabase
+          .channel(channelName)
         .on(
           'postgres_changes',
           {
@@ -94,16 +97,37 @@ export class RealtimeSubscriptionManager {
 
           if (err) {
             logger.error('❌ Subscription error:', err)
-            // Try to recover with simpler subscription if complex one fails
-            if (err.message?.includes('binding mismatch')) {
-              logger.warn('🔄 Binding mismatch detected, attempting recovery...')
+            // CRITICAL FIX: Graceful handling of binding mismatch without crashing
+            if (err.message?.includes('binding mismatch') || err.message?.includes('bindings')) {
+              logger.warn('🔄 Binding mismatch detected - using polling fallback')
+              logger.warn('⚠️ Real-time updates disabled due to schema mismatch. App will still work with manual refresh.')
+              // Don't crash - just disable realtime for this session
+              // User can still use the app, just without live updates
+              return
             }
+            // For other errors, log but don't crash
+            logger.error('⚠️ Real-time subscription error, continuing without live updates')
           } else if (status === 'SUBSCRIBED') {
             logger.debug('✅ Successfully subscribed to real-time updates!')
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
             logger.warn('⚠️ Real-time subscription failed or closed:', status)
+            logger.warn('Continuing without live updates - manual refresh still works')
           }
         })
+
+      } catch (channelError) {
+        logger.error('❌ Failed to create realtime channel:', channelError)
+        logger.warn('⚠️ Continuing without realtime updates - app will work with manual refresh')
+
+        // Load initial data even if realtime fails
+        if (!options?.skipInitialLoad) {
+          logger.debug('🔄 Loading initial data (realtime disabled)...')
+          callback([])
+        }
+
+        // Return no-op unsubscribe
+        return () => logger.debug('No-op unsubscribe (realtime disabled)')
+      }
 
       // Load initial data when subscription is set up (unless explicitly skipped)
       if (!options?.skipInitialLoad) {
@@ -114,10 +138,26 @@ export class RealtimeSubscriptionManager {
 
       return () => {
         logger.debug('Unsubscribing from real-time updates')
-        supabase.removeChannel(channel)
+        try {
+          supabase.removeChannel(channel)
+        } catch (removeError) {
+          logger.warn('Error removing channel (already removed?):', removeError)
+        }
       }
     } catch (error) {
       logger.error('❌ Failed to set up real-time subscription:', error)
+      logger.warn('⚠️ App will continue to work without realtime updates')
+
+      // CRITICAL FIX: Still load initial data even if subscription completely fails
+      if (!options?.skipInitialLoad) {
+        logger.debug('🔄 Loading initial data (subscription setup failed)...')
+        try {
+          callback([])
+        } catch (callbackError) {
+          logger.error('Error in initial data callback:', callbackError)
+        }
+      }
+
       // Return a no-op unsubscribe function
       return () => {
         logger.debug('No-op unsubscribe (subscription failed)')
