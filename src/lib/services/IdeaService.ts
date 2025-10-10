@@ -8,6 +8,7 @@
 
 import { BaseService } from './BaseService'
 import { supabaseAdmin } from '../supabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type {
   IdeaCard,
   CreateIdeaInput,
@@ -27,19 +28,26 @@ export class IdeaService extends BaseService {
 
   /**
    * Get ideas by project with filtering and sorting options
+   *
+   * @param projectId - Project ID to filter by
+   * @param options - Query options including filters and sorting
+   * @param client - Authenticated Supabase client (enforces RLS) or undefined for admin access
    */
   static async getIdeasByProject(
     projectId?: string,
-    options?: IdeaQueryOptions
+    options?: IdeaQueryOptions,
+    client?: SupabaseClient
   ): Promise<ServiceResult<IdeaCard[]>> {
     const context = this.createContext('getIdeasByProject', options?.userId, projectId)
 
     return this.executeWithRetry(async () => {
-      // TEMPORARY SECURITY WORKAROUND: Use service role to bypass RLS
-      // Root cause: persistSession: false means Supabase client has no auth session after login
-      // TODO: Implement httpOnly cookie-based authentication (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
-      // SECURITY RISK: This bypasses RLS. Must validate user permissions in application layer.
-      const supabase = supabaseAdmin
+      // SECURITY: Use authenticated client for RLS enforcement
+      // Falls back to admin client only when explicitly needed (e.g., admin operations)
+      const supabase = client || supabaseAdmin
+
+      if (!client) {
+        logger.warn('⚠️ getIdeasByProject: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+      }
 
       let query = supabase
         .from('ideas')
@@ -107,10 +115,15 @@ export class IdeaService extends BaseService {
 
   /**
    * Create a new idea with validation
+   *
+   * @param idea - Idea data to create
+   * @param options - Service options
+   * @param client - Authenticated Supabase client (enforces RLS) or undefined for admin access
    */
   static async createIdea(
     idea: CreateIdeaInput,
-    options?: ServiceOptions
+    options?: ServiceOptions,
+    client?: SupabaseClient
   ): Promise<ServiceResult<IdeaCard>> {
     const context = this.createContext('createIdea', options?.userId, idea.project_id)
 
@@ -133,8 +146,12 @@ export class IdeaService extends BaseService {
     }
 
     return this.executeWithRetry(async () => {
-      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
-      const supabase = supabaseAdmin
+      // SECURITY: Use authenticated client for RLS enforcement
+      const supabase = client || supabaseAdmin
+
+      if (!client) {
+        logger.warn('⚠️ createIdea: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+      }
 
       // Ensure project ID is properly formatted
       const validProjectId = sanitizeProjectId(idea.project_id!)
@@ -172,11 +189,17 @@ export class IdeaService extends BaseService {
 
   /**
    * Update an existing idea with conflict detection
+   *
+   * @param id - Idea ID to update
+   * @param updates - Partial idea updates
+   * @param options - Service options
+   * @param client - Authenticated Supabase client (enforces RLS) or undefined for admin access
    */
   static async updateIdea(
     id: string,
     updates: Partial<Omit<IdeaCard, 'id' | 'created_at'>>,
-    options?: ServiceOptions
+    options?: ServiceOptions,
+    client?: SupabaseClient
   ): Promise<ServiceResult<IdeaCard>> {
     const context = this.createContext('updateIdea', options?.userId, updates.project_id)
 
@@ -193,8 +216,12 @@ export class IdeaService extends BaseService {
     }
 
     return this.executeWithRetry(async () => {
-      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
-      const supabase = supabaseAdmin
+      // SECURITY: Use authenticated client for RLS enforcement
+      const supabase = client || supabaseAdmin
+
+      if (!client) {
+        logger.warn('⚠️ updateIdea: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+      }
 
       // Check if user has permission to edit (if locked by someone else)
       if (options?.userId) {
@@ -229,13 +256,25 @@ export class IdeaService extends BaseService {
 
   /**
    * Delete an idea with permission checking
+   *
+   * @param id - Idea ID to delete
+   * @param options - Service options
+   * @param client - Authenticated Supabase client (enforces RLS) or undefined for admin access
    */
-  static async deleteIdea(id: string, options?: ServiceOptions): Promise<ServiceResult<boolean>> {
+  static async deleteIdea(
+    id: string,
+    options?: ServiceOptions,
+    client?: SupabaseClient
+  ): Promise<ServiceResult<boolean>> {
     const context = this.createContext('deleteIdea', options?.userId)
 
     return this.executeWithRetry(async () => {
-      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
-      const supabase = supabaseAdmin
+      // SECURITY: Use authenticated client for RLS enforcement
+      const supabase = client || supabaseAdmin
+
+      if (!client) {
+        logger.warn('⚠️ deleteIdea: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+      }
 
       // Check if user has permission to delete
       if (options?.userId) {
@@ -263,17 +302,27 @@ export class IdeaService extends BaseService {
 
   /**
    * Lock an idea for editing with debouncing
+   *
+   * @param ideaId - Idea ID to lock
+   * @param userId - User ID acquiring the lock
+   * @param _options - Service options (unused)
+   * @param client - Authenticated Supabase client (enforces RLS) or undefined for admin access
    */
   static async lockIdeaForEditing(
     ideaId: string,
     userId: string,
-    _options?: ServiceOptions
+    _options?: ServiceOptions,
+    client?: SupabaseClient
   ): Promise<ServiceResult<boolean>> {
     const context = this.createContext('lockIdeaForEditing', userId)
 
     return this.executeWithRetry(async () => {
-      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
-      const supabase = supabaseAdmin
+      // SECURITY: Use authenticated client for RLS enforcement
+      const supabase = client || supabaseAdmin
+
+      if (!client) {
+        logger.warn('⚠️ lockIdeaForEditing: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+      }
       // const debounceKey = `${ideaId}_${userId}_lock` // Currently unused
 
       // Check current lock status
@@ -334,17 +383,27 @@ export class IdeaService extends BaseService {
 
   /**
    * Unlock an idea for editing
+   *
+   * @param ideaId - Idea ID to unlock
+   * @param userId - User ID releasing the lock
+   * @param _options - Service options (unused)
+   * @param client - Authenticated Supabase client (enforces RLS) or undefined for admin access
    */
   static async unlockIdea(
     ideaId: string,
     userId: string,
-    _options?: ServiceOptions
+    _options?: ServiceOptions,
+    client?: SupabaseClient
   ): Promise<ServiceResult<boolean>> {
     const context = this.createContext('unlockIdea', userId)
 
     return this.executeWithRetry(async () => {
-      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
-      const supabase = supabaseAdmin
+      // SECURITY: Use authenticated client for RLS enforcement
+      const supabase = client || supabaseAdmin
+
+      if (!client) {
+        logger.warn('⚠️ unlockIdea: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+      }
 
       // Only unlock if current user owns the lock
       const { error } = await supabase
@@ -372,13 +431,23 @@ export class IdeaService extends BaseService {
 
   /**
    * Clean up stale locks (older than timeout)
+   *
+   * @param options - Service options
+   * @param client - Authenticated Supabase client (enforces RLS) or undefined for admin access
    */
-  static async cleanupStaleLocks(options?: ServiceOptions): Promise<ServiceResult<number>> {
+  static async cleanupStaleLocks(
+    options?: ServiceOptions,
+    client?: SupabaseClient
+  ): Promise<ServiceResult<number>> {
     const context = this.createContext('cleanupStaleLocks', options?.userId)
 
     return this.executeWithRetry(async () => {
-      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
-      const supabase = supabaseAdmin
+      // SECURITY: Use authenticated client for RLS enforcement
+      const supabase = client || supabaseAdmin
+
+      if (!client) {
+        logger.warn('⚠️ cleanupStaleLocks: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+      }
       const staleTime = new Date(Date.now() - this.LOCK_TIMEOUT_MS).toISOString()
 
       const { data, error } = await supabase
@@ -406,13 +475,25 @@ export class IdeaService extends BaseService {
 
   /**
    * Get current lock information for an idea
+   *
+   * @param ideaId - Idea ID to get lock info for
+   * @param options - Service options
+   * @param client - Authenticated Supabase client (enforces RLS) or undefined for admin access
    */
-  static async getLockInfo(ideaId: string, options?: ServiceOptions): Promise<ServiceResult<LockInfo | null>> {
+  static async getLockInfo(
+    ideaId: string,
+    options?: ServiceOptions,
+    client?: SupabaseClient
+  ): Promise<ServiceResult<LockInfo | null>> {
     const context = this.createContext('getLockInfo', options?.userId)
 
     return this.executeWithRetry(async () => {
-      // TEMPORARY SECURITY WORKAROUND: Use service role (see ROOT_CAUSE_IDEAS_NOT_LOADING.md)
-      const supabase = supabaseAdmin
+      // SECURITY: Use authenticated client for RLS enforcement
+      const supabase = client || supabaseAdmin
+
+      if (!client) {
+        logger.warn('⚠️ getLockInfo: Using supabaseAdmin (bypasses RLS). Consider passing authenticated client.')
+      }
 
       const { data, error } = await supabase
         .from('ideas')
