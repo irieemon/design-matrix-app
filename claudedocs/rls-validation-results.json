@@ -1,0 +1,73 @@
+{
+  "timestamp": "2025-10-10T18:24:02.075Z",
+  "summary": {
+    "enforced": 7,
+    "notEnforced": 0,
+    "enforcementErrors": 0
+  },
+  "results": [
+    {
+      "table": "ideas",
+      "enforcement": {
+        "tableName": "ideas",
+        "rlsEnforced": true,
+        "result": "Query succeeded but returned no data (RLS filtering)",
+        "data": []
+      }
+    },
+    {
+      "table": "projects",
+      "enforcement": {
+        "tableName": "projects",
+        "rlsEnforced": true,
+        "result": "Query succeeded but returned no data (RLS filtering)",
+        "data": []
+      }
+    },
+    {
+      "table": "user_profiles",
+      "enforcement": {
+        "tableName": "user_profiles",
+        "rlsEnforced": true,
+        "result": "Query succeeded but returned no data (RLS filtering)",
+        "data": []
+      }
+    },
+    {
+      "table": "project_collaborators",
+      "enforcement": {
+        "tableName": "project_collaborators",
+        "rlsEnforced": true,
+        "result": "Query succeeded but returned no data (RLS filtering)",
+        "data": []
+      }
+    },
+    {
+      "table": "project_files",
+      "enforcement": {
+        "tableName": "project_files",
+        "rlsEnforced": true,
+        "result": "Query succeeded but returned no data (RLS filtering)",
+        "data": []
+      }
+    },
+    {
+      "table": "tags",
+      "enforcement": {
+        "tableName": "tags",
+        "rlsEnforced": true,
+        "result": "Access denied (as expected)",
+        "error": "Could not find the table 'public.tags' in the schema cache"
+      }
+    },
+    {
+      "table": "idea_tags",
+      "enforcement": {
+        "tableName": "idea_tags",
+        "rlsEnforced": true,
+        "result": "Access denied (as expected)",
+        "error": "Could not find the table 'public.idea_tags' in the schema cache"
+      }
+    }
+  ]
+}
