@@ -1,0 +1,2 @@
+Trigger Vercel deployment - 2025-10-10 21:50
+This file triggers a new Vercel deployment to pick up commit 8943a4f
