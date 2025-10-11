@@ -684,6 +684,23 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
             }
           } else {
             console.log('🔍 No existing session in storage')
+
+            // CRITICAL FIX: Early exit when no session exists - show login immediately
+            console.log('🚀 FAST PATH: No session detected, showing login immediately')
+
+            // Clear the 8-second timeout - no need to wait
+            if (maxLoadingTimeoutRef.current) {
+              clearTimeout(maxLoadingTimeoutRef.current)
+              maxLoadingTimeoutRef.current = null
+            }
+
+            // Set loading false IMMEDIATELY - user sees login screen instantly
+            if (mounted) {
+              setIsLoading(false)
+              authPerformanceMonitor.finishSession('success')
+            }
+
+            return // Exit early - skip getSession() call entirely
           }
         } catch (storageCheckError) {
           console.warn('⚠️ Error checking session storage:', storageCheckError)
@@ -788,19 +805,22 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
             logger.debug('Could not clean legacy storage:', error)
           }
 
-          logger.debug('🔓 No valid session - showing login screen')
-          // Enhanced loading state management with maximum timeout
-          const finalTimeout = setTimeout(() => {
-            if (mounted) {
-              const totalTime = performance.now() - startTime
-              logger.debug('🔓 Final check: showing login screen', `total: ${totalTime.toFixed(1)}ms`)
-              authPerformanceMonitor.finishSession('success')
-              setIsLoading(false)
-            }
-          }, 500) // Increased from 200ms for better stability
+          // CRITICAL FIX: Clear loading IMMEDIATELY when no session detected
+          logger.debug('🔓 No valid session - showing login screen IMMEDIATELY')
 
-          // Add cleanup for the timeout
-          return () => clearTimeout(finalTimeout)
+          // Clear the max timeout to prevent race condition
+          if (maxLoadingTimeoutRef.current) {
+            clearTimeout(maxLoadingTimeoutRef.current)
+            maxLoadingTimeoutRef.current = null
+          }
+
+          // Set loading false IMMEDIATELY - no additional timeout needed
+          if (mounted) {
+            const totalTime = performance.now() - startTime
+            logger.debug('🔓 Login screen shown', `total: ${totalTime.toFixed(1)}ms`)
+            authPerformanceMonitor.finishSession('success')
+            setIsLoading(false)
+          }
         }
       } catch (error) {
         logger.error('💥 Error initializing auth:', error)
