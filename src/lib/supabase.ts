@@ -78,13 +78,15 @@ const cleanupLegacyAuthStorage = () => {
     })
 
     // AGGRESSIVE: Also scan for any remaining Supabase keys we might have missed
-    // CRITICAL: Exclude cleanup flag to prevent re-running cleanup on every load
+    // CRITICAL: Exclude cleanup flag AND active session key to prevent deleting valid sessions
     const CLEANUP_FLAG_PREFIX = 'sb-migration-cleanup-done'
+    const ACTIVE_SESSION_KEY = 'sb-vfovtgtjailvrphsgafv-auth-token'
     try {
       const allKeys = Object.keys(localStorage)
       const supabaseKeys = allKeys.filter(key =>
         (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth-token')) &&
-        !key.startsWith(CLEANUP_FLAG_PREFIX)  // Don't delete our own cleanup flag!
+        !key.startsWith(CLEANUP_FLAG_PREFIX) &&  // Don't delete our own cleanup flag!
+        key !== ACTIVE_SESSION_KEY                // Don't delete active session key!
       )
 
       supabaseKeys.forEach(key => {
@@ -179,9 +181,28 @@ export const supabase = createClient(
       autoRefreshToken: true,   // Auto-refresh tokens before expiry
       persistSession: true,      // Store and detect sessions (critical for both login and refresh)
       detectSessionInUrl: false, // OAuth handled server-side
-      // Use default storage (localStorage for web, with cookie fallback)
-      storage: undefined,        // Let Supabase use its default storage
-      storageKey: undefined,     // Use standard Supabase key format
+      // CRITICAL FIX: Explicitly provide localStorage storage adapter
+      // Setting storage: undefined caused Supabase to NOT persist sessions properly
+      storage: {
+        getItem: (key) => {
+          if (typeof window !== 'undefined') {
+            return window.localStorage.getItem(key)
+          }
+          return null
+        },
+        setItem: (key, value) => {
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem(key, value)
+          }
+        },
+        removeItem: (key) => {
+          if (typeof window !== 'undefined') {
+            window.localStorage.removeItem(key)
+          }
+        }
+      },
+      // CRITICAL: Use explicit storage key so cleanup can preserve it
+      storageKey: 'sb-vfovtgtjailvrphsgafv-auth-token',
       flowType: 'pkce'          // PKCE flow for security
     },
     // Database connection optimizations
