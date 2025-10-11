@@ -20,49 +20,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   logger.error('You need to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file')
 }
 
-// Create Supabase client with session persistence ENABLED
-// PHASE 2 FIX: This enables session detection AND page refresh persistence
-// The key is that Supabase will store sessions AND detect them on refresh
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key',
-  {
-    auth: {
-      // PHASE 2: Enable session persistence for login AND page refresh
-      // This allows both: (1) Login to work, (2) Sessions to persist across refreshes
-      autoRefreshToken: true,   // Auto-refresh tokens before expiry
-      persistSession: true,      // Store and detect sessions (critical for both login and refresh)
-      detectSessionInUrl: false, // OAuth handled server-side
-      // Use default storage (localStorage for web, with cookie fallback)
-      storage: undefined,        // Let Supabase use its default storage
-      storageKey: undefined,     // Use standard Supabase key format
-      flowType: 'pkce'          // PKCE flow for security
-    },
-    // Database connection optimizations
-    db: {
-      schema: 'public'
-    },
-    // Global request optimizations
-    global: {
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
-    },
-    // Enable connection pooling and optimize timeouts
-    realtime: {
-      params: {
-        eventsPerSecond: 10
-      }
-    }
-  }
-)
-
-// ✅ SECURITY FIX: supabaseAdmin client REMOVED from frontend
-// Admin operations MUST be performed via backend API endpoints only
-// Frontend uses authenticated anon key client with RLS enforcement
-
 // CRITICAL FIX: Clean up ALL storage to fix persistSession: true migration
+// MUST run BEFORE Supabase client creation!
 // When switching from persistSession: false to true, old session data causes timeouts
 // This aggressive cleanup ensures a clean slate for the new configuration
 const cleanupLegacyAuthStorage = () => {
@@ -155,12 +114,13 @@ const cleanupLegacyAuthStorage = () => {
 }
 
 // CRITICAL: Run cleanup IMMEDIATELY on module load
-// This must happen before any Supabase auth operations
+// This must happen BEFORE creating the Supabase client
 // Flag to ensure we only run once per browser session
 const CLEANUP_FLAG = 'sb-migration-cleanup-done-v2'  // v2 for aggressive cleanup
 const hasRunCleanup = sessionStorage.getItem(CLEANUP_FLAG)
 
 if (!hasRunCleanup) {
+  logger.warn('🔧 Running storage cleanup before Supabase initialization...')
   cleanupLegacyAuthStorage()
   try {
     sessionStorage.setItem(CLEANUP_FLAG, 'true')
@@ -168,6 +128,47 @@ if (!hasRunCleanup) {
     // Ignore sessionStorage errors
   }
 }
+
+// NOW create Supabase client AFTER cleanup has run
+// This ensures the client doesn't read any old incompatible storage data
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      // PHASE 2: Enable session persistence for login AND page refresh
+      // This allows both: (1) Login to work, (2) Sessions to persist across refreshes
+      autoRefreshToken: true,   // Auto-refresh tokens before expiry
+      persistSession: true,      // Store and detect sessions (critical for both login and refresh)
+      detectSessionInUrl: false, // OAuth handled server-side
+      // Use default storage (localStorage for web, with cookie fallback)
+      storage: undefined,        // Let Supabase use its default storage
+      storageKey: undefined,     // Use standard Supabase key format
+      flowType: 'pkce'          // PKCE flow for security
+    },
+    // Database connection optimizations
+    db: {
+      schema: 'public'
+    },
+    // Global request optimizations
+    global: {
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    },
+    // Enable connection pooling and optimize timeouts
+    realtime: {
+      params: {
+        eventsPerSecond: 10
+      }
+    }
+  }
+)
+
+// ✅ SECURITY FIX: supabaseAdmin client REMOVED from frontend
+// Admin operations MUST be performed via backend API endpoints only
+// Frontend uses authenticated anon key client with RLS enforcement
 
 // Auth helper functions
 export const getCurrentUser = async () => {
