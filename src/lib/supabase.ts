@@ -78,12 +78,13 @@ const cleanupLegacyAuthStorage = () => {
     })
 
     // AGGRESSIVE: Also scan for any remaining Supabase keys we might have missed
+    // CRITICAL: Exclude cleanup flag to prevent re-running cleanup on every load
+    const CLEANUP_FLAG_PREFIX = 'sb-migration-cleanup-done'
     try {
       const allKeys = Object.keys(localStorage)
       const supabaseKeys = allKeys.filter(key =>
-        key.startsWith('sb-') ||
-        key.includes('supabase') ||
-        key.includes('auth-token')
+        (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth-token')) &&
+        !key.startsWith(CLEANUP_FLAG_PREFIX)  // Don't delete our own cleanup flag!
       )
 
       supabaseKeys.forEach(key => {
@@ -124,18 +125,45 @@ const cleanupLegacyAuthStorage = () => {
 
 // CRITICAL: Run cleanup IMMEDIATELY on module load
 // This must happen BEFORE creating the Supabase client
-// Flag to ensure we only run once per browser session
-const CLEANUP_FLAG = 'sb-migration-cleanup-done-v2'  // v2 for aggressive cleanup
-const hasRunCleanup = sessionStorage.getItem(CLEANUP_FLAG)
+// CRITICAL FIX: Use localStorage (not sessionStorage) so cleanup doesn't run on every refresh
+const CLEANUP_FLAG = 'sb-migration-cleanup-done-v3'  // v3 with localStorage persistence
+const CLEANUP_EXPIRY_DAYS = 30 // Re-run cleanup after 30 days in case of issues
 
-if (!hasRunCleanup) {
+// Check if cleanup has already run (with time-based expiry)
+let shouldRunCleanup = true
+const cleanupData = localStorage.getItem(CLEANUP_FLAG)
+
+if (cleanupData) {
+  try {
+    const { timestamp } = JSON.parse(cleanupData)
+    const daysSinceCleanup = (Date.now() - timestamp) / (1000 * 60 * 60 * 24)
+
+    if (daysSinceCleanup < CLEANUP_EXPIRY_DAYS) {
+      shouldRunCleanup = false
+      console.log(`✅ Storage cleanup already completed ${daysSinceCleanup.toFixed(1)} days ago - skipping`)
+    } else {
+      console.log(`🔄 Re-running storage cleanup (last run: ${daysSinceCleanup.toFixed(1)} days ago)`)
+    }
+  } catch (parseError) {
+    // Invalid data, run cleanup
+    console.log('⚠️ Invalid cleanup flag data, running cleanup')
+    shouldRunCleanup = true
+  }
+}
+
+if (shouldRunCleanup) {
   // CRITICAL: Use console.log directly to bypass logger filtering in production
   console.log('🔧 Running storage cleanup before Supabase initialization...')
   cleanupLegacyAuthStorage()
   try {
-    sessionStorage.setItem(CLEANUP_FLAG, 'true')
+    // Store cleanup flag with timestamp in localStorage (persists across refreshes)
+    localStorage.setItem(CLEANUP_FLAG, JSON.stringify({
+      timestamp: Date.now(),
+      version: 'v3'
+    }))
+    console.log('✅ Cleanup flag set - will not run again for 30 days')
   } catch (error) {
-    // Ignore sessionStorage errors
+    console.warn('⚠️ Could not set cleanup flag:', error)
   }
 }
 
