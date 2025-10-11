@@ -20,27 +20,23 @@ if (!supabaseUrl || !supabaseAnonKey) {
   logger.error('You need to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file')
 }
 
-// Create Supabase client with httpOnly cookie support
-// CRITICAL FIX: Enable session persistence to work with server-side httpOnly cookies
-// Backend /api/auth endpoints handle login/logout and set httpOnly cookies
-// Frontend client needs persistSession: true to detect and use these cookies
+// Create Supabase client with session persistence ENABLED
+// PHASE 2 FIX: This enables session detection AND page refresh persistence
+// The key is that Supabase will store sessions AND detect them on refresh
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
   supabaseAnonKey || 'placeholder-key',
   {
     auth: {
-      // CRITICAL FIX: Enable autoRefreshToken to maintain session across page refreshes
-      // Supabase will automatically refresh tokens before they expire
-      autoRefreshToken: true,
-      // CRITICAL FIX: Enable persistSession so client can detect existing sessions
-      // When page refreshes, Supabase checks for existing session (including httpOnly cookies)
-      persistSession: true,
-      detectSessionInUrl: false, // OAuth still handled server-side
-      // CRITICAL FIX: Let Supabase use default storage (supports cookie detection)
-      // Default storage checks both localStorage AND cookies for sessions
-      storage: undefined, // Use default storage adapter
-      storageKey: undefined, // Use standard Supabase storage key
-      flowType: 'pkce' // PKCE flow for OAuth (server-side only)
+      // PHASE 2: Enable session persistence for login AND page refresh
+      // This allows both: (1) Login to work, (2) Sessions to persist across refreshes
+      autoRefreshToken: true,   // Auto-refresh tokens before expiry
+      persistSession: true,      // Store and detect sessions (critical for both login and refresh)
+      detectSessionInUrl: false, // OAuth handled server-side
+      // Use default storage (localStorage for web, with cookie fallback)
+      storage: undefined,        // Let Supabase use its default storage
+      storageKey: undefined,     // Use standard Supabase key format
+      flowType: 'pkce'          // PKCE flow for security
     },
     // Database connection optimizations
     db: {
@@ -66,14 +62,18 @@ export const supabase = createClient(
 // Admin operations MUST be performed via backend API endpoints only
 // Frontend uses authenticated anon key client with RLS enforcement
 
-// SECURITY: Clean up legacy localStorage tokens (migration from insecure auth)
-// This is a one-time cleanup for users migrating from localStorage-based auth
+// CRITICAL FIX: Clean up ALL storage to fix persistSession: true migration
+// When switching from persistSession: false to true, old session data causes timeouts
+// This aggressive cleanup ensures a clean slate for the new configuration
 const cleanupLegacyAuthStorage = () => {
   try {
     // Extract project reference from Supabase URL for dynamic key cleanup
     const projectRef = supabaseUrl?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
 
-    // Build list of keys to clean (legacy tokens from insecure auth)
+    logger.info('🧹 Starting comprehensive storage cleanup for persistSession migration...')
+
+    // AGGRESSIVE CLEANUP: Remove ALL Supabase-related storage
+    // This is necessary because old persistSession: false data breaks persistSession: true
     const keysToClean = [
       // Legacy custom auth keys
       'prioritas-auth',
@@ -85,51 +85,88 @@ const cleanupLegacyAuthStorage = () => {
       // SECURITY FIX: Remove PII storage per PRIO-SEC-002 (CVSS 7.8)
       'collaboratorEmailMappings',   // GDPR violation: plaintext email storage
 
-      // Legacy Supabase session tokens (now in httpOnly cookies)
+      // CRITICAL: Remove ALL Supabase session keys (old and new formats)
       ...(projectRef ? [
-        `sb-${projectRef}-auth-token`,                    // Legacy session
+        `sb-${projectRef}-auth-token`,                    // Old format session
         `sb-${projectRef}-auth-token-code-verifier`,      // PKCE verifier
         `sb-${projectRef}-auth-token.0`,                  // Additional token data
         `sb-${projectRef}-auth-token.1`,                  // Additional token data
+        `sb-${projectRef}-auth-token-refresh`,            // Refresh token
+        // CRITICAL: Also check for any keys that might interfere
+        ...Array.from({ length: 10 }, (_, i) => `sb-${projectRef}-auth-token.${i}`)
       ] : [])
     ]
 
     let cleanedCount = 0
+
+    // Clean specific keys
     keysToClean.forEach(key => {
       try {
         const value = localStorage.getItem(key)
         if (value !== null) {
           localStorage.removeItem(key)
           cleanedCount++
-          logger.debug(`🧹 Removed legacy auth key: ${key}`)
+          logger.debug(`🧹 Removed key: ${key}`)
         }
       } catch (error) {
         logger.warn(`⚠️ Failed to clean key ${key}:`, error)
       }
     })
 
-    // Also clear any remaining sessionStorage auth data
+    // AGGRESSIVE: Also scan for any remaining Supabase keys we might have missed
     try {
-      sessionStorage.removeItem('supabase.auth.token')
+      const allKeys = Object.keys(localStorage)
+      const supabaseKeys = allKeys.filter(key =>
+        key.startsWith('sb-') ||
+        key.includes('supabase') ||
+        key.includes('auth-token')
+      )
+
+      supabaseKeys.forEach(key => {
+        try {
+          localStorage.removeItem(key)
+          cleanedCount++
+          logger.debug(`🧹 Removed discovered Supabase key: ${key}`)
+        } catch (error) {
+          logger.warn(`⚠️ Failed to clean discovered key ${key}:`, error)
+        }
+      })
+    } catch (error) {
+      logger.warn('⚠️ Error scanning localStorage:', error)
+    }
+
+    // Clean sessionStorage completely
+    try {
+      sessionStorage.clear()
+      logger.debug('🧹 Cleared all sessionStorage')
     } catch (error) {
       logger.warn('⚠️ Failed to clean sessionStorage:', error)
     }
 
     if (cleanedCount > 0) {
-      logger.info(`✅ Legacy auth cleanup: removed ${cleanedCount} insecure tokens from localStorage`)
-      logger.info('🔒 Authentication now uses secure httpOnly cookies')
+      logger.info(`✅ Storage cleanup complete: removed ${cleanedCount} storage entries`)
+      logger.info('🔒 Ready for persistSession: true configuration')
+    } else {
+      logger.debug('✅ No legacy storage found - clean slate')
     }
   } catch (error) {
-    logger.warn('⚠️ Error during legacy auth cleanup:', error)
+    logger.warn('⚠️ Error during storage cleanup:', error)
   }
 }
 
-// Run cleanup once on application load
-// This helps users migrate from the old localStorage-based auth
-let hasRunCleanup = false
+// CRITICAL: Run cleanup IMMEDIATELY on module load
+// This must happen before any Supabase auth operations
+// Flag to ensure we only run once per browser session
+const CLEANUP_FLAG = 'sb-migration-cleanup-done-v2'  // v2 for aggressive cleanup
+const hasRunCleanup = sessionStorage.getItem(CLEANUP_FLAG)
+
 if (!hasRunCleanup) {
   cleanupLegacyAuthStorage()
-  hasRunCleanup = true
+  try {
+    sessionStorage.setItem(CLEANUP_FLAG, 'true')
+  } catch (error) {
+    // Ignore sessionStorage errors
+  }
 }
 
 // Auth helper functions

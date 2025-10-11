@@ -144,7 +144,7 @@ export class RealtimeSubscriptionManager {
           logger.warn('Error removing channel (already removed?):', removeError)
         }
       }
-    } catch (error) {
+    } catch (error) {  // Closes outer try block from line 49
       logger.error('❌ Failed to set up real-time subscription:', error)
       logger.warn('⚠️ App will continue to work without realtime updates')
 
