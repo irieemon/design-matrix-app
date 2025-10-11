@@ -641,6 +641,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
         // CRITICAL FIX: Clear potentially corrupt session storage BEFORE getSession()
         // This fixes timeout issues caused by invalid session data
+        let shouldSkipSessionCheck = false
         try {
           const projectRef = 'vfovtgtjailvrphsgafv' // Extract from VITE_SUPABASE_URL
           const sessionKey = `sb-${projectRef}-auth-token`
@@ -685,7 +686,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
           } else {
             console.log('🔍 No existing session in storage')
 
-            // CRITICAL FIX: Early exit when no session exists - show login immediately
+            // CRITICAL FIX: Fast path when no session exists - show login immediately
             console.log('🚀 FAST PATH: No session detected, showing login immediately')
 
             // Clear the 8-second timeout - no need to wait
@@ -700,10 +701,18 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
               authPerformanceMonitor.finishSession('success')
             }
 
-            return // Exit early - skip getSession() call entirely
+            // IMPORTANT: Don't exit function - let auth listener setup happen
+            // Just skip the session check by setting flag
+            shouldSkipSessionCheck = true
           }
         } catch (storageCheckError) {
           console.warn('⚠️ Error checking session storage:', storageCheckError)
+        }
+
+        // Skip session check if no session exists in storage
+        if (shouldSkipSessionCheck) {
+          logger.debug('⏩ Skipping session check - no session in storage')
+          return // Exit initializeAuth early, but allow listener setup to happen
         }
 
         // FIX #3: INCREASED session check timeout to allow network completion
