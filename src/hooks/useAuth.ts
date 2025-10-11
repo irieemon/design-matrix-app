@@ -65,6 +65,9 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   const maxLoadingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isLoadingRef = useRef(isLoading) // Track current isLoading for timeout closure
 
+  // CRITICAL FIX: Store latest handleAuthSuccess ref so listener always calls current version
+  const handleAuthSuccessRef = useRef<((authUser: any) => Promise<void>) | null>(null)
+
   const { onProjectsCheck, setCurrentProject, setIdeas } = options
 
   // OPTIMIZED: Simple refresh detection without blocking auth
@@ -546,6 +549,12 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     }
   }, [handleAuthUser])
 
+  // CRITICAL FIX: Update ref whenever handleAuthSuccess changes
+  // This ensures the listener always calls the latest version
+  useEffect(() => {
+    handleAuthSuccessRef.current = handleAuthSuccess
+  }, [handleAuthSuccess])
+
   const handleLogout = useCallback(async () => {
     try {
       logger.debug('🚪 Logging out...')
@@ -884,7 +893,12 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
       if (event === 'SIGNED_IN' && session?.user) {
         logger.debug('✅ SIGNED_IN event received, processing user...')
-        await handleAuthSuccess(session.user)
+        // CRITICAL FIX: Use ref to ensure we always call the latest handleAuthSuccess
+        if (handleAuthSuccessRef.current) {
+          await handleAuthSuccessRef.current(session.user)
+        } else {
+          logger.error('❌ handleAuthSuccessRef is null - cannot process SIGNED_IN event')
+        }
         // Loading is now handled inside handleAuthSuccess → handleAuthUser after completion
       } else if (event === 'SIGNED_OUT') {
         logger.debug('🚪 SIGNED_OUT event received')
@@ -897,7 +911,12 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       } else if (event === 'INITIAL_SESSION') {
         if (session?.user) {
           logger.debug('✅ INITIAL_SESSION with user found, processing...')
-          await handleAuthSuccess(session.user)
+          // CRITICAL FIX: Use ref to ensure we always call the latest handleAuthSuccess
+          if (handleAuthSuccessRef.current) {
+            await handleAuthSuccessRef.current(session.user)
+          } else {
+            logger.error('❌ handleAuthSuccessRef is null - cannot process INITIAL_SESSION event')
+          }
         } else {
           logger.debug('🔓 INITIAL_SESSION without user, showing login screen')
           setIsLoading(false)
@@ -906,7 +925,12 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         logger.debug('🔄 TOKEN_REFRESHED event received')
         // Don't re-process user on token refresh, just ensure we have the session
         if (!currentUser) {
-          await handleAuthSuccess(session.user)
+          // CRITICAL FIX: Use ref to ensure we always call the latest handleAuthSuccess
+          if (handleAuthSuccessRef.current) {
+            await handleAuthSuccessRef.current(session.user)
+          } else {
+            logger.error('❌ handleAuthSuccessRef is null - cannot process TOKEN_REFRESHED event')
+          }
         }
       }
     })
