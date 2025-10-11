@@ -26,10 +26,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // This aggressive cleanup ensures a clean slate for the new configuration
 const cleanupLegacyAuthStorage = () => {
   try {
+    // DIAGNOSTIC: Log ALL storage keys BEFORE cleanup
+    console.log('🔍 BEFORE CLEANUP - localStorage keys:', Object.keys(localStorage))
+    console.log('🔍 BEFORE CLEANUP - sessionStorage keys:', Object.keys(sessionStorage))
+
     // Extract project reference from Supabase URL for dynamic key cleanup
     const projectRef = supabaseUrl?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
 
-    logger.info('🧹 Starting comprehensive storage cleanup for persistSession migration...')
+    console.log('🧹 Starting comprehensive storage cleanup for persistSession migration...')
+    console.log('🔍 Project ref:', projectRef)
 
     // AGGRESSIVE CLEANUP: Remove ALL Supabase-related storage
     // This is necessary because old persistSession: false data breaks persistSession: true
@@ -103,11 +108,15 @@ const cleanupLegacyAuthStorage = () => {
     }
 
     if (cleanedCount > 0) {
-      logger.info(`✅ Storage cleanup complete: removed ${cleanedCount} storage entries`)
-      logger.info('🔒 Ready for persistSession: true configuration')
+      console.log(`✅ Storage cleanup complete: removed ${cleanedCount} storage entries`)
+      console.log('🔒 Ready for persistSession: true configuration')
     } else {
-      logger.debug('✅ No legacy storage found - clean slate')
+      console.log('✅ No legacy storage found - clean slate')
     }
+
+    // DIAGNOSTIC: Log ALL storage keys AFTER cleanup
+    console.log('🔍 AFTER CLEANUP - localStorage keys:', Object.keys(localStorage))
+    console.log('🔍 AFTER CLEANUP - sessionStorage keys:', Object.keys(sessionStorage))
   } catch (error) {
     logger.warn('⚠️ Error during storage cleanup:', error)
   }
@@ -120,7 +129,8 @@ const CLEANUP_FLAG = 'sb-migration-cleanup-done-v2'  // v2 for aggressive cleanu
 const hasRunCleanup = sessionStorage.getItem(CLEANUP_FLAG)
 
 if (!hasRunCleanup) {
-  logger.warn('🔧 Running storage cleanup before Supabase initialization...')
+  // CRITICAL: Use console.log directly to bypass logger filtering in production
+  console.log('🔧 Running storage cleanup before Supabase initialization...')
   cleanupLegacyAuthStorage()
   try {
     sessionStorage.setItem(CLEANUP_FLAG, 'true')

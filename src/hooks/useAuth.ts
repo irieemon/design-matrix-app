@@ -639,9 +639,59 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         // authPerformanceMonitor.checkStoragePerformance()
         // authPerformanceMonitor.checkNetworkPerformance().catch(() => {}) // Non-blocking
 
-        // FIX #3: Reduced session check timeout for faster failure detection
+        // CRITICAL FIX: Clear potentially corrupt session storage BEFORE getSession()
+        // This fixes timeout issues caused by invalid session data
+        try {
+          const projectRef = 'vfovtgtjailvrphsgafv' // Extract from VITE_SUPABASE_URL
+          const sessionKey = `sb-${projectRef}-auth-token`
+
+          console.log('🔍 PRE-CHECK: Checking for existing session in storage...')
+          const existingSession = localStorage.getItem(sessionKey)
+
+          if (existingSession) {
+            console.log('🔍 Found existing session, validating...')
+            try {
+              const parsed = JSON.parse(existingSession)
+              const expiresAt = parsed?.expires_at
+
+              if (expiresAt) {
+                const expiryDate = new Date(expiresAt * 1000)
+                const isExpired = expiryDate <= new Date()
+
+                console.log('🔍 Session expiry check:', {
+                  expiresAt: expiryDate.toISOString(),
+                  now: new Date().toISOString(),
+                  isExpired
+                })
+
+                if (isExpired) {
+                  console.log('🧹 CRITICAL: Session expired, clearing storage...')
+                  localStorage.removeItem(sessionKey)
+                  // Clear any related keys
+                  localStorage.removeItem(`${sessionKey}-code-verifier`)
+                  localStorage.removeItem(`${sessionKey}.0`)
+                  localStorage.removeItem(`${sessionKey}.1`)
+                  sessionCache.clear()
+                }
+              }
+            } catch (parseError) {
+              console.log('🧹 CRITICAL: Corrupt session data, clearing storage...')
+              localStorage.removeItem(sessionKey)
+              localStorage.removeItem(`${sessionKey}-code-verifier`)
+              localStorage.removeItem(`${sessionKey}.0`)
+              localStorage.removeItem(`${sessionKey}.1`)
+              sessionCache.clear()
+            }
+          } else {
+            console.log('🔍 No existing session in storage')
+          }
+        } catch (storageCheckError) {
+          console.warn('⚠️ Error checking session storage:', storageCheckError)
+        }
+
+        // FIX #3: INCREASED session check timeout to allow network completion
         const controller = new AbortController()
-        const sessionTimeoutMs = 5000  // Reduced from 30s to 5s
+        const sessionTimeoutMs = 15000  // Increased from 5s to 15s to allow network completion
         const timeoutId = setTimeout(() => {
           logger.warn(`⏰ Session check timeout after ${sessionTimeoutMs}ms, using fallback`)
           controller.abort()
