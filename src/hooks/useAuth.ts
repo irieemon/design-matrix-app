@@ -691,6 +691,12 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
               if (parsed.user && mounted) {
                 console.log('🔍 initAuth: Processing user from localStorage fallback')
+
+                // CRITICAL: Also need session propagation delay for fallback path
+                console.log('🔍 initAuth: Waiting 150ms for session propagation (fallback path)...')
+                await new Promise(resolve => setTimeout(resolve, 150))
+                console.log('🔍 initAuth: Propagation delay complete (fallback path)')
+
                 await handleAuthUser(parsed.user)
                 console.log('🔍 initAuth: Fallback auth completed')
                 return
