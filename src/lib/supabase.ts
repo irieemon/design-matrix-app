@@ -181,26 +181,10 @@ export const supabase = createClient(
       autoRefreshToken: true,   // Auto-refresh tokens before expiry
       persistSession: true,      // Store and detect sessions (critical for both login and refresh)
       detectSessionInUrl: false, // OAuth handled server-side
-      // CRITICAL FIX: Explicitly provide localStorage storage adapter
-      // Setting storage: undefined caused Supabase to NOT persist sessions properly
-      storage: {
-        getItem: (key) => {
-          if (typeof window !== 'undefined') {
-            return window.localStorage.getItem(key)
-          }
-          return null
-        },
-        setItem: (key, value) => {
-          if (typeof window !== 'undefined') {
-            window.localStorage.setItem(key, value)
-          }
-        },
-        removeItem: (key) => {
-          if (typeof window !== 'undefined') {
-            window.localStorage.removeItem(key)
-          }
-        }
-      },
+      // CRITICAL FIX: Use undefined to let Supabase use its default localStorage adapter
+      // The explicit storage adapter with typeof window checks broke session reading during initialization
+      // Supabase's default adapter handles SSR and browser contexts correctly
+      storage: undefined,
       // CRITICAL: Use explicit storage key so cleanup can preserve it
       storageKey: 'sb-vfovtgtjailvrphsgafv-auth-token',
       flowType: 'pkce'          // PKCE flow for security
