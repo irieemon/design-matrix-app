@@ -684,9 +684,8 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
                   sessionCache.clear()
                   shouldSkipSessionCheck = false // Token expired, need to show login
                 } else {
-                  // CRITICAL FIX: Valid session exists - process user directly from localStorage
-                  // WITHOUT making any API calls (profile fetch causes timeout)
-                  console.log('🚀 FAST PATH: Valid session found, setting state immediately')
+                  // CRITICAL FIX: Valid session exists - load into Supabase client AND set React state
+                  console.log('🚀 FAST PATH: Valid session found, loading into client')
 
                   // Clear the 8-second timeout
                   if (maxLoadingTimeoutRef.current) {
@@ -694,7 +693,21 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
                     maxLoadingTimeoutRef.current = null
                   }
 
-                  // Extract user from session and set state DIRECTLY (no API calls)
+                  // CRITICAL: Load session into Supabase client so database queries work
+                  // Without this, the client has no session and all queries fail (unauthenticated)
+                  try {
+                    console.log('🔐 Loading session into Supabase client for database queries...')
+                    await supabase.auth.setSession({
+                      access_token: parsed.access_token,
+                      refresh_token: parsed.refresh_token
+                    })
+                    console.log('✅ Session loaded into Supabase client successfully')
+                  } catch (sessionError) {
+                    console.error('❌ Failed to load session into client:', sessionError)
+                    // Continue anyway - we'll set React state and let auth listener handle it
+                  }
+
+                  // Extract user from session and set state DIRECTLY
                   const user = parsed?.user
                   if (user && mounted) {
                     console.log('✅ Setting user state directly from localStorage:', user.email)
