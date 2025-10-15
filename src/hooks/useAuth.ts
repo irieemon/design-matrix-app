@@ -592,8 +592,12 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     }
   }, [setCurrentProject, setIdeas])
 
+  // DIAGNOSTIC: Log before useEffect
+  console.log('🔍 useAuth: About to register useEffect (this should appear on every render)')
+
   // Initialize Supabase auth - STANDARD PATTERN
   useEffect(() => {
+    console.log('🔍 useAuth useEffect: CALLBACK EXECUTING - this should appear ONCE on mount')
     logger.debug('🔄 useAuth useEffect STARTING - standard Supabase auth pattern')
     let mounted = true
     authPerformanceMonitor.startSession()
