@@ -682,6 +682,27 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
                   localStorage.removeItem(`${sessionKey}.0`)
                   localStorage.removeItem(`${sessionKey}.1`)
                   sessionCache.clear()
+                  shouldSkipSessionCheck = false // Token expired, need to show login
+                } else {
+                  // CRITICAL FIX: Valid session exists - trust it and show dashboard immediately
+                  console.log('🚀 FAST PATH: Valid session found, processing immediately')
+
+                  // Clear the 8-second timeout
+                  if (maxLoadingTimeoutRef.current) {
+                    clearTimeout(maxLoadingTimeoutRef.current)
+                    maxLoadingTimeoutRef.current = null
+                  }
+
+                  // Process the user from the session data directly
+                  const user = parsed?.user
+                  if (user && mounted) {
+                    console.log('✅ Processing user from stored session:', user.email)
+                    await handleAuthUser(user)
+                    authPerformanceMonitor.finishSession('success')
+                  }
+
+                  // Skip the getSession() call entirely - we already have the session
+                  shouldSkipSessionCheck = true
                 }
               }
             } catch (parseError) {
