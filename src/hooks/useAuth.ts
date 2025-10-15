@@ -598,12 +598,26 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   // Initialize Supabase auth - STANDARD PATTERN
   useEffect(() => {
     console.log('🔍 useAuth useEffect: CALLBACK EXECUTING - this should appear ONCE on mount')
-    logger.debug('🔄 useAuth useEffect STARTING - standard Supabase auth pattern')
+
+    try {
+      logger.debug('🔄 useAuth useEffect STARTING - standard Supabase auth pattern')
+    } catch (logError) {
+      console.error('🚨 LOGGER.DEBUG FAILED:', logError)
+    }
+
     let mounted = true
-    authPerformanceMonitor.startSession()
+
+    try {
+      authPerformanceMonitor.startSession()
+    } catch (perfError) {
+      console.error('🚨 AUTH PERFORMANCE MONITOR FAILED:', perfError)
+    }
+
+    console.log('🔍 useAuth useEffect: Continuing after logger/perf monitor - about to define initAuth')
 
     // STANDARD PATTERN: Simple initialization
     const initAuth = async () => {
+      console.log('🔍 initAuth: FUNCTION EXECUTING')
       try {
         // STEP 1: Get current session (reads from localStorage, no network request)
         logger.debug('🔐 Calling getSession() to load session into client...')
@@ -647,7 +661,9 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       }
     }
 
+    console.log('🔍 useAuth useEffect: About to call initAuth()')
     initAuth()
+    console.log('🔍 useAuth useEffect: initAuth() called (async, will continue in background)')
 
     // STEP 2: Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
