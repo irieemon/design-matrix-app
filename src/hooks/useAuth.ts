@@ -621,7 +621,16 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       try {
         // STEP 1: Get current session (reads from localStorage, no network request)
         console.log('🔍 initAuth: About to call getSession()')
-        const { data: { session }, error } = await supabase.auth.getSession()
+
+        // CRITICAL FIX: Add timeout to getSession() as it hangs on refresh
+        const getSessionWithTimeout = Promise.race([
+          supabase.auth.getSession(),
+          new Promise<{ data: { session: null }, error: any }>((_, reject) =>
+            setTimeout(() => reject(new Error('getSession() timeout after 2 seconds')), 2000)
+          )
+        ])
+
+        const { data: { session }, error } = await getSessionWithTimeout
         console.log('🔍 initAuth: getSession() completed', { hasSession: !!session, hasError: !!error, userEmail: session?.user?.email })
 
         if (error) {
@@ -662,6 +671,46 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
           console.log('🔍 initAuth: Component unmounted, skipping auth processing')
         }
       } catch (error) {
+        console.error('🔍 initAuth: ERROR caught:', error)
+
+        // CRITICAL FIX: If getSession() timed out, read localStorage directly as fallback
+        if (error instanceof Error && error.message.includes('getSession() timeout')) {
+          console.log('🔍 initAuth: getSession() timed out, reading session from localStorage directly')
+
+          try {
+            const storageKey = 'sb-vfovtgtjailvrphsgafv-auth-token'
+            const stored = localStorage.getItem(storageKey)
+
+            if (stored) {
+              const parsed = JSON.parse(stored)
+              console.log('🔍 initAuth: Found session in localStorage:', {
+                hasUser: !!parsed.user,
+                email: parsed.user?.email,
+                expiresAt: parsed.expires_at
+              })
+
+              if (parsed.user && mounted) {
+                console.log('🔍 initAuth: Processing user from localStorage fallback')
+                await handleAuthUser(parsed.user)
+                console.log('🔍 initAuth: Fallback auth completed')
+                return
+              }
+            }
+
+            console.log('🔍 initAuth: No valid session in localStorage, showing login')
+            if (mounted) {
+              setIsLoading(false)
+            }
+            return
+          } catch (storageError) {
+            console.error('🔍 initAuth: Error reading localStorage:', storageError)
+            if (mounted) {
+              setIsLoading(false)
+            }
+            return
+          }
+        }
+
         logger.error('💥 Error initializing auth:', error)
         if (mounted) {
           setIsLoading(false)
