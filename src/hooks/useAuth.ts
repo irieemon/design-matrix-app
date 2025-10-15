@@ -684,8 +684,9 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
                   sessionCache.clear()
                   shouldSkipSessionCheck = false // Token expired, need to show login
                 } else {
-                  // CRITICAL FIX: Valid session exists - trust it and show dashboard immediately
-                  console.log('🚀 FAST PATH: Valid session found, processing immediately')
+                  // CRITICAL FIX: Valid session exists - process user directly from localStorage
+                  // WITHOUT making any API calls (profile fetch causes timeout)
+                  console.log('🚀 FAST PATH: Valid session found, setting state immediately')
 
                   // Clear the 8-second timeout
                   if (maxLoadingTimeoutRef.current) {
@@ -693,12 +694,29 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
                     maxLoadingTimeoutRef.current = null
                   }
 
-                  // Process the user from the session data directly
+                  // Extract user from session and set state DIRECTLY (no API calls)
                   const user = parsed?.user
                   if (user && mounted) {
-                    console.log('✅ Processing user from stored session:', user.email)
-                    await handleAuthUser(user)
+                    console.log('✅ Setting user state directly from localStorage:', user.email)
+
+                    // Create user profile from session data
+                    const userProfile = {
+                      id: user.id,
+                      email: user.email,
+                      full_name: user.user_metadata?.full_name || user.email,
+                      avatar_url: user.user_metadata?.avatar_url || null,
+                      role: (user.user_metadata?.role || user.app_metadata?.role || 'user') as 'user' | 'admin' | 'super_admin',
+                      created_at: user.created_at || new Date().toISOString(),
+                      updated_at: user.updated_at || new Date().toISOString()
+                    }
+
+                    // Set state IMMEDIATELY - no async operations
+                    setCurrentUser(userProfile)
+                    setAuthUser(user)
+                    setIsLoading(false)
+
                     authPerformanceMonitor.finishSession('success')
+                    console.log('✅ User state set successfully, loading complete')
                   }
 
                   // Skip the getSession() call entirely - we already have the session
