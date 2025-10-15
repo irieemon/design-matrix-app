@@ -605,6 +605,20 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
           await supabase.auth.signOut()
         }
 
+        if (session?.user) {
+          // CRITICAL: Wait for session to propagate to client's internal auth state
+          // This ensures RLS (Row Level Security) can access auth.uid() for database queries
+          logger.debug('⏳ Waiting for session propagation to client auth state...')
+          await new Promise(resolve => setTimeout(resolve, 150))
+
+          // Verify propagation
+          const verifySession = await supabase.auth.getSession()
+          logger.debug('✅ Session propagation verified:', {
+            hasSession: !!verifySession.data.session,
+            userId: verifySession.data.session?.user?.id
+          })
+        }
+
         if (mounted) {
           if (session?.user) {
             logger.debug('✅ Session exists, processing user:', session.user.email)
