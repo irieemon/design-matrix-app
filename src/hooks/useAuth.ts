@@ -684,27 +684,14 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
                   sessionCache.clear()
                   shouldSkipSessionCheck = false // Token expired, need to show login
                 } else {
-                  // CRITICAL FIX: Valid session exists - load into Supabase client AND set React state
-                  console.log('🚀 FAST PATH: Valid session found, loading into client')
+                  // FAST PATH: Valid session exists - set React state immediately
+                  // Supabase client already has session loaded from persistSession: true
+                  console.log('🚀 FAST PATH: Valid session found, setting state immediately')
 
                   // Clear the 8-second timeout
                   if (maxLoadingTimeoutRef.current) {
                     clearTimeout(maxLoadingTimeoutRef.current)
                     maxLoadingTimeoutRef.current = null
-                  }
-
-                  // CRITICAL: Load session into Supabase client so database queries work
-                  // Without this, the client has no session and all queries fail (unauthenticated)
-                  try {
-                    console.log('🔐 Loading session into Supabase client for database queries...')
-                    await supabase.auth.setSession({
-                      access_token: parsed.access_token,
-                      refresh_token: parsed.refresh_token
-                    })
-                    console.log('✅ Session loaded into Supabase client successfully')
-                  } catch (sessionError) {
-                    console.error('❌ Failed to load session into client:', sessionError)
-                    // Continue anyway - we'll set React state and let auth listener handle it
                   }
 
                   // Extract user from session and set state DIRECTLY
