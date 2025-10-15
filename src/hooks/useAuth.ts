@@ -620,37 +620,46 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       console.log('🔍 initAuth: FUNCTION EXECUTING')
       try {
         // STEP 1: Get current session (reads from localStorage, no network request)
-        logger.debug('🔐 Calling getSession() to load session into client...')
+        console.log('🔍 initAuth: About to call getSession()')
         const { data: { session }, error } = await supabase.auth.getSession()
+        console.log('🔍 initAuth: getSession() completed', { hasSession: !!session, hasError: !!error, userEmail: session?.user?.email })
 
         if (error) {
-          logger.error('❌ Session error:', error)
+          console.error('🔍 initAuth: Session error detected:', error)
           await supabase.auth.signOut()
         }
 
         if (session?.user) {
+          console.log('🔍 initAuth: Session exists, starting propagation delay...')
           // CRITICAL: Wait for session to propagate to client's internal auth state
           // This ensures RLS (Row Level Security) can access auth.uid() for database queries
-          logger.debug('⏳ Waiting for session propagation to client auth state...')
           await new Promise(resolve => setTimeout(resolve, 150))
+          console.log('🔍 initAuth: Propagation delay complete')
 
           // Verify propagation
           const verifySession = await supabase.auth.getSession()
-          logger.debug('✅ Session propagation verified:', {
+          console.log('🔍 initAuth: Session propagation verified:', {
             hasSession: !!verifySession.data.session,
             userId: verifySession.data.session?.user?.id
           })
+        } else {
+          console.log('🔍 initAuth: No session found')
         }
 
+        console.log('🔍 initAuth: Checking mounted flag:', mounted)
         if (mounted) {
           if (session?.user) {
-            logger.debug('✅ Session exists, processing user:', session.user.email)
+            console.log('🔍 initAuth: About to call handleAuthUser()', session.user.email)
             await handleAuthUser(session.user)
+            console.log('🔍 initAuth: handleAuthUser() completed')
           } else {
-            logger.debug('🔓 No session, showing login screen')
+            console.log('🔍 initAuth: No session, setting isLoading to false')
             setIsLoading(false)
           }
           authPerformanceMonitor.finishSession('success')
+          console.log('🔍 initAuth: Finished successfully')
+        } else {
+          console.log('🔍 initAuth: Component unmounted, skipping auth processing')
         }
       } catch (error) {
         logger.error('💥 Error initializing auth:', error)
