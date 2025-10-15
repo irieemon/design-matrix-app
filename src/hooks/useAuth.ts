@@ -58,10 +58,15 @@ setInterval(() => {
 }, 30000) // Clean up every 30 seconds for better memory management
 
 export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
+  // DIAGNOSTIC: Log that useAuth hook is being called
+  console.log('🔍 useAuth: Hook called at', new Date().toISOString())
+
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const abortControllerRef = useRef<AbortController | null>(null)
+
+  console.log('🔍 useAuth: Initial state -', { currentUser, authUser, isLoading })
 
   // CRITICAL FIX: Store latest handleAuthSuccess ref so listener always calls current version
   const handleAuthSuccessRef = useRef<((authUser: any) => Promise<void>) | null>(null)
