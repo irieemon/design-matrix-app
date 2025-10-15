@@ -62,8 +62,6 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const abortControllerRef = useRef<AbortController | null>(null)
-  const maxLoadingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const isLoadingRef = useRef(isLoading) // Track current isLoading for timeout closure
 
   // CRITICAL FIX: Store latest handleAuthSuccess ref so listener always calls current version
   const handleAuthSuccessRef = useRef<((authUser: any) => Promise<void>) | null>(null)
@@ -80,11 +78,6 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   // PERFORMANCE OPTIMIZED: Extended project cache for reduced DB calls
   const projectExistenceCache = useRef(new Map<string, { exists: boolean; timestamp: number; expires: number }>())
   const PROJECT_CACHE_DURATION = 5 * 60 * 1000 // Extended to 5 minutes
-
-  // Sync isLoadingRef with isLoading state for timeout closure
-  useEffect(() => {
-    isLoadingRef.current = isLoading
-  }, [isLoading])
 
   // Optimized project check with aggressive caching and minimal data fetching
   const checkUserProjectsAndRedirect = async (userId: string, isDemoUser = false) => {
@@ -375,13 +368,6 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         setAuthUser(authUser)
         setIsLoading(false)
         logger.debug('✅ Demo user state set complete')
-
-        // Clear timeout to prevent race condition overwriting auth success
-        if (maxLoadingTimeoutRef.current) {
-          logger.debug('⏹️  Clearing auth timeout')
-          clearTimeout(maxLoadingTimeoutRef.current)
-          maxLoadingTimeoutRef.current = null
-        }
       } else {
         // For real users, get profile with caching and run project check in parallel
         const isDemoUser = authUser.isDemoUser || isDemoUUID(authUser.id)
@@ -425,12 +411,6 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
           setCurrentUser(userProfile)
           setAuthUser(authUser)
           setIsLoading(false)
-
-          // Clear timeout to prevent race condition overwriting auth success
-          if (maxLoadingTimeoutRef.current) {
-            clearTimeout(maxLoadingTimeoutRef.current)
-            maxLoadingTimeoutRef.current = null
-          }
         } else {
           logger.error('❌ Error fetching user profile, using fallback:', userProfileResult.reason)
           // Fallback to basic user
@@ -447,12 +427,6 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
           setCurrentUser(fallbackUser)
           setAuthUser(authUser)
           setIsLoading(false)
-
-          // Clear timeout to prevent race condition overwriting auth success
-          if (maxLoadingTimeoutRef.current) {
-            clearTimeout(maxLoadingTimeoutRef.current)
-            maxLoadingTimeoutRef.current = null
-          }
         }
       }
       
@@ -471,12 +445,6 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       setCurrentUser(errorFallbackUser)
       setAuthUser(authUser)
       setIsLoading(false)
-
-      // Clear timeout to prevent race condition overwriting auth success
-      if (maxLoadingTimeoutRef.current) {
-        clearTimeout(maxLoadingTimeoutRef.current)
-        maxLoadingTimeoutRef.current = null
-      }
       
       // Try to check for projects even in error case
       if (authUser?.id) {
@@ -619,368 +587,69 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     }
   }, [setCurrentProject, setIdeas])
 
-  // Initialize Supabase auth and handle session changes
+  // Initialize Supabase auth - STANDARD PATTERN
   useEffect(() => {
-    logger.debug('🔄 useAuth useEffect STARTING - initializing authentication system')
+    logger.debug('🔄 useAuth useEffect STARTING - standard Supabase auth pattern')
     let mounted = true
-    const startTime = performance.now()
+    authPerformanceMonitor.startSession()
 
-      // FIX #3: Reduced timeout for faster failure detection
-    const maxTimeoutMs = 8000  // Reduced from 30s to 8s for better user experience
-    maxLoadingTimeoutRef.current = setTimeout(() => {
-      // Use ref to read CURRENT isLoading state, not closure-captured value
-      if (mounted && isLoadingRef.current) {
-        logger.warn(`⏱️ Auth timeout reached after ${maxTimeoutMs}ms - clearing loading state`)
-        authPerformanceMonitor.finishSession('timeout')
-        setIsLoading(false)
-      }
-    }, maxTimeoutMs)
-
-    const initializeAuth = async () => {
+    // STANDARD PATTERN: Simple initialization
+    const initAuth = async () => {
       try {
-        logger.debug('🚀 Initializing authentication...')
-        authPerformanceMonitor.startSession()
-
-        // Minimal delay for better performance
-        await new Promise(resolve => setTimeout(resolve, 50))
-
-        // Check storage and network performance (temporarily disabled for stability)
-        // authPerformanceMonitor.checkStoragePerformance()
-        // authPerformanceMonitor.checkNetworkPerformance().catch(() => {}) // Non-blocking
-
-        // CRITICAL FIX: Clear potentially corrupt session storage BEFORE getSession()
-        // This fixes timeout issues caused by invalid session data
-        let shouldSkipSessionCheck = false
-        try {
-          const projectRef = 'vfovtgtjailvrphsgafv' // Extract from VITE_SUPABASE_URL
-          const sessionKey = `sb-${projectRef}-auth-token`
-
-          console.log('🔍 PRE-CHECK: Checking for existing session in storage...')
-          const existingSession = localStorage.getItem(sessionKey)
-
-          if (existingSession) {
-            console.log('🔍 Found existing session, validating...')
-            try {
-              const parsed = JSON.parse(existingSession)
-              const expiresAt = parsed?.expires_at
-
-              if (expiresAt) {
-                const expiryDate = new Date(expiresAt * 1000)
-                const isExpired = expiryDate <= new Date()
-
-                console.log('🔍 Session expiry check:', {
-                  expiresAt: expiryDate.toISOString(),
-                  now: new Date().toISOString(),
-                  isExpired
-                })
-
-                if (isExpired) {
-                  console.log('🧹 CRITICAL: Session expired, clearing storage...')
-                  localStorage.removeItem(sessionKey)
-                  // Clear any related keys
-                  localStorage.removeItem(`${sessionKey}-code-verifier`)
-                  localStorage.removeItem(`${sessionKey}.0`)
-                  localStorage.removeItem(`${sessionKey}.1`)
-                  sessionCache.clear()
-                  shouldSkipSessionCheck = false // Token expired, need to show login
-                } else {
-                  // FAST PATH: Valid session exists - load into Supabase client for database queries
-                  console.log('🚀 FAST PATH: Valid session in storage, loading into client')
-
-                  // Clear the 8-second timeout
-                  if (maxLoadingTimeoutRef.current) {
-                    clearTimeout(maxLoadingTimeoutRef.current)
-                    maxLoadingTimeoutRef.current = null
-                  }
-
-                  // CRITICAL: Call getSession() to load session into Supabase client
-                  // This is REQUIRED for database queries to work
-                  try {
-                    console.log('🔐 Loading session into client with getSession()...')
-                    const { data: { session }, error } = await supabase.auth.getSession()
-
-                    if (session && !error && mounted) {
-                      console.log('✅ Session loaded into client, setting state')
-                      const user = session.user
-
-                      // Create user profile from session data
-                      const userProfile = {
-                        id: user.id,
-                        email: user.email,
-                        full_name: user.user_metadata?.full_name || user.email,
-                        avatar_url: user.user_metadata?.avatar_url || null,
-                        role: (user.user_metadata?.role || user.app_metadata?.role || 'user') as 'user' | 'admin' | 'super_admin',
-                        created_at: user.created_at || new Date().toISOString(),
-                        updated_at: user.updated_at || new Date().toISOString()
-                      }
-
-                      // Set state
-                      setCurrentUser(userProfile)
-                      setAuthUser(user)
-                      setIsLoading(false)
-
-                      authPerformanceMonitor.finishSession('success')
-                      console.log('✅ User state set, client has session for database queries')
-
-                      // Skip the normal session check path
-                      shouldSkipSessionCheck = true
-                    } else {
-                      console.log('⚠️ getSession() returned no session, falling back to normal path')
-                      shouldSkipSessionCheck = false
-                    }
-                  } catch (sessionError) {
-                    console.error('❌ Error loading session:', sessionError)
-                    shouldSkipSessionCheck = false // Fall back to normal path
-                  }
-                }
-              }
-            } catch (parseError) {
-              console.log('🧹 CRITICAL: Corrupt session data, clearing storage...')
-              localStorage.removeItem(sessionKey)
-              localStorage.removeItem(`${sessionKey}-code-verifier`)
-              localStorage.removeItem(`${sessionKey}.0`)
-              localStorage.removeItem(`${sessionKey}.1`)
-              sessionCache.clear()
-            }
-          } else {
-            console.log('🔍 No existing session in storage')
-
-            // CRITICAL FIX: Fast path when no session exists - show login immediately
-            console.log('🚀 FAST PATH: No session detected, showing login immediately')
-
-            // Clear the 8-second timeout - no need to wait
-            if (maxLoadingTimeoutRef.current) {
-              clearTimeout(maxLoadingTimeoutRef.current)
-              maxLoadingTimeoutRef.current = null
-            }
-
-            // Set loading false IMMEDIATELY - user sees login screen instantly
-            if (mounted) {
-              setIsLoading(false)
-              authPerformanceMonitor.finishSession('success')
-            }
-
-            // IMPORTANT: Don't exit function - let auth listener setup happen
-            // Just skip the session check by setting flag
-            shouldSkipSessionCheck = true
-          }
-        } catch (storageCheckError) {
-          console.warn('⚠️ Error checking session storage:', storageCheckError)
-        }
-
-        // Skip session check if no session exists in storage
-        if (shouldSkipSessionCheck) {
-          logger.debug('⏩ Skipping session check - no session in storage')
-          return // Exit initializeAuth early, but allow listener setup to happen
-        }
-
-        // FIX #3: INCREASED session check timeout to allow network completion
-        const controller = new AbortController()
-        const sessionTimeoutMs = 15000  // Increased from 5s to 15s to allow network completion
-        const timeoutId = setTimeout(() => {
-          logger.warn(`⏰ Session check timeout after ${sessionTimeoutMs}ms, using fallback`)
-          controller.abort()
-        }, sessionTimeoutMs)
-
-        // PERFORMANCE OPTIMIZED: Check session cache first with TOKEN VALIDATION
-        const sessionCacheKey = 'current_session'
-        const cachedSession = sessionCache.get(sessionCacheKey)
-
-        let sessionResult
-        if (cachedSession && Date.now() < cachedSession.expires) {
-          // FIX #1: Validate token expiry before using cached session
-          const tokenExpiresAt = cachedSession.session?.expires_at
-          const tokenStillValid = tokenExpiresAt && new Date(tokenExpiresAt * 1000) > new Date()
-
-          if (tokenStillValid) {
-            logger.debug('🎯 Using cached session data (token validated)')
-            sessionResult = { data: { session: cachedSession.session }, error: null }
-            clearTimeout(timeoutId)
-          } else {
-            logger.warn('⚠️ Cached session token expired, fetching fresh session')
-            sessionCache.delete(sessionCacheKey) // Clear stale cache
-            try {
-              sessionResult = await supabase.auth.getSession()
-              clearTimeout(timeoutId)
-
-              // Cache the fresh session
-              if (sessionResult.data?.session) {
-                sessionCache.set(sessionCacheKey, {
-                  session: sessionResult.data.session,
-                  timestamp: Date.now(),
-                  expires: Date.now() + SESSION_CACHE_DURATION
-                })
-              }
-            } catch (error) {
-              if (error instanceof Error && error.name === 'AbortError') {
-                logger.debug('⏰ Session check timeout, using fallback')
-                sessionResult = { data: { session: null }, error: null }
-              } else {
-                throw error
-              }
-            }
-          }
-        } else {
-          try {
-            sessionResult = await supabase.auth.getSession()
-            clearTimeout(timeoutId)
-
-            // Cache the session result for better performance
-            if (sessionResult.data?.session) {
-              sessionCache.set(sessionCacheKey, {
-                session: sessionResult.data.session,
-                timestamp: Date.now(),
-                expires: Date.now() + SESSION_CACHE_DURATION
-              })
-            }
-          } catch (error) {
-            if (error instanceof Error && error.name === 'AbortError') {
-              logger.debug('⏰ Session check timeout, using fallback')
-              sessionResult = { data: { session: null }, error: null }
-            } else {
-              throw error
-            }
-          }
-        }
-
-        const { data: { session }, error } = sessionResult
-        const sessionTime = performance.now() - startTime
-        authPerformanceMonitor.recordSessionCheck(sessionTime)
-
-        logger.debug('🔐 Session check result:', {
-          session: session ? 'found' : 'undefined',
-          userEmail: session?.user?.email,
-          error,
-          timing: `${sessionTime.toFixed(1)}ms`
-        })
+        // STEP 1: Get current session (reads from localStorage, no network request)
+        logger.debug('🔐 Calling getSession() to load session into client...')
+        const { data: { session }, error } = await supabase.auth.getSession()
 
         if (error) {
-          logger.error('❌ Error getting session:', error)
+          logger.error('❌ Session error:', error)
+          await supabase.auth.signOut()
         }
 
-        if (session?.user && mounted) {
-          logger.debug('✅ User already signed in:', session.user.email)
-          await handleAuthUser(session.user)
-        } else {
-          logger.debug('❌ No active session found')
-
-          // SECURITY FIX: Removed legacy localStorage authentication bypass
-          // Previous code allowed complete auth bypass via localStorage manipulation
-          // Clean up any legacy storage that might cause conflicts
-          try {
-            localStorage.removeItem('prioritasUser')
-          } catch (error) {
-            logger.debug('Could not clean legacy storage:', error)
-          }
-
-          // CRITICAL FIX: Clear loading IMMEDIATELY when no session detected
-          logger.debug('🔓 No valid session - showing login screen IMMEDIATELY')
-
-          // Clear the max timeout to prevent race condition
-          if (maxLoadingTimeoutRef.current) {
-            clearTimeout(maxLoadingTimeoutRef.current)
-            maxLoadingTimeoutRef.current = null
-          }
-
-          // Set loading false IMMEDIATELY - no additional timeout needed
-          if (mounted) {
-            const totalTime = performance.now() - startTime
-            logger.debug('🔓 Login screen shown', `total: ${totalTime.toFixed(1)}ms`)
-            authPerformanceMonitor.finishSession('success')
+        if (mounted) {
+          if (session?.user) {
+            logger.debug('✅ Session exists, processing user:', session.user.email)
+            await handleAuthUser(session.user)
+          } else {
+            logger.debug('🔓 No session, showing login screen')
             setIsLoading(false)
           }
+          authPerformanceMonitor.finishSession('success')
         }
       } catch (error) {
         logger.error('💥 Error initializing auth:', error)
-        authPerformanceMonitor.finishSession('error')
-        if (mounted) setIsLoading(false)
-      }
-    }
-
-    // EMERGENCY FIX: Wrap initializeAuth call in try-catch for immediate fallback
-    logger.debug('📞 About to call initializeAuth()...')
-    try {
-      initializeAuth().catch((error) => {
-        // Emergency fallback: if initializeAuth throws, show login immediately
-        logger.error('💥 CRITICAL: initializeAuth() promise rejected:', error)
-        logger.debug('🚨 Emergency fallback: showing login screen immediately')
-
-        // Clear the timeout - we're failing fast
-        if (maxLoadingTimeoutRef.current) {
-          clearTimeout(maxLoadingTimeoutRef.current)
-          maxLoadingTimeoutRef.current = null
-        }
-
-        // Immediately show login screen
         if (mounted) {
           setIsLoading(false)
           authPerformanceMonitor.finishSession('error')
         }
-      })
-    } catch (syncError) {
-      // Catch synchronous errors in calling initializeAuth
-      logger.error('💥 CRITICAL: initializeAuth() threw synchronously:', syncError)
-      logger.debug('🚨 Emergency fallback: showing login screen immediately')
-
-      // Clear the timeout
-      if (maxLoadingTimeoutRef.current) {
-        clearTimeout(maxLoadingTimeoutRef.current)
-        maxLoadingTimeoutRef.current = null
-      }
-
-      // Immediately show login screen
-      if (mounted) {
-        setIsLoading(false)
-        authPerformanceMonitor.finishSession('error')
       }
     }
 
-    // Listen for auth changes
+    initAuth()
+
+    // STEP 2: Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
 
       logger.debug('🔐 Auth state changed:', event, session?.user?.email)
 
       if (event === 'SIGNED_IN' && session?.user) {
-        logger.debug('✅ SIGNED_IN event received, processing user...')
-        // CRITICAL FIX: Use ref to ensure we always call the latest handleAuthSuccess
+        logger.debug('✅ SIGNED_IN event, processing user...')
         if (handleAuthSuccessRef.current) {
           await handleAuthSuccessRef.current(session.user)
-        } else {
-          logger.error('❌ handleAuthSuccessRef is null - cannot process SIGNED_IN event')
         }
-        // Loading is now handled inside handleAuthSuccess → handleAuthUser after completion
       } else if (event === 'SIGNED_OUT') {
-        logger.debug('🚪 SIGNED_OUT event received')
+        logger.debug('🚪 SIGNED_OUT event')
         setAuthUser(null)
         setCurrentUser(null)
         setCurrentProject?.(null)
         setIdeas?.([])
-        localStorage.removeItem('prioritasUser') // Clean up legacy
+        localStorage.removeItem('prioritasUser')
         setIsLoading(false)
-      } else if (event === 'INITIAL_SESSION') {
-        if (session?.user) {
-          logger.debug('✅ INITIAL_SESSION with user found, processing...')
-          // CRITICAL FIX: Use ref to ensure we always call the latest handleAuthSuccess
-          if (handleAuthSuccessRef.current) {
-            await handleAuthSuccessRef.current(session.user)
-          } else {
-            logger.error('❌ handleAuthSuccessRef is null - cannot process INITIAL_SESSION event')
-          }
-        } else {
-          logger.debug('🔓 INITIAL_SESSION without user, showing login screen')
-          setIsLoading(false)
-        }
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        logger.debug('🔄 TOKEN_REFRESHED event received')
-        // Don't re-process user on token refresh, just ensure we have the session
-        if (!currentUser) {
-          // CRITICAL FIX: Use ref to ensure we always call the latest handleAuthSuccess
-          if (handleAuthSuccessRef.current) {
-            await handleAuthSuccessRef.current(session.user)
-          } else {
-            logger.error('❌ handleAuthSuccessRef is null - cannot process TOKEN_REFRESHED event')
-          }
+        logger.debug('🔄 TOKEN_REFRESHED event')
+        // Session is already updated in client, just ensure React state is current
+        if (!currentUser && handleAuthSuccessRef.current) {
+          await handleAuthSuccessRef.current(session.user)
         }
       }
     })
@@ -990,23 +659,17 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       DatabaseService.cleanupStaleLocks()
     }, 30000)
 
+    // STEP 3: Cleanup
     return () => {
       mounted = false
       subscription.unsubscribe()
       clearInterval(lockCleanupInterval)
 
-      // Clean up maximum loading timeout using ref
-      if (maxLoadingTimeoutRef.current) {
-        clearTimeout(maxLoadingTimeoutRef.current)
-        maxLoadingTimeoutRef.current = null
-      }
-
-      // Cancel any pending requests
       if (abortControllerRef.current) {
         abortControllerRef.current.abort()
       }
     }
-  }, []) // OPTIMIZED: Removed complex dependencies for stability
+  }, []) // Empty deps array - run once on mount
 
   return {
     currentUser,

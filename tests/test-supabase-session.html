@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase Session Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Session Test</h1>
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+
+        function log(msg) {
+            output.innerHTML += `<p>${msg}</p>`;
+            console.log(msg);
+        }
+
+        // Initialize Supabase client with same config as your app
+        const supabase = window.supabase.createClient(
+            'https://vfovtgtjailvrphsgafv.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmb3Z0Z3RqYWlsdnJwaHNnYWZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjU1NTg1MjUsImV4cCI6MjA0MTEzNDUyNX0.xbE7lvRMHQbZmZASdcKwHw_mRjXdjiW6okfJeQjDPaY',
+            {
+                auth: {
+                    autoRefreshToken: true,
+                    persistSession: true,
+                    detectSessionInUrl: false,
+                    storage: undefined,
+                    storageKey: 'sb-vfovtgtjailvrphsgafv-auth-token',
+                    flowType: 'pkce'
+                }
+            }
+        );
+
+        async function testSession() {
+            log('=== Testing Supabase Session ===');
+
+            // Check localStorage
+            const storageKey = 'sb-vfovtgtjailvrphsgafv-auth-token';
+            const stored = localStorage.getItem(storageKey);
+            log(`1. localStorage has session: ${stored ? 'YES' : 'NO'}`);
+
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    log(`   - User: ${parsed.user?.email}`);
+                    log(`   - Expires: ${new Date(parsed.expires_at * 1000).toISOString()}`);
+                } catch (e) {
+                    log(`   - Parse error: ${e.message}`);
+                }
+            }
+
+            // Check client session BEFORE getSession()
+            log('2. Testing client session BEFORE getSession()...');
+            try {
+                const { data, error } = await supabase.from('projects').select('id').limit(1);
+                log(`   - Database query: ${error ? 'FAILED' : 'SUCCESS'}`);
+                if (error) log(`   - Error: ${error.message}`);
+            } catch (e) {
+                log(`   - Query error: ${e.message}`);
+            }
+
+            // Call getSession()
+            log('3. Calling getSession()...');
+            const start = Date.now();
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                const duration = Date.now() - start;
+                log(`   - getSession() completed in ${duration}ms`);
+                log(`   - Session: ${session ? 'EXISTS' : 'NULL'}`);
+                if (session) log(`   - User: ${session.user.email}`);
+                if (error) log(`   - Error: ${error.message}`);
+            } catch (e) {
+                const duration = Date.now() - start;
+                log(`   - getSession() threw error after ${duration}ms: ${e.message}`);
+            }
+
+            // Check client session AFTER getSession()
+            log('4. Testing client session AFTER getSession()...');
+            try {
+                const { data, error } = await supabase.from('projects').select('id').limit(1);
+                log(`   - Database query: ${error ? 'FAILED' : 'SUCCESS'}`);
+                if (error) log(`   - Error: ${error.message}`);
+                if (data) log(`   - Data: ${JSON.stringify(data)}`);
+            } catch (e) {
+                log(`   - Query error: ${e.message}`);
+            }
+        }
+
+        // Run test after page load
+        setTimeout(testSession, 1000);
+    </script>
+</body>
+</html>
