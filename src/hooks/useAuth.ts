@@ -684,9 +684,8 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
                   sessionCache.clear()
                   shouldSkipSessionCheck = false // Token expired, need to show login
                 } else {
-                  // FAST PATH: Valid session exists - set React state immediately
-                  // Supabase client already has session loaded from persistSession: true
-                  console.log('🚀 FAST PATH: Valid session found, setting state immediately')
+                  // FAST PATH: Valid session exists - load into Supabase client for database queries
+                  console.log('🚀 FAST PATH: Valid session in storage, loading into client')
 
                   // Clear the 8-second timeout
                   if (maxLoadingTimeoutRef.current) {
@@ -694,33 +693,45 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
                     maxLoadingTimeoutRef.current = null
                   }
 
-                  // Extract user from session and set state DIRECTLY
-                  const user = parsed?.user
-                  if (user && mounted) {
-                    console.log('✅ Setting user state directly from localStorage:', user.email)
+                  // CRITICAL: Call getSession() to load session into Supabase client
+                  // This is REQUIRED for database queries to work
+                  try {
+                    console.log('🔐 Loading session into client with getSession()...')
+                    const { data: { session }, error } = await supabase.auth.getSession()
 
-                    // Create user profile from session data
-                    const userProfile = {
-                      id: user.id,
-                      email: user.email,
-                      full_name: user.user_metadata?.full_name || user.email,
-                      avatar_url: user.user_metadata?.avatar_url || null,
-                      role: (user.user_metadata?.role || user.app_metadata?.role || 'user') as 'user' | 'admin' | 'super_admin',
-                      created_at: user.created_at || new Date().toISOString(),
-                      updated_at: user.updated_at || new Date().toISOString()
+                    if (session && !error && mounted) {
+                      console.log('✅ Session loaded into client, setting state')
+                      const user = session.user
+
+                      // Create user profile from session data
+                      const userProfile = {
+                        id: user.id,
+                        email: user.email,
+                        full_name: user.user_metadata?.full_name || user.email,
+                        avatar_url: user.user_metadata?.avatar_url || null,
+                        role: (user.user_metadata?.role || user.app_metadata?.role || 'user') as 'user' | 'admin' | 'super_admin',
+                        created_at: user.created_at || new Date().toISOString(),
+                        updated_at: user.updated_at || new Date().toISOString()
+                      }
+
+                      // Set state
+                      setCurrentUser(userProfile)
+                      setAuthUser(user)
+                      setIsLoading(false)
+
+                      authPerformanceMonitor.finishSession('success')
+                      console.log('✅ User state set, client has session for database queries')
+
+                      // Skip the normal session check path
+                      shouldSkipSessionCheck = true
+                    } else {
+                      console.log('⚠️ getSession() returned no session, falling back to normal path')
+                      shouldSkipSessionCheck = false
                     }
-
-                    // Set state IMMEDIATELY - no async operations
-                    setCurrentUser(userProfile)
-                    setAuthUser(user)
-                    setIsLoading(false)
-
-                    authPerformanceMonitor.finishSession('success')
-                    console.log('✅ User state set successfully, loading complete')
+                  } catch (sessionError) {
+                    console.error('❌ Error loading session:', sessionError)
+                    shouldSkipSessionCheck = false // Fall back to normal path
                   }
-
-                  // Skip the getSession() call entirely - we already have the session
-                  shouldSkipSessionCheck = true
                 }
               }
             } catch (parseError) {

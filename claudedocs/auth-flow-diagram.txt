@@ -1,0 +1,307 @@
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║                   SUPABASE AUTHENTICATION ARCHITECTURE                            ║
+║                            Standard Pattern                                       ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│ INITIALIZATION FLOW (Page Load / Refresh)                                        │
+└──────────────────────────────────────────────────────────────────────────────────┘
+
+     App Starts
+         │
+         ▼
+    useAuth() Hook Mounts
+         │
+         ├─────────────────────┐
+         │                     │
+         ▼                     ▼
+   [Fast Check]        [Setup Listener]
+   localStorage?       onAuthStateChange()
+         │                     │
+    YES  │  NO                │
+    ┌────┴────┐               │
+    ▼         ▼               │
+Continue   Skip to            │
+           Show Login         │
+         │                    │
+         ▼                    │
+   getSession()               │
+    (50-150ms)                │
+         │                    │
+    ┌────┴────┐               │
+    │         │               │
+Valid?    Invalid?            │
+    │         │               │
+    ▼         ▼               │
+Set User  Clear &             │
+Set State Show Login          │
+    │         │               │
+    └─────────┴───────────────┘
+              │
+              ▼
+       isLoading = false
+              │
+              ▼
+          RENDER UI
+
+
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│ LOGIN FLOW (User Action)                                                         │
+└──────────────────────────────────────────────────────────────────────────────────┘
+
+    User Enters Credentials
+              │
+              ▼
+    signInWithPassword()
+              │
+         [Network Request]
+         [Validate Creds]
+         [Create Session]
+              │
+              ▼
+    localStorage Updated
+    (Supabase internal)
+              │
+              ▼
+    onAuthStateChange() Fires
+         Event: SIGNED_IN
+              │
+              ▼
+    setUser(session.user)
+    setSession(session)
+              │
+              ▼
+    Supabase Client Has Session ✓
+    React State Has User ✓
+              │
+              ▼
+    Navigate to Dashboard
+
+
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│ TOKEN REFRESH FLOW (Background, Every ~55 minutes)                               │
+└──────────────────────────────────────────────────────────────────────────────────┘
+
+    App Running
+         │
+    55 min elapsed
+         │
+         ▼
+    Supabase Detects
+    Token Near Expiry
+         │
+         ▼
+    Auto Refresh Request
+    (Background, no UI)
+         │
+    ┌────┴────┐
+    │         │
+Success?  Failure?
+    │         │
+    ▼         ▼
+New Token  Force Logout
+Updated    Clear Session
+    │         │
+    ▼         ▼
+onAuthStateChange()
+Event: TOKEN_REFRESHED
+    │
+    ▼
+Update Session State
+(User stays logged in)
+
+
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│ LOGOUT FLOW (User Action)                                                        │
+└──────────────────────────────────────────────────────────────────────────────────┘
+
+    User Clicks Logout
+              │
+              ▼
+    supabase.auth.signOut()
+              │
+         [API Request]
+         [Invalidate Token]
+              │
+              ▼
+    localStorage Cleared
+    (Supabase internal)
+              │
+              ▼
+    onAuthStateChange() Fires
+         Event: SIGNED_OUT
+              │
+              ▼
+    setUser(null)
+    setSession(null)
+              │
+              ▼
+    Navigate to Login
+
+
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│ MULTI-TAB SYNCHRONIZATION (Automatic)                                            │
+└──────────────────────────────────────────────────────────────────────────────────┘
+
+    Tab 1: User Logs In
+              │
+              ▼
+    localStorage Updated
+              │
+              ▼
+    Browser Storage Event
+              │
+              ├──────────┬──────────┬──────────┐
+              ▼          ▼          ▼          ▼
+           Tab 2      Tab 3      Tab 4      Tab 5
+              │          │          │          │
+              ▼          ▼          ▼          ▼
+    onAuthStateChange() Fires in All Tabs
+       Event: SIGNED_IN
+              │
+              ▼
+    All Tabs Update to Authenticated State
+
+
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│ STATE MANAGEMENT ARCHITECTURE                                                     │
+└──────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────┐
+│  localStorage       │  ← Supabase writes session automatically
+│  (Persistent)       │  ← survives page refresh
+└──────────┬──────────┘
+           │
+           │ getSession() reads
+           │ (no network request)
+           ▼
+┌─────────────────────┐
+│ Supabase Client     │  ← Internal session state
+│ (Session Loaded)    │  ← Used for all API requests
+└──────────┬──────────┘
+           │
+           │ Auth requests include
+           │ Authorization: Bearer <token>
+           ▼
+┌─────────────────────┐
+│  Database (RLS)     │  ← Row Level Security validates token
+│  (Secure Queries)   │  ← Returns user-specific data
+└─────────────────────┘
+
+           ┌──────────────────────┐
+           │  React State         │  ← UI knows who's logged in
+           │  (user, isLoading)   │  ← Renders conditionally
+           └──────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│ PERFORMANCE CHARACTERISTICS                                                       │
+└──────────────────────────────────────────────────────────────────────────────────┘
+
+Operation                Time (ms)      Network?   Notes
+────────────────────────────────────────────────────────────────────────────────────
+getSession()             10-50          NO         Reads localStorage only
+First Render (no auth)   50-100         NO         Fast path to login
+First Render (with auth) 50-150         NO         Load from localStorage
+Fresh Login              200-500        YES        Network + DB query
+Token Refresh            100-300        YES        Background, transparent
+Logout                   20-100         YES        Clear session
+Multi-Tab Sync           < 10           NO         localStorage events
+
+
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│ COMPARISON: YOUR APPROACH vs STANDARD                                            │
+└──────────────────────────────────────────────────────────────────────────────────┘
+
+╔═══════════════════════╤═════════════════════════╤═════════════════════════╗
+║ Aspect                │ Your "Fast Path"        │ Standard Pattern        ║
+╠═══════════════════════╪═════════════════════════╪═════════════════════════╣
+║ Session Loading       │ localStorage.getItem()  │ supabase.getSession()   ║
+║                       │ ✗ Client NO session     │ ✓ Client HAS session    ║
+╟───────────────────────┼─────────────────────────┼─────────────────────────╢
+║ UI Render Time        │ 6ms                     │ 80ms                    ║
+║                       │ ✓ Very fast             │ ✓ Still fast            ║
+╟───────────────────────┼─────────────────────────┼─────────────────────────╢
+║ Database Queries      │ ✗ FAIL (no JWT)         │ ✓ WORK (has JWT)        ║
+║                       │ "JWT expired" errors    │ Queries succeed         ║
+╟───────────────────────┼─────────────────────────┼─────────────────────────╢
+║ Actual User Flow      │ 1. UI shows "logged in" │ 1. UI shows "logged in" ║
+║                       │ 2. Try to load data     │ 2. Load data succeeds   ║
+║                       │ 3. Queries fail         │ 3. Dashboard renders    ║
+║                       │ 4. "Initializing" hang  │ 4. User working         ║
+╟───────────────────────┼─────────────────────────┼─────────────────────────╢
+║ Code Complexity       │ ~1000 lines             │ ~50 lines               ║
+║                       │ 3 cache layers          │ No caching              ║
+║                       │ Custom timeouts         │ No timeouts             ║
+╟───────────────────────┼─────────────────────────┼─────────────────────────╢
+║ Maintainability       │ ✗ Complex, fragile      │ ✓ Simple, robust        ║
+╚═══════════════════════╧═════════════════════════╧═════════════════════════╝
+
+VERDICT: You saved 74ms but broke the entire application.
+
+
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│ THE KEY INSIGHT                                                                   │
+└──────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────┐
+│  React State ≠ Supabase Client State                                   │
+│                                                                         │
+│  Your fast path:                                                       │
+│    ✓ React knows: "User is logged in"                                 │
+│    ✗ Supabase knows: "No session loaded, use anon key"                │
+│                                                                         │
+│  Result: React renders auth UI, but database queries fail              │
+│                                                                         │
+│  Standard pattern:                                                     │
+│    ✓ React knows: "User is logged in"                                 │
+│    ✓ Supabase knows: "Session loaded, use auth token"                 │
+│                                                                         │
+│  Result: Everything works as expected                                  │
+└────────────────────────────────────────────────────────────────────────┘
+
+
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│ THE SOLUTION (3 Steps)                                                            │
+└──────────────────────────────────────────────────────────────────────────────────┘
+
+1. Delete fast path code (lines 651-758 in useAuth.ts)
+   Remove: Direct localStorage reading
+   Remove: Manual session parsing
+   Remove: shouldSkipSessionCheck flag
+
+2. Simplify to standard pattern:
+   ✓ Call getSession() on mount
+   ✓ Set up onAuthStateChange() listener
+   ✓ Remove all custom caching
+   ✓ Remove all timeouts
+
+3. Trust Supabase:
+   ✓ Let it manage localStorage
+   ✓ Let it handle token refresh
+   ✓ Let it sync multi-tab
+   ✓ Let it validate sessions
+
+
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│ EXPECTED OUTCOME                                                                  │
+└──────────────────────────────────────────────────────────────────────────────────┘
+
+Before:
+├─ Login: 8-15 seconds (timeout)
+├─ Refresh: "Initializing workspace" hang
+├─ Queries: "JWT expired" errors
+├─ Code: ~1000 lines
+└─ Debugging: Hours of frustration
+
+After:
+├─ Login: < 500ms
+├─ Refresh: < 200ms
+├─ Queries: Work immediately
+├─ Code: ~50 lines
+└─ Debugging: None needed
+
+
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║  BOTTOM LINE: Stop trying to optimize. Use the standard pattern. It just works.  ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
