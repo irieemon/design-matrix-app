@@ -692,6 +692,40 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
               if (parsed.user && mounted) {
                 console.log('🔍 initAuth: Processing user from localStorage fallback')
 
+                // CRITICAL FIX: Load session into Supabase client using setSession()
+                // This is needed so database queries can access auth.uid() for RLS
+                console.log('🔍 initAuth: Loading session into Supabase client with setSession()')
+
+                try {
+                  // Add timeout to setSession() as well, in case it also hangs
+                  const setSessionWithTimeout = Promise.race([
+                    supabase.auth.setSession({
+                      access_token: parsed.access_token,
+                      refresh_token: parsed.refresh_token
+                    }),
+                    new Promise<{ data: any, error: any }>((_, reject) =>
+                      setTimeout(() => reject(new Error('setSession() timeout after 2 seconds')), 2000)
+                    )
+                  ])
+
+                  const { data, error: sessionError } = await setSessionWithTimeout
+
+                  if (sessionError) {
+                    console.error('🔍 initAuth: setSession() error:', sessionError)
+                    // Fall through to create user anyway
+                  } else {
+                    console.log('🔍 initAuth: Session loaded into client successfully')
+
+                    // CRITICAL: Wait for session to propagate to client's internal auth state
+                    console.log('🔍 initAuth: Waiting for session propagation...')
+                    await new Promise(resolve => setTimeout(resolve, 150))
+                    console.log('🔍 initAuth: Session propagation complete')
+                  }
+                } catch (setSessionError) {
+                  console.error('🔍 initAuth: setSession() threw error (continuing anyway):', setSessionError)
+                  // Fall through to create user anyway - better to have React state than nothing
+                }
+
                 // CRITICAL FIX: Don't call handleAuthUser which will try to fetch profile (calls getSession again!)
                 // Instead, create a basic user from localStorage and set state directly
                 console.log('🔍 initAuth: Creating user from localStorage (skipping profile fetch to avoid getSession hang)')
