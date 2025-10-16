@@ -7,6 +7,7 @@ import { authPerformanceMonitor } from '../utils/authPerformanceMonitor'
 import { ensureUUID, isDemoUUID } from '../utils/uuid'
 import { SUPABASE_STORAGE_KEY, TIMEOUTS, CACHE_DURATIONS } from '../lib/config'
 import { withTimeout } from '../utils/promiseUtils'
+import { CacheManager } from '../services/CacheManager'
 
 interface UseAuthReturn {
   currentUser: User | null
@@ -26,37 +27,12 @@ interface UseAuthOptions {
   setCurrentPage?: (page: string) => void
 }
 
-// PERFORMANCE OPTIMIZED: Aggressive caching for auth data
-const userProfileCache = new Map<string, { user: User; timestamp: number; expires: number }>()
-const pendingRequests = new Map<string, Promise<User>>()
+// PERFORMANCE OPTIMIZED: Aggressive caching for auth data using CacheManager
+// CacheManager provides automatic cleanup, type safety, and consistent behavior
+const userProfileCache = new CacheManager<User>(CACHE_DURATIONS.USER_PROFILE * 3) // Triple cache duration for maximum performance
+const pendingRequests = new Map<string, Promise<User>>() // Keep this - not a cache, tracks in-flight requests
 // Session cache for faster repeat authentications
-const sessionCache = new Map<string, { session: any; timestamp: number; expires: number }>()
-
-// PERFORMANCE OPTIMIZED: Clean up all auth caches periodically
-setInterval(() => {
-  const now = Date.now()
-  let cleaned = 0
-
-  // Clean user profile cache
-  for (const [key, cached] of userProfileCache.entries()) {
-    if (now > cached.expires) {
-      userProfileCache.delete(key)
-      cleaned++
-    }
-  }
-
-  // Clean session cache
-  for (const [key, cached] of sessionCache.entries()) {
-    if (now > cached.expires) {
-      sessionCache.delete(key)
-      cleaned++
-    }
-  }
-
-  if (cleaned > 0) {
-    logger.debug(`🧹 Cleaned ${cleaned} expired auth cache entries`)
-  }
-}, 30000) // Clean up every 30 seconds for better memory management
+const sessionCache = new CacheManager<any>(CACHE_DURATIONS.SESSION)
 
 export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -168,13 +144,12 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   // Optimized user profile fetching with aggressive caching and request deduplication
   const getCachedUserProfile = async (userId: string, userEmail: string): Promise<User> => {
     const cacheKey = `${userId}:${userEmail}`
-    const now = Date.now()
 
     // Check cache first with longer duration for better performance
     const cached = userProfileCache.get(cacheKey)
-    if (cached && now < cached.expires) {
-      logger.debug('🎯 Using cached user profile:', { email: userEmail, age: now - cached.timestamp })
-      return cached.user
+    if (cached) {
+      logger.debug('🎯 Using cached user profile:', { email: userEmail })
+      return cached
     }
 
     // Check for pending request to avoid duplicates
@@ -238,11 +213,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
             // FIX #5: Update session cache with fresh session
             const sessionCacheKey = 'current_session'
-            sessionCache.set(sessionCacheKey, {
-              session: data.session,
-              timestamp: Date.now(),
-              expires: Date.now() + CACHE_DURATIONS.SESSION
-            })
+            sessionCache.set(sessionCacheKey, data.session)
 
             // Retry with fresh token
             const retryResponse = await fetch('/api/auth?action=user', {
@@ -266,11 +237,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
               }
 
               // Cache the fresh profile
-              userProfileCache.set(cacheKey, {
-                user: userProfile,
-                timestamp: now,
-                expires: now + (CACHE_DURATIONS.USER_PROFILE * 3)
-              })
+              userProfileCache.set(cacheKey, userProfile)
 
               return userProfile
             } else {
@@ -296,12 +263,8 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
             updated_at: user.updated_at
           }
 
-          // PERFORMANCE OPTIMIZED: Extended cache duration
-          userProfileCache.set(cacheKey, {
-            user: userProfile,
-            timestamp: now,
-            expires: now + (CACHE_DURATIONS.USER_PROFILE * 3) // Triple cache duration for maximum performance
-          })
+          // PERFORMANCE OPTIMIZED: Extended cache duration handled by CacheManager
+          userProfileCache.set(cacheKey, userProfile)
 
           return userProfile
         } else {

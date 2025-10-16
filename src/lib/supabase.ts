@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { logger } from '../utils/logger'
 import { SUPABASE_STORAGE_KEY, CACHE_DURATIONS } from './config'
 import { withTimeout } from '../utils/promiseUtils'
+import { CacheManager } from '../services/CacheManager'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -210,8 +211,8 @@ export const getCurrentUser = async () => {
   return user
 }
 
-// Profile cache for better performance
-const profileCache = new Map<string, { profile: any; timestamp: number; expires: number }>()
+// Profile cache for better performance using CacheManager
+const profileCache = new CacheManager<any>(CACHE_DURATIONS.PROFILE)
 
 export const getUserProfile = async (userId: string) => {
   const profileStart = performance.now()
@@ -219,9 +220,9 @@ export const getUserProfile = async (userId: string) => {
 
   // Check cache first
   const cached = profileCache.get(userId)
-  if (cached && Date.now() < cached.expires) {
-    logger.debug('🎯 Using cached profile:', { userId, age: Date.now() - cached.timestamp })
-    return cached.profile
+  if (cached) {
+    logger.debug('🎯 Using cached profile:', { userId })
+    return cached
   }
 
   try {
@@ -312,11 +313,7 @@ export const getUserProfile = async (userId: string) => {
 
     // Cache successful result
     if (data) {
-      profileCache.set(userId, {
-        profile: data,
-        timestamp: Date.now(),
-        expires: Date.now() + CACHE_DURATIONS.PROFILE
-      })
+      profileCache.set(userId, data)
     }
 
     return data
@@ -326,15 +323,7 @@ export const getUserProfile = async (userId: string) => {
   }
 }
 
-// Clean up expired profile cache entries
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, cached] of profileCache.entries()) {
-    if (now > cached.expires) {
-      profileCache.delete(key)
-    }
-  }
-}, 60000) // Clean up every minute
+// Note: Profile cache cleanup is handled automatically by CacheManager
 
 export const createUserProfile = async (userId: string, email?: string) => {
   const createStart = performance.now()
