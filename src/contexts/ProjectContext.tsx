@@ -76,11 +76,17 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
 
           console.log('🔍 ProjectContext: Making direct fetch to Supabase REST API')
 
+          // Get config from environment
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+          const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+          console.log('🔍 ProjectContext: Using URL:', supabaseUrl)
+
           const fetchPromise = fetch(
-            `https://vfovtgtjailvrphsgafv.supabase.co/rest/v1/projects?id=eq.${projectId}&select=*`,
+            `${supabaseUrl}/rest/v1/projects?id=eq.${projectId}&select=*`,
             {
               headers: {
-                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmb3Z0Z3RqYWlsdnJwaHNnYWZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjU1NTg1MjUsImV4cCI6MjA0MTEzNDUyNX0.xbE7lvRMHQbZmZASdcKwHw_mRjXdjiW6okfJeQjDPaY',
+                'apikey': supabaseAnonKey,
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json',
                 'Prefer': 'return=representation'
