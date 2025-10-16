@@ -6,6 +6,7 @@ import { logger } from '../utils/logger'
 import { authPerformanceMonitor } from '../utils/authPerformanceMonitor'
 import { ensureUUID, isDemoUUID } from '../utils/uuid'
 import { SUPABASE_STORAGE_KEY, TIMEOUTS, CACHE_DURATIONS } from '../lib/config'
+import { withTimeout } from '../utils/promiseUtils'
 
 interface UseAuthReturn {
   currentUser: User | null
@@ -596,14 +597,11 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       try {
         // STEP 1: Get current session (reads from localStorage, no network request)
         // CRITICAL FIX: Add timeout to getSession() as it hangs on refresh
-        const getSessionWithTimeout = Promise.race([
+        const { data: { session }, error } = await withTimeout(
           supabase.auth.getSession(),
-          new Promise<{ data: { session: null }, error: any }>((_, reject) =>
-            setTimeout(() => reject(new Error('getSession() timeout after 2 seconds')), TIMEOUTS.AUTH_GET_SESSION)
-          )
-        ])
-
-        const { data: { session }, error } = await getSessionWithTimeout
+          TIMEOUTS.AUTH_GET_SESSION,
+          'getSession() timeout'
+        )
         logger.debug('🔐 Session check:', { hasSession: !!session, hasError: !!error })
 
         if (error) {

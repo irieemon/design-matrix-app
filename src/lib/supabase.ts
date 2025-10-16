@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { logger } from '../utils/logger'
 import { SUPABASE_STORAGE_KEY, CACHE_DURATIONS } from './config'
+import { withTimeout } from '../utils/promiseUtils'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -225,23 +226,24 @@ export const getUserProfile = async (userId: string) => {
 
   try {
     // Optimized query with minimal data selection
-    // Use Promise.race for timeout instead of abortSignal (not supported by PostgrestBuilder)
-    const profilePromise = supabase
+    const profilePromise = Promise.resolve(supabase
       .from('user_profiles')
       .select('id, email, full_name, role, avatar_url, created_at, updated_at')
       .eq('id', userId)
-      .single()
+      .single())
 
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Query timeout after 1500ms')), 1500)
-    })
-
-    const { data, error } = await Promise.race([profilePromise, timeoutPromise]).catch(err => {
+    const result = await withTimeout(
+      profilePromise,
+      1500,
+      'Query timeout after 1500ms'
+    ).catch(err => {
       if (err.message?.includes('timeout')) {
         return { data: null, error: { name: 'AbortError', message: err.message } }
       }
       throw err
     })
+
+    const { data, error } = result
     const profileTime = performance.now() - profileStart
     logger.debug('🔍 getUserProfile query result:', { data, error, timing: `${profileTime.toFixed(1)}ms` })
     
@@ -367,24 +369,26 @@ export const createUserProfile = async (userId: string, email?: string) => {
     }
     
     logger.debug('📝 Attempting to insert profile:', newProfile)
-    
-    // Optimized profile creation with timeout using Promise.race
-    const insertPromise = supabase
+
+    // Optimized profile creation with timeout
+    const insertPromise = Promise.resolve(supabase
       .from('user_profiles')
       .insert([newProfile])
       .select()
-      .single()
+      .single())
 
-    const insertTimeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Insert timeout after 1000ms')), 1000)
-    })
-
-    const { data, error } = await Promise.race([insertPromise, insertTimeoutPromise]).catch(err => {
+    const result = await withTimeout(
+      insertPromise,
+      1000,
+      'Insert timeout after 1000ms'
+    ).catch(err => {
       if (err.message?.includes('timeout')) {
         return { data: null, error: { name: 'AbortError', message: err.message } }
       }
       throw err
     })
+
+    const { data, error } = result
     const createTime = performance.now() - createStart
     
     if (error) {

@@ -7,12 +7,12 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { Project } from '../types'
-import { DatabaseService } from '../lib/database'
 import { logger } from '../utils/logger'
 import { useCurrentUser, useAuthenticatedClient } from './UserContext'
 import { useToast } from './ToastContext'
 import { supabase } from '../lib/supabase'
 import { SUPABASE_STORAGE_KEY, TIMEOUTS } from '../lib/config'
+import { withTimeout } from '../utils/promiseUtils'
 
 interface ProjectContextType {
   currentProject: Project | null
@@ -76,63 +76,54 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
           const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-          const fetchPromise = fetch(
-            `${supabaseUrl}/rest/v1/projects?id=eq.${projectId}&select=*`,
-            {
-              headers: {
-                'apikey': supabaseAnonKey,
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=representation'
+          project = await withTimeout(
+            fetch(
+              `${supabaseUrl}/rest/v1/projects?id=eq.${projectId}&select=*`,
+              {
+                headers: {
+                  'apikey': supabaseAnonKey,
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation'
+                }
               }
-            }
-          ).then(async (response) => {
-            const queryTime = Date.now() - queryStart
-            logger.debug('REST API responded:', { queryTime, status: response.status })
-
-            if (response.ok) {
-              const data = await response.json()
-              return data[0] || null  // PostgREST returns array
-            } else {
-              const errorText = await response.text()
-              logger.error('REST API error:', response.status, errorText)
-              return null
-            }
-          })
-
-          const timeoutPromise = new Promise<null>((_, reject) =>
-            setTimeout(() => {
+            ).then(async (response) => {
               const queryTime = Date.now() - queryStart
-              logger.error('REST API timeout after', queryTime, 'ms')
-              reject(new Error('Project restoration timeout after 5 seconds'))
-            }, TIMEOUTS.PROJECT_RESTORE)
-          )
+              logger.debug('REST API responded:', { queryTime, status: response.status })
 
-          project = await Promise.race([fetchPromise, timeoutPromise])
+              if (response.ok) {
+                const data = await response.json()
+                return data[0] || null  // PostgREST returns array
+              } else {
+                const errorText = await response.text()
+                logger.error('REST API error:', response.status, errorText)
+                return null
+              }
+            }),
+            TIMEOUTS.PROJECT_RESTORE,
+            'Project restoration timeout'
+          )
         }
       } else {
         logger.debug('Using standard Supabase client')
 
-        const restorationPromise = supabase
-          .from('projects')
-          .select('*')
-          .eq('id', projectId)
-          .single()
-          .then((result: any) => {
-            const queryTime = Date.now() - queryStart
-            logger.debug('Query completed:', { queryTime })
-            return result.data
-          })
+        const restorationPromise = Promise.resolve(
+          supabase
+            .from('projects')
+            .select('*')
+            .eq('id', projectId)
+            .single()
+        ).then((result: any) => {
+          const queryTime = Date.now() - queryStart
+          logger.debug('Query completed:', { queryTime })
+          return result.data
+        })
 
-        const timeoutPromise = new Promise<null>((_, reject) =>
-          setTimeout(() => {
-            const queryTime = Date.now() - queryStart
-            logger.error('Query timeout after', queryTime, 'ms')
-            reject(new Error('Project restoration timeout after 5 seconds'))
-          }, TIMEOUTS.PROJECT_RESTORE)
+        project = await withTimeout(
+          restorationPromise,
+          TIMEOUTS.PROJECT_RESTORE,
+          'Project restoration timeout'
         )
-
-        project = await Promise.race([restorationPromise, timeoutPromise])
       }
 
       if (project) {
