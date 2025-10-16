@@ -57,45 +57,83 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
       setIsRestoringProject(true)
       logger.debug('🔄 Project: Restoring project from URL:', projectId)
 
-      // CRITICAL FIX: Use authenticated client if available (fallback when getSession hangs)
-      const clientToUse = authenticatedClient || supabase
-      console.log('🔍 ProjectContext: Using client:', authenticatedClient ? 'AUTHENTICATED (localStorage)' : 'STANDARD (may fail RLS)')
-
-      // CRITICAL FIX: Query database directly with authenticated client
       console.log('🔍 ProjectContext: Starting database query for project:', projectId)
       const queryStart = Date.now()
 
-      const restorationPromise = clientToUse
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .single()
-        .then((result: any) => {
-          const queryTime = Date.now() - queryStart
-          console.log('🔍 ProjectContext: Query completed in', queryTime, 'ms')
-          console.log('🔍 ProjectContext: Query result:', {
-            hasData: !!result.data,
-            hasError: !!result.error,
-            error: result.error,
-            dataKeys: result.data ? Object.keys(result.data) : []
+      let project: Project | null = null
+
+      // CRITICAL FIX: If authenticated client exists, use direct REST API call to avoid GoTrueClient conflict
+      if (authenticatedClient) {
+        console.log('🔍 ProjectContext: Using DIRECT REST API with localStorage token')
+
+        // Get token from localStorage
+        const storageKey = 'sb-vfovtgtjailvrphsgafv-auth-token'
+        const stored = localStorage.getItem(storageKey)
+
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          const accessToken = parsed.access_token
+
+          console.log('🔍 ProjectContext: Making direct fetch to Supabase REST API')
+
+          const fetchPromise = fetch(
+            `https://vfovtgtjailvrphsgafv.supabase.co/rest/v1/projects?id=eq.${projectId}&select=*`,
+            {
+              headers: {
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmb3Z0Z3RqYWlsdnJwaHNnYWZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjU1NTg1MjUsImV4cCI6MjA0MTEzNDUyNX0.xbE7lvRMHQbZmZASdcKwHw_mRjXdjiW6okfJeQjDPaY',
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+              }
+            }
+          ).then(async (response) => {
+            const queryTime = Date.now() - queryStart
+            console.log('🔍 ProjectContext: REST API responded in', queryTime, 'ms, status:', response.status)
+
+            if (response.ok) {
+              const data = await response.json()
+              console.log('🔍 ProjectContext: REST API data:', data)
+              return data[0] || null  // PostgREST returns array
+            } else {
+              const errorText = await response.text()
+              console.error('🔍 ProjectContext: REST API error:', response.status, errorText)
+              return null
+            }
           })
-          return result
-        })
 
-      const timeoutPromise = new Promise<null>((_, reject) =>
-        setTimeout(() => {
-          const queryTime = Date.now() - queryStart
-          console.error('🔍 ProjectContext: Query TIMEOUT after', queryTime, 'ms')
-          reject(new Error('Project restoration timeout after 5 seconds'))
-        }, 5000)
-      )
+          const timeoutPromise = new Promise<null>((_, reject) =>
+            setTimeout(() => {
+              const queryTime = Date.now() - queryStart
+              console.error('🔍 ProjectContext: REST API TIMEOUT after', queryTime, 'ms')
+              reject(new Error('Project restoration timeout after 5 seconds'))
+            }, 5000)
+          )
 
-      const result = await Promise.race([restorationPromise, timeoutPromise])
-      const project = result && 'data' in result ? result.data : null
-      const error = result && 'error' in result ? result.error : null
+          project = await Promise.race([fetchPromise, timeoutPromise])
+        }
+      } else {
+        console.log('🔍 ProjectContext: Using STANDARD Supabase client')
 
-      if (error) {
-        console.error('🔍 ProjectContext: Database query error:', error)
+        const restorationPromise = supabase
+          .from('projects')
+          .select('*')
+          .eq('id', projectId)
+          .single()
+          .then((result: any) => {
+            const queryTime = Date.now() - queryStart
+            console.log('🔍 ProjectContext: Query completed in', queryTime, 'ms')
+            return result.data
+          })
+
+        const timeoutPromise = new Promise<null>((_, reject) =>
+          setTimeout(() => {
+            const queryTime = Date.now() - queryStart
+            console.error('🔍 ProjectContext: Query TIMEOUT after', queryTime, 'ms')
+            reject(new Error('Project restoration timeout after 5 seconds'))
+          }, 5000)
+        )
+
+        project = await Promise.race([restorationPromise, timeoutPromise])
       }
 
       if (project) {
