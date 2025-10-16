@@ -5,6 +5,7 @@ import { User, AuthUser, Project } from '../types'
 import { logger } from '../utils/logger'
 import { authPerformanceMonitor } from '../utils/authPerformanceMonitor'
 import { ensureUUID, isDemoUUID } from '../utils/uuid'
+import { SUPABASE_STORAGE_KEY, TIMEOUTS, CACHE_DURATIONS } from '../lib/config'
 
 interface UseAuthReturn {
   currentUser: User | null
@@ -26,11 +27,9 @@ interface UseAuthOptions {
 
 // PERFORMANCE OPTIMIZED: Aggressive caching for auth data
 const userProfileCache = new Map<string, { user: User; timestamp: number; expires: number }>()
-const CACHE_DURATION = 10 * 60 * 1000 // Extended to 10 minutes for better performance
 const pendingRequests = new Map<string, Promise<User>>()
 // Session cache for faster repeat authentications
 const sessionCache = new Map<string, { session: any; timestamp: number; expires: number }>()
-const SESSION_CACHE_DURATION = 2 * 60 * 1000 // 2 minutes session caching
 
 // PERFORMANCE OPTIMIZED: Clean up all auth caches periodically
 setInterval(() => {
@@ -82,7 +81,6 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
   // PERFORMANCE OPTIMIZED: Extended project cache for reduced DB calls
   const projectExistenceCache = useRef(new Map<string, { exists: boolean; timestamp: number; expires: number }>())
-  const PROJECT_CACHE_DURATION = 5 * 60 * 1000 // Extended to 5 minutes
 
   // Optimized project check with aggressive caching and minimal data fetching
   const checkUserProjectsAndRedirect = async (userId: string, isDemoUser = false) => {
@@ -114,8 +112,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       // Optimized query: just check count, use abort signal for faster timeout
       const controller = new AbortController()
       // PERFORMANCE OPTIMIZED: Generous timeout to allow project check completion
-      const timeoutMs = 10000  // Increased to 10s for reliable completion
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.PROJECT_CHECK)
 
       const projectExistsPromise = supabase
         .from('projects')
@@ -146,7 +143,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       projectExistenceCache.current.set(userId, {
         exists: hasProjects,
         timestamp: Date.now(),
-        expires: Date.now() + PROJECT_CACHE_DURATION
+        expires: Date.now() + CACHE_DURATIONS.PROJECT_EXISTENCE
       })
 
       if (hasProjects) {
@@ -193,8 +190,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         abortControllerRef.current = controller
 
         // PERFORMANCE OPTIMIZED: Generous timeout to allow profile fetch completion
-        const profileTimeoutMs = 10000  // Increased to 10s for reliable completion
-        const timeoutId = setTimeout(() => controller.abort(), profileTimeoutMs)
+        const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.PROFILE_FETCH)
 
         // Get token with caching to avoid repeated session calls
         let token = (await supabase.auth.getSession()).data.session?.access_token
@@ -244,7 +240,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
             sessionCache.set(sessionCacheKey, {
               session: data.session,
               timestamp: Date.now(),
-              expires: Date.now() + SESSION_CACHE_DURATION
+              expires: Date.now() + CACHE_DURATIONS.SESSION
             })
 
             // Retry with fresh token
@@ -272,7 +268,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
               userProfileCache.set(cacheKey, {
                 user: userProfile,
                 timestamp: now,
-                expires: now + (CACHE_DURATION * 3)
+                expires: now + (CACHE_DURATIONS.USER_PROFILE * 3)
               })
 
               return userProfile
@@ -303,7 +299,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
           userProfileCache.set(cacheKey, {
             user: userProfile,
             timestamp: now,
-            expires: now + (CACHE_DURATION * 3) // Triple cache duration for maximum performance
+            expires: now + (CACHE_DURATIONS.USER_PROFILE * 3) // Triple cache duration for maximum performance
           })
 
           return userProfile
@@ -382,18 +378,15 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         const projectController = new AbortController()
 
         // PERFORMANCE OPTIMIZED: Generous timeouts to allow completion
-        const profileTimeoutMs = 10000   // Increased to 10s to allow profile fetch completion
-        const projectTimeoutMs = 10000    // Increased to 10s to allow project check completion
-
         const profileTimeout = setTimeout(() => {
-          logger.debug(`⏰ Profile fetch timeout after ${profileTimeoutMs}ms (refresh: ${isRefreshScenario})`)
+          logger.debug(`⏰ Profile fetch timeout after ${TIMEOUTS.PROFILE_FETCH}ms (refresh: ${isRefreshScenario})`)
           profileController.abort()
-        }, profileTimeoutMs)
+        }, TIMEOUTS.PROFILE_FETCH)
 
         const projectTimeout = setTimeout(() => {
-          logger.debug(`⏰ Project check timeout after ${projectTimeoutMs}ms (refresh: ${isRefreshScenario})`)
+          logger.debug(`⏰ Project check timeout after ${TIMEOUTS.PROJECT_CHECK}ms (refresh: ${isRefreshScenario})`)
           projectController.abort()
-        }, projectTimeoutMs)
+        }, TIMEOUTS.PROJECT_CHECK)
 
         const [userProfileResult, projectCheckResult] = await Promise.allSettled([
           getCachedUserProfile(authUser.id, authUser.email).finally(() => clearTimeout(profileTimeout)),
@@ -606,7 +599,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         const getSessionWithTimeout = Promise.race([
           supabase.auth.getSession(),
           new Promise<{ data: { session: null }, error: any }>((_, reject) =>
-            setTimeout(() => reject(new Error('getSession() timeout after 2 seconds')), 2000)
+            setTimeout(() => reject(new Error('getSession() timeout after 2 seconds')), TIMEOUTS.AUTH_GET_SESSION)
           )
         ])
 
@@ -644,8 +637,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
           logger.debug('getSession() timed out, reading session from localStorage directly')
 
           try {
-            const storageKey = 'sb-vfovtgtjailvrphsgafv-auth-token'
-            const stored = localStorage.getItem(storageKey)
+            const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
 
             if (stored) {
               const parsed = JSON.parse(stored)

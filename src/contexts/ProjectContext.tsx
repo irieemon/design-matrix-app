@@ -12,6 +12,7 @@ import { logger } from '../utils/logger'
 import { useCurrentUser, useAuthenticatedClient } from './UserContext'
 import { useToast } from './ToastContext'
 import { supabase } from '../lib/supabase'
+import { SUPABASE_STORAGE_KEY, TIMEOUTS } from '../lib/config'
 
 interface ProjectContextType {
   currentProject: Project | null
@@ -65,8 +66,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
         logger.debug('Using direct REST API with localStorage token')
 
         // Get token from localStorage
-        const storageKey = 'sb-vfovtgtjailvrphsgafv-auth-token'
-        const stored = localStorage.getItem(storageKey)
+        const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
 
         if (stored) {
           const parsed = JSON.parse(stored)
@@ -105,7 +105,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
               const queryTime = Date.now() - queryStart
               logger.error('REST API timeout after', queryTime, 'ms')
               reject(new Error('Project restoration timeout after 5 seconds'))
-            }, 5000)
+            }, TIMEOUTS.PROJECT_RESTORE)
           )
 
           project = await Promise.race([fetchPromise, timeoutPromise])
@@ -129,7 +129,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
             const queryTime = Date.now() - queryStart
             logger.error('Query timeout after', queryTime, 'ms')
             reject(new Error('Project restoration timeout after 5 seconds'))
-          }, 5000)
+          }, TIMEOUTS.PROJECT_RESTORE)
         )
 
         project = await Promise.race([restorationPromise, timeoutPromise])
@@ -158,7 +158,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
         logger.error('🚨 Project: Restoration timeout for project:', projectId)
         logger.error('Project restoration timed out', error, {
           projectId,
-          timeout: 5000,
+          timeout: TIMEOUTS.PROJECT_RESTORE,
           reason: 'timeout'
         })
         // PHASE 1 FIX: Show timeout error to user
