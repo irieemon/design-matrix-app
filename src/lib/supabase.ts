@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { logger } from '../utils/logger'
 import { SUPABASE_STORAGE_KEY, CACHE_DURATIONS } from './config'
 import { withTimeout } from '../utils/promiseUtils'
-import { CacheManager } from '../services/CacheManager'
+import { ProfileService } from '../services/ProfileService'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -211,119 +211,40 @@ export const getCurrentUser = async () => {
   return user
 }
 
-// Profile cache for better performance using CacheManager
-const profileCache = new CacheManager<any>(CACHE_DURATIONS.PROFILE)
+// Unified profile service for better performance
+const profileService = new ProfileService(supabase, CACHE_DURATIONS.PROFILE)
 
+/**
+ * Get user profile by ID
+ *
+ * Note: This is a legacy wrapper around ProfileService for backwards compatibility.
+ * New code should use ProfileService directly.
+ *
+ * @param userId User ID
+ * @returns User profile or null
+ */
 export const getUserProfile = async (userId: string) => {
   const profileStart = performance.now()
   logger.debug('🔍 getUserProfile called for userId:', userId)
 
-  // Check cache first
-  const cached = profileCache.get(userId)
-  if (cached) {
-    logger.debug('🎯 Using cached profile:', { userId })
-    return cached
-  }
-
   try {
-    // Optimized query with minimal data selection
-    const profilePromise = Promise.resolve(supabase
-      .from('user_profiles')
-      .select('id, email, full_name, role, avatar_url, created_at, updated_at')
-      .eq('id', userId)
-      .single())
-
-    const result = await withTimeout(
-      profilePromise,
-      1500,
-      'Query timeout after 1500ms'
-    ).catch(err => {
-      if (err.message?.includes('timeout')) {
-        return { data: null, error: { name: 'AbortError', message: err.message } }
-      }
-      throw err
-    })
-
-    const { data, error } = result
-    const profileTime = performance.now() - profileStart
-    logger.debug('🔍 getUserProfile query result:', { data, error, timing: `${profileTime.toFixed(1)}ms` })
-    
-    if (error) {
-      logger.error('❌ Error getting user profile:', error)
-
-      // If it's a timeout or table doesn't exist, try to create the profile
-      if (error.name === 'AbortError' || ('code' in error && error.code === '42P01')) {
-        logger.debug('🏗️ Attempting to create user profile for userId:', userId)
-        
-        // Add timeout to entire profile creation process
-        try {
-          const createProfilePromise = createUserProfile(userId)
-          const overallTimeoutPromise = new Promise((resolve) => 
-            setTimeout(async () => {
-              logger.warn('⏰ Profile creation taking too long, using emergency fallback')
-              // Try to get current user from auth for correct email
-              try {
-                const { data: { user } } = await supabase.auth.getUser()
-                resolve({
-                  id: userId,
-                  email: user?.email || '',
-                  full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                })
-              } catch (err) {
-                resolve({
-                  id: userId,
-                  email: '',
-                  full_name: 'Unknown User',
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                })
-              }
-            }, 5000)
-          )
-          
-          return await Promise.race([createProfilePromise, overallTimeoutPromise]) as any
-        } catch (createError) {
-          logger.error('❌ Profile creation failed:', createError)
-          // Try to get current user from auth for correct email
-          try {
-            const { data: { user } } = await supabase.auth.getUser()
-            return {
-              id: userId,
-              email: user?.email || '',
-              full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-          } catch {
-            return {
-              id: userId,
-              email: '',
-              full_name: 'Unknown User',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-          }
-        }
-      }
-      
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      logger.warn('No authenticated user for getUserProfile')
       return null
     }
 
-    // Cache successful result
-    if (data) {
-      profileCache.set(userId, data)
-    }
+    const profile = await profileService.getProfile(userId, user.email || '')
+    const profileTime = performance.now() - profileStart
+    logger.debug('🔍 getUserProfile result:', { profile, timing: `${profileTime.toFixed(1)}ms` })
 
-    return data
+    return profile
   } catch (err) {
-    logger.error('💥 Exception in getUserProfile:', err)
+    const profileTime = performance.now() - profileStart
+    logger.error('💥 Exception in getUserProfile:', err, `(${profileTime.toFixed(1)}ms)`)
     return null
   }
 }
-
-// Note: Profile cache cleanup is handled automatically by CacheManager
 
 export const createUserProfile = async (userId: string, email?: string) => {
   const createStart = performance.now()
@@ -418,19 +339,18 @@ export const createUserProfile = async (userId: string, email?: string) => {
   }
 }
 
+/**
+ * Update user profile
+ *
+ * Note: This is a legacy wrapper around ProfileService for backwards compatibility.
+ * New code should use ProfileService directly.
+ *
+ * @param userId User ID
+ * @param updates Profile updates
+ * @returns Updated profile
+ */
 export const updateUserProfile = async (userId: string, updates: any) => {
-  const { data, error } = await supabase
-    .from('user_profiles')
-    .update(updates)
-    .eq('id', userId)
-    .select()
-    .single()
-  
-  if (error) {
-    logger.error('Error updating user profile:', error)
-    throw error
-  }
-  return data
+  return profileService.updateProfile(userId, updates)
 }
 
 export const signOut = async () => {

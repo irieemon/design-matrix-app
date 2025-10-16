@@ -8,6 +8,7 @@ import { ensureUUID, isDemoUUID } from '../utils/uuid'
 import { SUPABASE_STORAGE_KEY, TIMEOUTS, CACHE_DURATIONS } from '../lib/config'
 import { withTimeout } from '../utils/promiseUtils'
 import { CacheManager } from '../services/CacheManager'
+import { ProfileService } from '../services/ProfileService'
 
 interface UseAuthReturn {
   currentUser: User | null
@@ -27,10 +28,8 @@ interface UseAuthOptions {
   setCurrentPage?: (page: string) => void
 }
 
-// PERFORMANCE OPTIMIZED: Aggressive caching for auth data using CacheManager
-// CacheManager provides automatic cleanup, type safety, and consistent behavior
-const userProfileCache = new CacheManager<User>(CACHE_DURATIONS.USER_PROFILE * 3) // Triple cache duration for maximum performance
-const pendingRequests = new Map<string, Promise<User>>() // Keep this - not a cache, tracks in-flight requests
+// PERFORMANCE OPTIMIZED: Unified profile service with caching
+const profileService = new ProfileService(supabase, CACHE_DURATIONS.USER_PROFILE * 3)
 // Session cache for faster repeat authentications
 const sessionCache = new CacheManager<any>(CACHE_DURATIONS.SESSION)
 
@@ -141,155 +140,9 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     }
   }
 
-  // Optimized user profile fetching with aggressive caching and request deduplication
+  // Optimized user profile fetching using ProfileService
   const getCachedUserProfile = async (userId: string, userEmail: string): Promise<User> => {
-    const cacheKey = `${userId}:${userEmail}`
-
-    // Check cache first with longer duration for better performance
-    const cached = userProfileCache.get(cacheKey)
-    if (cached) {
-      logger.debug('🎯 Using cached user profile:', { email: userEmail })
-      return cached
-    }
-
-    // Check for pending request to avoid duplicates
-    const pending = pendingRequests.get(cacheKey)
-    if (pending) {
-      logger.debug('⏳ Waiting for pending user profile request:', userEmail)
-      return pending
-    }
-
-    // Create new request with aggressive timeout
-    const profilePromise = (async (): Promise<User> => {
-      try {
-        const controller = new AbortController()
-        abortControllerRef.current = controller
-
-        // PERFORMANCE OPTIMIZED: Generous timeout to allow profile fetch completion
-        const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.PROFILE_FETCH)
-
-        // Get token with caching to avoid repeated session calls
-        let token = (await supabase.auth.getSession()).data.session?.access_token
-        if (!token) {
-          // Try to get session one more time before failing
-          await new Promise(resolve => setTimeout(resolve, 50))
-          token = (await supabase.auth.getSession()).data.session?.access_token
-          if (!token) {
-            throw new Error('No auth token available')
-          }
-        }
-
-        const response = await fetch('/api/auth?action=user', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-          },
-          signal: controller.signal
-        })
-
-        clearTimeout(timeoutId)
-
-        // FIX #2: Handle 401/403 with token refresh
-        if (response.status === 401 || response.status === 403) {
-          logger.warn('⚠️ Token expired (401/403), attempting refresh...')
-
-          // FIX #5: Don't clear session cache - just update it after successful refresh
-          // Only clear the user profile cache since we're fetching fresh data
-          userProfileCache.clear()
-
-          try {
-            // Force token refresh
-            const { data, error } = await supabase.auth.refreshSession()
-
-            if (error || !data.session) {
-              logger.error('❌ Token refresh failed, forcing re-login:', error)
-              // Only clear session cache on failure
-              sessionCache.clear()
-              throw new Error('Session expired, please log in again')
-            }
-
-            logger.debug('✅ Token refreshed successfully, retrying profile fetch')
-
-            // FIX #5: Update session cache with fresh session
-            const sessionCacheKey = 'current_session'
-            sessionCache.set(sessionCacheKey, data.session)
-
-            // Retry with fresh token
-            const retryResponse = await fetch('/api/auth?action=user', {
-              headers: {
-                'Authorization': `Bearer ${data.session.access_token}`,
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache'
-              }
-            })
-
-            if (retryResponse.ok) {
-              const { user } = await retryResponse.json()
-              const userProfile: User = {
-                id: user.id,
-                email: user.email,
-                full_name: user.full_name || user.email,
-                avatar_url: user.avatar_url,
-                role: user.role,
-                created_at: user.created_at,
-                updated_at: user.updated_at
-              }
-
-              // Cache the fresh profile
-              userProfileCache.set(cacheKey, userProfile)
-
-              return userProfile
-            } else {
-              throw new Error(`Profile fetch retry failed: ${retryResponse.status}`)
-            }
-          } catch (refreshError) {
-            logger.error('❌ Token refresh process failed:', refreshError)
-            // Clear all caches on complete failure
-            sessionCache.clear()
-            throw new Error('Authentication failed, please log in again')
-          }
-        }
-
-        if (response.ok) {
-          const { user } = await response.json()
-          const userProfile: User = {
-            id: user.id,
-            email: user.email,
-            full_name: user.full_name || user.email,
-            avatar_url: user.avatar_url,
-            role: user.role,
-            created_at: user.created_at,
-            updated_at: user.updated_at
-          }
-
-          // PERFORMANCE OPTIMIZED: Extended cache duration handled by CacheManager
-          userProfileCache.set(cacheKey, userProfile)
-
-          return userProfile
-        } else {
-          throw new Error(`Profile fetch failed: ${response.status}`)
-        }
-      } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          logger.debug('🚫 User profile request aborted')
-        } else {
-          logger.error('❌ Error fetching user profile:', error)
-        }
-        throw error
-      }
-    })()
-
-    // Store pending request
-    pendingRequests.set(cacheKey, profilePromise)
-
-    try {
-      const result = await profilePromise
-      return result
-    } finally {
-      // Clean up pending request
-      pendingRequests.delete(cacheKey)
-    }
+    return profileService.getProfile(userId, userEmail)
   }
 
   // EMERGENCY FIX: Remove circular state dependency that caused 0% success rate
@@ -431,8 +284,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     logger.debug('🧹 Clearing all user caches to prevent stale user data')
 
     // Clear frontend caches
-    userProfileCache.clear()
-    pendingRequests.clear()
+    profileService.clearCache()
     sessionCache.clear()
 
     // CRITICAL FIX: Clear server-side caches via API call
@@ -491,8 +343,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
       // CRITICAL FIX: Clear all caches (frontend + server) on logout to prevent user data leaks
       logger.debug('🧹 Clearing all user caches on logout')
-      userProfileCache.clear()
-      pendingRequests.clear()
+      profileService.clearCache()
       sessionCache.clear()
 
       // CRITICAL FIX: Clear server-side caches via API call (before signing out)
@@ -536,8 +387,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       setIdeas?.([])
 
       // CRITICAL FIX: Clear all caches even in fallback scenario
-      userProfileCache.clear()
-      pendingRequests.clear()
+      profileService.clearCache()
       sessionCache.clear()
 
       // Clear legacy localStorage entries
