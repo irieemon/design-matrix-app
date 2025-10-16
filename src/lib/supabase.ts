@@ -26,15 +26,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // This aggressive cleanup ensures a clean slate for the new configuration
 const cleanupLegacyAuthStorage = () => {
   try {
-    // DIAGNOSTIC: Log ALL storage keys BEFORE cleanup
-    console.log('🔍 BEFORE CLEANUP - localStorage keys:', Object.keys(localStorage))
-    console.log('🔍 BEFORE CLEANUP - sessionStorage keys:', Object.keys(sessionStorage))
-
     // Extract project reference from Supabase URL for dynamic key cleanup
     const projectRef = supabaseUrl?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
-
-    console.log('🧹 Starting comprehensive storage cleanup for persistSession migration...')
-    console.log('🔍 Project ref:', projectRef)
+    logger.debug('Starting storage cleanup:', { projectRef })
 
     // AGGRESSIVE CLEANUP: Remove ALL Supabase-related storage
     // This is necessary because old persistSession: false data breaks persistSession: true
@@ -111,15 +105,10 @@ const cleanupLegacyAuthStorage = () => {
     }
 
     if (cleanedCount > 0) {
-      console.log(`✅ Storage cleanup complete: removed ${cleanedCount} storage entries`)
-      console.log('🔒 Ready for persistSession: true configuration')
+      logger.debug(`Storage cleanup complete: removed ${cleanedCount} entries`)
     } else {
-      console.log('✅ No legacy storage found - clean slate')
+      logger.debug('No legacy storage found - clean slate')
     }
-
-    // DIAGNOSTIC: Log ALL storage keys AFTER cleanup
-    console.log('🔍 AFTER CLEANUP - localStorage keys:', Object.keys(localStorage))
-    console.log('🔍 AFTER CLEANUP - sessionStorage keys:', Object.keys(sessionStorage))
   } catch (error) {
     logger.warn('⚠️ Error during storage cleanup:', error)
   }
@@ -142,30 +131,27 @@ if (cleanupData) {
 
     if (daysSinceCleanup < CLEANUP_EXPIRY_DAYS) {
       shouldRunCleanup = false
-      console.log(`✅ Storage cleanup already completed ${daysSinceCleanup.toFixed(1)} days ago - skipping`)
+      logger.debug(`Storage cleanup already completed ${daysSinceCleanup.toFixed(1)} days ago`)
     } else {
-      console.log(`🔄 Re-running storage cleanup (last run: ${daysSinceCleanup.toFixed(1)} days ago)`)
+      logger.debug(`Re-running storage cleanup (last run: ${daysSinceCleanup.toFixed(1)} days ago)`)
     }
   } catch (parseError) {
-    // Invalid data, run cleanup
-    console.log('⚠️ Invalid cleanup flag data, running cleanup')
+    logger.debug('Invalid cleanup flag data, running cleanup')
     shouldRunCleanup = true
   }
 }
 
 if (shouldRunCleanup) {
-  // CRITICAL: Use console.log directly to bypass logger filtering in production
-  console.log('🔧 Running storage cleanup before Supabase initialization...')
+  logger.debug('Running storage cleanup before Supabase initialization')
   cleanupLegacyAuthStorage()
   try {
-    // Store cleanup flag with timestamp in localStorage (persists across refreshes)
     localStorage.setItem(CLEANUP_FLAG, JSON.stringify({
       timestamp: Date.now(),
       version: 'v3'
     }))
-    console.log('✅ Cleanup flag set - will not run again for 30 days')
+    logger.debug('Cleanup flag set - will not run again for 30 days')
   } catch (error) {
-    console.warn('⚠️ Could not set cleanup flag:', error)
+    logger.warn('Could not set cleanup flag:', error)
   }
 }
 
@@ -478,18 +464,18 @@ export const createAuthenticatedClientFromLocalStorage = () => {
     const stored = localStorage.getItem(storageKey)
 
     if (!stored) {
-      console.log('🔍 createAuthenticatedClient: No session in localStorage')
+      logger.debug('No session in localStorage')
       return null
     }
 
     const parsed = JSON.parse(stored)
 
     if (!parsed.access_token || !parsed.user) {
-      console.log('🔍 createAuthenticatedClient: Invalid session data')
+      logger.debug('Invalid session data in localStorage')
       return null
     }
 
-    console.log('🔍 createAuthenticatedClient: Creating authenticated client with token')
+    logger.debug('Creating authenticated client with token')
 
     // Create new Supabase client with access token in headers
     // This authenticates ALL requests without needing getSession/setSession
@@ -512,10 +498,10 @@ export const createAuthenticatedClientFromLocalStorage = () => {
       }
     )
 
-    console.log('✅ createAuthenticatedClient: Authenticated client created')
+    logger.debug('Authenticated client created successfully')
     return authenticatedClient
   } catch (error) {
-    console.error('🔍 createAuthenticatedClient: Error:', error)
+    logger.error('Error creating authenticated client:', error)
     return null
   }
 }

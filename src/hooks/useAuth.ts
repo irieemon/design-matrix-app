@@ -59,15 +59,10 @@ setInterval(() => {
 }, 30000) // Clean up every 30 seconds for better memory management
 
 export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
-  // DIAGNOSTIC: Log that useAuth hook is being called
-  console.log('🔍 useAuth: Hook called at', new Date().toISOString())
-
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const abortControllerRef = useRef<AbortController | null>(null)
-
-  console.log('🔍 useAuth: Initial state -', { currentUser, authUser, isLoading })
 
   // CRITICAL FIX: Store latest handleAuthSuccess ref so listener always calls current version
   const handleAuthSuccessRef = useRef<((authUser: any) => Promise<void>) | null>(null)
@@ -597,36 +592,16 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     }
   }, [setCurrentProject, setIdeas])
 
-  // DIAGNOSTIC: Log before useEffect
-  console.log('🔍 useAuth: About to register useEffect (this should appear on every render)')
-
   // Initialize Supabase auth - STANDARD PATTERN
   useEffect(() => {
-    console.log('🔍 useAuth useEffect: CALLBACK EXECUTING - this should appear ONCE on mount')
-
-    try {
-      logger.debug('🔄 useAuth useEffect STARTING - standard Supabase auth pattern')
-    } catch (logError) {
-      console.error('🚨 LOGGER.DEBUG FAILED:', logError)
-    }
-
+    logger.debug('🔄 useAuth useEffect STARTING - standard Supabase auth pattern')
     let mounted = true
-
-    try {
-      authPerformanceMonitor.startSession()
-    } catch (perfError) {
-      console.error('🚨 AUTH PERFORMANCE MONITOR FAILED:', perfError)
-    }
-
-    console.log('🔍 useAuth useEffect: Continuing after logger/perf monitor - about to define initAuth')
+    authPerformanceMonitor.startSession()
 
     // STANDARD PATTERN: Simple initialization
     const initAuth = async () => {
-      console.log('🔍 initAuth: FUNCTION EXECUTING')
       try {
         // STEP 1: Get current session (reads from localStorage, no network request)
-        console.log('🔍 initAuth: About to call getSession()')
-
         // CRITICAL FIX: Add timeout to getSession() as it hangs on refresh
         const getSessionWithTimeout = Promise.race([
           supabase.auth.getSession(),
@@ -636,51 +611,37 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         ])
 
         const { data: { session }, error } = await getSessionWithTimeout
-        console.log('🔍 initAuth: getSession() completed', { hasSession: !!session, hasError: !!error, userEmail: session?.user?.email })
+        logger.debug('🔐 Session check:', { hasSession: !!session, hasError: !!error })
 
         if (error) {
-          console.error('🔍 initAuth: Session error detected:', error)
+          logger.error('Session error detected:', error)
           await supabase.auth.signOut()
         }
 
         if (session?.user) {
-          console.log('🔍 initAuth: Session exists, starting propagation delay...')
           // CRITICAL: Wait for session to propagate to client's internal auth state
           // This ensures RLS (Row Level Security) can access auth.uid() for database queries
           await new Promise(resolve => setTimeout(resolve, 150))
-          console.log('🔍 initAuth: Propagation delay complete')
+          logger.debug('🔐 Session propagated, verifying...')
 
           // Verify propagation
           const verifySession = await supabase.auth.getSession()
-          console.log('🔍 initAuth: Session propagation verified:', {
-            hasSession: !!verifySession.data.session,
-            userId: verifySession.data.session?.user?.id
-          })
-        } else {
-          console.log('🔍 initAuth: No session found')
+          logger.debug('Session verified:', { hasSession: !!verifySession.data.session })
         }
 
-        console.log('🔍 initAuth: Checking mounted flag:', mounted)
         if (mounted) {
           if (session?.user) {
-            console.log('🔍 initAuth: About to call handleAuthUser()', session.user.email)
+            logger.debug('Processing authenticated user:', session.user.email)
             await handleAuthUser(session.user)
-            console.log('🔍 initAuth: handleAuthUser() completed')
           } else {
-            console.log('🔍 initAuth: No session, setting isLoading to false')
             setIsLoading(false)
           }
           authPerformanceMonitor.finishSession('success')
-          console.log('🔍 initAuth: Finished successfully')
-        } else {
-          console.log('🔍 initAuth: Component unmounted, skipping auth processing')
         }
       } catch (error) {
-        console.error('🔍 initAuth: ERROR caught:', error)
-
         // CRITICAL FIX: If getSession() timed out, read localStorage directly as fallback
         if (error instanceof Error && error.message.includes('getSession() timeout')) {
-          console.log('🔍 initAuth: getSession() timed out, reading session from localStorage directly')
+          logger.debug('getSession() timed out, reading session from localStorage directly')
 
           try {
             const storageKey = 'sb-vfovtgtjailvrphsgafv-auth-token'
@@ -688,32 +649,20 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
             if (stored) {
               const parsed = JSON.parse(stored)
-              console.log('🔍 initAuth: Found session in localStorage:', {
-                hasUser: !!parsed.user,
-                email: parsed.user?.email,
-                expiresAt: parsed.expires_at
-              })
+              logger.debug('Found session in localStorage:', { email: parsed.user?.email })
 
               if (parsed.user && mounted) {
-                console.log('🔍 initAuth: Processing user from localStorage fallback')
-
                 // CRITICAL FIX: Create authenticated client from localStorage tokens
                 // This bypasses getSession/setSession entirely and uses direct Authorization header
-                console.log('🔍 initAuth: Creating authenticated client from localStorage')
-
                 const authenticatedClient = createAuthenticatedClientFromLocalStorage()
 
                 if (authenticatedClient) {
-                  console.log('✅ initAuth: Authenticated client created successfully')
+                  logger.debug('Authenticated client created successfully')
                   authenticatedClientRef.current = authenticatedClient
-                } else {
-                  console.error('❌ initAuth: Failed to create authenticated client')
                 }
 
                 // CRITICAL FIX: Don't call handleAuthUser which will try to fetch profile (calls getSession again!)
                 // Instead, create a basic user from localStorage and set state directly
-                console.log('🔍 initAuth: Creating user from localStorage (skipping profile fetch to avoid getSession hang)')
-
                 const fallbackUser = {
                   id: ensureUUID(parsed.user.id),
                   email: parsed.user.email,
@@ -724,22 +673,20 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
                   updated_at: new Date().toISOString()
                 }
 
-                console.log('🔍 initAuth: Setting user state directly from localStorage')
                 setCurrentUser(fallbackUser)
                 setAuthUser(parsed.user)
                 setIsLoading(false)
-                console.log('🔍 initAuth: Fallback auth completed')
+                logger.debug('Fallback auth completed')
                 return
               }
             }
 
-            console.log('🔍 initAuth: No valid session in localStorage, showing login')
             if (mounted) {
               setIsLoading(false)
             }
             return
           } catch (storageError) {
-            console.error('🔍 initAuth: Error reading localStorage:', storageError)
+            logger.error('Error reading localStorage:', storageError)
             if (mounted) {
               setIsLoading(false)
             }
@@ -755,9 +702,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       }
     }
 
-    console.log('🔍 useAuth useEffect: About to call initAuth()')
     initAuth()
-    console.log('🔍 useAuth useEffect: initAuth() called (async, will continue in background)')
 
     // STEP 2: Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {

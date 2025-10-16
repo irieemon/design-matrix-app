@@ -57,14 +57,12 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
       setIsRestoringProject(true)
       logger.debug('🔄 Project: Restoring project from URL:', projectId)
 
-      console.log('🔍 ProjectContext: Starting database query for project:', projectId)
       const queryStart = Date.now()
-
       let project: Project | null = null
 
       // CRITICAL FIX: If authenticated client exists, use direct REST API call to avoid GoTrueClient conflict
       if (authenticatedClient) {
-        console.log('🔍 ProjectContext: Using DIRECT REST API with localStorage token')
+        logger.debug('Using direct REST API with localStorage token')
 
         // Get token from localStorage
         const storageKey = 'sb-vfovtgtjailvrphsgafv-auth-token'
@@ -74,13 +72,9 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
           const parsed = JSON.parse(stored)
           const accessToken = parsed.access_token
 
-          console.log('🔍 ProjectContext: Making direct fetch to Supabase REST API')
-
           // Get config from environment
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
           const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-          console.log('🔍 ProjectContext: Using URL:', supabaseUrl)
 
           const fetchPromise = fetch(
             `${supabaseUrl}/rest/v1/projects?id=eq.${projectId}&select=*`,
@@ -94,15 +88,14 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
             }
           ).then(async (response) => {
             const queryTime = Date.now() - queryStart
-            console.log('🔍 ProjectContext: REST API responded in', queryTime, 'ms, status:', response.status)
+            logger.debug('REST API responded:', { queryTime, status: response.status })
 
             if (response.ok) {
               const data = await response.json()
-              console.log('🔍 ProjectContext: REST API data:', data)
               return data[0] || null  // PostgREST returns array
             } else {
               const errorText = await response.text()
-              console.error('🔍 ProjectContext: REST API error:', response.status, errorText)
+              logger.error('REST API error:', response.status, errorText)
               return null
             }
           })
@@ -110,7 +103,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
           const timeoutPromise = new Promise<null>((_, reject) =>
             setTimeout(() => {
               const queryTime = Date.now() - queryStart
-              console.error('🔍 ProjectContext: REST API TIMEOUT after', queryTime, 'ms')
+              logger.error('REST API timeout after', queryTime, 'ms')
               reject(new Error('Project restoration timeout after 5 seconds'))
             }, 5000)
           )
@@ -118,7 +111,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
           project = await Promise.race([fetchPromise, timeoutPromise])
         }
       } else {
-        console.log('🔍 ProjectContext: Using STANDARD Supabase client')
+        logger.debug('Using standard Supabase client')
 
         const restorationPromise = supabase
           .from('projects')
@@ -127,14 +120,14 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
           .single()
           .then((result: any) => {
             const queryTime = Date.now() - queryStart
-            console.log('🔍 ProjectContext: Query completed in', queryTime, 'ms')
+            logger.debug('Query completed:', { queryTime })
             return result.data
           })
 
         const timeoutPromise = new Promise<null>((_, reject) =>
           setTimeout(() => {
             const queryTime = Date.now() - queryStart
-            console.error('🔍 ProjectContext: Query TIMEOUT after', queryTime, 'ms')
+            logger.error('Query timeout after', queryTime, 'ms')
             reject(new Error('Project restoration timeout after 5 seconds'))
           }, 5000)
         )

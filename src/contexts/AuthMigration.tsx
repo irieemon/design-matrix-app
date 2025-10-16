@@ -34,16 +34,16 @@ interface AuthMigrationProviderProps {
  * based on feature flag. Wraps children with appropriate auth system.
  */
 export function AuthMigrationProvider({ children }: AuthMigrationProviderProps) {
-  // DIAGNOSTIC: Log environment variable value
   const envValue = import.meta.env.VITE_FEATURE_HTTPONLY_AUTH
-  console.log('🔍 AuthMigrationProvider: VITE_FEATURE_HTTPONLY_AUTH =', envValue, '(type:', typeof envValue, ')')
-
   const useNewAuth = envValue === 'true'
-  console.log('🔍 AuthMigrationProvider: useNewAuth =', useNewAuth, '→ using', useNewAuth ? 'NEW (httpOnly cookies)' : 'OLD (localStorage)')
+
+  logger.debug('Auth system selection:', {
+    useNewAuth,
+    system: useNewAuth ? 'httpOnly cookies' : 'localStorage'
+  })
 
   if (useNewAuth) {
     // New auth system: httpOnly cookies
-    console.log('✅ Rendering SecureAuthProvider (NEW auth system)')
     return (
       <SecureAuthProvider>
         <NewAuthAdapter>
@@ -54,7 +54,6 @@ export function AuthMigrationProvider({ children }: AuthMigrationProviderProps) 
   }
 
   // Old auth system: localStorage (current behavior)
-  console.log('✅ Rendering OldAuthAdapter (OLD auth system with useAuth hook)')
   return <OldAuthAdapter>{children}</OldAuthAdapter>
 }
 
@@ -121,15 +120,11 @@ function NewAuthAdapter({ children }: { children: ReactNode }) {
  * Calls useAuth hook and passes value to UserProvider.
  */
 function OldAuthAdapter({ children }: { children: ReactNode }) {
-  console.log('🔍 OldAuthAdapter: Component rendering, about to call useAuth()...')
-
   const authState = useAuth()
 
-  console.log('🔍 OldAuthAdapter: useAuth() returned:', {
+  logger.debug('Auth state loaded:', {
     hasCurrentUser: !!authState.currentUser,
-    hasAuthUser: !!authState.authUser,
-    isLoading: authState.isLoading,
-    currentUserEmail: authState.currentUser?.email
+    isLoading: authState.isLoading
   })
 
   return <UserProvider value={authState}>{children}</UserProvider>
