@@ -31,6 +31,8 @@ export const useBrowserHistory = ({
   const hasCompletedInitialLoadRef = useRef(false)
   const restorationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const failedRestorationAttemptsRef = useRef(new Set<string>())
+  // CRITICAL FIX: Track attempted restorations to prevent infinite loop from duplicate useEffects
+  const attemptedRestorationRef = useRef(new Set<string>())
 
   // CRITICAL FIX: Enhanced project restoration with deadlock prevention and auth coordination
   useEffect(() => {
@@ -59,6 +61,12 @@ export const useBrowserHistory = ({
 
     // If there's a project in URL but no current project, we need to restore
     if (projectIdFromUrl && !currentProject && onProjectRestore && !isRestoringProject) {
+      // CRITICAL FIX: Check if we've already attempted to restore this project in this session
+      if (attemptedRestorationRef.current.has(projectIdFromUrl)) {
+        logger.debug('Skipping restoration - already attempted for project', { projectId: projectIdFromUrl })
+        return
+      }
+
       // Check if we've already failed to restore this project
       if (failedRestorationAttemptsRef.current.has(projectIdFromUrl)) {
         logger.warn('Skipping restoration - already failed for project', { projectId: projectIdFromUrl })
@@ -74,6 +82,8 @@ export const useBrowserHistory = ({
       }
 
       logger.info('Starting project restoration', { projectId: projectIdFromUrl })
+      // CRITICAL FIX: Mark this project as attempted BEFORE calling restore to prevent duplicate calls
+      attemptedRestorationRef.current.add(projectIdFromUrl)
       setIsRestoringProject(true)
 
       // PHASE 1 FIX: Increased restoration timeout to match auth timeout (8s)
@@ -239,13 +249,19 @@ export const useBrowserHistory = ({
 
       // Restore project if specified in URL and different from current
       if (projectIdFromUrl && projectIdFromUrl !== currentProject?.id && onProjectRestore) {
-        logger.info('Restoring project from URL', {
-          projectId: projectIdFromUrl,
-          projectIdLength: projectIdFromUrl.length,
-          searchParams: location.search
-        })
-        setIsRestoringProject(true)
-        onProjectRestore(projectIdFromUrl)
+        // CRITICAL FIX: Prevent duplicate restoration - first useEffect already handles this
+        if (attemptedRestorationRef.current.has(projectIdFromUrl)) {
+          logger.debug('Skipping duplicate restoration from second useEffect', { projectId: projectIdFromUrl })
+        } else {
+          logger.info('Restoring project from URL (second useEffect)', {
+            projectId: projectIdFromUrl,
+            projectIdLength: projectIdFromUrl.length,
+            searchParams: location.search
+          })
+          attemptedRestorationRef.current.add(projectIdFromUrl)
+          setIsRestoringProject(true)
+          onProjectRestore(projectIdFromUrl)
+        }
       } else if (isInitialLoad) {
         // If initial load and no project restoration needed, mark initial load as complete
         logger.debug('Initial load complete - no project restoration needed')
