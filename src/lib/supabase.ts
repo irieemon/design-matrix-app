@@ -463,6 +463,63 @@ export const signOut = async () => {
   }
 }
 
+/**
+ * CRITICAL FIX: Create authenticated Supabase client from localStorage tokens
+ *
+ * Used as fallback when getSession() and setSession() hang on refresh.
+ * Creates a new client with the access_token as a custom auth header.
+ * This bypasses Supabase's auth methods entirely and authenticates directly.
+ *
+ * @returns Authenticated Supabase client or null if no valid session in localStorage
+ */
+export const createAuthenticatedClientFromLocalStorage = () => {
+  try {
+    const storageKey = 'sb-vfovtgtjailvrphsgafv-auth-token'
+    const stored = localStorage.getItem(storageKey)
+
+    if (!stored) {
+      console.log('🔍 createAuthenticatedClient: No session in localStorage')
+      return null
+    }
+
+    const parsed = JSON.parse(stored)
+
+    if (!parsed.access_token || !parsed.user) {
+      console.log('🔍 createAuthenticatedClient: Invalid session data')
+      return null
+    }
+
+    console.log('🔍 createAuthenticatedClient: Creating authenticated client with token')
+
+    // Create new Supabase client with access token in headers
+    // This authenticates ALL requests without needing getSession/setSession
+    const authenticatedClient = createClient(
+      supabaseUrl || 'https://placeholder.supabase.co',
+      supabaseAnonKey || 'placeholder-key',
+      {
+        auth: {
+          autoRefreshToken: false,  // Disable to prevent getSession() calls
+          persistSession: false,     // Disable to prevent session storage writes
+          detectSessionInUrl: false
+        },
+        global: {
+          headers: {
+            'Authorization': `Bearer ${parsed.access_token}`,  // Direct auth header
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        }
+      }
+    )
+
+    console.log('✅ createAuthenticatedClient: Authenticated client created')
+    return authenticatedClient
+  } catch (error) {
+    console.error('🔍 createAuthenticatedClient: Error:', error)
+    return null
+  }
+}
+
 // Project helpers
 export const getUserProjects = async (userId: string) => {
   const collaboratorIds = await getCollaboratorProjectIds(userId)

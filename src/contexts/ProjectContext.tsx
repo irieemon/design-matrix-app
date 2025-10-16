@@ -9,8 +9,9 @@ import { createContext, useContext, useState, ReactNode, useEffect } from 'react
 import { Project } from '../types'
 import { DatabaseService } from '../lib/database'
 import { logger } from '../utils/logger'
-import { useCurrentUser } from './UserContext'
+import { useCurrentUser, useAuthenticatedClient } from './UserContext'
 import { useToast } from './ToastContext'
+import { supabase } from '../lib/supabase'
 
 interface ProjectContextType {
   currentProject: Project | null
@@ -30,6 +31,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
   const [isRestoringProject, setIsRestoringProject] = useState(false)
   const currentUser = useCurrentUser()
+  const authenticatedClient = useAuthenticatedClient()
   const { showError } = useToast()
 
   // Clear project when user changes (logout/login)
@@ -45,7 +47,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
       logger.debug('🎯 Project: handleProjectSelect called with:', project.name, project.id)
       setCurrentProject(project)
     } else {
-      logger.debug('🎯 Project: handleProjectSelect called with null, clearing project')
+      logger.debug('🔍 Project: handleProjectSelect called with null, clearing project')
       setCurrentProject(null)
     }
   }
@@ -55,13 +57,23 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
       setIsRestoringProject(true)
       logger.debug('🔄 Project: Restoring project from URL:', projectId)
 
-      // CRITICAL FIX: Coordinated timeout aligned with browser history (5s to finish before browser history 6s timeout)
-      const restorationPromise = DatabaseService.getProjectById(projectId)
+      // CRITICAL FIX: Use authenticated client if available (fallback when getSession hangs)
+      const clientToUse = authenticatedClient || supabase
+      console.log('🔍 ProjectContext: Using client:', authenticatedClient ? 'AUTHENTICATED (localStorage)' : 'STANDARD (may fail RLS)')
+
+      // CRITICAL FIX: Query database directly with authenticated client
+      const restorationPromise = clientToUse
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .single()
+
       const timeoutPromise = new Promise<null>((_, reject) =>
         setTimeout(() => reject(new Error('Project restoration timeout after 5 seconds')), 5000)
       )
 
-      const project = await Promise.race([restorationPromise, timeoutPromise])
+      const result = await Promise.race([restorationPromise, timeoutPromise])
+      const project = result && 'data' in result ? result.data : null
 
       if (project) {
         logger.debug('✅ Project: Project restored successfully:', project.name)

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, createAuthenticatedClientFromLocalStorage } from '../lib/supabase'
 import { DatabaseService } from '../lib/database'
 import { User, AuthUser, Project } from '../types'
 import { logger } from '../utils/logger'
@@ -14,6 +14,7 @@ interface UseAuthReturn {
   handleLogout: () => Promise<void>
   setCurrentUser: (user: User | null) => void
   setIsLoading: (loading: boolean) => void
+  authenticatedClient: any | null  // CRITICAL FIX: Expose authenticated client for database queries
 }
 
 interface UseAuthOptions {
@@ -70,6 +71,10 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
   // CRITICAL FIX: Store latest handleAuthSuccess ref so listener always calls current version
   const handleAuthSuccessRef = useRef<((authUser: any) => Promise<void>) | null>(null)
+
+  // CRITICAL FIX: Store authenticated client created from localStorage for fallback path
+  // This client bypasses getSession/setSession and uses direct Authorization header
+  const authenticatedClientRef = useRef<any>(null)
 
   const { onProjectsCheck, setCurrentProject, setIdeas } = options
 
@@ -692,38 +697,17 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
               if (parsed.user && mounted) {
                 console.log('🔍 initAuth: Processing user from localStorage fallback')
 
-                // CRITICAL FIX: Load session into Supabase client using setSession()
-                // This is needed so database queries can access auth.uid() for RLS
-                console.log('🔍 initAuth: Loading session into Supabase client with setSession()')
+                // CRITICAL FIX: Create authenticated client from localStorage tokens
+                // This bypasses getSession/setSession entirely and uses direct Authorization header
+                console.log('🔍 initAuth: Creating authenticated client from localStorage')
 
-                try {
-                  // Add timeout to setSession() as well, in case it also hangs
-                  const setSessionWithTimeout = Promise.race([
-                    supabase.auth.setSession({
-                      access_token: parsed.access_token,
-                      refresh_token: parsed.refresh_token
-                    }),
-                    new Promise<{ data: any, error: any }>((_, reject) =>
-                      setTimeout(() => reject(new Error('setSession() timeout after 2 seconds')), 2000)
-                    )
-                  ])
+                const authenticatedClient = createAuthenticatedClientFromLocalStorage()
 
-                  const { data, error: sessionError } = await setSessionWithTimeout
-
-                  if (sessionError) {
-                    console.error('🔍 initAuth: setSession() error:', sessionError)
-                    // Fall through to create user anyway
-                  } else {
-                    console.log('🔍 initAuth: Session loaded into client successfully')
-
-                    // CRITICAL: Wait for session to propagate to client's internal auth state
-                    console.log('🔍 initAuth: Waiting for session propagation...')
-                    await new Promise(resolve => setTimeout(resolve, 150))
-                    console.log('🔍 initAuth: Session propagation complete')
-                  }
-                } catch (setSessionError) {
-                  console.error('🔍 initAuth: setSession() threw error (continuing anyway):', setSessionError)
-                  // Fall through to create user anyway - better to have React state than nothing
+                if (authenticatedClient) {
+                  console.log('✅ initAuth: Authenticated client created successfully')
+                  authenticatedClientRef.current = authenticatedClient
+                } else {
+                  console.error('❌ initAuth: Failed to create authenticated client')
                 }
 
                 // CRITICAL FIX: Don't call handleAuthUser which will try to fetch profile (calls getSession again!)
@@ -827,6 +811,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     handleAuthSuccess,
     handleLogout,
     setCurrentUser,
-    setIsLoading
+    setIsLoading,
+    authenticatedClient: authenticatedClientRef.current  // CRITICAL FIX: Expose authenticated client
   }
 }

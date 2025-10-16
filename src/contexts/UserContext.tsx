@@ -16,6 +16,7 @@ interface UserContextType {
   handleLogout: () => Promise<void>
   setCurrentUser: (user: User | null) => void
   setIsLoading: (loading: boolean) => void
+  authenticatedClient?: any | null  // CRITICAL FIX: Authenticated client for database queries
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -62,4 +63,13 @@ export function useUserDisplay(): { displayName: string; email: string; isLoadin
     email: currentUser?.email || '',
     isLoading
   }
+}
+
+/**
+ * CRITICAL FIX: Get authenticated Supabase client for database queries
+ * Used when getSession()/setSession() hang on refresh
+ */
+export function useAuthenticatedClient(): any | null {
+  const { authenticatedClient } = useUser()
+  return authenticatedClient || null
 }
