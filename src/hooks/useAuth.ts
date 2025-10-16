@@ -28,10 +28,23 @@ interface UseAuthOptions {
   setCurrentPage?: (page: string) => void
 }
 
-// PERFORMANCE OPTIMIZED: Unified profile service with caching
-const profileService = new ProfileService(supabase, CACHE_DURATIONS.USER_PROFILE * 3)
-// Session cache for faster repeat authentications
-const sessionCache = new CacheManager<any>(CACHE_DURATIONS.SESSION)
+// PERFORMANCE OPTIMIZED: Lazy-initialized singletons to prevent multiple GoTrueClient instances
+let profileServiceInstance: ProfileService | null = null
+let sessionCacheInstance: CacheManager<any> | null = null
+
+function getProfileService(): ProfileService {
+  if (!profileServiceInstance) {
+    profileServiceInstance = new ProfileService(supabase, CACHE_DURATIONS.USER_PROFILE * 3)
+  }
+  return profileServiceInstance
+}
+
+function getSessionCache(): CacheManager<any> {
+  if (!sessionCacheInstance) {
+    sessionCacheInstance = new CacheManager<any>(CACHE_DURATIONS.SESSION)
+  }
+  return sessionCacheInstance
+}
 
 export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -142,7 +155,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
   // Optimized user profile fetching using ProfileService
   const getCachedUserProfile = async (userId: string, userEmail: string): Promise<User> => {
-    return profileService.getProfile(userId, userEmail)
+    return getProfileService().getProfile(userId, userEmail)
   }
 
   // EMERGENCY FIX: Remove circular state dependency that caused 0% success rate
@@ -284,8 +297,8 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     logger.debug('🧹 Clearing all user caches to prevent stale user data')
 
     // Clear frontend caches
-    profileService.clearCache()
-    sessionCache.clear()
+    getProfileService().clearCache()
+    getSessionCache().clear()
 
     // CRITICAL FIX: Clear server-side caches via API call
     try {
@@ -343,8 +356,8 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
       // CRITICAL FIX: Clear all caches (frontend + server) on logout to prevent user data leaks
       logger.debug('🧹 Clearing all user caches on logout')
-      profileService.clearCache()
-      sessionCache.clear()
+      getProfileService().clearCache()
+      getSessionCache().clear()
 
       // CRITICAL FIX: Clear server-side caches via API call (before signing out)
       try {
@@ -387,8 +400,8 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       setIdeas?.([])
 
       // CRITICAL FIX: Clear all caches even in fallback scenario
-      profileService.clearCache()
-      sessionCache.clear()
+      getProfileService().clearCache()
+      getSessionCache().clear()
 
       // Clear legacy localStorage entries
       localStorage.removeItem('prioritasUser')

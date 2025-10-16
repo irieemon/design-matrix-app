@@ -211,8 +211,15 @@ export const getCurrentUser = async () => {
   return user
 }
 
-// Unified profile service for better performance
-const profileService = new ProfileService(supabase, CACHE_DURATIONS.PROFILE)
+// CRITICAL FIX: Lazy-initialized singleton to prevent multiple GoTrueClient instances
+let profileServiceInstance: ProfileService | null = null
+
+function getProfileService(): ProfileService {
+  if (!profileServiceInstance) {
+    profileServiceInstance = new ProfileService(supabase, CACHE_DURATIONS.PROFILE)
+  }
+  return profileServiceInstance
+}
 
 /**
  * Get user profile by ID
@@ -234,7 +241,7 @@ export const getUserProfile = async (userId: string) => {
       return null
     }
 
-    const profile = await profileService.getProfile(userId, user.email || '')
+    const profile = await getProfileService().getProfile(userId, user.email || '')
     const profileTime = performance.now() - profileStart
     logger.debug('🔍 getUserProfile result:', { profile, timing: `${profileTime.toFixed(1)}ms` })
 
@@ -350,7 +357,7 @@ export const createUserProfile = async (userId: string, email?: string) => {
  * @returns Updated profile
  */
 export const updateUserProfile = async (userId: string, updates: any) => {
-  return profileService.updateProfile(userId, updates)
+  return getProfileService().updateProfile(userId, updates)
 }
 
 export const signOut = async () => {
