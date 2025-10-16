@@ -456,12 +456,25 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
               logger.debug('Found session in localStorage:', { email: parsed.user?.email })
 
               if (parsed.user && mounted) {
-                // CRITICAL FIX v2: Don't create second Supabase client (causes Multiple GoTrueClient warning)
-                // Instead, call handleAuthUser() which will properly load user profile and data
-                // The main supabase client will handle all auth operations
-                logger.debug('🔄 Calling handleAuthUser from localStorage fallback path')
-                await handleAuthUser(parsed.user)
-                logger.debug('✅ Fallback auth completed successfully')
+                // EMERGENCY FIX v3: Don't call handleAuthUser - it calls getSession() again = infinite loop!
+                // Create basic user from localStorage WITHOUT calling ProfileService
+                // Accept degraded experience (basic user, no full profile) over infinite loading
+                logger.debug('⚠️ getSession() timed out - creating fallback user from localStorage')
+
+                const fallbackUser: User = {
+                  id: ensureUUID(parsed.user.id),
+                  email: parsed.user.email,
+                  full_name: parsed.user.user_metadata?.full_name || parsed.user.email,
+                  avatar_url: parsed.user.user_metadata?.avatar_url || null,
+                  role: parsed.user.user_metadata?.role || 'user',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                }
+
+                setCurrentUser(fallbackUser)
+                setAuthUser(parsed.user)
+                setIsLoading(false)
+                logger.debug('✅ Fallback auth completed (degraded mode - basic user only)')
                 return
               }
             }
