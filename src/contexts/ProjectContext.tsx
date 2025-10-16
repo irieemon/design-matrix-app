@@ -62,18 +62,41 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
       console.log('🔍 ProjectContext: Using client:', authenticatedClient ? 'AUTHENTICATED (localStorage)' : 'STANDARD (may fail RLS)')
 
       // CRITICAL FIX: Query database directly with authenticated client
+      console.log('🔍 ProjectContext: Starting database query for project:', projectId)
+      const queryStart = Date.now()
+
       const restorationPromise = clientToUse
         .from('projects')
         .select('*')
         .eq('id', projectId)
         .single()
+        .then((result: any) => {
+          const queryTime = Date.now() - queryStart
+          console.log('🔍 ProjectContext: Query completed in', queryTime, 'ms')
+          console.log('🔍 ProjectContext: Query result:', {
+            hasData: !!result.data,
+            hasError: !!result.error,
+            error: result.error,
+            dataKeys: result.data ? Object.keys(result.data) : []
+          })
+          return result
+        })
 
       const timeoutPromise = new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error('Project restoration timeout after 5 seconds')), 5000)
+        setTimeout(() => {
+          const queryTime = Date.now() - queryStart
+          console.error('🔍 ProjectContext: Query TIMEOUT after', queryTime, 'ms')
+          reject(new Error('Project restoration timeout after 5 seconds'))
+        }, 5000)
       )
 
       const result = await Promise.race([restorationPromise, timeoutPromise])
       const project = result && 'data' in result ? result.data : null
+      const error = result && 'error' in result ? result.error : null
+
+      if (error) {
+        console.error('🔍 ProjectContext: Database query error:', error)
+      }
 
       if (project) {
         logger.debug('✅ Project: Project restored successfully:', project.name)
