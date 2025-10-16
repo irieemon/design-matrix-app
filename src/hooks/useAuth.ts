@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase, createAuthenticatedClientFromLocalStorage, getProfileService } from '../lib/supabase'
+import { supabase, getProfileService } from '../lib/supabase'
 import { DatabaseService } from '../lib/database'
 import { User, AuthUser, Project } from '../types'
 import { logger } from '../utils/logger'
@@ -17,7 +17,7 @@ interface UseAuthReturn {
   handleLogout: () => Promise<void>
   setCurrentUser: (user: User | null) => void
   setIsLoading: (loading: boolean) => void
-  authenticatedClient: any | null  // CRITICAL FIX: Expose authenticated client for database queries
+  authenticatedClient: any | null  // Always null now - main supabase client used for all operations
 }
 
 interface UseAuthOptions {
@@ -46,10 +46,6 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
   // CRITICAL FIX: Store latest handleAuthSuccess ref so listener always calls current version
   const handleAuthSuccessRef = useRef<((authUser: any) => Promise<void>) | null>(null)
-
-  // CRITICAL FIX: Store authenticated client created from localStorage for fallback path
-  // This client bypasses getSession/setSession and uses direct Authorization header
-  const authenticatedClientRef = useRef<any>(null)
 
   const { onProjectsCheck, setCurrentProject, setIdeas } = options
 
@@ -460,31 +456,12 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
               logger.debug('Found session in localStorage:', { email: parsed.user?.email })
 
               if (parsed.user && mounted) {
-                // CRITICAL FIX: Create authenticated client from localStorage tokens
-                // This bypasses getSession/setSession entirely and uses direct Authorization header
-                const authenticatedClient = createAuthenticatedClientFromLocalStorage()
-
-                if (authenticatedClient) {
-                  logger.debug('Authenticated client created successfully')
-                  authenticatedClientRef.current = authenticatedClient
-                }
-
-                // CRITICAL FIX: Don't call handleAuthUser which will try to fetch profile (calls getSession again!)
-                // Instead, create a basic user from localStorage and set state directly
-                const fallbackUser = {
-                  id: ensureUUID(parsed.user.id),
-                  email: parsed.user.email,
-                  full_name: parsed.user.user_metadata?.full_name || parsed.user.email,
-                  avatar_url: parsed.user.user_metadata?.avatar_url || null,
-                  role: 'user' as const,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                }
-
-                setCurrentUser(fallbackUser)
-                setAuthUser(parsed.user)
-                setIsLoading(false)
-                logger.debug('Fallback auth completed')
+                // CRITICAL FIX v2: Don't create second Supabase client (causes Multiple GoTrueClient warning)
+                // Instead, call handleAuthUser() which will properly load user profile and data
+                // The main supabase client will handle all auth operations
+                logger.debug('🔄 Calling handleAuthUser from localStorage fallback path')
+                await handleAuthUser(parsed.user)
+                logger.debug('✅ Fallback auth completed successfully')
                 return
               }
             }
@@ -565,6 +542,6 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     handleLogout,
     setCurrentUser,
     setIsLoading,
-    authenticatedClient: authenticatedClientRef.current  // CRITICAL FIX: Expose authenticated client
+    authenticatedClient: null  // No longer creating second client - main supabase client handles everything
   }
 }
