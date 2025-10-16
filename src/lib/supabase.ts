@@ -212,9 +212,10 @@ export const getCurrentUser = async () => {
 }
 
 // CRITICAL FIX: Lazy-initialized singleton to prevent multiple GoTrueClient instances
+// EXPORTED so useAuth.ts and other modules can share the SAME instance
 let profileServiceInstance: ProfileService | null = null
 
-function getProfileService(): ProfileService {
+export function getProfileService(): ProfileService {
   if (!profileServiceInstance) {
     profileServiceInstance = new ProfileService(supabase, CACHE_DURATIONS.PROFILE)
   }

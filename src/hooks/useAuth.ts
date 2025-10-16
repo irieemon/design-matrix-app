@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase, createAuthenticatedClientFromLocalStorage } from '../lib/supabase'
+import { supabase, createAuthenticatedClientFromLocalStorage, getProfileService } from '../lib/supabase'
 import { DatabaseService } from '../lib/database'
 import { User, AuthUser, Project } from '../types'
 import { logger } from '../utils/logger'
@@ -8,7 +8,6 @@ import { ensureUUID, isDemoUUID } from '../utils/uuid'
 import { SUPABASE_STORAGE_KEY, TIMEOUTS, CACHE_DURATIONS } from '../lib/config'
 import { withTimeout } from '../utils/promiseUtils'
 import { CacheManager } from '../services/CacheManager'
-import { ProfileService } from '../services/ProfileService'
 
 interface UseAuthReturn {
   currentUser: User | null
@@ -28,16 +27,9 @@ interface UseAuthOptions {
   setCurrentPage?: (page: string) => void
 }
 
-// PERFORMANCE OPTIMIZED: Lazy-initialized singletons to prevent multiple GoTrueClient instances
-let profileServiceInstance: ProfileService | null = null
+// PERFORMANCE OPTIMIZED: Lazy-initialized singleton to prevent multiple GoTrueClient instances
+// ProfileService singleton is now in supabase.ts and imported via getProfileService()
 let sessionCacheInstance: CacheManager<any> | null = null
-
-function getProfileService(): ProfileService {
-  if (!profileServiceInstance) {
-    profileServiceInstance = new ProfileService(supabase, CACHE_DURATIONS.USER_PROFILE * 3)
-  }
-  return profileServiceInstance
-}
 
 function getSessionCache(): CacheManager<any> {
   if (!sessionCacheInstance) {
