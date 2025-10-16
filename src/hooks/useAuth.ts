@@ -692,12 +692,24 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
               if (parsed.user && mounted) {
                 console.log('🔍 initAuth: Processing user from localStorage fallback')
 
-                // CRITICAL: Also need session propagation delay for fallback path
-                console.log('🔍 initAuth: Waiting 150ms for session propagation (fallback path)...')
-                await new Promise(resolve => setTimeout(resolve, 150))
-                console.log('🔍 initAuth: Propagation delay complete (fallback path)')
+                // CRITICAL FIX: Don't call handleAuthUser which will try to fetch profile (calls getSession again!)
+                // Instead, create a basic user from localStorage and set state directly
+                console.log('🔍 initAuth: Creating user from localStorage (skipping profile fetch to avoid getSession hang)')
 
-                await handleAuthUser(parsed.user)
+                const fallbackUser = {
+                  id: ensureUUID(parsed.user.id),
+                  email: parsed.user.email,
+                  full_name: parsed.user.user_metadata?.full_name || parsed.user.email,
+                  avatar_url: parsed.user.user_metadata?.avatar_url || null,
+                  role: 'user' as const,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                }
+
+                console.log('🔍 initAuth: Setting user state directly from localStorage')
+                setCurrentUser(fallbackUser)
+                setAuthUser(parsed.user)
+                setIsLoading(false)
                 console.log('🔍 initAuth: Fallback auth completed')
                 return
               }
