@@ -70,9 +70,15 @@ const PageRouter: React.FC<PageRouterProps> = ({
 
   // Handle redirects that require a project when no project is available
   useEffect(() => {
-    if (!isRestoringProject && !currentProject) {
+    // CRITICAL FIX: Check if there's a project ID in the URL before redirecting
+    // This prevents race condition where we redirect before project restoration completes
+    const urlParams = new URLSearchParams(window.location.search)
+    const projectIdFromUrl = urlParams.get('project')
+
+    if (!isRestoringProject && !currentProject && !projectIdFromUrl) {
       const pagesRequiringProject = ['data', 'reports', 'roadmap', 'files', 'collaboration']
       if (pagesRequiringProject.includes(currentPage)) {
+        logger.debug('No project available and no project in URL - redirecting to projects page')
         onPageChange('projects')
       }
     }
