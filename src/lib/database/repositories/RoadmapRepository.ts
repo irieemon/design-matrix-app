@@ -5,7 +5,7 @@
  * CRUD operations, versioning, and roadmap queries.
  */
 
-import { supabase } from '../../supabase'
+import { supabase, createAuthenticatedClientFromLocalStorage } from '../../supabase'
 import { logger } from '../../../utils/logger'
 import { DatabaseHelpers } from '../utils/DatabaseHelpers'
 
@@ -79,7 +79,16 @@ export class RoadmapRepository {
    */
   static async getProjectRoadmaps(projectId: string): Promise<RoadmapData[]> {
     try {
-      const { data, error } = await supabase
+      // CRITICAL FIX: Use authenticated client from localStorage when available
+      // On refresh, getSession() may timeout but localStorage has valid auth token
+      let client = supabase
+      const fallbackClient = createAuthenticatedClientFromLocalStorage()
+      if (fallbackClient) {
+        logger.debug('🗺️ Using authenticated client from localStorage for roadmaps query')
+        client = fallbackClient
+      }
+
+      const { data, error} = await client
         .from('project_roadmaps')
         .select('*')
         .eq('project_id', projectId)

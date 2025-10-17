@@ -5,7 +5,7 @@
  * CRUD operations, versioning, and insights queries.
  */
 
-import { supabase } from '../../supabase'
+import { supabase, createAuthenticatedClientFromLocalStorage } from '../../supabase'
 import { logger } from '../../../utils/logger'
 import { DatabaseHelpers } from '../utils/DatabaseHelpers'
 
@@ -79,7 +79,16 @@ export class InsightsRepository {
    */
   static async getProjectInsights(projectId: string): Promise<InsightData[]> {
     try {
-      const { data, error } = await supabase
+      // CRITICAL FIX: Use authenticated client from localStorage when available
+      // On refresh, getSession() may timeout but localStorage has valid auth token
+      let client = supabase
+      const fallbackClient = createAuthenticatedClientFromLocalStorage()
+      if (fallbackClient) {
+        logger.debug('📊 Using authenticated client from localStorage for insights query')
+        client = fallbackClient
+      }
+
+      const { data, error } = await client
         .from('project_insights')
         .select('*')
         .eq('project_id', projectId)
