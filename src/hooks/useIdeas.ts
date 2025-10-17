@@ -6,6 +6,7 @@ import { useOptimisticUpdates } from './useOptimisticUpdates'
 import { useLogger } from '../lib/logging'
 import { useCurrentUser } from '../contexts/UserContext'
 import { supabase } from '../lib/supabase'
+import { SUPABASE_STORAGE_KEY } from '../lib/config'
 
 interface UseIdeasReturn {
   ideas: IdeaCard[]
@@ -71,17 +72,29 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
 
         logger.debug('🔍 DIAGNOSTIC: Fetching ideas via API endpoint')
 
-        // WORKAROUND: Use direct API endpoint to bypass database.ts hanging issue
-        // SECURITY: Support both httpOnly cookies (new) and localStorage auth (old)
+        // CRITICAL FIX: Read token from localStorage directly to avoid getSession() timeout
+        // The standard supabase.auth.getSession() hangs on page refresh (same issue as useAuth.ts)
+        // This is the SAME pattern used in ProjectContext.tsx (commit caab7bc)
 
-        // Get access token from localStorage (old auth) for backwards compatibility
-        const { data: { session } } = await supabase.auth.getSession()
-        const accessToken = session?.access_token
+        const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
+        let accessToken: string | null = null
+
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored)
+            accessToken = parsed.access_token
+            logger.debug('🔑 Using access token from localStorage (bypassing getSession)')
+          } catch (error) {
+            logger.error('Error parsing localStorage session:', error)
+          }
+        }
 
         const headers: HeadersInit = {}
         if (accessToken) {
           headers['Authorization'] = `Bearer ${accessToken}`
-          logger.debug('🔑 Including Authorization header from localStorage session')
+          logger.debug('🔑 Including Authorization header for ideas API')
+        } else {
+          logger.warn('⚠️ No access token found in localStorage - ideas may not load')
         }
 
         const response = await fetch(`/api/ideas?projectId=${projectId}`, {
