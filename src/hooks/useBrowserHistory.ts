@@ -184,14 +184,28 @@ export const useBrowserHistory = ({
 
   // Sync URL when page changes (programmatic navigation)
   useEffect(() => {
-    // OPTIMIZED: Remove blocking logic that prevents navigation during auth
-    // Allow navigation to proceed normally without waiting
-    logger.debug('Allowing programmatic navigation - no blocking')
+    // CRITICAL FIX: DO NOT navigate while project restoration is in progress
+    // This prevents race condition where PageRouter redirect overwrites URL with ?project= parameter
+    if (isRestoringProject) {
+      logger.debug('Skipping URL sync - project restoration in progress')
+      return
+    }
+
+    // CRITICAL FIX: Also check if there's a project parameter in URL that hasn't been restored yet
+    // This prevents PageRouter redirect from removing ?project= before restoration completes
+    const urlParams = new URLSearchParams(location.search)
+    const projectIdFromUrl = urlParams.get('project')
+    if (projectIdFromUrl && !currentProject) {
+      logger.debug('Skipping URL sync - project parameter in URL but not restored yet', {
+        projectIdFromUrl,
+        currentPage
+      })
+      return
+    }
 
     const targetPath = pageToPath[currentPage] || '/'
 
     // Build URL with project context
-    const urlParams = new URLSearchParams(location.search)
     const rawCurrentProjectParam = urlParams.get('project')
     const currentProjectParam = rawCurrentProjectParam ? sanitizeProjectId(rawCurrentProjectParam) : null
 
@@ -218,7 +232,7 @@ export const useBrowserHistory = ({
 
     lastCurrentPageRef.current = currentPage
     lastProjectIdRef.current = currentProject?.id
-  }, [currentPage, currentProject, navigate, pageToPath, isRestoringProject])
+  }, [currentPage, currentProject, navigate, pageToPath, isRestoringProject, location.search])
   // NOTE: location.pathname and location.search intentionally excluded from deps
   // They're used for comparison only, not as triggers (would cause infinite loop)
 
