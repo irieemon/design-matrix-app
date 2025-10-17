@@ -1,7 +1,7 @@
 import { User } from '../types'
 import { logger } from '../utils/logger'
 import { CacheManager } from './CacheManager'
-import { CACHE_DURATIONS } from '../lib/config'
+import { CACHE_DURATIONS, SUPABASE_STORAGE_KEY } from '../lib/config'
 
 /**
  * ProfileService - Unified profile management with caching
@@ -126,13 +126,25 @@ export class ProfileService {
     try {
       this.abortController = new AbortController()
 
-      let token = (await this.supabaseClient.auth.getSession()).data.session?.access_token
-      if (!token) {
-        await new Promise(resolve => setTimeout(resolve, 50))
-        token = (await this.supabaseClient.auth.getSession()).data.session?.access_token
-        if (!token) {
-          throw new Error('No auth token available')
+      // CRITICAL FIX: Read token from localStorage directly to avoid getSession() timeout
+      // The standard supabase.auth.getSession() hangs on page refresh (same issue as useAuth.ts, ProjectContext.tsx, useIdeas.ts)
+      // This is the SAME pattern used throughout the app (commits caab7bc, a4ec5e3)
+
+      const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
+      let token: string | null = null
+
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          token = parsed.access_token
+          logger.debug('🔑 ProfileService: Using access token from localStorage (bypassing getSession)')
+        } catch (error) {
+          logger.error('ProfileService: Error parsing localStorage session:', error)
         }
+      }
+
+      if (!token) {
+        throw new Error('No auth token available')
       }
 
       const response = await fetch('/api/auth?action=user', {

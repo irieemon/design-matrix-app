@@ -289,8 +289,20 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     getSessionCache().clear()
 
     // CRITICAL FIX: Clear server-side caches via API call
+    // Using localStorage token read to avoid getSession() timeout
     try {
-      const token = (await supabase.auth.getSession()).data.session?.access_token
+      const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
+      let token: string | null = null
+
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          token = parsed.access_token
+        } catch (error) {
+          logger.error('Error parsing localStorage for cache clearing:', error)
+        }
+      }
+
       if (token) {
         logger.debug('🧹 Clearing server-side caches...')
         const response = await fetch('/api/auth?action=clear-cache', {
@@ -348,8 +360,20 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       getSessionCache().clear()
 
       // CRITICAL FIX: Clear server-side caches via API call (before signing out)
+      // Using localStorage token read to avoid getSession() timeout
       try {
-        const token = (await supabase.auth.getSession()).data.session?.access_token
+        const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
+        let token: string | null = null
+
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored)
+            token = parsed.access_token
+          } catch (error) {
+            logger.error('Error parsing localStorage for logout cache clearing:', error)
+          }
+        }
+
         if (token) {
           logger.debug('🧹 Clearing server-side caches on logout...')
           const response = await fetch('/api/auth?action=clear-cache', {

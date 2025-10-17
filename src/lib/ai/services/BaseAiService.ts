@@ -3,9 +3,9 @@
  * Common functionality for all AI services including auth, fetch wrapper, and caching
  */
 
-import { supabase } from '../../supabase'
 import { logger } from '../../../utils/logger'
 import { aiCache, AICache } from '../../aiCache'
+import { SUPABASE_STORAGE_KEY } from '../../../lib/config'
 
 export interface SecureAIServiceConfig {
   baseUrl?: string // For custom API endpoints (defaults to current domain)
@@ -52,13 +52,28 @@ export abstract class BaseAiService {
    * @returns Headers with authentication token if available
    */
   protected async getAuthHeaders(): Promise<HeadersInit> {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
+    // CRITICAL FIX: Read token from localStorage directly to avoid getSession() timeout
+    // The standard supabase.auth.getSession() hangs on page refresh
+    // This is the SAME pattern used throughout the app (commits caab7bc, a4ec5e3, ProfileService fix)
 
-      if (session?.access_token) {
+    try {
+      const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
+      let token: string | null = null
+
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          token = parsed.access_token
+          logger.debug('🔑 BaseAiService: Using access token from localStorage (bypassing getSession)')
+        } catch (error) {
+          logger.error('BaseAiService: Error parsing localStorage session:', error)
+        }
+      }
+
+      if (token) {
         return {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${token}`
         }
       }
     } catch (error) {
