@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase, createAuthenticatedClientFromLocalStorage } from './supabase'
 import { logger } from '../utils/logger'
 import { ProjectFile } from '../types'
 
@@ -158,7 +158,19 @@ export class FileService {
     try {
       logger.debug('📂 Loading files for project:', projectId)
 
-      const { data, error } = await supabase
+      // CRITICAL FIX: Try to get authenticated client from localStorage first
+      // On refresh, getSession() may timeout but localStorage has valid auth token
+      // This ensures files query has proper auth context for RLS
+      let client = supabase
+      const fallbackClient = createAuthenticatedClientFromLocalStorage()
+      if (fallbackClient) {
+        logger.debug('📂 Using authenticated client from localStorage for files query')
+        client = fallbackClient
+      } else {
+        logger.debug('📂 Using default supabase client for files query')
+      }
+
+      const { data, error } = await client
         .from('project_files')
         .select('*')
         .eq('project_id', projectId)
@@ -166,6 +178,12 @@ export class FileService {
 
       if (error) {
         logger.error('❌ Error loading project files:', error)
+        logger.error('❌ Error details:', {
+          message: error.message,
+          code: error.code,
+          hint: error.hint,
+          details: error.details
+        })
         return []
       }
 
