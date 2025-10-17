@@ -41,6 +41,14 @@ export const useBrowserHistory = ({
     // Convert legacy project IDs to proper UUID format
     const projectIdFromUrl = rawProjectId ? sanitizeProjectId(rawProjectId) : null
 
+    logger.debug('🔄 useBrowserHistory restoration useEffect triggered', {
+      projectIdFromUrl,
+      hasCurrentProject: !!currentProject,
+      currentProjectId: currentProject?.id,
+      hasOnProjectRestore: !!onProjectRestore,
+      isRestoringProject
+    })
+
     // Clear any existing timeout when dependencies change
     if (restorationTimeoutRef.current) {
       clearTimeout(restorationTimeoutRef.current)
@@ -116,6 +124,13 @@ export const useBrowserHistory = ({
         if (restorationTimeoutRef.current) {
           clearTimeout(restorationTimeoutRef.current)
           restorationTimeoutRef.current = null
+        }
+
+        // CRITICAL FIX: Clear attempted restoration tracking when project successfully loads
+        // This allows future restorations of the same project to work (e.g., after logout/login)
+        if (currentProject && projectIdFromUrl) {
+          logger.debug('Project loaded successfully, clearing attempted restoration tracking')
+          attemptedRestorationRef.current.delete(projectIdFromUrl)
         }
       }
       setIsRestoringProject(false)
