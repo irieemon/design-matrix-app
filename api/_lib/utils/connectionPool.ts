@@ -198,7 +198,13 @@ let pool: SupabaseConnectionPool | null = null
 export function getConnectionPool(): SupabaseConnectionPool {
   if (!pool) {
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+
+    // CRITICAL FIX: Use SERVICE_ROLE_KEY for backend connection pool to bypass RLS
+    // Backend operations need full database access without Row Level Security restrictions
+    // The ANON key has RLS restrictions and causes "TypeError: fetch failed" on user_profiles queries
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY ||
+                        process.env.SUPABASE_ANON_KEY ||
+                        process.env.VITE_SUPABASE_ANON_KEY
 
     if (!supabaseUrl || !supabaseKey) {
       throw new Error('Missing Supabase configuration for connection pool')
@@ -211,7 +217,7 @@ export function getConnectionPool(): SupabaseConnectionPool {
       idleTimeoutMs: 30000  // 30s cleanup
     })
 
-    console.log('🏊‍♂️ Supabase connection pool initialized')
+    console.log('🏊‍♂️ Supabase connection pool initialized with service role key')
   }
 
   return pool
