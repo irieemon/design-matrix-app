@@ -8,9 +8,8 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
 import { Project } from '../types'
 import { logger } from '../utils/logger'
-import { useCurrentUser, useAuthenticatedClient } from './UserContext'
+import { useCurrentUser } from './UserContext'
 import { useToast } from './ToastContext'
-import { supabase } from '../lib/supabase'
 import { SUPABASE_STORAGE_KEY, TIMEOUTS } from '../lib/config'
 import { withTimeout } from '../utils/promiseUtils'
 
@@ -32,7 +31,6 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
   const [isRestoringProject, setIsRestoringProject] = useState(false)
   const currentUser = useCurrentUser()
-  const authenticatedClient = useAuthenticatedClient()
   const { showError } = useToast()
 
   // Clear project when user changes (logout/login)
@@ -61,17 +59,18 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
       const queryStart = Date.now()
       let project: Project | null = null
 
-      // CRITICAL FIX: If authenticated client exists, use direct REST API call to avoid GoTrueClient conflict
-      if (authenticatedClient) {
-        logger.debug('Using direct REST API with localStorage token')
+      // CRITICAL FIX v2: ALWAYS use direct REST API with localStorage token to avoid getSession() timeout
+      // The standard Supabase client calls getSession() internally which can hang on page refresh
+      logger.debug('Using direct REST API with localStorage token (bypassing getSession)')
 
-        // Get token from localStorage
-        const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
+      // Get token from localStorage
+      const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
 
-        if (stored) {
-          const parsed = JSON.parse(stored)
-          const accessToken = parsed.access_token
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        const accessToken = parsed.access_token
 
+        if (accessToken) {
           // Get config from environment
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
           const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -103,27 +102,11 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
             TIMEOUTS.PROJECT_RESTORE,
             'Project restoration timeout'
           )
+        } else {
+          logger.warn('No access token found in localStorage - cannot restore project')
         }
       } else {
-        logger.debug('Using standard Supabase client')
-
-        const restorationPromise = Promise.resolve(
-          supabase
-            .from('projects')
-            .select('*')
-            .eq('id', projectId)
-            .single()
-        ).then((result: any) => {
-          const queryTime = Date.now() - queryStart
-          logger.debug('Query completed:', { queryTime })
-          return result.data
-        })
-
-        project = await withTimeout(
-          restorationPromise,
-          TIMEOUTS.PROJECT_RESTORE,
-          'Project restoration timeout'
-        )
+        logger.warn('No auth session found in localStorage - cannot restore project')
       }
 
       if (project) {
