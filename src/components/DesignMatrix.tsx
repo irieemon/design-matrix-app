@@ -34,6 +34,14 @@ interface DesignMatrixProps {
   onStateChange?: (state: ComponentState) => void
   /** Callback for async operations with automatic state management */
   onAsyncOperation?: (operation: () => Promise<void>) => Promise<void>
+  /** Zoom level for full-screen mode (0.5 - 2.0) */
+  zoomLevel?: number
+  /** Show grid lines */
+  showGrid?: boolean
+  /** Show quadrant labels */
+  showLabels?: boolean
+  /** Whether component is in fullscreen mode */
+  isFullscreen?: boolean
 }
 
 // Matrix component reference for imperative operations
@@ -64,7 +72,11 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   animated = true,
   size = 'md',
   onStateChange,
-  onAsyncOperation
+  onAsyncOperation,
+  zoomLevel = 1,
+  showGrid = true,
+  showLabels = true,
+  isFullscreen = false
 }, ref) => {
   const [hoveredQuadrant, setHoveredQuadrant] = useState<string | null>(null)
 
@@ -186,13 +198,10 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   // Show skeleton loading state
   if (componentState.isLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-8">
-        {/* Matrix Header */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Interactive Priority Matrix</h2>
-          <p className="text-slate-500">Loading your priority matrix...</p>
-        </div>
-
+      <div
+        className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-8"
+        style={isFullscreen ? { height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' } : { minHeight: 'calc(100vh - 200px)', height: 'auto' }}
+      >
         {/* Skeleton Matrix */}
         <SkeletonMatrix
           variant="matrix-safe"
@@ -200,15 +209,6 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
           layout="grid"
           items={6}
         />
-
-        {/* Skeleton Guide */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, index) => (
-            <div key={index} className="animate-pulse">
-              <div className="h-24 bg-slate-200 rounded-2xl"></div>
-            </div>
-          ))}
-        </div>
       </div>
     )
   }
@@ -216,7 +216,10 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   // Show error state
   if (componentState.hasError) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-red-200/60 p-8">
+      <div
+        className="bg-white rounded-2xl shadow-sm border border-red-200/60 p-8"
+        style={isFullscreen ? { height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' } : { minHeight: 'calc(100vh - 200px)', height: 'auto' }}
+      >
         <div className="text-center py-12">
           <div className="text-red-400 text-4xl mb-4">⚠️</div>
           <h3 className="text-lg font-medium text-red-900 mb-2">Unable to load matrix</h3>
@@ -245,13 +248,10 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   ].filter(Boolean).join(' ')
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-8">
-      {/* Matrix Header */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-slate-900 mb-2">Interactive Priority Matrix</h2>
-        <p className="text-slate-500">Double-click any card to edit • Drag to reposition ideas across quadrants</p>
-      </div>
-
+    <div
+      className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-8"
+      style={isFullscreen ? { height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' } : { minHeight: 'calc(100vh - 200px)', height: 'auto' }}
+    >
       {/* Matrix Container */}
       <div
         ref={(node) => {
@@ -265,9 +265,15 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
         data-variant={componentState.variant}
         data-size={componentState.size}
         data-testid="design-matrix"
+        style={{
+          transform: `scale(${zoomLevel})`,
+          transformOrigin: 'center center',
+          transition: 'transform 200ms ease-out',
+          ...(isFullscreen ? { flex: 1, minHeight: 0 } : {})
+        }}
       >
         {/* Matrix Grid Background */}
-        <div className="matrix-grid" />
+        {showGrid && <div className="matrix-grid" />}
 
         {/* Center Point */}
         <div className="matrix-center-point" />
@@ -281,65 +287,69 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
         </div>
 
         {/* Enhanced Quadrant Labels with Performance-Optimized Hover */}
-        <div
-          className={`absolute top-6 left-6 bg-emerald-50 text-emerald-800 px-4 py-3 rounded-xl text-sm font-semibold border border-emerald-200/60 shadow-sm cursor-pointer instant-hover-card ${
-            hoveredQuadrant === 'quick-wins' ? 'matrix-hover-layer bg-emerald-100' : ''
-          }`}
-          onMouseEnter={() => handleQuadrantHover('quick-wins')}
-          onMouseLeave={() => handleQuadrantHover(null)}
-          data-testid="quadrant-quick-wins"
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-            Quick Wins
-          </div>
-          <div className="text-xs text-emerald-600 font-normal">High Value • Low Effort</div>
-        </div>
+        {showLabels && (
+          <>
+            <div
+              className={`absolute top-6 left-6 bg-emerald-50 text-emerald-800 px-4 py-3 rounded-xl text-sm font-semibold border border-emerald-200/60 shadow-sm cursor-pointer instant-hover-card ${
+                hoveredQuadrant === 'quick-wins' ? 'matrix-hover-layer bg-emerald-100' : ''
+              }`}
+              onMouseEnter={() => handleQuadrantHover('quick-wins')}
+              onMouseLeave={() => handleQuadrantHover(null)}
+              data-testid="quadrant-quick-wins"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                Quick Wins
+              </div>
+              <div className="text-xs text-emerald-600 font-normal">High Value • Low Effort</div>
+            </div>
 
-        <div
-          className={`absolute top-6 right-6 bg-blue-50 text-blue-800 px-4 py-3 rounded-xl text-sm font-semibold border border-blue-200/60 shadow-sm cursor-pointer instant-hover-card ${
-            hoveredQuadrant === 'strategic' ? 'matrix-hover-layer bg-blue-100' : ''
-          }`}
-          onMouseEnter={() => handleQuadrantHover('strategic')}
-          onMouseLeave={() => handleQuadrantHover(null)}
-          data-testid="quadrant-strategic"
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            Strategic
-          </div>
-          <div className="text-xs text-blue-600 font-normal">High Value • High Effort</div>
-        </div>
+            <div
+              className={`absolute top-6 right-6 bg-blue-50 text-blue-800 px-4 py-3 rounded-xl text-sm font-semibold border border-blue-200/60 shadow-sm cursor-pointer instant-hover-card ${
+                hoveredQuadrant === 'strategic' ? 'matrix-hover-layer bg-blue-100' : ''
+              }`}
+              onMouseEnter={() => handleQuadrantHover('strategic')}
+              onMouseLeave={() => handleQuadrantHover(null)}
+              data-testid="quadrant-strategic"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                Strategic
+              </div>
+              <div className="text-xs text-blue-600 font-normal">High Value • High Effort</div>
+            </div>
 
-        <div
-          className={`absolute bottom-20 left-6 bg-amber-50 text-amber-800 px-4 py-3 rounded-xl text-sm font-semibold border border-amber-200/60 shadow-sm cursor-pointer instant-hover-card ${
-            hoveredQuadrant === 'reconsider' ? 'matrix-hover-layer bg-amber-100' : ''
-          }`}
-          onMouseEnter={() => handleQuadrantHover('reconsider')}
-          onMouseLeave={() => handleQuadrantHover(null)}
-          data-testid="quadrant-reconsider"
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-            Reconsider
-          </div>
-          <div className="text-xs text-amber-600 font-normal">Low Value • Low Effort</div>
-        </div>
+            <div
+              className={`absolute bottom-20 left-6 bg-amber-50 text-amber-800 px-4 py-3 rounded-xl text-sm font-semibold border border-amber-200/60 shadow-sm cursor-pointer instant-hover-card ${
+                hoveredQuadrant === 'reconsider' ? 'matrix-hover-layer bg-amber-100' : ''
+              }`}
+              onMouseEnter={() => handleQuadrantHover('reconsider')}
+              onMouseLeave={() => handleQuadrantHover(null)}
+              data-testid="quadrant-reconsider"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                Reconsider
+              </div>
+              <div className="text-xs text-amber-600 font-normal">Low Value • Low Effort</div>
+            </div>
 
-        <div
-          className={`absolute bottom-20 right-6 bg-red-50 text-red-800 px-4 py-3 rounded-xl text-sm font-semibold border border-red-200/60 shadow-sm cursor-pointer instant-hover-card ${
-            hoveredQuadrant === 'avoid' ? 'matrix-hover-layer bg-red-100' : ''
-          }`}
-          onMouseEnter={() => handleQuadrantHover('avoid')}
-          onMouseLeave={() => handleQuadrantHover(null)}
-          data-testid="quadrant-avoid"
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-            Avoid
-          </div>
-          <div className="text-xs text-red-600 font-normal">Low Value • High Effort</div>
-        </div>
+            <div
+              className={`absolute bottom-20 right-6 bg-red-50 text-red-800 px-4 py-3 rounded-xl text-sm font-semibold border border-red-200/60 shadow-sm cursor-pointer instant-hover-card ${
+                hoveredQuadrant === 'avoid' ? 'matrix-hover-layer bg-red-100' : ''
+              }`}
+              onMouseEnter={() => handleQuadrantHover('avoid')}
+              onMouseLeave={() => handleQuadrantHover(null)}
+              data-testid="quadrant-avoid"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                Avoid
+              </div>
+              <div className="text-xs text-red-600 font-normal">Low Value • High Effort</div>
+            </div>
+          </>
+        )}
 
         {/* Modern Center Lines */}
         <div className="absolute top-0 bottom-0 left-1/2 w-px bg-slate-300/60 transform -translate-x-0.5"></div>
@@ -396,53 +406,6 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
             </div>
           </div>
         )}
-      </div>
-
-      {/* Enhanced Matrix Guide with State Indicators */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className={`text-center p-6 bg-emerald-50 rounded-2xl border border-emerald-200/60 shadow-sm transition-all duration-300 ${
-          hoveredQuadrant === 'quick-wins' ? 'scale-105 shadow-lg bg-emerald-100 border-emerald-300' : 'hover:shadow-md hover:scale-102'
-        }`}>
-          <div className="w-3 h-3 bg-emerald-500 rounded-full mx-auto mb-3"></div>
-          <h4 className="font-semibold text-emerald-800 mb-2">Quick Wins</h4>
-          <p className="text-sm text-emerald-600">Do these first for immediate impact</p>
-          <div className="mt-3 text-xs text-emerald-500 font-medium">
-            {ideas.filter(idea => idea.x < 260 && idea.y < 260).length} ideas
-          </div>
-        </div>
-
-        <div className={`text-center p-6 bg-blue-50 rounded-2xl border border-blue-200/60 shadow-sm transition-all duration-300 ${
-          hoveredQuadrant === 'strategic' ? 'scale-105 shadow-lg bg-blue-100 border-blue-300' : 'hover:shadow-md hover:scale-102'
-        }`}>
-          <div className="w-3 h-3 bg-blue-500 rounded-full mx-auto mb-3"></div>
-          <h4 className="font-semibold text-blue-800 mb-2">Strategic</h4>
-          <p className="text-sm text-blue-600">Plan carefully for long-term value</p>
-          <div className="mt-3 text-xs text-blue-500 font-medium">
-            {ideas.filter(idea => idea.x >= 260 && idea.y < 260).length} ideas
-          </div>
-        </div>
-
-        <div className={`text-center p-6 bg-amber-50 rounded-2xl border border-amber-200/60 shadow-sm transition-all duration-300 ${
-          hoveredQuadrant === 'reconsider' ? 'scale-105 shadow-lg bg-amber-100 border-amber-300' : 'hover:shadow-md hover:scale-102'
-        }`}>
-          <div className="w-3 h-3 bg-amber-500 rounded-full mx-auto mb-3"></div>
-          <h4 className="font-semibold text-amber-800 mb-2">Reconsider</h4>
-          <p className="text-sm text-amber-600">Maybe later when priorities shift</p>
-          <div className="mt-3 text-xs text-amber-500 font-medium">
-            {ideas.filter(idea => idea.x < 260 && idea.y >= 260).length} ideas
-          </div>
-        </div>
-
-        <div className={`text-center p-6 bg-red-50 rounded-2xl border border-red-200/60 shadow-sm transition-all duration-300 ${
-          hoveredQuadrant === 'avoid' ? 'scale-105 shadow-lg bg-red-100 border-red-300' : 'hover:shadow-md hover:scale-102'
-        }`}>
-          <div className="w-3 h-3 bg-red-500 rounded-full mx-auto mb-3"></div>
-          <h4 className="font-semibold text-red-800 mb-2">Avoid</h4>
-          <p className="text-sm text-red-600">Skip these to focus resources</p>
-          <div className="mt-3 text-xs text-red-500 font-medium">
-            {ideas.filter(idea => idea.x >= 260 && idea.y >= 260).length} ideas
-          </div>
-        </div>
       </div>
     </div>
   )

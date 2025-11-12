@@ -423,26 +423,27 @@ describe('DesignMatrix', () => {
     })
   })
 
-  describe('Matrix Guide', () => {
-    it('should render guide section with all four quadrants', () => {
+  describe('Matrix Display', () => {
+    it('should render matrix without legend cards', () => {
       renderWithProviders(
         <DesignMatrix {...defaultProps} />
       )
 
-      expect(screen.getByText(/Do these first for immediate impact/i)).toBeInTheDocument()
-      expect(screen.getByText(/Plan carefully for long-term value/i)).toBeInTheDocument()
-      expect(screen.getByText(/Maybe later when priorities shift/i)).toBeInTheDocument()
-      expect(screen.getByText(/Skip these to focus resources/i)).toBeInTheDocument()
+      // Matrix should render without bottom legend cards
+      expect(screen.queryByText(/Do these first for immediate impact/i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Plan carefully for long-term value/i)).not.toBeInTheDocument()
     })
 
-    it('should display color indicators for each quadrant', () => {
+    it('should still display quadrant labels on the matrix itself', () => {
       renderWithProviders(
         <DesignMatrix {...defaultProps} />
       )
 
-      // Should have colored dots
-      const colorDots = document.querySelectorAll('.rounded-full')
-      expect(colorDots.length).toBeGreaterThanOrEqual(4)
+      // Quadrant labels should still appear within the matrix
+      expect(screen.getByText('Quick Wins')).toBeInTheDocument()
+      expect(screen.getByText('Strategic')).toBeInTheDocument()
+      expect(screen.getByText('Reconsider')).toBeInTheDocument()
+      expect(screen.getByText('Avoid')).toBeInTheDocument()
     })
   })
 
@@ -748,18 +749,17 @@ describe('DesignMatrix', () => {
         <DesignMatrix {...defaultProps} />
       )
 
-      // Should have heading for matrix title
-      const heading = screen.getByRole('heading', { name: /Interactive Priority Matrix/i })
-      expect(heading).toBeInTheDocument()
+      // Matrix should render with proper semantic structure
+      expect(screen.getByText('Quick Wins')).toBeInTheDocument()
     })
 
-    it('should provide descriptive text for users', () => {
+    it('should provide interactive matrix experience', () => {
       renderWithProviders(
         <DesignMatrix {...defaultProps} />
       )
 
-      expect(screen.getByText(/Double-click any card to edit/i)).toBeInTheDocument()
-      expect(screen.getByText(/Drag to reposition ideas/i)).toBeInTheDocument()
+      // Verify matrix is interactive by checking for idea cards
+      expect(screen.getByTestId('idea-card-test-1')).toBeInTheDocument()
     })
 
     it('should have accessible error recovery button', () => {
