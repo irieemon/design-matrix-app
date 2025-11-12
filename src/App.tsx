@@ -3,14 +3,19 @@
  *
  * Refactored from 178-line god component to focused architecture.
  * Uses context providers to eliminate prop drilling and separate concerns.
+ *
+ * PERFORMANCE OPTIMIZATION: Demo routes are lazy loaded to reduce initial bundle size
+ * Expected impact: 20-30% reduction in initial bundle (demos rarely accessed)
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { AppProviders } from './contexts/AppProviders'
 import AppWithAuth from './components/app/AppWithAuth'
-import MonochromaticDemo from './components/demo/MonochromaticDemo'
-import MonochromeLuxDemo from './components/demo/MonochromeLuxDemo'
-import MonochromeLuxAnimated from './components/demo/MonochromeLuxAnimated'
+
+// Lazy load demo components - only loaded when accessed via hash routes
+const MonochromaticDemo = lazy(() => import('./components/demo/MonochromaticDemo'))
+const MonochromeLuxDemo = lazy(() => import('./components/demo/MonochromeLuxDemo'))
+const MonochromeLuxAnimated = lazy(() => import('./components/demo/MonochromeLuxAnimated'))
 
 function App() {
   const [currentHash, setCurrentHash] = useState(window.location.hash)
@@ -25,18 +30,31 @@ function App() {
   }, [])
 
   // If demo hash is present, show demo without auth/layout
+  // Wrapped in Suspense for lazy loading with fallback
   if (currentHash === '#mono-demo') {
-    return <MonochromaticDemo />
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading demo...</div>}>
+        <MonochromaticDemo />
+      </Suspense>
+    )
   }
 
   // Monochrome-Lux demo (refined version)
   if (currentHash === '#lux-demo') {
-    return <MonochromeLuxDemo />
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading demo...</div>}>
+        <MonochromeLuxDemo />
+      </Suspense>
+    )
   }
 
   // Monochrome-Lux with micro-animations (fully animated)
   if (currentHash === '#lux-animated') {
-    return <MonochromeLuxAnimated />
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading demo...</div>}>
+        <MonochromeLuxAnimated />
+      </Suspense>
+    )
   }
 
   return (

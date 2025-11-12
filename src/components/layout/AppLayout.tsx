@@ -1,11 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, lazy, Suspense } from 'react'
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { User, Project, IdeaCard } from '../../types'
 import Sidebar from '../Sidebar'
 import { OptimizedIdeaCard } from '../matrix/OptimizedIdeaCard'
-import AddIdeaModal from '../AddIdeaModal'
-import AIIdeaModal from '../AIIdeaModal'
-import EditIdeaModal from '../EditIdeaModal'
+// PERFORMANCE OPTIMIZATION: Lazy load modals - only loaded when opened
+const AddIdeaModal = lazy(() => import('../AddIdeaModal'))
+const AIIdeaModal = lazy(() => import('../AIIdeaModal'))
+const EditIdeaModal = lazy(() => import('../EditIdeaModal'))
 import { useSkipLinks } from '../../hooks/useAccessibility'
 import { getAccessibleLandmarkProps } from '../../utils/accessibility'
 
@@ -136,7 +137,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
       {/* Main content area */}
       <main
         id="main-content"
-        className={`${sidebarCollapsed ? 'pl-20' : 'pl-72'} transition-all duration-300`}
+        className={`min-h-screen ${sidebarCollapsed ? 'pl-20' : 'pl-72'} transition-all duration-300`}
         {...getAccessibleLandmarkProps('main', `${currentProject?.name || 'Application'} - ${currentPage}`)}
       >
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEndWrapper}>
@@ -149,7 +150,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({
             ideas,
             deleteIdea,
             updateIdea,
-            toggleCollapse
+            toggleCollapse,
+            handleDragEnd
           })}
 
           <DragOverlay
@@ -191,34 +193,40 @@ const AppLayout: React.FC<AppLayoutProps> = ({
         </DndContext>
       </main>
 
-      {/* Modals */}
-      {addIdea && (
-        <AddIdeaModal
-          isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          onAdd={addIdea}
-          currentUser={currentUser}
-        />
+      {/* Modals - wrapped in Suspense for lazy loading */}
+      {addIdea && showAddModal && (
+        <Suspense fallback={null}>
+          <AddIdeaModal
+            isOpen={showAddModal}
+            onClose={() => setShowAddModal(false)}
+            onAdd={addIdea}
+            currentUser={currentUser}
+          />
+        </Suspense>
       )}
 
       {showAIModal && addIdea && (
-        <AIIdeaModal 
-          onClose={() => setShowAIModal(false)}
-          onAdd={addIdea}
-          currentProject={currentProject}
-          currentUser={currentUser}
-        />
+        <Suspense fallback={null}>
+          <AIIdeaModal
+            onClose={() => setShowAIModal(false)}
+            onAdd={addIdea}
+            currentProject={currentProject}
+            currentUser={currentUser}
+          />
+        </Suspense>
       )}
 
-      {updateIdea && deleteIdea && (
-        <EditIdeaModal
-          idea={editingIdea}
-          isOpen={!!editingIdea}
-          currentUser={currentUser}
-          onClose={() => setEditingIdea(null)}
-          onUpdate={updateIdea}
-          onDelete={deleteIdea}
-        />
+      {updateIdea && deleteIdea && editingIdea && (
+        <Suspense fallback={null}>
+          <EditIdeaModal
+            idea={editingIdea}
+            isOpen={!!editingIdea}
+            currentUser={currentUser}
+            onClose={() => setEditingIdea(null)}
+            onUpdate={updateIdea}
+            onDelete={deleteIdea}
+          />
+        </Suspense>
       )}
     </div>
   )

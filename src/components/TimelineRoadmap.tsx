@@ -509,8 +509,17 @@ const TimelineRoadmap: React.FC<TimelineRoadmapProps> = ({
     return months
   }
 
-  const timelineDuration = calculateTimelineDuration()
-  const months = generateMonths(timelineDuration)
+  // PERFORMANCE OPTIMIZATION: Memoize timeline duration calculation
+  // Prevents recalculation on every render when features haven't changed
+  const timelineDuration = useMemo(() => {
+    return calculateTimelineDuration()
+  }, [featuresOperation.state.data])
+
+  // PERFORMANCE OPTIMIZATION: Memoize months array generation
+  // Prevents expensive date calculations on every render
+  const months = useMemo(() => {
+    return generateMonths(timelineDuration)
+  }, [timelineDuration, startDate])
   
 
   // Get features for a specific team
