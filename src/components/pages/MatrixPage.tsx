@@ -99,7 +99,7 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
       {/* Normal View */}
       <div className={`bg-slate-50 min-h-screen ${isFullScreen ? 'hidden' : ''}`}>
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-6 py-8">
+        <main className="mx-auto px-6 py-8">
           {/* Project Header */}
           <ProjectHeader
             currentUser={currentUser}

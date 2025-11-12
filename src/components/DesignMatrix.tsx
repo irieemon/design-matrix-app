@@ -250,7 +250,7 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   return (
     <div
       className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-8"
-      style={isFullscreen ? { height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' } : { minHeight: 'calc(100vh - 200px)', height: 'auto' }}
+      style={isFullscreen ? { height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' } : { height: 'auto' }}
     >
       {/* Matrix Container */}
       <div
