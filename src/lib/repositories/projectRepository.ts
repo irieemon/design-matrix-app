@@ -1,10 +1,72 @@
-import { supabase } from '../supabase'
+import { supabase, createAuthenticatedClientFromLocalStorage } from '../supabase'
 import { Project } from '../../types'
 import { logger } from '../../utils/logger'
 import { sanitizeUserId, sanitizeProjectId } from '../../utils/uuid'
 
 // ✅ SECURITY FIX: supabaseAdmin removed from frontend
 // All operations use authenticated client with RLS enforcement
+
+/**
+ * Get authenticated Supabase client for RLS enforcement
+ * Falls back to global client if no authenticated session exists
+ *
+ * MULTIPLE CLIENT PATTERN EXPLANATION:
+ * =====================================
+ *
+ * WHY WE CREATE A SECOND CLIENT:
+ * The global Supabase client relies on getSession() which is asynchronous and can timeout
+ * on page refresh (especially on slower connections or initial page load). This causes a
+ * deadlock where:
+ * 1. User refreshes page with ?project= parameter in URL
+ * 2. App tries to restore project from URL
+ * 3. getSession() is still loading/timing out
+ * 4. Project query fails or hangs waiting for session
+ * 5. User sees loading spinner indefinitely
+ *
+ * THE SOLUTION:
+ * Create a second Supabase client directly from localStorage access token, which:
+ * - Bypasses the async getSession() call entirely
+ * - Uses the token that's immediately available in localStorage
+ * - Allows authenticated queries to proceed without waiting for session load
+ * - Is cached at module level to prevent excessive client creation
+ *
+ * THE "MULTIPLE GOTRUECLIENT INSTANCES" WARNING:
+ * This console warning appears because we're creating two GoTrueClient instances:
+ * 1. Global client (supabase.ts) - for normal authentication flow
+ * 2. Fallback client (createAuthenticatedClientFromLocalStorage) - for page refresh
+ *
+ * The warning is HARMLESS and expected. Both clients:
+ * - Use the same auth token from localStorage
+ * - Point to the same Supabase project
+ * - Enforce the same RLS policies
+ * - Don't interfere with each other's auth state
+ *
+ * ALTERNATIVE APPROACHES CONSIDERED:
+ * 1. Wait for getSession() - REJECTED: Causes timeout deadlock
+ * 2. Use only global client - REJECTED: Unreliable on page refresh
+ * 3. Single client with manual token injection - REJECTED: More complex, same warning
+ * 4. Custom auth adapter - REJECTED: Over-engineered, Supabase internal API
+ *
+ * PERFORMANCE IMPACT:
+ * - Module-level caching prevents excessive client creation
+ * - Token hash comparison ensures we only create new client when token changes
+ * - Negligible memory overhead (2 clients vs 1)
+ * - Significant UX improvement (instant auth vs timeout)
+ *
+ * REFERENCE:
+ * - Supabase issue: https://github.com/supabase/supabase-js/issues/873
+ * - Implementation: src/lib/supabase.ts:374-462 (createAuthenticatedClientFromLocalStorage)
+ * - This pattern is used in: ProjectRepository, RoadmapRepository, InsightsRepository
+ */
+function getAuthenticatedClient() {
+  const authenticatedClient = createAuthenticatedClientFromLocalStorage()
+  if (authenticatedClient) {
+    logger.debug('Using authenticated client with access token from localStorage')
+    return authenticatedClient
+  }
+  logger.debug('No authenticated session, using global client')
+  return supabase
+}
 
 /**
  * Project Repository
@@ -52,10 +114,11 @@ export class ProjectRepository {
         return []
       }
 
-      // ✅ SECURITY FIX: Use authenticated client with RLS enforcement
+      // ✅ CRITICAL FIX: Use authenticated client from localStorage for RLS enforcement
+      const client = getAuthenticatedClient()
       logger.debug('Fetching projects with authenticated client')
 
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from('projects')
         .select('*')
         .eq('owner_id', validUserId)
@@ -63,10 +126,11 @@ export class ProjectRepository {
 
       if (error) {
         logger.error('Error fetching user projects:', error)
+        logger.error('Error details:', { code: error.code, message: error.message, hint: error.hint })
         throw new Error(error.message)
       }
 
-      logger.debug(`Successfully fetched ${data?.length || 0} projects for user`)
+      logger.debug(`✅ Successfully fetched ${data?.length || 0} projects for user`)
       return data || []
     } catch (error) {
       logger.error('Exception in getUserOwnedProjects', error)
@@ -478,38 +542,14 @@ export class ProjectRepository {
   }
 
   /**
-   * ⚠️ DEPRECATED: Admin methods should be backend-only
-   * Admin operations MUST use backend API endpoints for security
+   * NOTE: Admin operations have been removed from frontend repositories
+   * All admin operations must be performed via backend API endpoints for security
+   *
+   * Available backend admin endpoints:
+   * - GET /api/admin/projects - Get all projects
+   * - GET /api/admin/projects/:id - Get project by ID
+   * - GET /api/admin/projects/:id/stats - Get project statistics
+   *
+   * Use these endpoints directly from admin portal or privileged contexts only.
    */
-
-  /**
-   * @deprecated Use backend API: GET /api/admin/projects
-   */
-  static async adminGetAllProjects(): Promise<Project[]> {
-    logger.error('❌ adminGetAllProjects called from frontend - DEPRECATED')
-    logger.error('🔒 Admin operations must use backend API: GET /api/admin/projects')
-    throw new Error('Admin operations must be performed via backend API endpoints')
-  }
-
-  /**
-   * @deprecated Use backend API: GET /api/admin/projects/:id
-   */
-  static async adminGetProjectById(projectId: string): Promise<Project | null> {
-    logger.error('❌ adminGetProjectById called from frontend - DEPRECATED')
-    logger.error('🔒 Admin operations must use backend API: GET /api/admin/projects/' + projectId)
-    throw new Error('Admin operations must be performed via backend API endpoints')
-  }
-
-  /**
-   * @deprecated Use backend API: GET /api/admin/projects/:id/stats
-   */
-  static async adminGetProjectStats(projectId: string): Promise<{
-    ideaCount: number
-    collaboratorCount: number
-    lastActivity: string | null
-  }> {
-    logger.error('❌ adminGetProjectStats called from frontend - DEPRECATED')
-    logger.error('🔒 Admin operations must use backend API: GET /api/admin/projects/' + projectId + '/stats')
-    throw new Error('Admin operations must be performed via backend API endpoints')
-  }
 }

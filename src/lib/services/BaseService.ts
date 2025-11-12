@@ -5,7 +5,7 @@
  * Extracted from DatabaseService to eliminate duplication and ensure consistency.
  */
 
-import { supabase } from '../supabase'
+import { supabase, createAuthenticatedClientFromLocalStorage } from '../supabase'
 import { logger } from '../../utils/logger'
 import type {
   ServiceResult,
@@ -315,9 +315,35 @@ export abstract class BaseService {
 
   /**
    * Get Supabase client instance
+   *
+   * CRITICAL FIX: Use authenticated client from localStorage for RLS enforcement.
+   * The global supabase client doesn't include the user's access token in headers,
+   * so RLS policies block queries even when user is authenticated in UI.
+   *
+   * NOTE: This creates a second Supabase client (with caching), which causes a
+   * "Multiple GoTrueClient instances" warning. This is a known limitation
+   * because the global client's session loading is asynchronous and doesn't
+   * work reliably on page refresh. The warning is harmless and can be ignored.
    */
   protected static getSupabaseClient() {
-    return supabase
+    // Try to get authenticated client from localStorage first
+    const authenticatedClient = this.getAuthenticatedClientFromStorage()
+
+    // Fall back to global client if no authenticated session
+    return authenticatedClient || supabase
+  }
+
+  /**
+   * Get authenticated Supabase client from localStorage tokens
+   *
+   * Creates a client with the access_token as auth header for RLS enforcement.
+   * Returns null if no valid session exists in localStorage.
+   *
+   * Uses centralized caching from createAuthenticatedClientFromLocalStorage()
+   * to minimize the number of client instances created.
+   */
+  private static getAuthenticatedClientFromStorage() {
+    return createAuthenticatedClientFromLocalStorage()
   }
 
   /**

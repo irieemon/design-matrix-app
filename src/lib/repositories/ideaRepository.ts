@@ -1,6 +1,7 @@
 import { supabase } from '../supabase'
 import { IdeaCard } from '../../types'
 import { logger } from '../../utils/logger'
+import { ApiResponse, createSuccessResponse, createErrorResponse, handleSupabaseError } from './types'
 
 export interface CreateIdeaInput {
   content: string
@@ -10,12 +11,6 @@ export interface CreateIdeaInput {
   priority: 'low' | 'moderate' | 'high' | 'strategic' | 'innovation'
   created_by?: string
   project_id?: string
-}
-
-export interface ApiResponse<T> {
-  success: boolean
-  data?: T
-  error?: string
 }
 
 /**
@@ -132,23 +127,17 @@ export class IdeaRepository {
 
       if (error) {
         logger.error('Error creating idea:', error)
-        return {
-          success: false,
-          error: error.message
-        }
+        return handleSupabaseError<IdeaCard>(error, 'Create idea')
       }
 
       logger.debug('Idea created successfully:', data.id)
-      return {
-        success: true,
-        data: data
-      }
+      return createSuccessResponse(data)
     } catch (error) {
       logger.error('Failed to create idea:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }
+      return createErrorResponse<IdeaCard>(
+        error instanceof Error ? error.message : 'Unknown error occurred',
+        'EXCEPTION'
+      )
     }
   }
 
