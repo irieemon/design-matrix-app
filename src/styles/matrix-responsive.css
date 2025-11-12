@@ -22,10 +22,11 @@
 
 /* ===== RESPONSIVE MATRIX CONTAINER ===== */
 /* Matrix now scales coordinates dynamically to fill available space */
+/* Responsive aspect ratio: square on mobile/tablet, widescreen on desktop */
 .matrix-container {
   width: 100%;
-  max-width: 1200px;  /* Maximum width for large screens */
-  aspect-ratio: 1 / 1;  /* Maintain square aspect */
+  max-width: none;  /* Allow full width utilization */
+  aspect-ratio: 1 / 1;  /* Square aspect ratio for mobile/tablet (< 1440px) */
   margin: 0 auto;  /* Center the matrix */
   position: relative;  /* For absolute positioned children */
 }
@@ -246,10 +247,12 @@
 }
 
 /* ===== LARGE DESKTOP (1440px - 1919px) ===== */
+/* Widescreen 16:10 aspect ratio for optimal horizontal space utilization */
 @media (min-width: 1440px) and (max-width: 1919px) {
   .matrix-container {
-    height: 650px;
-    max-width: 1200px;
+    aspect-ratio: 16 / 10;  /* Standard widescreen aspect ratio */
+    max-width: 1600px;  /* Allow wider matrix on large screens */
+    /* Remove fixed height - aspect-ratio controls it */
   }
 
   .matrix-grid {
@@ -278,10 +281,12 @@
 }
 
 /* ===== ULTRA-WIDE DESKTOP (1920px+) ===== */
+/* Ultra-wide 21:10 aspect ratio for maximum horizontal canvas */
 @media (min-width: 1920px) {
   .matrix-container {
-    height: 700px;
-    max-width: 1400px;
+    aspect-ratio: 21 / 10;  /* Ultra-wide aspect ratio */
+    max-width: 2100px;  /* Allow even wider matrix on ultra-wide displays */
+    /* Remove fixed height - aspect-ratio controls it */
   }
 
   .matrix-grid {
