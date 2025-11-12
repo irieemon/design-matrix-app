@@ -4,6 +4,7 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { withPooledConnection } from './connectionPool'
 import { sanitizeUserId, ensureUUID } from '../../../utils/uuid'
+import { logger } from '../../../utils/logger'
 
 interface QueryCacheEntry {
   data: any
@@ -101,7 +102,7 @@ class QueryOptimizer {
     // Validate and sanitize user ID first
     const validUserId = sanitizeUserId(userId)
     if (!validUserId) {
-      console.warn(`Invalid user ID format, using fallback: ${userId}`)
+      logger.warn(`Invalid user ID format, using fallback: ${userId}`)
       return this.createFallbackProfile(ensureUUID(userId), userEmail)
     }
 
@@ -134,7 +135,7 @@ class QueryOptimizer {
         const { data, error } = result
 
         if (error) {
-          console.warn(`Profile query error for ${validUserId}:`, error.message)
+          logger.warn(`Profile query error for ${validUserId}:`, error.message)
           // Return fallback profile to prevent cascading failures
           return this.createFallbackProfile(validUserId, userEmail)
         }
@@ -155,7 +156,7 @@ class QueryOptimizer {
       const queryTime = performance.now() - queryStart
       this.recordMetrics(operation, queryTime, false)
 
-      console.warn(`Profile fetch timeout/error for ${validUserId}:`, (error as Error).message)
+      logger.warn(`Profile fetch timeout/error for ${validUserId}:`, (error as Error).message)
       return this.createFallbackProfile(validUserId, userEmail)
     }
   }
@@ -235,12 +236,12 @@ class QueryOptimizer {
       const queryTime = performance.now() - queryStart
       this.recordMetrics(operation, queryTime, false)
 
-      console.log(`Batch profile query: ${profileData.length}/${userIds.length} profiles in ${queryTime.toFixed(1)}ms`)
+      logger.debug(`Batch profile query: ${profileData.length}/${userIds.length} profiles in ${queryTime.toFixed(1)}ms`)
 
     } catch (error) {
       const queryTime = performance.now() - queryStart
       this.recordMetrics(operation, queryTime, false)
-      console.warn('Batch profile query failed:', error)
+      logger.warn('Batch profile query failed:', error)
     }
 
     return results
@@ -259,7 +260,7 @@ class QueryOptimizer {
     }
 
     if (cleaned > 0) {
-      console.log(`Cleaned ${cleaned} expired cache entries. Cache size: ${this.cache.size}`)
+      logger.debug(`Cleaned ${cleaned} expired cache entries. Cache size: ${this.cache.size}`)
     }
   }
 
@@ -299,7 +300,7 @@ class QueryOptimizer {
   clearAllCache(): number {
     const size = this.cache.size
     this.cache.clear()
-    console.log(`🧹 Query optimizer: Cleared all ${size} cache entries`)
+    logger.debug(`🧹 Query optimizer: Cleared all ${size} cache entries`)
     return size
   }
 
@@ -330,7 +331,7 @@ class QueryOptimizer {
     }
 
     if (cleared > 0) {
-      console.log(`🧹 Query optimizer: Cleared ${cleared} user-specific cache entries for ${userEmail}`)
+      logger.debug(`🧹 Query optimizer: Cleared ${cleared} user-specific cache entries for ${userEmail}`)
     }
 
     return cleared
@@ -352,7 +353,7 @@ let optimizer: QueryOptimizer | null = null
 export function getQueryOptimizer(): QueryOptimizer {
   if (!optimizer) {
     optimizer = new QueryOptimizer()
-    console.log('🚀 Query optimizer initialized')
+    logger.debug('🚀 Query optimizer initialized')
   }
   return optimizer
 }

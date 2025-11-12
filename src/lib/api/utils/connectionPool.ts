@@ -2,6 +2,7 @@
 // Optimized for minimal latency and maximum throughput
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { logger } from '../../../utils/logger'
 
 interface PoolConfig {
   maxConnections: number
@@ -169,7 +170,7 @@ class SupabaseConnectionPool {
     })
 
     if (connectionsToRemove.length > 0) {
-      console.log(`Cleaned up ${connectionsToRemove.length} idle connections. Pool size: ${this.connections.size}`)
+      logger.debug(`Cleaned up ${connectionsToRemove.length} idle connections. Pool size: ${this.connections.size}`)
     }
   }
 
@@ -211,7 +212,7 @@ export function getConnectionPool(): SupabaseConnectionPool {
       idleTimeoutMs: 30000  // 30s cleanup
     })
 
-    console.log('🏊‍♂️ Supabase connection pool initialized')
+    logger.debug('🏊‍♂️ Supabase connection pool initialized')
   }
 
   return pool

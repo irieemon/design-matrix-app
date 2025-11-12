@@ -7,6 +7,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type { AuthenticatedRequest, MiddlewareHandler, MiddlewareWrapper, RateLimitConfig } from './types'
+import { logger } from '../../../utils/logger'
 
 /**
  * Environment detection for rate limiting configuration
@@ -17,8 +18,8 @@ const isDevelopment = process.env.NODE_ENV === 'development' ||
 const bypassRateLimit = process.env.BYPASS_RATE_LIMIT === 'true' && isDevelopment
 
 if (bypassRateLimit) {
-  console.warn('⚠️  [SECURITY] Rate limiting bypassed in development mode')
-  console.warn('⚠️  [SECURITY] This should NEVER be enabled in production')
+  logger.warn('⚠️  [SECURITY] Rate limiting bypassed in development mode')
+  logger.warn('⚠️  [SECURITY] This should NEVER be enabled in production')
 }
 
 /**
@@ -98,7 +99,7 @@ export function withRateLimit(
     return async (req: VercelRequest, res: VercelResponse) => {
       // Development bypass (only if explicitly enabled)
       if (bypassRateLimit) {
-        console.log(`[DEV] Rate limiting bypassed for ${req.url}`)
+        logger.debug(`[DEV] Rate limiting bypassed for ${req.url}`)
         return handler(req as AuthenticatedRequest, res)
       }
 

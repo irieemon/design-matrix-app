@@ -8,6 +8,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type { AuthenticatedRequest, MiddlewareHandler, MiddlewareWrapper, CSRFConfig } from './types'
 import { getCookie, COOKIE_NAMES } from './cookies'
+import { logger } from '../../../utils/logger'
 
 /**
  * Default CSRF configuration
@@ -179,7 +180,7 @@ export function withOriginValidation(
       })
 
       if (!isAllowed) {
-        console.warn('Origin validation failed:', {
+        logger.warn('Origin validation failed:', {
           received: originUrl.origin,
           allowed,
         })

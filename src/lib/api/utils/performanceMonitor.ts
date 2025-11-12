@@ -1,3 +1,4 @@
+import { logger } from '../../../utils/logger'
 // Comprehensive Auth Performance Monitor
 // Real-time tracking of authentication bottlenecks and optimization opportunities
 
@@ -103,7 +104,7 @@ class AuthPerformanceMonitor {
     }
 
     if (alerts.length > 0) {
-      console.warn(`🚨 PERFORMANCE ALERT:`, alerts.join(', '))
+      logger.warn(`🚨 PERFORMANCE ALERT:`, alerts.join(', '))
     }
   }
 
@@ -206,7 +207,7 @@ class AuthPerformanceMonitor {
   reset(): void {
     this.metrics.clear()
     this.sessionStarts.clear()
-    console.log('📊 Performance metrics reset')
+    logger.debug('📊 Performance metrics reset')
   }
 
   // Export metrics for external monitoring
@@ -225,7 +226,7 @@ let monitor: AuthPerformanceMonitor | null = null
 export function getPerformanceMonitor(): AuthPerformanceMonitor {
   if (!monitor) {
     monitor = new AuthPerformanceMonitor()
-    console.log('📊 Auth performance monitor initialized')
+    logger.debug('📊 Auth performance monitor initialized')
   }
   return monitor
 }
@@ -250,7 +251,7 @@ if (process.env.NODE_ENV === 'development') {
     const report = monitor.generateReport()
 
     if (report.bottlenecks.length > 0) {
-      console.log('📊 PERFORMANCE REPORT:', {
+      logger.debug('📊 PERFORMANCE REPORT:', {
         avgAuthTime: `${report.avgAuthTime.toFixed(0)}ms`,
         successRate: `${(report.overallSuccessRate * 100).toFixed(1)}%`,
         bottlenecks: report.bottlenecks,
