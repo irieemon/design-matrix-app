@@ -1,17 +1,19 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { User, Project } from '../../types'
 import MatrixPage from '../pages/MatrixPage'
 import DataManagement from '../pages/DataManagement'
-import ReportsAnalytics from '../pages/ReportsAnalytics'
 import UserSettings from '../pages/UserSettings'
 import ProjectCollaboration from '../pages/ProjectCollaboration'
-import ProjectManagement from '../ProjectManagement'
-import ProjectRoadmap from '../ProjectRoadmap'
-import ProjectFiles from '../ProjectFiles'
-import { ButtonTestPage } from '../pages/ButtonTestPage'
-import { FormTestPage } from '../pages/FormTestPage'
-import { SkeletonTestPage } from '../pages/SkeletonTestPage'
-import MonochromaticDemo from '../demo/MonochromaticDemo'
+// PERFORMANCE OPTIMIZATION: Lazy load large components to reduce initial bundle size
+// Components loaded on demand when user navigates to specific routes
+const ReportsAnalytics = lazy(() => import('../pages/ReportsAnalytics'))
+const ProjectManagement = lazy(() => import('../ProjectManagement'))
+const ProjectRoadmap = lazy(() => import('../ProjectRoadmap'))
+const ProjectFiles = lazy(() => import('../ProjectFiles'))
+const ButtonTestPage = lazy(() => import('../pages/ButtonTestPage').then(m => ({ default: m.ButtonTestPage })))
+const FormTestPage = lazy(() => import('../pages/FormTestPage').then(m => ({ default: m.FormTestPage })))
+const SkeletonTestPage = lazy(() => import('../pages/SkeletonTestPage').then(m => ({ default: m.SkeletonTestPage })))
+const MonochromaticDemo = lazy(() => import('../demo/MonochromaticDemo'))
 // import PerformanceDashboard from '../dev/PerformanceDashboard'
 import { useProjectFiles } from '../../hooks/useProjectFiles'
 import { IdeaCard } from '../../types'
@@ -40,8 +42,24 @@ interface PageRouterProps {
   deleteIdea?: (ideaId: string) => Promise<void>
   updateIdea?: (updatedIdea: IdeaCard) => Promise<void>
   toggleCollapse?: (ideaId: string, collapsed?: boolean) => Promise<void>
+  handleDragEnd?: (event: any) => Promise<void>
   isRestoringProject?: boolean
 }
+
+// Loading fallback component for lazy-loaded routes
+const PageLoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--canvas-primary)' }}>
+    <div className="text-center">
+      <div className="w-8 h-8 rounded-full animate-spin mx-auto mb-4" style={{
+        borderWidth: '2px',
+        borderStyle: 'solid',
+        borderColor: 'var(--sapphire-500)',
+        borderTopColor: 'transparent'
+      }}></div>
+      <p style={{ color: 'var(--graphite-600)' }}>Loading...</p>
+    </div>
+  </div>
+)
 
 const PageRouter: React.FC<PageRouterProps> = ({
   currentPage,
@@ -64,6 +82,7 @@ const PageRouter: React.FC<PageRouterProps> = ({
   deleteIdea,
   updateIdea: _updateIdea,
   toggleCollapse,
+  handleDragEnd,
   isRestoringProject = false
 }) => {
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
@@ -86,7 +105,7 @@ const PageRouter: React.FC<PageRouterProps> = ({
 
   // Handle invalid pages
   useEffect(() => {
-    const validPages = ['matrix', 'home', 'data', 'reports', 'projects', 'roadmap', 'files', 'collaboration', 'user', 'button-test', 'form-test', 'skeleton-test', 'performance', 'mono-demo']
+    const validPages = ['matrix', 'home', 'data', 'reports', 'projects', 'roadmap', 'management', 'files', 'collaboration', 'settings', 'user', 'button-test', 'form-test', 'skeleton-test', 'performance', 'mono-demo']
     if (!validPages.includes(currentPage)) {
       onPageChange('matrix')
     }
@@ -113,6 +132,7 @@ const PageRouter: React.FC<PageRouterProps> = ({
             ideas={ideas}
             deleteIdea={deleteIdea}
             toggleCollapse={toggleCollapse}
+            handleDragEnd={handleDragEnd}
           />
         )
       
@@ -160,38 +180,42 @@ const PageRouter: React.FC<PageRouterProps> = ({
         }
         return (
           <div className="min-h-screen" style={{ backgroundColor: 'var(--canvas-primary)' }}>
-            <ReportsAnalytics
-              ideas={ideas}
-              currentUser={currentUser}
-              currentProject={currentProject}
-            />
+            <Suspense fallback={<PageLoadingFallback />}>
+              <ReportsAnalytics
+                ideas={ideas}
+                currentUser={currentUser}
+                currentProject={currentProject}
+              />
+            </Suspense>
           </div>
         )
       
       case 'projects':
         return (
           <div className="min-h-screen" style={{ backgroundColor: 'var(--canvas-primary)' }}>
-            <ProjectManagement
-              currentUser={currentUser}
-              currentProject={currentProject}
-              onProjectSelect={onProjectSelect}
-              onProjectCreated={(project, projectIdeas) => {
-                // CRITICAL FIX: Set ideas BEFORE selecting project to avoid race condition
-                if (projectIdeas && setIdeas) {
-                  logger.debug('🎯 AI Starter: Setting', projectIdeas.length, 'ideas in state')
-                  setIdeas(projectIdeas)
-                }
+            <Suspense fallback={<PageLoadingFallback />}>
+              <ProjectManagement
+                currentUser={currentUser}
+                currentProject={currentProject}
+                onProjectSelect={onProjectSelect}
+                onProjectCreated={(project, projectIdeas) => {
+                  // CRITICAL FIX: Set ideas BEFORE selecting project to avoid race condition
+                  if (projectIdeas && setIdeas) {
+                    logger.debug('🎯 AI Starter: Setting', projectIdeas.length, 'ideas in state')
+                    setIdeas(projectIdeas)
+                  }
 
-                // Then select project
-                logger.debug('🎯 AI Starter: Selecting project:', project.name)
-                onProjectSelect(project)
+                  // Then select project
+                  logger.debug('🎯 AI Starter: Selecting project:', project.name)
+                  onProjectSelect(project)
 
-                // Finally navigate
-                logger.debug('🎯 AI Starter: Navigating to matrix')
-                onPageChange('matrix')
-              }}
-              onNavigateToMatrix={() => onPageChange('matrix')}
-            />
+                  // Finally navigate
+                  logger.debug('🎯 AI Starter: Navigating to matrix')
+                  onPageChange('matrix')
+                }}
+                onNavigateToMatrix={() => onPageChange('matrix')}
+              />
+            </Suspense>
           </div>
         )
       
@@ -214,11 +238,13 @@ const PageRouter: React.FC<PageRouterProps> = ({
         return (
           <div className="min-h-screen" style={{ backgroundColor: 'var(--canvas-primary)' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-              <ProjectRoadmap
-                currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
-                currentProject={currentProject}
-                ideas={ideas}
-              />
+              <Suspense fallback={<PageLoadingFallback />}>
+                <ProjectRoadmap
+                  currentUser={currentUser?.email || currentUser?.full_name || 'Anonymous'}
+                  currentProject={currentProject}
+                  ideas={ideas}
+                />
+              </Suspense>
             </div>
           </div>
         )
@@ -241,12 +267,14 @@ const PageRouter: React.FC<PageRouterProps> = ({
         }
         return (
           <div className="min-h-screen" style={{ backgroundColor: 'var(--canvas-primary)' }}>
-            <ProjectFiles
-              currentProject={currentProject}
-              files={getCurrentProjectFiles()}
-              onFilesUploaded={handleFilesUploaded}
-              onDeleteFile={handleDeleteFile}
-            />
+            <Suspense fallback={<PageLoadingFallback />}>
+              <ProjectFiles
+                currentProject={currentProject}
+                files={getCurrentProjectFiles()}
+                onFilesUploaded={handleFilesUploaded}
+                onDeleteFile={handleDeleteFile}
+              />
+            </Suspense>
           </div>
         )
       
@@ -288,16 +316,32 @@ const PageRouter: React.FC<PageRouterProps> = ({
         )
 
       case 'button-test':
-        return <ButtonTestPage />
+        return (
+          <Suspense fallback={<PageLoadingFallback />}>
+            <ButtonTestPage />
+          </Suspense>
+        )
 
       case 'form-test':
-        return <FormTestPage />
+        return (
+          <Suspense fallback={<PageLoadingFallback />}>
+            <FormTestPage />
+          </Suspense>
+        )
 
       case 'skeleton-test':
-        return <SkeletonTestPage />
+        return (
+          <Suspense fallback={<PageLoadingFallback />}>
+            <SkeletonTestPage />
+          </Suspense>
+        )
 
       case 'mono-demo':
-        return <MonochromaticDemo />
+        return (
+          <Suspense fallback={<PageLoadingFallback />}>
+            <MonochromaticDemo />
+          </Suspense>
+        )
 
       // case 'performance':
       //   return <PerformanceDashboard />

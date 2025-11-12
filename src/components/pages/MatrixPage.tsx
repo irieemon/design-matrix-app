@@ -1,9 +1,11 @@
-import React from 'react'
-import { Plus, Sparkles, FolderOpen, Target, Lightbulb } from 'lucide-react'
+import React, { useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
+import { Plus, Sparkles, FolderOpen, Target, Lightbulb, Maximize2 } from 'lucide-react'
 import { User, Project, IdeaCard } from '../../types'
 import DesignMatrix from '../DesignMatrix'
 import ProjectHeader from '../ProjectHeader'
 import ProjectFiles from '../ProjectFiles'
+import MatrixFullScreenView from '../matrix/MatrixFullScreenView'
 import { useProjectFiles } from '../../hooks/useProjectFiles'
 import { logger } from '../../utils/logger'
 import { generateDemoUUID } from '../../utils/uuid'
@@ -22,10 +24,11 @@ interface MatrixPageProps {
   onSetEditingIdea?: (idea: IdeaCard | null) => void
   onSetShowAddModal?: (show: boolean) => void
   onSetShowAIModal?: (show: boolean) => void
-  // Ideas data passed down from AppLayout
+  // Ideas data and handlers passed down from AppLayout
   ideas?: IdeaCard[]
   deleteIdea?: (ideaId: string) => Promise<void>
   toggleCollapse?: (ideaId: string, collapsed?: boolean) => Promise<void>
+  handleDragEnd?: (event: any) => Promise<void>
 }
 
 const MatrixPage: React.FC<MatrixPageProps> = ({
@@ -42,8 +45,16 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
   onSetShowAIModal: _onSetShowAIModal,
   ideas = [],
   deleteIdea,
-  toggleCollapse
+  toggleCollapse,
+  handleDragEnd
 }) => {
+  // Full-screen state
+  const [isFullScreen, setIsFullScreen] = useState(false)
+
+  // Memoize onExit callback to prevent useEffect cleanup in MatrixFullScreenView
+  const handleExitFullScreen = useCallback(() => {
+    setIsFullScreen(false)
+  }, [])
 
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
   
@@ -59,15 +70,42 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
   }, [currentProject?.id]) // Only trigger on project changes, not idea count changes
 
   return (
-    <div className="bg-slate-50 min-h-screen">
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Project Header */}
-        <ProjectHeader 
+    <>
+      {/* Full-Screen View - Rendered via Portal to document.body */}
+      {isFullScreen && createPortal(
+        <MatrixFullScreenView
+          isActive={isFullScreen}
+          onExit={handleExitFullScreen}
           currentUser={currentUser}
           currentProject={currentProject}
-          onProjectChange={onProjectChange}
-        />
+          ideas={ideas}
+          activeId={activeId}
+          onEditIdea={onSetEditingIdea || (() => {})}
+          onDeleteIdea={deleteIdea || (async () => {})}
+          onToggleCollapse={toggleCollapse || (async () => {})}
+          onDragEnd={handleDragEnd || (async () => {})}
+          onShowAddModal={() => {
+            onShowAddModal()
+            _onSetShowAddModal?.(true)
+          }}
+          onShowAIModal={() => {
+            onShowAIModal()
+            _onSetShowAIModal?.(true)
+          }}
+        />,
+        document.body
+      )}
+
+      {/* Normal View */}
+      <div className={`bg-slate-50 min-h-screen ${isFullScreen ? 'hidden' : ''}`}>
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-6 py-8">
+          {/* Project Header */}
+          <ProjectHeader
+            currentUser={currentUser}
+            currentProject={currentProject}
+            onProjectChange={onProjectChange}
+          />
         
         {/* Conditional Content Based on Project Selection */}
         {!currentProject ? (
@@ -118,6 +156,15 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
           <>
             {/* Add Idea Buttons */}
             <div className="flex justify-end gap-3 mb-6">
+              <Button
+                onClick={() => setIsFullScreen(true)}
+                variant="secondary"
+                size="md"
+                icon={<Maximize2 className="w-4 h-4" />}
+                aria-label="Enter full-screen mode"
+              >
+                Full Screen
+              </Button>
               <Button
                 onClick={() => {
                   onShowAIModal()
@@ -194,8 +241,9 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
             </div>
           </>
         )}
-      </main>
-    </div>
+        </main>
+      </div>
+    </>
   )
 }
 
