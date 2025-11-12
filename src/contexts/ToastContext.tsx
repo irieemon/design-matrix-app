@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react'
 import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-react'
 
 export interface Toast {
@@ -78,8 +78,18 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }
 
+  // PERFORMANCE OPTIMIZATION: Memoize context value to prevent unnecessary re-renders
+  // Functions are already memoized with useCallback, just memoize the object itself
+  const contextValue = useMemo(() => ({
+    showToast,
+    showSuccess,
+    showError,
+    showWarning,
+    showInfo
+  }), [showToast, showSuccess, showError, showWarning, showInfo])
+
   return (
-    <ToastContext.Provider value={{ showToast, showSuccess, showError, showWarning, showInfo }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       
       {/* Toast Container */}

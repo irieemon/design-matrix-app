@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import React, { useState } from 'react'
 import { AlertTriangle, CheckCircle, Settings, Upload, RefreshCw } from 'lucide-react'
 import { logger } from '../lib/logging'

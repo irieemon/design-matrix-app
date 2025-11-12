@@ -4,7 +4,7 @@ import { sanitizeProjectId } from '../utils/uuid'
 import { useLogger } from '../lib/logging'
 
 interface UseBrowserHistoryProps {
-  currentPage: string
+  currentPage: string | null // null = initial route not yet determined
   onPageChange: (page: string) => void
   currentProject?: { id: string; name: string } | null
   onProjectRestore?: (projectId: string) => void
@@ -199,6 +199,12 @@ export const useBrowserHistory = ({
 
   // Sync URL when page changes (programmatic navigation)
   useEffect(() => {
+    // Skip if initial route not yet determined
+    if (currentPage === null) {
+      logger.debug('Skipping URL sync - initial route not yet determined')
+      return
+    }
+
     // CRITICAL FIX: DO NOT navigate while project restoration is in progress
     // This prevents race condition where PageRouter redirect overwrites URL with ?project= parameter
     if (isRestoringProject) {
@@ -259,7 +265,7 @@ export const useBrowserHistory = ({
     // Convert legacy project IDs to proper UUID format
     const projectIdFromUrl = rawProjectId ? sanitizeProjectId(rawProjectId) : null
     const currentFullUrl = location.pathname + location.search
-    
+
     // Check if this is the initial load or a genuine URL change
     const isInitialLoad = !hasInitializedRef.current
     const fullUrlChanged = lastLocationRef.current !== currentFullUrl
@@ -270,10 +276,19 @@ export const useBrowserHistory = ({
         to: currentFullUrl
       })
 
-      // Update page if it changed
-      if (currentPageFromUrl !== currentPage) {
-        logger.debug('Changing page', { to: currentPageFromUrl })
+      // CRITICAL FIX: Don't set page on initial load if currentPage is null
+      // This allows route determination logic in MainApp to run first
+      // Only update page if:
+      // 1. It's NOT initial load (user navigated), OR
+      // 2. It IS initial load but we have a specific path (not just "/")
+      const shouldUpdatePage = !isInitialLoad || location.pathname !== '/'
+
+      // Update page if it changed and we should update
+      if (shouldUpdatePage && currentPageFromUrl !== currentPage) {
+        logger.debug('Changing page', { to: currentPageFromUrl, isInitialLoad, shouldUpdatePage })
         onPageChange(currentPageFromUrl)
+      } else if (isInitialLoad && location.pathname === '/') {
+        logger.debug('Skipping page change on initial load to "/" - letting route determination handle it')
       }
 
       // Restore project if specified in URL and different from current

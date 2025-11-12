@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 // Legacy logger - deprecated in favor of LoggingService
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 

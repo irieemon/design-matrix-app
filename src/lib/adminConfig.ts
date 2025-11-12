@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Admin Configuration Management
  * Handles environment-specific admin account configuration and privileges

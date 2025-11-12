@@ -5,7 +5,7 @@
  * Handles all modal states including add, AI, editing, and drag operations.
  */
 
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, useMemo, ReactNode } from 'react'
 import { IdeaCard } from '../types'
 
 interface ModalContextType {
@@ -71,7 +71,9 @@ export function ModalProvider({ children }: ModalProviderProps) {
     setActiveId(null)
   }
 
-  const value = {
+  // PERFORMANCE OPTIMIZATION: Memoize context value to prevent unnecessary re-renders
+  // Only recreate when state actually changes, not on every parent render
+  const value = useMemo(() => ({
     // States
     showAddModal,
     showAIModal,
@@ -96,7 +98,22 @@ export function ModalProvider({ children }: ModalProviderProps) {
     clearEditingIdea,
     clearActiveId,
     closeAllModals
-  }
+  }), [
+    showAddModal,
+    showAIModal,
+    showAdminPortal,
+    editingIdea,
+    activeId,
+    openAddModal,
+    closeAddModal,
+    openAIModal,
+    closeAIModal,
+    openAdminPortal,
+    closeAdminPortal,
+    clearEditingIdea,
+    clearActiveId,
+    closeAllModals
+  ])
 
   return (
     <ModalContext.Provider value={value}>

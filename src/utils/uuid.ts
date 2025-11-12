@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * UUID Utility Module
  * Provides consistent UUID generation, validation, and formatting across the application

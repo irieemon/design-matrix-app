@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Enhanced Logging Service
  * Provides production-ready, structured logging with TypeScript support

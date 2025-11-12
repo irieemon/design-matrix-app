@@ -5,13 +5,14 @@
  * Handles current project state, project selection, and restoration from URL.
  */
 
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+import { createContext, useContext, useState, useMemo, ReactNode, useEffect } from 'react'
 import { Project } from '../types'
 import { logger } from '../utils/logger'
 import { useCurrentUser } from './UserContext'
 import { useToast } from './ToastContext'
 import { SUPABASE_STORAGE_KEY, TIMEOUTS } from '../lib/config'
 import { withTimeout } from '../utils/promiseUtils'
+import { ProjectRepository } from '../lib/repositories'
 
 interface ProjectContextType {
   currentProject: Project | null
@@ -19,6 +20,8 @@ interface ProjectContextType {
   handleProjectSelect: (project: Project | null) => void
   handleProjectRestore: (projectId: string) => Promise<void>
   isRestoringProject: boolean
+  projects: Project[] | null // null = loading, [] = no projects, [...] = has projects
+  projectsLoaded: boolean
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined)
@@ -30,14 +33,41 @@ interface ProjectProviderProps {
 export function ProjectProvider({ children }: ProjectProviderProps) {
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
   const [isRestoringProject, setIsRestoringProject] = useState(false)
+  const [projects, setProjects] = useState<Project[] | null>(null) // null = loading
+  const [projectsLoaded, setProjectsLoaded] = useState(false)
   const currentUser = useCurrentUser()
   const { showError } = useToast()
+
+  // Load user's projects for route determination
+  useEffect(() => {
+    if (!currentUser?.id) {
+      setProjects(null)
+      setProjectsLoaded(false)
+      return
+    }
+
+    logger.debug('🔄 ProjectContext: Loading projects for user', { userId: currentUser.id })
+
+    // Subscribe to projects with real-time updates
+    const unsubscribe = ProjectRepository.subscribeToProjects(
+      (loadedProjects) => {
+        logger.debug('✅ ProjectContext: Projects loaded', { count: loadedProjects?.length })
+        setProjects(loadedProjects || [])
+        setProjectsLoaded(true)
+      },
+      currentUser.id
+    )
+
+    return unsubscribe
+  }, [currentUser?.id])
 
   // Clear project when user changes (logout/login)
   useEffect(() => {
     if (!currentUser) {
-      logger.debug('🔄 User logged out, clearing current project')
+      logger.debug('🔄 User logged out, clearing current project and projects list')
       setCurrentProject(null)
+      setProjects(null)
+      setProjectsLoaded(false)
     }
   }, [currentUser])
 
@@ -151,13 +181,17 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
     }
   }
 
-  const value = {
+  // PERFORMANCE OPTIMIZATION: Memoize context value to prevent unnecessary re-renders
+  // Only recreate when dependencies change
+  const value = useMemo(() => ({
     currentProject,
     setCurrentProject,
     handleProjectSelect,
     handleProjectRestore,
-    isRestoringProject
-  }
+    isRestoringProject,
+    projects,
+    projectsLoaded
+  }), [currentProject, isRestoringProject, projects, projectsLoaded, handleProjectSelect, handleProjectRestore])
 
   return (
     <ProjectContext.Provider value={value}>
