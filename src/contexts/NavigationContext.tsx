@@ -9,9 +9,11 @@ import { createContext, useContext, useState, ReactNode } from 'react'
 import { logger } from '../lib/logging'
 
 interface NavigationContextType {
-  currentPage: string
+  currentPage: string | null // null = initial route not yet determined
   setCurrentPage: (page: string) => void
   handlePageChange: (newPage: string) => void
+  setInitialRoute: (userHasProjects: boolean, urlHasPath: boolean) => void
+  hasSetInitialRoute: boolean
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined)
@@ -22,7 +24,8 @@ interface NavigationProviderProps {
 }
 
 export function NavigationProvider({ children, initialPage = 'matrix' }: NavigationProviderProps) {
-  const [currentPage, setCurrentPage] = useState<string>(initialPage)
+  const [currentPage, setCurrentPage] = useState<string | null>(null) // null until route determined
+  const [hasSetInitialRoute, setHasSetInitialRoute] = useState(false)
   const navLogger = logger.withContext({ component: 'NavigationContext' })
 
   // Debug wrapper for page changes
@@ -35,10 +38,53 @@ export function NavigationProvider({ children, initialPage = 'matrix' }: Navigat
     setCurrentPage(newPage)
   }
 
+  /**
+   * Set the initial route based on user's project state
+   * Only runs once per session to determine landing page
+   */
+  const setInitialRoute = (userHasProjects: boolean, urlHasPath: boolean) => {
+    if (hasSetInitialRoute) {
+      navLogger.debug('Initial route already set, skipping')
+      return
+    }
+
+    navLogger.debug('🎯 setInitialRoute called', {
+      userHasProjects,
+      urlHasPath,
+      currentPage,
+      timestamp: Date.now()
+    })
+
+    if (urlHasPath) {
+      // User navigated to specific URL, respect it
+      navLogger.debug('URL has specific path, using that as initial route')
+      if (currentPage === null) {
+        // If we haven't set a page yet, use the initial default
+        // The URL sync logic in useBrowserHistory will update it correctly
+        setCurrentPage(initialPage)
+      }
+      setHasSetInitialRoute(true)
+      return
+    }
+
+    // Determine route based on whether user has projects
+    const route = userHasProjects ? 'projects' : 'matrix'
+    navLogger.debug('✅ Setting initial route based on project count', {
+      userHasProjects,
+      route,
+      reason: userHasProjects ? 'user_has_projects' : 'no_projects_show_create',
+      timestamp: Date.now()
+    })
+    setCurrentPage(route)
+    setHasSetInitialRoute(true)
+  }
+
   const value = {
     currentPage,
     setCurrentPage,
-    handlePageChange
+    handlePageChange,
+    setInitialRoute,
+    hasSetInitialRoute
   }
 
   return (

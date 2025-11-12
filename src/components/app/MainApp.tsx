@@ -5,7 +5,7 @@
  * Uses context providers to eliminate prop drilling and manage state cleanly.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import AdminPortal from '../admin/AdminPortal'
 import AppLayout from '../layout/AppLayout'
@@ -19,6 +19,7 @@ import { useModal } from '../../contexts/ModalContext'
 import { useUser } from '../../contexts/UserContext'
 import { useIdeas } from '../../hooks/useIdeas'
 import { useBrowserHistory } from '../../hooks/useBrowserHistory'
+import { logger } from '../../utils/logger'
 
 interface MainAppProps {
   currentUser: User
@@ -40,8 +41,8 @@ export default function MainApp({
     [currentUser?.id, propCurrentUser?.id]
   )
   // Context hooks
-  const { currentPage, handlePageChange } = useNavigation()
-  const { currentProject, handleProjectSelect, handleProjectRestore } = useProject()
+  const { currentPage, handlePageChange, setInitialRoute } = useNavigation()
+  const { currentProject, handleProjectSelect, handleProjectRestore, projects, projectsLoaded } = useProject()
   const {
     showAdminPortal,
     closeAdminPortal,
@@ -83,6 +84,48 @@ export default function MainApp({
     onProjectRestore: handleProjectRestore
   })
 
+  // Intelligent initial route determination
+  // Routes users with projects to /projects, users without to /matrix
+  useEffect(() => {
+    console.log('🎯 MainApp useEffect triggered', {
+      hasEffectiveUser: !!effectiveUser,
+      projectsLoaded,
+      currentPage,
+      projectsLength: projects?.length
+    })
+
+    // Only run when we have user data and projects have loaded
+    if (!effectiveUser || !projectsLoaded || currentPage !== null) {
+      console.log('🎯 MainApp: Skipping route determination', {
+        reason: !effectiveUser ? 'no user' : !projectsLoaded ? 'projects not loaded' : 'page already set'
+      })
+      return
+    }
+
+    console.log('🎯 MainApp: Determining initial route', {
+      userId: effectiveUser.id,
+      projectsLoaded,
+      projectCount: projects?.length,
+      currentPage
+    })
+
+    // Check if user navigated to specific URL
+    const urlParams = new URLSearchParams(window.location.search)
+    const hasProjectInUrl = urlParams.has('project')
+    const hasSpecificPath = window.location.pathname !== '/'
+
+    const userHasProjects = (projects?.length ?? 0) > 0
+
+    console.log('🎯 MainApp: Route decision factors', {
+      userHasProjects,
+      hasProjectInUrl,
+      hasSpecificPath,
+      pathname: window.location.pathname
+    })
+
+    setInitialRoute(userHasProjects, hasProjectInUrl || hasSpecificPath)
+  }, [effectiveUser?.id, projectsLoaded, projects, currentPage, setInitialRoute])
+
   const handleDataUpdated = () => {
     // Data updated handled by real-time subscriptions in hooks
   }
@@ -101,6 +144,23 @@ export default function MainApp({
         onBackToApp={async () => { closeAdminPortal() }}
         onLogout={onLogout}
       />
+    )
+  }
+
+  // Show loading screen while determining initial route
+  if (currentPage === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--canvas-primary)' }}>
+        <div className="text-center">
+          <div className="w-8 h-8 rounded-full animate-spin mx-auto mb-4" style={{
+            borderWidth: '2px',
+            borderStyle: 'solid',
+            borderColor: 'var(--sapphire-500)',
+            borderTopColor: 'transparent'
+          }}></div>
+          <p style={{ color: 'var(--graphite-600)' }}>Loading your workspace...</p>
+        </div>
+      </div>
     )
   }
 
