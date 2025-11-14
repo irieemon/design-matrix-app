@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // For now, proceeding without auth for development
 
     // Create admin Supabase client with service role key
-    const supabaseUrl = process.env.VITE_SUPABASE_URL
+    const supabaseUrl = process.env.SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !supabaseServiceKey) {

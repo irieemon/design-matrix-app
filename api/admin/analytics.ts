@@ -520,7 +520,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('❌ Cache miss - fetching fresh data')
 
     // Create admin Supabase client
-    const supabaseUrl = process.env.VITE_SUPABASE_URL
+    const supabaseUrl = process.env.SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !supabaseServiceKey) {
