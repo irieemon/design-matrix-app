@@ -102,6 +102,9 @@ jspm_packages/
 .serena/
 .playwright-mcp/
 
+# Supabase temporary files
+supabase/.temp/
+
 # Temporary SQL migrations (should be in supabase/migrations)
 *.sql
 
