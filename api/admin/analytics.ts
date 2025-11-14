@@ -120,7 +120,7 @@ function setCache(key: string, data: any): void {
 // ============================================================================
 
 function getDateRange(rangeType: string, customStart?: string, customEnd?: string): { start: Date; end: Date } {
-  const end = new Date()
+  let end = new Date()
   let start = new Date()
 
   switch (rangeType) {
@@ -326,7 +326,6 @@ async function getTopUsers(supabase: any, startDate: Date, endDate: Date, limit:
   })
 
   // Get idea counts per user (through projects)
-  const projectIds = projects?.map((p: any) => p.owner_id) || []
   const { data: ideas } = await supabase
     .from('ideas')
     .select('project_id, projects!inner(owner_id)')

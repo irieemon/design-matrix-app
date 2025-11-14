@@ -7,7 +7,7 @@ import type { SubscriptionTier } from '../../src/types/subscription'
 /**
  * Read raw body from Vercel request
  */
-async function getRawBody(req: VercelRequest): Promise<Buffer> {
+async function getRawBody(req: any): Promise<Buffer> {
   const chunks: Buffer[] = []
   for await (const chunk of req) {
     chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
@@ -47,7 +47,7 @@ export default async function webhook(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Get raw body and signature
-    const rawBody = await buffer(req)
+    const rawBody = await getRawBody(req)
     const signature = req.headers['stripe-signature'] as string
 
     if (!signature) {

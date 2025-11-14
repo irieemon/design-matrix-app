@@ -5,7 +5,7 @@
  */
 
 import { supabase, createAuthenticatedClientFromLocalStorage } from '../supabase';
-import { TIER_LIMITS, getLimit, isUnlimited, type SubscriptionTier } from '../config/tierLimits';
+import { getLimit, isUnlimited, type SubscriptionTier } from '../config/tierLimits';
 import type {
   Subscription,
   SubscriptionUpdateParams,
@@ -35,6 +35,9 @@ export class SubscriptionService {
   async getSubscription(userId: string): Promise<Subscription | null> {
     try {
       const client = this.getClient();
+      if (!client) {
+        throw new Error('Failed to initialize Supabase client');
+      }
 
       const { data, error} = await client
         .from('subscriptions')
@@ -63,6 +66,9 @@ export class SubscriptionService {
   async createSubscription(userId: string, tier: SubscriptionTier = 'free'): Promise<Subscription> {
     try {
       const client = this.getClient();
+      if (!client) {
+        throw new Error('Failed to initialize Supabase client');
+      }
 
       const { data, error } = await client
         .from('subscriptions')
@@ -90,6 +96,9 @@ export class SubscriptionService {
   async updateSubscription(userId: string, updates: SubscriptionUpdateParams): Promise<void> {
     try {
       const client = this.getClient();
+      if (!client) {
+        throw new Error('Failed to initialize Supabase client');
+      }
 
       const { error } = await client
         .from('subscriptions')
@@ -180,6 +189,9 @@ export class SubscriptionService {
   private async getProjectCount(userId: string): Promise<number> {
     try {
       const client = this.getClient();
+      if (!client) {
+        throw new Error('Failed to initialize Supabase client');
+      }
 
       const { count, error } = await client
         .from('projects')
@@ -200,6 +212,9 @@ export class SubscriptionService {
   private async getMonthlyAIUsage(userId: string): Promise<number> {
     try {
       const client = this.getClient();
+      if (!client) {
+        throw new Error('Failed to initialize Supabase client');
+      }
 
       const now = new Date();
       const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -230,7 +245,7 @@ export class SubscriptionService {
   /**
    * Get team member count (placeholder for future team feature)
    */
-  private async getTeamMemberCount(userId: string): Promise<number> {
+  private async getTeamMemberCount(_userId: string): Promise<number> {
     // TODO: Implement when team features are added
     // For now, return 1 (just the user)
     return 1;
@@ -242,6 +257,9 @@ export class SubscriptionService {
   async getUserIdFromStripeCustomer(stripeCustomerId: string): Promise<string | null> {
     try {
       const client = this.getClient();
+      if (!client) {
+        throw new Error('Failed to initialize Supabase client');
+      }
 
       const { data, error } = await client
         .from('subscriptions')

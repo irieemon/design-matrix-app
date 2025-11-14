@@ -377,7 +377,7 @@ export const signOut = async () => {
 
 // ✅ PERFORMANCE OPTIMIZATION: Cache authenticated client to prevent multiple GoTrueClient instances
 // This is a module-level cache shared by ALL code that imports createAuthenticatedClientFromLocalStorage
-let cachedAuthenticatedClient: ReturnType<typeof createClient> | null = null
+let cachedAuthenticatedClient: any | null = null
 let cachedTokenHash: string | null = null
 
 /**

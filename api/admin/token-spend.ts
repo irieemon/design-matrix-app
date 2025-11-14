@@ -410,8 +410,8 @@ async function getHourlyTimeline(supabase: any, startDate: Date, endDate: Date):
 
 async function calculateProjections(
   supabase: any,
-  startDate: Date,
-  endDate: Date,
+  _startDate: Date,
+  _endDate: Date,
   monthlyBudget: number | null
 ) {
   console.log('📊 Calculating projections...')

@@ -6,6 +6,8 @@
 
 import type { SubscriptionTier, SubscriptionStatus } from '../lib/config/tierLimits';
 
+export type { SubscriptionTier, SubscriptionStatus };
+
 /**
  * Subscription record from database
  */

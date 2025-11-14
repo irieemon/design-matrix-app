@@ -73,9 +73,9 @@ async function refreshHandler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       success: true,
       user: {
-        id: data.user.id,
-        email: data.user.email,
-        user_metadata: data.user.user_metadata,
+        id: data.user?.id,
+        email: data.user?.email,
+        user_metadata: data.user?.user_metadata,
       },
       csrfToken,
       timestamp: new Date().toISOString()

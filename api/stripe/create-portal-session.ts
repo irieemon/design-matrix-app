@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelResponse } from '@vercel/node'
 import { withAuth, type AuthenticatedRequest } from '../_lib/middleware/withAuth'
 import { stripeService } from '../../src/lib/services/stripeService'
 import { subscriptionService } from '../../src/lib/services/subscriptionService'
