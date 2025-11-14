@@ -41,8 +41,108 @@ const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 // ============================================================================
-// SESSION HANDLERS (login/logout)
+// SESSION HANDLERS (login/logout/signup)
 // ============================================================================
+
+async function handleSignup(req: VercelRequest, res: VercelResponse) {
+  try {
+    const { email, password, full_name } = req.body
+
+    if (!email || !password) {
+      return res.status(400).json({
+        error: {
+          message: 'Email and password are required',
+          code: 'VALIDATION_ERROR',
+        },
+        timestamp: new Date().toISOString(),
+      })
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        error: {
+          message: 'Password must be at least 8 characters',
+          code: 'WEAK_PASSWORD',
+        },
+        timestamp: new Date().toISOString(),
+      })
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: full_name || email.split('@')[0],
+        },
+      },
+    })
+
+    if (error) {
+      console.error('Signup error:', error)
+      return res.status(400).json({
+        error: {
+          message: error.message,
+          code: 'SIGNUP_ERROR',
+        },
+        timestamp: new Date().toISOString(),
+      })
+    }
+
+    if (!data.user) {
+      return res.status(500).json({
+        error: {
+          message: 'User creation failed',
+          code: 'USER_CREATION_FAILED',
+        },
+        timestamp: new Date().toISOString(),
+      })
+    }
+
+    if (!data.session) {
+      return res.status(200).json({
+        success: true,
+        message: 'Please check your email to confirm your account',
+        requiresEmailConfirmation: true,
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+        },
+        timestamp: new Date().toISOString(),
+      })
+    }
+
+    const csrfToken = generateCSRFToken()
+
+    setAuthCookies(res, {
+      accessToken: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+      csrfToken,
+    })
+
+    return res.status(201).json({
+      success: true,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        user_metadata: data.user.user_metadata,
+      },
+      csrfToken,
+      timestamp: new Date().toISOString(),
+    })
+  } catch (error) {
+    console.error('Signup handler error:', error)
+    return res.status(500).json({
+      error: {
+        message: 'Internal server error during signup',
+        code: 'SIGNUP_ERROR',
+      },
+      timestamp: new Date().toISOString(),
+    })
+  }
+}
 
 async function handleLogin(req: VercelRequest, res: VercelResponse) {
   try {
@@ -732,6 +832,19 @@ async function authRouter(req: VercelRequest, res: VercelResponse) {
 
   // Route based on action
   switch (action) {
+    case 'signup':
+      if (req.method !== 'POST') {
+        return res.status(405).json({
+          error: {
+            message: 'Method not allowed',
+            code: 'METHOD_NOT_ALLOWED',
+            allowed: ['POST'],
+          },
+          timestamp: new Date().toISOString(),
+        })
+      }
+      return handleSignup(req, res)
+
     case 'session':
       if (req.method === 'POST') {
         return handleLogin(req, res)
@@ -809,7 +922,7 @@ async function authRouter(req: VercelRequest, res: VercelResponse) {
         error: {
           message: 'Not found',
           code: 'INVALID_ACTION',
-          validActions: ['session', 'refresh', 'user', 'clear-cache', 'performance', 'admin-verify'],
+          validActions: ['signup', 'session', 'refresh', 'user', 'clear-cache', 'performance', 'admin-verify'],
         },
         timestamp: new Date().toISOString(),
       })
