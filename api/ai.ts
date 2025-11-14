@@ -13,12 +13,22 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import { InputValidator, commonRules } from './_lib/utils/validation.js'
+import { withAuth } from './_lib/middleware/withAuth.js'
+import type { AuthenticatedRequest } from './_lib/middleware/types.js'
+
+// Import subscription services for limit enforcement
+// Note: Using relative paths since these are TypeScript files in src/
+import { subscriptionService } from '../src/lib/services/subscriptionService.js'
+import { usageTrackingService } from '../src/lib/services/usageTrackingService.js'
+
+// Import admin utilities for token tracking
+import { trackTokenUsage } from './_lib/utils/supabaseAdmin.js'
 
 // ============================================================================
 // GENERATE IDEAS HANDLER
 // ============================================================================
 
-async function handleGenerateIdeas(req: VercelRequest, res: VercelResponse) {
+async function handleGenerateIdeas(req: AuthenticatedRequest, res: VercelResponse) {
   // Validate and sanitize input
   const validation = InputValidator.validate(req.body, [
     commonRules.title,
@@ -39,6 +49,31 @@ async function handleGenerateIdeas(req: VercelRequest, res: VercelResponse) {
   const { title, description, projectType = 'other', count = 8, tolerance = 50 } = validation.sanitizedData
 
   try {
+    // ✅ SUBSCRIPTION LIMIT CHECK: Verify user can generate AI ideas
+    const userId = req.user!.id // Guaranteed to exist because of withAuth
+    console.log('🔍 Checking AI limit for user:', userId)
+
+    const limitCheck = await subscriptionService.checkLimit(userId, 'ai_ideas')
+    console.log('📊 AI limit status:', {
+      canUse: limitCheck.canUse,
+      current: limitCheck.current,
+      limit: limitCheck.limit,
+      isUnlimited: limitCheck.isUnlimited
+    })
+
+    if (!limitCheck.canUse) {
+      console.warn(`⚠️ AI limit reached for user ${userId}`, {
+        current: limitCheck.current,
+        limit: limitCheck.limit
+      })
+      return res.status(403).json({
+        error: 'AI_LIMIT_REACHED',
+        message: `You've reached your monthly limit of ${limitCheck.limit} AI-generated ideas. Upgrade to Team or Enterprise for unlimited AI generation.`,
+        current: limitCheck.current,
+        limit: limitCheck.limit,
+        percentageUsed: limitCheck.percentageUsed
+      })
+    }
     console.log('📥 Request body:', req.body)
     console.log('🔧 Request headers:', {
       authorization: req.headers.authorization ? 'Bearer ***' : 'Missing',
@@ -69,7 +104,16 @@ async function handleGenerateIdeas(req: VercelRequest, res: VercelResponse) {
       // Use OpenAI
       console.log('🤖 Calling OpenAI API...')
       try {
-        ideas = await generateIdeasWithOpenAI(openaiKey, title, description, projectType, count, tolerance)
+        ideas = await generateIdeasWithOpenAI(
+          openaiKey,
+          title,
+          description,
+          projectType,
+          count,
+          tolerance,
+          userId, // Track tokens for this user
+          req.body.projectId // Optional project association
+        )
         console.log('✅ OpenAI API call completed, ideas count:', ideas?.length || 0)
         console.log('🔍 Sample idea:', ideas?.[0])
       } catch (openaiError) {
@@ -89,6 +133,16 @@ async function handleGenerateIdeas(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // ✅ USAGE TRACKING: Track AI idea generation
+    console.log('📝 Tracking AI usage for user:', userId)
+    try {
+      await usageTrackingService.trackAIUsage(userId)
+      console.log('✅ AI usage tracked successfully')
+    } catch (trackingError) {
+      console.error('⚠️ Failed to track AI usage (non-critical):', trackingError)
+      // Don't fail the request if tracking fails
+    }
+
     return res.status(200).json({ ideas })
 
   } catch (error) {
@@ -105,12 +159,23 @@ async function handleGenerateIdeas(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function generateIdeasWithOpenAI(apiKey: string, title: string, description: string, projectType: string, count: number = 8, tolerance: number = 50) {
+async function generateIdeasWithOpenAI(
+  apiKey: string,
+  title: string,
+  description: string,
+  projectType: string,
+  count: number = 8,
+  tolerance: number = 50,
+  userId?: string,
+  projectId?: string
+) {
   console.log('🚀 Making OpenAI request with:', {
     model: 'gpt-4o',
     temperature: 0.8,
     max_tokens: 2500
   })
+
+  const startTime = Date.now()
 
   // Get project-specific persona and context
   const personaContext = getProjectTypePersona(projectType, tolerance)
@@ -183,6 +248,24 @@ ${personaContext.additionalPrompt}`
 
   const data = await response.json()
   console.log('📄 OpenAI response data:', JSON.stringify(data, null, 2))
+
+  // Track token usage if user ID provided
+  const responseTimeMs = Date.now() - startTime
+  if (userId && data.usage) {
+    await trackTokenUsage({
+      userId,
+      projectId: projectId || null,
+      endpoint: 'generate-ideas',
+      model: 'gpt-4o',
+      usage: {
+        prompt_tokens: data.usage.prompt_tokens,
+        completion_tokens: data.usage.completion_tokens,
+        total_tokens: data.usage.total_tokens
+      },
+      responseTimeMs,
+      success: true
+    })
+  }
 
   const content = data.choices[0]?.message?.content || '[]'
   console.log('📝 Extracted content:', content)
@@ -2405,7 +2488,7 @@ function assessTranscriptionProjectRelevance(text: string, projectContext: any):
 // MAIN ROUTER
 // ============================================================================
 
-export default async function aiRouter(req: VercelRequest, res: VercelResponse) {
+async function aiRouter(req: AuthenticatedRequest, res: VercelResponse) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -2449,3 +2532,7 @@ export default async function aiRouter(req: VercelRequest, res: VercelResponse) 
       })
   }
 }
+
+// ✅ AUTHENTICATION: Wrap router with authentication middleware
+// All AI endpoints now require authentication for usage tracking and limit enforcement
+export default withAuth(aiRouter)

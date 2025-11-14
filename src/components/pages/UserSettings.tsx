@@ -1,7 +1,12 @@
-import { useState } from 'react'
-import { Settings, Save, LogOut, UserCircle, Calendar, Shield } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Settings, Save, LogOut, UserCircle, Calendar, Shield, CreditCard, TrendingUp, ExternalLink, HelpCircle, FileText } from 'lucide-react'
 import { User } from '../../types'
 import { useCurrentUser, useUserDisplay } from '../../contexts/UserContext'
+import { subscriptionService } from '../../lib/services/subscriptionService'
+import { supabase } from '../../lib/supabase'
+import type { Subscription } from '../../types/subscription'
+import { useNavigation } from '../../contexts/NavigationContext'
+import FAQAdmin from '../admin/FAQAdmin'
 
 interface UserSettingsProps {
   currentUser: User | null
@@ -13,6 +18,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
   // Use centralized user context as primary source
   const contextUser = useCurrentUser()
   const { displayName: contextDisplayName, email: contextEmail } = useUserDisplay()
+  const { handlePageChange } = useNavigation()
 
   // Use context user data as primary, fallback to props for backwards compatibility
   const currentUser = contextUser || propCurrentUser
@@ -36,6 +42,24 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
   const [email, setEmail] = useState(currentUser?.email || contextEmail || '')
   const [isEditing, setIsEditing] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [loadingSubscription, setLoadingSubscription] = useState(true)
+  const [managingSubscription, setManagingSubscription] = useState(false)
+
+  // Load subscription data
+  useEffect(() => {
+    if (currentUser?.id) {
+      subscriptionService.getSubscription(currentUser.id)
+        .then(sub => {
+          setSubscription(sub)
+          setLoadingSubscription(false)
+        })
+        .catch(err => {
+          console.error('Failed to load subscription:', err)
+          setLoadingSubscription(false)
+        })
+    }
+  }, [currentUser?.id])
 
   const handleSaveProfile = async () => {
     setSaveStatus('saving')
@@ -63,6 +87,52 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
   const handleLogout = () => {
     // localStorage cleanup is handled in the centralized useAuth hook
     onLogout()
+  }
+
+  const handleManageSubscription = async () => {
+    setManagingSubscription(true)
+    try {
+      // Get Supabase session for authentication
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        alert('Authentication required. Please sign in again.')
+        setManagingSubscription(false)
+        return
+      }
+
+      const response = await fetch('/api/stripe/create-portal-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create portal session')
+      }
+
+      const { url } = await response.json()
+      window.location.href = url
+    } catch (error) {
+      console.error('Error creating portal session:', error)
+      alert('Failed to open subscription management. Please try again.')
+      setManagingSubscription(false)
+    }
+  }
+
+  const getTierDisplay = (tier: string) => {
+    switch (tier) {
+      case 'free':
+        return { name: 'Free', color: 'text-slate-600', bgColor: 'bg-slate-100' }
+      case 'team':
+        return { name: 'Team', color: 'text-blue-600', bgColor: 'bg-blue-100' }
+      case 'enterprise':
+        return { name: 'Enterprise', color: 'text-purple-600', bgColor: 'bg-purple-100' }
+      default:
+        return { name: 'Unknown', color: 'text-slate-600', bgColor: 'bg-slate-100' }
+    }
   }
 
   const userStats = {
@@ -235,6 +305,134 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
         )}
       </div>
 
+      {/* Subscription Section */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-slate-900">Subscription & Billing</h3>
+          <button
+            onClick={() => handlePageChange('pricing')}
+            className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>View All Plans</span>
+          </button>
+        </div>
+
+        {loadingSubscription ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="w-8 h-8 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : subscription ? (
+          <div className="space-y-4">
+            {/* Current Plan */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <CreditCard className="w-5 h-5 text-slate-500" />
+                <div>
+                  <p className="text-sm font-medium text-slate-700">Current Plan</p>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTierDisplay(subscription.tier).bgColor} ${getTierDisplay(subscription.tier).color}`}
+                    >
+                      {getTierDisplay(subscription.tier).name}
+                    </span>
+                    {subscription.tier === 'free' && (
+                      <span className="text-xs text-slate-500">• Free forever</span>
+                    )}
+                    {subscription.tier === 'team' && (
+                      <span className="text-xs text-slate-500">• $29/month</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {subscription.tier !== 'free' && (
+                <button
+                  onClick={handleManageSubscription}
+                  disabled={managingSubscription}
+                  className="flex items-center space-x-2 px-3 py-1.5 text-sm bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition-colors disabled:opacity-50"
+                >
+                  {managingSubscription ? (
+                    <>
+                      <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Opening...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="w-3 h-3" />
+                      <span>Manage</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Plan Features */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="text-xs font-medium text-slate-500 mb-1">Projects</p>
+                <p className="text-lg font-semibold text-slate-900">
+                  {subscription.tier === 'free' ? '1' : subscription.tier === 'team' ? '10' : 'Unlimited'}
+                </p>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="text-xs font-medium text-slate-500 mb-1">AI Ideas/Month</p>
+                <p className="text-lg font-semibold text-slate-900">
+                  {subscription.tier === 'free' ? '5' : 'Unlimited'}
+                </p>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="text-xs font-medium text-slate-500 mb-1">Team Members</p>
+                <p className="text-lg font-semibold text-slate-900">
+                  {subscription.tier === 'free' ? '3' : subscription.tier === 'team' ? '15' : 'Unlimited'}
+                </p>
+              </div>
+            </div>
+
+            {/* Upgrade CTA for Free Users */}
+            {subscription.tier === 'free' && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-blue-900 mb-1">Upgrade to unlock more</h4>
+                    <p className="text-xs text-blue-700 mb-3">
+                      Get 10 projects, unlimited AI generations, and premium features starting at $29/month
+                    </p>
+                    <button
+                      onClick={() => handlePageChange('pricing')}
+                      className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      <span>View Pricing</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Billing Period Info for Paid Users */}
+            {subscription.tier !== 'free' && subscription.current_period_end && (
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg text-sm">
+                <span className="text-slate-600">
+                  {subscription.cancel_at_period_end ? 'Cancels on' : 'Renews on'}
+                </span>
+                <span className="font-medium text-slate-900">
+                  {new Date(subscription.current_period_end).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-slate-600">Unable to load subscription information</p>
+          </div>
+        )}
+      </div>
+
       {/* Preferences Section */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-900 mb-6">Preferences</h3>
@@ -272,6 +470,32 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
               <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
             </label>
           </div>
+        </div>
+      </div>
+
+      {/* FAQ & Support Section */}
+      <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">FAQ & Support</h3>
+            <p className="text-sm text-slate-600 mt-1">Manage help content and browse support resources</p>
+          </div>
+          <button
+            onClick={() => handlePageChange('faq')}
+            className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
+          >
+            <FileText className="w-4 h-4" />
+            <span>View FAQ Page</span>
+          </button>
+        </div>
+
+        {/* FAQ Admin Panel */}
+        <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+          <div className="flex items-center space-x-2 mb-4">
+            <HelpCircle className="w-5 h-5 text-slate-600" />
+            <h4 className="text-sm font-semibold text-slate-900">Content Management</h4>
+          </div>
+          <FAQAdmin />
         </div>
       </div>
 

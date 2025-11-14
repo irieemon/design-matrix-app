@@ -24,8 +24,15 @@ const ProjectManagement: React.FC<ProjectManagementProps> = () => {
   const loadProjects = async () => {
     setIsLoading(true)
     try {
-      const { projects: fetchedProjects } = await AdminService.getAllProjects(1, 50)
-      setProjects(fetchedProjects)
+      // Use backend API endpoint instead of deprecated AdminService method
+      const response = await fetch('/api/admin/projects')
+      const data = await response.json()
+
+      if (data.success && data.projects) {
+        setProjects(data.projects)
+      } else {
+        throw new Error(data.error || 'Failed to load projects')
+      }
     } catch (error) {
       logger.error('Error loading projects:', error)
     } finally {

@@ -178,7 +178,8 @@ class QueryOptimizer {
   private determineUserRole(email: string): string {
     const adminEmails = new Set([
       'admin@prioritas.com',
-      'manager@company.com'
+      'manager@company.com',
+      'sean@lakehouse.net'  // ADDED: App owner
     ])
 
     const superAdminEmails = new Set([

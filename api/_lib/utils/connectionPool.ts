@@ -65,16 +65,6 @@ class SupabaseConnectionPool {
         persistSession: false,
         detectSessionInUrl: false
       },
-      // PERFORMANCE: Optimized headers for connection reuse
-      global: {
-        headers: {
-          'Connection': 'keep-alive',
-          'Keep-Alive': 'timeout=2, max=1000',
-          'Cache-Control': 'no-store',
-          'X-Connection-ID': connectionId
-        }
-      },
-      // PERFORMANCE: Database optimizations
       db: {
         schema: 'public'
       }
@@ -210,6 +200,14 @@ export function getConnectionPool(): SupabaseConnectionPool {
       throw new Error('Missing Supabase configuration for connection pool')
     }
 
+    // DEBUG: Log which key is being used
+    const isServiceRole = supabaseKey === process.env.SUPABASE_SERVICE_ROLE_KEY
+    console.log(`🏊‍♂️ Connection pool config:`, {
+      hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      usingServiceRole: isServiceRole,
+      keyPrefix: supabaseKey?.substring(0, 15) + '...'
+    })
+
     pool = new SupabaseConnectionPool(supabaseUrl, supabaseKey, {
       maxConnections: 50,   // High limit for performance
       minConnections: 5,    // Always ready connections
@@ -217,7 +215,7 @@ export function getConnectionPool(): SupabaseConnectionPool {
       idleTimeoutMs: 30000  // 30s cleanup
     })
 
-    console.log('🏊‍♂️ Supabase connection pool initialized with service role key')
+    console.log(`🏊‍♂️ Supabase connection pool initialized with ${isServiceRole ? 'SERVICE ROLE' : 'ANON'} key`)
   }
 
   return pool

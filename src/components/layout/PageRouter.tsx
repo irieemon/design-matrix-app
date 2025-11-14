@@ -4,6 +4,9 @@ import MatrixPage from '../pages/MatrixPage'
 import DataManagement from '../pages/DataManagement'
 import UserSettings from '../pages/UserSettings'
 import ProjectCollaboration from '../pages/ProjectCollaboration'
+import PricingPage from '../pages/PricingPage'
+import SubscriptionSuccessPage from '../pages/SubscriptionSuccessPage'
+import FAQPage from '../pages/FAQPage'
 // PERFORMANCE OPTIMIZATION: Lazy load large components to reduce initial bundle size
 // Components loaded on demand when user navigates to specific routes
 const ReportsAnalytics = lazy(() => import('../pages/ReportsAnalytics'))
@@ -105,7 +108,7 @@ const PageRouter: React.FC<PageRouterProps> = ({
 
   // Handle invalid pages
   useEffect(() => {
-    const validPages = ['matrix', 'home', 'data', 'reports', 'projects', 'roadmap', 'management', 'files', 'collaboration', 'settings', 'user', 'button-test', 'form-test', 'skeleton-test', 'performance', 'mono-demo']
+    const validPages = ['matrix', 'home', 'data', 'reports', 'projects', 'roadmap', 'management', 'files', 'collaboration', 'settings', 'user', 'pricing', 'subscription-success', 'faq', 'button-test', 'form-test', 'skeleton-test', 'performance', 'mono-demo']
     if (!validPages.includes(currentPage)) {
       onPageChange('matrix')
     }
@@ -314,6 +317,15 @@ const PageRouter: React.FC<PageRouterProps> = ({
             />
           </div>
         )
+
+      case 'pricing':
+        return <PricingPage />
+
+      case 'subscription-success':
+        return <SubscriptionSuccessPage />
+
+      case 'faq':
+        return <FAQPage />
 
       case 'button-test':
         return (

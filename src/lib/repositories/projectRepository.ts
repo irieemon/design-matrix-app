@@ -2,6 +2,7 @@ import { supabase, createAuthenticatedClientFromLocalStorage } from '../supabase
 import { Project } from '../../types'
 import { logger } from '../../utils/logger'
 import { sanitizeUserId, sanitizeProjectId } from '../../utils/uuid'
+import { subscriptionService } from '../services/subscriptionService'
 
 // ✅ SECURITY FIX: supabaseAdmin removed from frontend
 // All operations use authenticated client with RLS enforcement
@@ -214,6 +215,17 @@ export class ProjectRepository {
     try {
       logger.debug('Creating project:', project.name)
 
+      // ✅ SUBSCRIPTION LIMIT CHECK: Verify user can create project
+      const limitCheck = await subscriptionService.checkLimit(project.owner_id, 'projects')
+
+      if (!limitCheck.canUse) {
+        logger.warn(`Project limit reached for user ${project.owner_id}`, {
+          current: limitCheck.current,
+          limit: limitCheck.limit
+        })
+        throw new Error('PROJECT_LIMIT_REACHED')
+      }
+
       // Ensure proper UUID for new project
       const projectId = crypto.randomUUID()
       const projectData = {
@@ -239,6 +251,10 @@ export class ProjectRepository {
       return data
     } catch (error) {
       logger.error('Failed to create project:', error)
+      // Re-throw limit errors for frontend handling
+      if (error instanceof Error && error.message === 'PROJECT_LIMIT_REACHED') {
+        throw error
+      }
       return null
     }
   }

@@ -77,6 +77,10 @@ export default defineConfig(({ mode }) => {
                 SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY, // Backend API only
                 OPENAI_API_KEY: env.OPENAI_API_KEY,
                 ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
+                STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY, // Stripe backend API
+                STRIPE_WEBHOOK_SECRET: env.STRIPE_WEBHOOK_SECRET, // Stripe webhook signature verification
+                VITE_STRIPE_PRICE_ID_TEAM: env.VITE_STRIPE_PRICE_ID_TEAM, // Team plan price ID
+                VITE_STRIPE_PRICE_ID_ENTERPRISE: env.VITE_STRIPE_PRICE_ID_ENTERPRISE, // Enterprise plan price ID
                 NODE_ENV: env.NODE_ENV || 'development'
               }
 

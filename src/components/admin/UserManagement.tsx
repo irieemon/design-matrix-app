@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Search, Filter, UserCheck, UserX, Shield, Mail, Calendar, Activity, Eye } from 'lucide-react'
-import { AdminUser, User } from '../../types'
+import { Search, Filter, UserCheck, UserX, Shield, Mail, Calendar, Activity, Eye, DollarSign, Zap } from 'lucide-react'
+import { User } from '../../types'
+import { AdminRepository, AdminUserStats, TokenUsageDetail } from '../../lib/repositories'
 import { AdminService } from '../../lib/adminService'
 import { logger } from '../../utils/logger'
 
@@ -9,12 +10,14 @@ interface UserManagementProps {
 }
 
 const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
-  const [users, setUsers] = useState<AdminUser[]>([])
+  const [users, setUsers] = useState<AdminUserStats[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all')
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
+  const [selectedUser, setSelectedUser] = useState<AdminUserStats | null>(null)
   const [showUserModal, setShowUserModal] = useState(false)
+  const [tokenUsage, setTokenUsage] = useState<TokenUsageDetail[]>([])
+  const [loadingTokenUsage, setLoadingTokenUsage] = useState(false)
 
   useEffect(() => {
     loadUsers()
@@ -23,13 +26,32 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
   const loadUsers = async () => {
     setIsLoading(true)
     try {
-      const { users: fetchedUsers } = await AdminService.getAllUsers(1, 50)
+      const fetchedUsers = await AdminRepository.getAllUserStats()
       setUsers(fetchedUsers)
     } catch (error) {
       logger.error('Error loading users:', error)
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const loadTokenUsage = async (userId: string) => {
+    setLoadingTokenUsage(true)
+    try {
+      const { recentTokenUsage } = await AdminRepository.getUserDetails(userId)
+      setTokenUsage(recentTokenUsage)
+    } catch (error) {
+      logger.error('Error loading token usage:', error)
+      setTokenUsage([])
+    } finally {
+      setLoadingTokenUsage(false)
+    }
+  }
+
+  const handleUserClick = async (user: AdminUserStats) => {
+    setSelectedUser(user)
+    setShowUserModal(true)
+    await loadTokenUsage(user.id)
   }
 
   const handleUserStatusToggle = async (userId: string, currentStatus: boolean) => {
@@ -56,17 +78,16 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.company?.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesFilter = filterStatus === 'all' || 
-                         (filterStatus === 'active' && user.is_active) ||
-                         (filterStatus === 'inactive' && !user.is_active)
-    
+                         user.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesFilter = filterStatus === 'all' ||
+                         (filterStatus === 'active' && user.subscription_status === 'active') ||
+                         (filterStatus === 'inactive' && user.subscription_status !== 'active')
+
     return matchesSearch && matchesFilter
   })
 
-  const UserModal: React.FC<{ user: AdminUser }> = ({ user }) => (
+  const UserModal: React.FC<{ user: AdminUserStats }> = ({ user }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-slate-200">
@@ -80,18 +101,27 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                 <p className="text-slate-600">{user.email}</p>
                 <div className="flex items-center space-x-2 mt-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    user.is_active 
-                      ? 'bg-green-100 text-green-800' 
+                    user.subscription_status === 'active'
+                      ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {user.is_active ? 'Active' : 'Inactive'}
+                    {user.subscription_status === 'active' ? 'Active' : 'Inactive'}
                   </span>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    user.role === 'admin' 
-                      ? 'bg-purple-100 text-purple-800' 
+                    user.role === 'admin'
+                      ? 'bg-purple-100 text-purple-800'
                       : 'bg-slate-100 text-slate-800'
                   }`}>
                     {user.role === 'admin' ? 'Admin' : 'User'}
+                  </span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    user.subscription_tier === 'enterprise'
+                      ? 'bg-purple-100 text-purple-800'
+                      : user.subscription_tier === 'team'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-slate-100 text-slate-800'
+                  }`}>
+                    {user.subscription_tier.charAt(0).toUpperCase() + user.subscription_tier.slice(1)}
                   </span>
                 </div>
               </div>
@@ -117,7 +147,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                 <div className="flex items-center space-x-3">
                   <Calendar className="w-4 h-4 text-slate-400" />
                   <span className="text-sm text-slate-600">
-                    Joined {new Date(user.created_at).toLocaleDateString()}
+                    Joined {new Date(user.join_date).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -141,32 +171,117 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                   <span className="text-sm font-medium text-slate-900">{user.idea_count}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-600">Files</span>
-                  <span className="text-sm font-medium text-slate-900">{user.file_count}</span>
+                  <span className="text-sm text-slate-600">Monthly AI Calls</span>
+                  <span className="text-sm font-medium text-slate-900">{user.monthly_ai_usage}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-slate-600">Storage Used</span>
-                  <span className="text-sm font-medium text-slate-900">
-                    {AdminService.formatFileSize(user.total_file_size)}
-                  </span>
+                  <span className="text-sm text-slate-600">Monthly Exports</span>
+                  <span className="text-sm font-medium text-slate-900">{user.monthly_export_usage}</span>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Token Usage Section */}
+          <div className="border-t border-slate-200 pt-6">
+            <h3 className="text-sm font-medium text-slate-700 mb-3">Token Usage & Costs</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-blue-50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <Zap className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-medium text-blue-900">Monthly Tokens</span>
+                  </div>
+                </div>
+                <p className="text-xl font-bold text-blue-900">{AdminService.formatNumber(user.monthly_tokens)}</p>
+                <p className="text-xs text-blue-600 mt-1">Current billing period</p>
+              </div>
+              <div className="bg-green-50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <DollarSign className="w-4 h-4 text-green-600" />
+                    <span className="text-xs font-medium text-green-900">Monthly Cost</span>
+                  </div>
+                </div>
+                <p className="text-xl font-bold text-green-900">${user.monthly_cost_usd.toFixed(2)}</p>
+                <p className="text-xs text-green-600 mt-1">OpenAI API usage</p>
+              </div>
+              <div className="bg-purple-50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <Zap className="w-4 h-4 text-purple-600" />
+                    <span className="text-xs font-medium text-purple-900">Total Tokens</span>
+                  </div>
+                </div>
+                <p className="text-xl font-bold text-purple-900">{AdminService.formatNumber(user.total_tokens_used)}</p>
+                <p className="text-xs text-purple-600 mt-1">All time</p>
+              </div>
+              <div className="bg-slate-50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <DollarSign className="w-4 h-4 text-slate-600" />
+                    <span className="text-xs font-medium text-slate-900">Total Cost</span>
+                  </div>
+                </div>
+                <p className="text-xl font-bold text-slate-900">${user.total_cost_usd.toFixed(2)}</p>
+                <p className="text-xs text-slate-600 mt-1">All time</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Token Usage History */}
+          <div className="border-t border-slate-200 pt-6">
+            <h3 className="text-sm font-medium text-slate-700 mb-3">Recent Token Usage</h3>
+            {loadingTokenUsage ? (
+              <div className="text-center py-8">
+                <Activity className="w-6 h-6 text-blue-600 animate-pulse mx-auto mb-2" />
+                <p className="text-sm text-slate-600">Loading token history...</p>
+              </div>
+            ) : tokenUsage.length === 0 ? (
+              <div className="text-center py-8 bg-slate-50 rounded-xl">
+                <Zap className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <p className="text-sm text-slate-600">No token usage recorded yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {tokenUsage.map((usage) => (
+                  <div key={usage.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-900">{usage.endpoint}</p>
+                      <p className="text-xs text-slate-600">
+                        {usage.model} • {new Date(usage.created_at).toLocaleString()}
+                      </p>
+                      {!usage.success && usage.error_message && (
+                        <p className="text-xs text-red-600 mt-1">Error: {usage.error_message}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-slate-900">
+                        {AdminService.formatNumber(usage.total_tokens)} tokens
+                      </p>
+                      <p className="text-xs text-green-600 font-medium">
+                        ${usage.total_cost.toFixed(4)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="flex space-x-3 pt-4 border-t border-slate-200">
             <button
-              onClick={() => handleUserStatusToggle(user.id, user.is_active || false)}
+              onClick={() => handleUserStatusToggle(user.id, user.subscription_status === 'active')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                user.is_active 
+                user.subscription_status === 'active'
                   ? 'bg-red-100 text-red-700 hover:bg-red-200'
                   : 'bg-green-100 text-green-700 hover:bg-green-200'
               }`}
             >
-              {user.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-              <span>{user.is_active ? 'Deactivate' : 'Activate'}</span>
+              {user.subscription_status === 'active' ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+              <span>{user.subscription_status === 'active' ? 'Deactivate' : 'Activate'}</span>
             </button>
-            
+
             {AdminService.isSuperAdmin(currentUser) && (
               <button
                 onClick={() => handleRoleChange(user.id, user.role === 'admin' ? 'user' : 'admin')}
@@ -234,8 +349,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                   <tr>
                     <th className="text-left p-4 font-medium text-slate-700">User</th>
                     <th className="text-left p-4 font-medium text-slate-700">Status</th>
+                    <th className="text-left p-4 font-medium text-slate-700">Tier</th>
                     <th className="text-left p-4 font-medium text-slate-700">Role</th>
-                    <th className="text-left p-4 font-medium text-slate-700">Projects</th>
+                    <th className="text-left p-4 font-medium text-slate-700">Usage</th>
                     <th className="text-left p-4 font-medium text-slate-700">Last Active</th>
                     <th className="text-left p-4 font-medium text-slate-700">Actions</th>
                   </tr>
@@ -251,25 +367,33 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                           <div>
                             <p className="font-medium text-slate-900">{user.full_name || 'Unnamed User'}</p>
                             <p className="text-sm text-slate-600">{user.email}</p>
-                            {user.company && (
-                              <p className="text-xs text-slate-500">{user.company}</p>
-                            )}
                           </div>
                         </div>
                       </td>
                       <td className="p-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          user.is_active 
-                            ? 'bg-green-100 text-green-800' 
+                          user.subscription_status === 'active'
+                            ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {user.is_active ? 'Active' : 'Inactive'}
+                          {user.subscription_status === 'active' ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="p-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          user.role === 'admin' 
-                            ? 'bg-purple-100 text-purple-800' 
+                          user.subscription_tier === 'enterprise'
+                            ? 'bg-purple-100 text-purple-800'
+                            : user.subscription_tier === 'team'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-slate-100 text-slate-800'
+                        }`}>
+                          {user.subscription_tier.charAt(0).toUpperCase() + user.subscription_tier.slice(1)}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          user.role === 'admin'
+                            ? 'bg-purple-100 text-purple-800'
                             : 'bg-slate-100 text-slate-800'
                         }`}>
                           {user.role === 'admin' ? 'Admin' : 'User'}
@@ -277,8 +401,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                       </td>
                       <td className="p-4">
                         <div className="text-sm">
-                          <p className="font-medium text-slate-900">{user.project_count}</p>
-                          <p className="text-slate-500">{user.idea_count} ideas</p>
+                          <p className="font-medium text-slate-900">{user.project_count} projects</p>
+                          <p className="text-slate-500">${user.monthly_cost_usd.toFixed(2)}/mo</p>
                         </div>
                       </td>
                       <td className="p-4">
@@ -288,10 +412,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
                       </td>
                       <td className="p-4">
                         <button
-                          onClick={() => {
-                            setSelectedUser(user)
-                            setShowUserModal(true)
-                          }}
+                          onClick={() => handleUserClick(user)}
                           className="flex items-center space-x-1 px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
                         >
                           <Eye className="w-4 h-4" />

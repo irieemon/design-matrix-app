@@ -97,3 +97,26 @@ jspm_packages/
 
 # Vercel
 .vercel
+
+# MCP Server data
+.serena/
+.playwright-mcp/
+
+# Temporary SQL migrations (should be in supabase/migrations)
+*.sql
+
+# Temporary documentation files (should be in claudedocs)
+*_FIX.md
+*_COMPLETE.md
+*_STATUS.md
+*_GUIDE.md
+APPLY_*.md
+DESIGN_*.md
+ENABLE_*.md
+FIX_*.md
+MAKE_*.md
+MIGRATION_*.md
+PHASE_*.md
+UNKNOWN_*.md
+UPDATE_*.md
+ZERO_*.md

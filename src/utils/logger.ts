@@ -41,6 +41,11 @@ class Logger {
   }
 
   private checkDebugMode(): boolean {
+    // Server-side: debug mode off by default
+    if (typeof window === 'undefined') {
+      return false
+    }
+
     // Check URL parameters
     const urlParams = new URLSearchParams(window.location.search)
     const debugParam = urlParams.get('debug')

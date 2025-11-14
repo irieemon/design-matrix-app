@@ -28,6 +28,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // When switching from persistSession: false to true, old session data causes timeouts
 // This aggressive cleanup ensures a clean slate for the new configuration
 const cleanupLegacyAuthStorage = () => {
+  // Guard against SSR environment
+  if (typeof window === 'undefined') {
+    return
+  }
+
   try {
     // Extract project reference from Supabase URL for dynamic key cleanup
     const projectRef = supabaseUrl?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
@@ -124,7 +129,7 @@ const CLEANUP_EXPIRY_DAYS = 30 // Re-run cleanup after 30 days in case of issues
 
 // Check if cleanup has already run (with time-based expiry)
 let shouldRunCleanup = true
-const cleanupData = localStorage.getItem(CLEANUP_FLAG)
+const cleanupData = typeof window !== 'undefined' ? localStorage.getItem(CLEANUP_FLAG) : null
 
 if (cleanupData) {
   try {
@@ -143,7 +148,8 @@ if (cleanupData) {
   }
 }
 
-if (shouldRunCleanup) {
+// Only run cleanup in browser environment
+if (shouldRunCleanup && typeof window !== 'undefined') {
   logger.debug('Running storage cleanup before Supabase initialization')
   cleanupLegacyAuthStorage()
   try {

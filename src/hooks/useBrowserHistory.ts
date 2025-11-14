@@ -151,12 +151,15 @@ export const useBrowserHistory = ({
     'matrix': '/',
     'projects': '/projects',
     'roadmap': '/roadmap',
-    'management': '/management', 
+    'management': '/management',
     'files': '/files',
     'data': '/data',
     'reports': '/reports',
-    'settings': '/settings',
-    'collaboration': '/collaboration'
+    'user': '/settings',
+    'pricing': '/pricing',
+    'subscription-success': '/subscription/success',
+    'collaboration': '/collaboration',
+    'faq': '/faq'
   }
 
   // Map URL paths to page names
@@ -165,11 +168,14 @@ export const useBrowserHistory = ({
     '/projects': 'projects',
     '/roadmap': 'roadmap',
     '/management': 'management',
-    '/files': 'files', 
+    '/files': 'files',
     '/data': 'data',
     '/reports': 'reports',
-    '/settings': 'settings',
-    '/collaboration': 'collaboration'
+    '/settings': 'user',
+    '/pricing': 'pricing',
+    '/subscription/success': 'subscription-success',
+    '/collaboration': 'collaboration',
+    '/faq': 'faq'
   }
 
   // Map page names to document titles
@@ -181,8 +187,11 @@ export const useBrowserHistory = ({
     'files': 'Project Files',
     'data': 'Data Management',
     'reports': 'Reports & Analytics',
-    'settings': 'User Settings',
-    'collaboration': 'Project Collaboration'
+    'user': 'User Settings',
+    'pricing': 'Pricing Plans',
+    'subscription-success': 'Subscription Activated',
+    'collaboration': 'Project Collaboration',
+    'faq': 'Help & Support'
   }
 
   // Update document title when page or project changes

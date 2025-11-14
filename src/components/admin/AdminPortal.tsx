@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react'
 import { Shield, AlertCircle, Home } from 'lucide-react'
 import { User } from '../../types'
 import { AdminService } from '../../lib/adminService'
-import AdminSidebar from './AdminSidebar'
+import { AdminLayout } from './AdminLayout'
 import AdminDashboard from './AdminDashboard'
 import UserManagement from './UserManagement'
 import ProjectManagement from './ProjectManagement'
+import FAQAdmin from './FAQAdmin'
+import AdminAnalytics from './AdminAnalytics'
+import TokenSpendAnalytics from './TokenSpendAnalytics'
 import { logger } from '../../utils/logger'
 
 interface AdminPortalProps {
@@ -15,9 +18,8 @@ interface AdminPortalProps {
 }
 
 const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onBackToApp, onLogout }) => {
-  const [currentPage, setCurrentPage] = useState('dashboard')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [hasAccess, setHasAccess] = useState<boolean | null>(null)
+  const [currentPage, setCurrentPage] = useState<string>('admin')
 
   useEffect(() => {
     // Check admin access
@@ -91,33 +93,27 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onBackToApp, onL
 
   const renderCurrentPage = () => {
     switch (currentPage) {
-      case 'dashboard':
+      case 'admin':
         return <AdminDashboard currentUser={currentUser} />
-      case 'users':
+      case 'admin/users':
         return <UserManagement currentUser={currentUser} />
-      case 'projects':
+      case 'admin/projects':
         return <ProjectManagement currentUser={currentUser} />
-      case 'storage':
+      case 'admin/faq':
+        return <FAQAdmin />
+      case 'admin/analytics':
+        return <AdminAnalytics currentUser={currentUser} />
+      case 'admin/tokens':
+        return <TokenSpendAnalytics currentUser={currentUser} />
+      case 'admin/settings':
         return (
-          <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-            <div className="text-center">
+          <div className="p-8">
+            <div className="max-w-4xl mx-auto text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Shield className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-lg font-medium text-slate-900 mb-2">File Storage Management</h3>
-              <p className="text-slate-600">Coming soon - Storage analytics and file management tools</p>
-            </div>
-          </div>
-        )
-      case 'settings':
-        return (
-          <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-8 h-8 text-purple-600" />
-              </div>
-              <h3 className="text-lg font-medium text-slate-900 mb-2">Platform Settings</h3>
-              <p className="text-slate-600">Coming soon - System configuration and preferences</p>
+              <h3 className="text-lg font-medium text-slate-900 mb-2">Coming Soon</h3>
+              <p className="text-slate-600">This feature is under development</p>
             </div>
           </div>
         )
@@ -127,21 +123,13 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ currentUser, onBackToApp, onL
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AdminSidebar
-        currentUser={currentUser}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-        onLogout={onLogout}
-        onBackToApp={onBackToApp}
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={setSidebarCollapsed}
-      />
-      
-      <main className={`${sidebarCollapsed ? 'ml-20' : 'ml-72'} transition-all duration-300 ease-in-out min-h-screen`}>
-        {renderCurrentPage()}
-      </main>
-    </div>
+    <AdminLayout
+      currentPage={currentPage}
+      onPageChange={setCurrentPage}
+      onBackToApp={onBackToApp}
+    >
+      {renderCurrentPage()}
+    </AdminLayout>
   )
 }
 

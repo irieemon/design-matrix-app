@@ -2,6 +2,7 @@
 export { IdeaRepository } from './ideaRepository'
 export { ProjectRepository } from './projectRepository'
 export { UserRepository } from './userRepository'
+export { AdminRepository } from './adminRepository'
 
 // Export shared repository types and helpers
 export type { ApiResponse } from './types'
@@ -10,3 +11,12 @@ export { createSuccessResponse, createErrorResponse, handleSupabaseError } from 
 // Re-export commonly used types
 export type { CreateIdeaInput } from './ideaRepository'
 export type { IdeaCard, Project, User, AuthUser } from '../../types'
+
+// Export admin types
+export type {
+  AdminUserStats,
+  AdminDashboardStats,
+  TokenUsageByDay,
+  TokenUsageDetail,
+  ProjectWithOwner
+} from './adminRepository'

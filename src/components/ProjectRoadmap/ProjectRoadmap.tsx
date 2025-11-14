@@ -22,7 +22,21 @@ interface ProjectRoadmapProps {
 const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentProject, ideas }) => {
   const logger = useLogger('ProjectRoadmap')
 
-  // Early return if no project selected
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  const [roadmapData, setRoadmapData] = useState<RoadmapData | null>(null)
+  const [state, setState] = useState<RoadmapState>({
+    isLoading: false,
+    error: null,
+    expandedPhases: new Set(),
+    showHistory: false,
+    selectedRoadmapId: null,
+    showConfirmModal: false,
+    isExportModalOpen: false
+  })
+  const [roadmapHistory, setRoadmapHistory] = useState<ProjectRoadmapType[]>([])
+  const [viewMode, setViewMode] = useState<RoadmapViewMode['mode']>('timeline')
+
+  // Early return AFTER all hooks - if no project selected
   if (!currentProject) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-6">
@@ -34,7 +48,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     )
   }
 
-  // Early return if no ideas
+  // Early return AFTER all hooks - if no ideas
   if (!ideas || ideas.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-6">
@@ -51,19 +65,6 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       </div>
     )
   }
-
-  const [roadmapData, setRoadmapData] = useState<RoadmapData | null>(null)
-  const [state, setState] = useState<RoadmapState>({
-    isLoading: false,
-    error: null,
-    expandedPhases: new Set(),
-    showHistory: false,
-    selectedRoadmapId: null,
-    showConfirmModal: false,
-    isExportModalOpen: false
-  })
-  const [roadmapHistory, setRoadmapHistory] = useState<ProjectRoadmapType[]>([])
-  const [viewMode, setViewMode] = useState<RoadmapViewMode['mode']>('timeline')
 
   // Load existing roadmaps when component mounts or project changes
   useEffect(() => {
