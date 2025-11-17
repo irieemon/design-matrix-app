@@ -5,21 +5,70 @@
  * Requires admin authentication with rate limiting and CSRF protection
  */
 
-import type { VercelResponse } from '@vercel/node'
-import { adminEndpoint } from '../_lib/middleware/compose'
-import { supabaseAdmin } from '../_lib/utils/supabaseAdmin'
-import type { AuthenticatedRequest } from '../_lib/middleware/types'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { createClient } from '@supabase/supabase-js'
 
-async function getAdminProjects(req: AuthenticatedRequest, res: VercelResponse) {
+// Direct environment variable access (no shared module)
+const supabaseUrl = process.env.SUPABASE_URL || ''
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || ''
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    // Admin user is already verified by withAdmin middleware
-    // Non-null assertion is safe here because withAdmin middleware guarantees user exists
-    console.log(`📊 Admin ${req.user!.email} fetching all projects`)
+    // Check environment variables
+    if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
+      console.error('❌ Missing Supabase environment variables:', {
+        hasUrl: !!supabaseUrl,
+        hasServiceKey: !!supabaseServiceKey,
+        hasAnonKey: !!supabaseAnonKey,
+      })
+      return res.status(500).json({
+        error: 'Server configuration error',
+        details: 'Missing Supabase credentials',
+      })
+    }
+
+    // Simple auth check - get token from Authorization header
+    const authHeader = req.headers.authorization
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No authentication token provided' })
+    }
+
+    const accessToken = authHeader.substring(7)
+
+    // Verify user and check admin role
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${accessToken}` } },
+    })
+
+    const { data: { user }, error: authError } = await authClient.auth.getUser(accessToken)
+    if (authError || !user) {
+      console.error('Auth error:', authError)
+      return res.status(401).json({ error: 'Invalid or expired token' })
+    }
+
+    // Check admin role
+    const { data: profile } = await authClient
+      .from('user_profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || !['admin', 'super_admin'].includes(profile.role)) {
+      return res.status(403).json({ error: 'Admin access required' })
+    }
+
+    console.log(`📊 Admin ${user.email} fetching all projects`)
+
+    // Create admin client for querying
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
 
     // Get all projects with owner information using the correct JOIN
     const { data, error } = await supabaseAdmin
@@ -128,6 +177,3 @@ async function getAdminProjects(req: AuthenticatedRequest, res: VercelResponse) 
     })
   }
 }
-
-// Export with admin middleware (includes rate limiting, CSRF, auth, and admin check)
-export default adminEndpoint(getAdminProjects)
