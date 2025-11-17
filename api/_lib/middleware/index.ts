@@ -12,7 +12,7 @@ export type {
   RateLimitConfig,
   CSRFConfig,
   ErrorResponse,
-} from './types.js'
+} from './types'
 
 // Cookie utilities
 export {
@@ -23,27 +23,27 @@ export {
   parseCookies,
   getCookie,
   generateCSRFToken,
-} from './cookies.js'
+} from './cookies'
 
 // Authentication middleware
 export {
   withAuth,
   withAdmin,
   withOptionalAuth,
-} from './withAuth.js'
+} from './withAuth'
 
 // CSRF protection
 export {
   withCSRF,
   withOriginValidation,
-} from './withCSRF.js'
+} from './withCSRF'
 
 // Rate limiting
 export {
   withRateLimit,
   withStrictRateLimit,
   withUserRateLimit,
-} from './withRateLimit.js'
+} from './withRateLimit'
 
 // Composition utilities
 export {
@@ -51,4 +51,4 @@ export {
   publicEndpoint,
   authenticatedEndpoint,
   adminEndpoint,
-} from './compose.js'
+} from './compose'
