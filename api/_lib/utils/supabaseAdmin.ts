@@ -9,10 +9,17 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || ''
+// Server-side: Use non-VITE_ prefixed variables (runtime variables)
+// VITE_ variables are only available at build time, not at runtime in serverless functions
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
+  console.error('❌ Missing Supabase configuration:', {
+    hasUrl: !!supabaseUrl,
+    hasServiceRoleKey: !!supabaseServiceRoleKey,
+    availableEnvVars: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
+  })
   throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables')
 }
 

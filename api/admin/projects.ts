@@ -5,68 +5,21 @@
  * Requires admin authentication with rate limiting and CSRF protection
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node'
-// TEMPORARILY DISABLED: import { adminEndpoint } from '../_lib/middleware/compose'
+import type { VercelResponse } from '@vercel/node'
+import { adminEndpoint } from '../_lib/middleware/compose'
 import { supabaseAdmin } from '../_lib/utils/supabaseAdmin'
-// TEMPORARILY DISABLED: import type { AuthenticatedRequest } from '../_lib/middleware/types'
-import { createClient } from '@supabase/supabase-js'
+import type { AuthenticatedRequest } from '../_lib/middleware/types'
 
-// Inline auth check (temporary diagnostic - bypasses middleware composition)
-async function getAdminProjects(req: VercelRequest, res: VercelResponse) {
+async function getAdminProjects(req: AuthenticatedRequest, res: VercelResponse) {
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    // DIAGNOSTIC: Temporary inline auth check
-    const supabaseUrl = process.env.SUPABASE_URL
-    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      return res.status(500).json({
-        error: 'Missing Supabase configuration',
-        hasUrl: !!supabaseUrl,
-        hasAnonKey: !!supabaseAnonKey,
-        availableEnvVars: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
-      })
-    }
-
-    // Extract token from cookie
-    const cookies = req.headers.cookie || ''
-    const accessToken = cookies
-      .split(';')
-      .find(c => c.trim().startsWith('sb-access-token='))
-      ?.split('=')[1]
-      ?.trim()
-
-    if (!accessToken) {
-      return res.status(401).json({ error: 'No access token found in cookies' })
-    }
-
-    // Verify user with token
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: `Bearer ${accessToken}` } }
-    })
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Invalid or expired token', details: authError?.message })
-    }
-
-    // Check admin role
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || (profile.role !== 'admin' && profile.role !== 'super_admin')) {
-      return res.status(403).json({ error: 'Admin access required' })
-    }
-
-    console.log(`📊 Admin ${user.email} fetching all projects`)
+    // Admin user is already verified by withAdmin middleware
+    // Non-null assertion is safe here because withAdmin middleware guarantees user exists
+    console.log(`📊 Admin ${req.user!.email} fetching all projects`)
 
     // Get all projects with owner information using the correct JOIN
     const { data, error } = await supabaseAdmin
@@ -173,8 +126,5 @@ async function getAdminProjects(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-// TEMPORARILY DISABLED: Export with admin middleware
-// export default adminEndpoint(getAdminProjects)
-
-// DIAGNOSTIC: Export without middleware wrapper to isolate the issue
-export default getAdminProjects
+// Export with admin middleware (includes rate limiting, CSRF, auth, and admin check)
+export default adminEndpoint(getAdminProjects)
