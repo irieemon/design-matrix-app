@@ -45,7 +45,7 @@ async function getAdminProjects(req: AuthenticatedRequest, res: VercelResponse) 
     }
 
     // Get counts for each project
-    const projectIds = (data || []).map(p => p.id)
+    const projectIds = (data || []).map((p: { id: string }) => p.id)
 
     // Get idea counts
     const { data: ideaCounts } = await supabaseAdmin
@@ -53,7 +53,7 @@ async function getAdminProjects(req: AuthenticatedRequest, res: VercelResponse) 
       .select('project_id')
       .in('project_id', projectIds)
 
-    const ideaCountMap = (ideaCounts || []).reduce((acc, idea) => {
+    const ideaCountMap = (ideaCounts || []).reduce((acc: Record<string, number>, idea: { project_id: string }) => {
       acc[idea.project_id] = (acc[idea.project_id] || 0) + 1
       return acc
     }, {} as Record<string, number>)
@@ -64,7 +64,7 @@ async function getAdminProjects(req: AuthenticatedRequest, res: VercelResponse) 
       .select('project_id, file_size')
       .in('project_id', projectIds)
 
-    const fileStatsMap = (fileData || []).reduce((acc, file) => {
+    const fileStatsMap = (fileData || []).reduce((acc: Record<string, { count: number; totalSize: number }>, file: { project_id: string; file_size: number | null }) => {
       if (!acc[file.project_id]) {
         acc[file.project_id] = { count: 0, totalSize: 0 }
       }
@@ -79,7 +79,7 @@ async function getAdminProjects(req: AuthenticatedRequest, res: VercelResponse) 
       .select('project_id')
       .in('project_id', projectIds)
 
-    const collaboratorCountMap = (collaborators || []).reduce((acc, collab) => {
+    const collaboratorCountMap = (collaborators || []).reduce((acc: Record<string, number>, collab: { project_id: string }) => {
       acc[collab.project_id] = (acc[collab.project_id] || 0) + 1
       return acc
     }, {} as Record<string, number>)
@@ -91,25 +91,28 @@ async function getAdminProjects(req: AuthenticatedRequest, res: VercelResponse) 
       .in('project_id', projectIds)
       .order('updated_at', { ascending: false })
 
-    const lastActivityMap = (activities || []).reduce((acc, activity) => {
+    const lastActivityMap = (activities || []).reduce((acc: Record<string, string>, activity: { project_id: string; updated_at: string }) => {
       if (!acc[activity.project_id]) {
         acc[activity.project_id] = activity.updated_at
       }
       return acc
     }, {} as Record<string, string>)
 
-    const projects = (data || []).map(project => ({
-      ...project,
-      owner: Array.isArray(project.owner) ? project.owner[0] : project.owner,
-      idea_count: ideaCountMap[project.id] || 0,
-      file_count: fileStatsMap[project.id]?.count || 0,
-      total_file_size: fileStatsMap[project.id]?.totalSize || 0,
-      collaborator_count: (collaboratorCountMap[project.id] || 0) + 1, // +1 for owner
-      last_activity: lastActivityMap[project.id] || null,
-      status: project.status || 'active',
-      priority_level: project.priority_level || 'medium',
-      visibility: project.visibility || 'private'
-    }))
+    const projects = (data || []).map((project: Record<string, unknown>) => {
+      const projectId = project.id as string
+      return {
+        ...project,
+        owner: Array.isArray(project.owner) ? project.owner[0] : project.owner,
+        idea_count: ideaCountMap[projectId] || 0,
+        file_count: fileStatsMap[projectId]?.count || 0,
+        total_file_size: fileStatsMap[projectId]?.totalSize || 0,
+        collaborator_count: (collaboratorCountMap[projectId] || 0) + 1, // +1 for owner
+        last_activity: lastActivityMap[projectId] || null,
+        status: project.status || 'active',
+        priority_level: project.priority_level || 'medium',
+        visibility: project.visibility || 'private'
+      }
+    })
 
     return res.status(200).json({
       success: true,
