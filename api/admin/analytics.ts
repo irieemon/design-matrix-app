@@ -490,7 +490,8 @@ async function getAnalytics(req: AuthenticatedRequest, res: VercelResponse) {
 
   try {
     // Admin user is already verified by withAdmin middleware
-    console.log(`📊 Admin ${req.user.email} fetching analytics`)
+    // Non-null assertion is safe here because withAdmin middleware guarantees user exists
+    console.log(`📊 Admin ${req.user!.email} fetching analytics`)
 
     // Parse query parameters
     const {

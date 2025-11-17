@@ -18,7 +18,8 @@ async function getAdminProjects(req: AuthenticatedRequest, res: VercelResponse) 
 
   try {
     // Admin user is already verified by withAdmin middleware
-    console.log(`📊 Admin ${req.user.email} fetching all projects`)
+    // Non-null assertion is safe here because withAdmin middleware guarantees user exists
+    console.log(`📊 Admin ${req.user!.email} fetching all projects`)
 
     // Get all projects with owner information using the correct JOIN
     const { data, error } = await supabaseAdmin

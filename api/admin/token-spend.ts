@@ -466,7 +466,8 @@ async function getTokenSpend(req: AuthenticatedRequest, res: VercelResponse) {
 
   try {
     // Admin user is already verified by withAdmin middleware
-    console.log(`💰 Admin ${req.user.email} fetching token spend analytics`)
+    // Non-null assertion is safe here because withAdmin middleware guarantees user exists
+    console.log(`💰 Admin ${req.user!.email} fetching token spend analytics`)
 
     // Parse query parameters
     const {
