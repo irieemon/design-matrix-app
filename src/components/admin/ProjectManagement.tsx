@@ -25,7 +25,15 @@ const ProjectManagement: React.FC<ProjectManagementProps> = () => {
     setIsLoading(true)
     try {
       // Use backend API endpoint instead of deprecated AdminService method
-      const response = await fetch('/api/admin/projects')
+      const response = await fetch('/api/admin/projects', {
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to load projects')
+      }
+
       const data = await response.json()
 
       if (data.success && data.projects) {
