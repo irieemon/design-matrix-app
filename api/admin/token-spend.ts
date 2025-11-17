@@ -218,7 +218,7 @@ async function getEndpointBreakdown(supabase: any, startDate: Date, endDate: Dat
 
   // Convert to array and calculate percentages
   const result: EndpointSpend[] = []
-  for (const [endpoint, stats] of endpointMap.entries()) {
+  for (const [endpoint, stats] of Array.from(endpointMap.entries())) {
     result.push({
       endpoint,
       callCount: stats.count,
@@ -272,7 +272,7 @@ async function getUserBreakdown(supabase: any, startDate: Date, endDate: Date): 
 
   // Convert to array
   const result: UserSpend[] = []
-  for (const [userId, stats] of userMap.entries()) {
+  for (const [userId, stats] of Array.from(userMap.entries())) {
     result.push({
       userId,
       email: stats.email,
@@ -313,7 +313,7 @@ async function getModelBreakdown(supabase: any, startDate: Date, endDate: Date):
 
   // Convert to array and calculate percentages
   const result: ModelSpend[] = []
-  for (const [model, stats] of modelMap.entries()) {
+  for (const [model, stats] of Array.from(modelMap.entries())) {
     result.push({
       model,
       callCount: stats.count,
@@ -352,7 +352,7 @@ async function getDailyTimeline(supabase: any, startDate: Date, endDate: Date): 
 
   // Convert to array
   const result: DailySpend[] = []
-  for (const [date, stats] of dailyMap.entries()) {
+  for (const [date, stats] of Array.from(dailyMap.entries())) {
     result.push({
       date,
       tokens: stats.tokens,
@@ -398,7 +398,7 @@ async function getHourlyTimeline(supabase: any, startDate: Date, endDate: Date):
 
   // Convert to array
   const result: HourlySpend[] = []
-  for (const [hour, stats] of hourlyMap.entries()) {
+  for (const [hour, stats] of Array.from(hourlyMap.entries())) {
     result.push({
       hour,
       tokens: stats.tokens,

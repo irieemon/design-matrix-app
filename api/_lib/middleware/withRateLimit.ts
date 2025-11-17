@@ -57,7 +57,7 @@ const DEFAULT_RATE_LIMIT_CONFIG: Required<RateLimitConfig> = {
  */
 function cleanupExpiredEntries(): void {
   const now = Date.now()
-  for (const [key, entry] of rateLimitStore.entries()) {
+  for (const [key, entry] of Array.from(rateLimitStore.entries())) {
     if (now > entry.resetTime) {
       rateLimitStore.delete(key)
     }
