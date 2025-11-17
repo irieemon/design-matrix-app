@@ -3,6 +3,7 @@ import { Search, Filter, FolderOpen, Users, Calendar, Activity, Trash2, Eye, Ale
 import { AdminProject, User } from '../../types'
 import { AdminService } from '../../lib/adminService'
 import { logger } from '../../utils/logger'
+import { getAuthHeadersSync } from '../../lib/authHeaders'
 
 interface ProjectManagementProps {
   currentUser: User
@@ -26,6 +27,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = () => {
     try {
       // Use backend API endpoint instead of deprecated AdminService method
       const response = await fetch('/api/admin/projects', {
+        headers: getAuthHeadersSync(),
         credentials: 'include'
       })
 

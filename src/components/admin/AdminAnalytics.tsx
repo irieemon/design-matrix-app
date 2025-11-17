@@ -18,6 +18,7 @@ import type { User } from '../../types'
 import QuickStatsGrid from './QuickStatsGrid'
 import ChartsSection from './ChartsSection'
 import DetailedAnalytics from './DetailedAnalytics'
+import { getAuthHeadersSync } from '../../lib/authHeaders'
 
 // ============================================================================
 // TYPE DEFINITIONS (matching API response)
@@ -132,6 +133,7 @@ export default function AdminAnalytics({ currentUser }: AdminAnalyticsProps) {
       })
 
       const response = await fetch(`/api/admin/analytics?${params}`, {
+        headers: getAuthHeadersSync(),
         credentials: 'include'
       })
 

@@ -12,6 +12,7 @@
 import { useState, useEffect } from 'react'
 import { Zap, DollarSign, TrendingUp, TrendingDown, AlertTriangle, RefreshCw, Calendar, Download } from 'lucide-react'
 import type { User } from '../../types'
+import { getAuthHeadersSync } from '../../lib/authHeaders'
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -137,6 +138,7 @@ export default function TokenSpendAnalytics({ currentUser }: TokenSpendAnalytics
       })
 
       const response = await fetch(`/api/admin/token-spend?${params}`, {
+        headers: getAuthHeadersSync(),
         credentials: 'include'
       })
 
