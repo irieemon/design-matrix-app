@@ -14,15 +14,6 @@
 
 import { createClient } from '@supabase/supabase-js'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-// Direct imports without .js extensions for Vercel compatibility
-import {
-  setAuthCookies,
-  clearAuthCookies,
-  generateCSRFToken,
-  getCookie,
-  COOKIE_NAMES,
-} from './_lib/middleware/cookies'
-import type { AuthenticatedRequest } from './_lib/middleware/types'
 
 // Runtime environment variables (not VITE_ build-time vars)
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
@@ -36,6 +27,135 @@ if (!supabaseUrl || !supabaseAnonKey) {
     hasAnonKey: !!supabaseAnonKey,
     hasServiceRoleKey: !!supabaseServiceRoleKey,
   })
+}
+
+// ============================================================================
+// INLINE COOKIE UTILITIES (to avoid middleware import issues)
+// ============================================================================
+
+interface AuthenticatedRequest extends VercelRequest {
+  user?: {
+    id: string
+    email: string
+    role: string
+    iat?: number
+    exp?: number
+  }
+  csrfToken?: string
+  session?: {
+    accessToken: string
+    refreshToken?: string
+  }
+}
+
+const COOKIE_NAMES = {
+  ACCESS_TOKEN: 'sb-access-token',
+  REFRESH_TOKEN: 'sb-refresh-token',
+  CSRF_TOKEN: 'csrf-token',
+} as const
+
+interface CookieOptions {
+  httpOnly?: boolean
+  secure?: boolean
+  sameSite?: 'strict' | 'lax' | 'none'
+  maxAge?: number
+  path?: string
+  domain?: string
+}
+
+const DEFAULT_COOKIE_OPTIONS: CookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  path: '/',
+}
+
+function setSecureCookie(
+  res: VercelResponse,
+  name: string,
+  value: string,
+  options: CookieOptions = {}
+): void {
+  const opts = { ...DEFAULT_COOKIE_OPTIONS, ...options }
+  const cookieParts: string[] = [`${name}=${encodeURIComponent(value)}`]
+
+  if (opts.httpOnly) cookieParts.push('HttpOnly')
+  if (opts.secure) cookieParts.push('Secure')
+  if (opts.sameSite) {
+    cookieParts.push(`SameSite=${opts.sameSite.charAt(0).toUpperCase() + opts.sameSite.slice(1)}`)
+  }
+  if (opts.maxAge !== undefined) cookieParts.push(`Max-Age=${opts.maxAge}`)
+  if (opts.path) cookieParts.push(`Path=${opts.path}`)
+  if (opts.domain) cookieParts.push(`Domain=${opts.domain}`)
+
+  const existingHeaders = res.getHeader('Set-Cookie') || []
+  const headers = Array.isArray(existingHeaders) ? existingHeaders : [existingHeaders.toString()]
+  headers.push(cookieParts.join('; '))
+  res.setHeader('Set-Cookie', headers)
+}
+
+function setAuthCookies(
+  res: VercelResponse,
+  tokens: { accessToken: string; refreshToken: string; csrfToken: string }
+): void {
+  setSecureCookie(res, COOKIE_NAMES.ACCESS_TOKEN, tokens.accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 60,
+    path: '/',
+  })
+  setSecureCookie(res, COOKIE_NAMES.REFRESH_TOKEN, tokens.refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 60 * 60 * 24 * 7,
+    path: '/api/auth',
+  })
+  setSecureCookie(res, COOKIE_NAMES.CSRF_TOKEN, tokens.csrfToken, {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 60,
+    path: '/',
+  })
+}
+
+function clearAuthCookies(res: VercelResponse): void {
+  const cookieNames = [COOKIE_NAMES.ACCESS_TOKEN, COOKIE_NAMES.REFRESH_TOKEN, COOKIE_NAMES.CSRF_TOKEN]
+  cookieNames.forEach(name => {
+    setSecureCookie(res, name, '', {
+      maxAge: 0,
+      path: name === COOKIE_NAMES.REFRESH_TOKEN ? '/api/auth' : '/',
+    })
+  })
+}
+
+function parseCookies(cookieHeader: string | undefined): Record<string, string> {
+  if (!cookieHeader) return {}
+  const cookies: Record<string, string> = {}
+  cookieHeader.split(';').forEach(cookie => {
+    const [name, ...rest] = cookie.split('=')
+    const value = rest.join('=').trim()
+    if (name && value) {
+      try {
+        cookies[name.trim()] = decodeURIComponent(value)
+      } catch {
+        // Invalid cookie value, skip
+      }
+    }
+  })
+  return cookies
+}
+
+function getCookie(req: { headers: { cookie?: string } }, name: string): string | undefined {
+  const cookies = parseCookies(req.headers.cookie)
+  return cookies[name]
+}
+
+function generateCSRFToken(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32))
+  return Buffer.from(bytes).toString('base64url')
 }
 
 // ============================================================================
