@@ -38,8 +38,7 @@
 -- ----------------------------------------------------------------------------
 
 -- This function is called by multiple admin policies, so fixing it fixes all
-DROP FUNCTION IF EXISTS public.is_admin();
-
+-- Use CREATE OR REPLACE to avoid dependency issues with existing policies
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
 DECLARE
