@@ -11,8 +11,10 @@
  * Performance: Cached responses (5min TTL), <2s fresh queries
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import type { VercelResponse } from '@vercel/node'
+import { adminEndpoint } from '../_lib/middleware/compose'
+import { supabaseAdmin } from '../_lib/utils/supabaseAdmin'
+import type { AuthenticatedRequest } from '../_lib/middleware/types'
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -454,7 +456,7 @@ async function calculateProjections(
 // MAIN HANDLER
 // ============================================================================
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function getTokenSpend(req: AuthenticatedRequest, res: VercelResponse) {
   const startTime = Date.now()
 
   // Only allow GET requests
@@ -463,9 +465,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // TODO: Add admin authentication check
-    // const session = await validateAdminSession(req)
-    // if (!session) return res.status(403).json({ error: 'Admin access required' })
+    // Admin user is already verified by withAdmin middleware
+    console.log(`💰 Admin ${req.user.email} fetching token spend analytics`)
 
     // Parse query parameters
     const {
@@ -493,23 +494,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('❌ Cache miss - fetching fresh data')
 
-    // Create admin Supabase client
-    const supabaseUrl = process.env.SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('❌ Missing Supabase credentials')
-      return res.status(500).json({ error: 'Server configuration error' })
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
     // Get date range
     const { start: startDate, end: endDate } = getDateRange(timeRangeStr)
 
     console.log(`📊 Fetching token spend for ${startDate.toISOString()} to ${endDate.toISOString()}`)
 
-    // Execute all queries in parallel
+    // Execute all queries in parallel using shared supabaseAdmin client
     const [
       overview,
       endpointBreakdown,
@@ -519,13 +509,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       hourlyTimeline,
       projections
     ] = await Promise.all([
-      getOverviewMetrics(supabase, startDate, endDate),
-      getEndpointBreakdown(supabase, startDate, endDate),
-      getUserBreakdown(supabase, startDate, endDate),
-      getModelBreakdown(supabase, startDate, endDate),
-      getDailyTimeline(supabase, startDate, endDate),
-      getHourlyTimeline(supabase, startDate, endDate),
-      calculateProjections(supabase, startDate, endDate, monthlyBudget)
+      getOverviewMetrics(supabaseAdmin, startDate, endDate),
+      getEndpointBreakdown(supabaseAdmin, startDate, endDate),
+      getUserBreakdown(supabaseAdmin, startDate, endDate),
+      getModelBreakdown(supabaseAdmin, startDate, endDate),
+      getDailyTimeline(supabaseAdmin, startDate, endDate),
+      getHourlyTimeline(supabaseAdmin, startDate, endDate),
+      calculateProjections(supabaseAdmin, startDate, endDate, monthlyBudget)
     ])
 
     const response: TokenSpendResponse = {
@@ -566,3 +556,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 }
+
+// Export with admin middleware (includes rate limiting, CSRF, auth, and admin check)
+export default adminEndpoint(getTokenSpend)

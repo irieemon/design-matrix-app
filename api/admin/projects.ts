@@ -2,37 +2,23 @@
  * Admin Projects API Endpoint
  *
  * Provides admin-only access to all projects across the platform
- * Requires admin authentication
+ * Requires admin authentication with rate limiting and CSRF protection
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import type { VercelResponse } from '@vercel/node'
+import { adminEndpoint } from '../_lib/middleware/compose'
+import { supabaseAdmin } from '../_lib/utils/supabaseAdmin'
+import type { AuthenticatedRequest } from '../_lib/middleware/types'
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function getAdminProjects(req: AuthenticatedRequest, res: VercelResponse) {
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    // TODO: Add admin authentication check here
-    // For now, proceeding without auth for development
-
-    // Create admin Supabase client with service role key
-    const supabaseUrl = process.env.SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('❌ Missing Supabase credentials')
-      return res.status(500).json({ error: 'Server configuration error' })
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
+    // Admin user is already verified by withAdmin middleware
+    console.log(`📊 Admin ${req.user.email} fetching all projects`)
 
     // Get all projects with owner information using the correct JOIN
     const { data, error } = await supabaseAdmin
@@ -138,3 +124,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 }
+
+// Export with admin middleware (includes rate limiting, CSRF, auth, and admin check)
+export default adminEndpoint(getAdminProjects)

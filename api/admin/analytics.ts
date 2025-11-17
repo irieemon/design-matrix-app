@@ -11,8 +11,10 @@
  * Performance: Cached responses (5min TTL), < 2s fresh queries
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import type { VercelResponse } from '@vercel/node'
+import { adminEndpoint } from '../_lib/middleware/compose'
+import { supabaseAdmin } from '../_lib/utils/supabaseAdmin'
+import type { AuthenticatedRequest } from '../_lib/middleware/types'
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -478,7 +480,7 @@ async function getTopEndpoints(supabase: any, startDate: Date, endDate: Date, li
 // MAIN HANDLER
 // ============================================================================
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function getAnalytics(req: AuthenticatedRequest, res: VercelResponse) {
   const startTime = Date.now()
 
   // Only allow GET requests
@@ -487,9 +489,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // TODO: Add admin authentication check
-    // const session = await validateAdminSession(req)
-    // if (!session) return res.status(403).json({ error: 'Admin access required' })
+    // Admin user is already verified by withAdmin middleware
+    console.log(`📊 Admin ${req.user.email} fetching analytics`)
 
     // Parse query parameters
     const {
@@ -519,22 +520,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('❌ Cache miss - fetching fresh data')
 
-    // Create admin Supabase client
-    const supabaseUrl = process.env.SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('❌ Missing Supabase credentials')
-      return res.status(500).json({ error: 'Server configuration error' })
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
-
     // Calculate date range
     const { start, end } = getDateRange(
       dateRangeStr,
@@ -547,7 +532,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Parse requested metrics
     const requestedMetrics = metricsStr.split(',')
 
-    // Execute queries in parallel for performance
+    // Execute queries in parallel for performance using shared supabaseAdmin client
     const [
       overview,
       timeSeries,
@@ -609,3 +594,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   }
 }
+
+// Export with admin middleware (includes rate limiting, CSRF, auth, and admin check)
+export default adminEndpoint(getAnalytics)
