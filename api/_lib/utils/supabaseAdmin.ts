@@ -14,22 +14,25 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
+// Log configuration status (don't throw to allow module to load)
 if (!supabaseUrl || !supabaseServiceRoleKey) {
   console.error('❌ Missing Supabase configuration:', {
     hasUrl: !!supabaseUrl,
     hasServiceRoleKey: !!supabaseServiceRoleKey,
     availableEnvVars: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
   })
-  throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables')
 }
 
 // Create admin client with service role key (bypasses RLS)
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-})
+// If credentials are missing, client creation will fail gracefully at query time
+export const supabaseAdmin = supabaseUrl && supabaseServiceRoleKey
+  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : null as any  // Null client - will fail gracefully at usage time instead of module load
 
 /**
  * Track OpenAI token usage
