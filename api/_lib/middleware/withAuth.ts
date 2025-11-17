@@ -12,8 +12,10 @@ import { getCookie, COOKIE_NAMES } from './cookies.js'
 
 export type { AuthenticatedRequest }
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL!
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!
+// Server-side: Use non-VITE_ prefixed variables (runtime variables)
+// VITE_* variables are only available at build time in frontend
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY!
 
 /**
  * Error responses
