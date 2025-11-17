@@ -64,8 +64,14 @@ function cleanupExpiredEntries(): void {
   }
 }
 
-// Periodic cleanup every minute
-setInterval(cleanupExpiredEntries, 60 * 1000)
+// Periodic cleanup every minute (lazy initialization for serverless)
+let cleanupIntervalStarted = false
+function ensureCleanupInterval() {
+  if (!cleanupIntervalStarted) {
+    cleanupIntervalStarted = true
+    setInterval(cleanupExpiredEntries, 60 * 1000)
+  }
+}
 
 /**
  * Rate limiting middleware
@@ -96,6 +102,9 @@ export function withRateLimit(
 
   return (handler: MiddlewareHandler) => {
     return async (req: VercelRequest, res: VercelResponse) => {
+      // Ensure cleanup interval is started (lazy initialization for serverless)
+      ensureCleanupInterval()
+
       // Development bypass (only if explicitly enabled)
       if (bypassRateLimit) {
         console.log(`[DEV] Rate limiting bypassed for ${req.url}`)
