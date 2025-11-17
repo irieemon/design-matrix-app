@@ -116,7 +116,8 @@ SELECT
 FROM pg_policies
 WHERE schemaname = 'public'
   AND (
-    definition LIKE '%auth.uid() IS NOT NULL%'
+    qual LIKE '%auth.uid() IS NOT NULL%'
+    OR with_check LIKE '%auth.uid() IS NOT NULL%'
     OR cmd = 'DELETE'  -- DELETE policies typically don't need explicit check
   );
 
@@ -126,7 +127,7 @@ SELECT
   tablename,
   policyname,
   CASE
-    WHEN definition LIKE '%auth.uid() IS NOT NULL%' THEN '✅ Protected'
+    WHEN qual LIKE '%auth.uid() IS NOT NULL%' OR with_check LIKE '%auth.uid() IS NOT NULL%' THEN '✅ Protected'
     WHEN cmd = 'DELETE' THEN '✅ Delete policy'
     ELSE '⚠️ Review needed'
   END as protection_status
@@ -135,7 +136,7 @@ WHERE schemaname = 'public'
   AND tablename NOT LIKE 'faq%'  -- FAQ tables may intentionally allow public access
 ORDER BY
   CASE
-    WHEN definition LIKE '%auth.uid() IS NOT NULL%' THEN 1
+    WHEN qual LIKE '%auth.uid() IS NOT NULL%' OR with_check LIKE '%auth.uid() IS NOT NULL%' THEN 1
     WHEN cmd = 'DELETE' THEN 2
     ELSE 3
   END,
