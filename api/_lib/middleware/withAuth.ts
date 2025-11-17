@@ -14,8 +14,16 @@ export type { AuthenticatedRequest }
 
 // Server-side: Use non-VITE_ prefixed variables (runtime variables)
 // VITE_* variables are only available at build time in frontend
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL!
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+
+// Validate environment variables at startup
+if (!supabaseUrl) {
+  console.error('❌ CRITICAL: SUPABASE_URL environment variable is not set')
+}
+if (!supabaseAnonKey) {
+  console.error('❌ CRITICAL: SUPABASE_ANON_KEY environment variable is not set')
+}
 
 /**
  * Error responses
@@ -56,6 +64,22 @@ function sendForbidden(res: VercelResponse, message: string): void {
 export const withAuth: MiddlewareWrapper = (handler: MiddlewareHandler) => {
   return async (req: VercelRequest, res: VercelResponse) => {
     try {
+      // Validate environment variables are available
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('❌ Missing Supabase configuration:', {
+          hasUrl: !!supabaseUrl,
+          hasAnonKey: !!supabaseAnonKey,
+          envVars: Object.keys(process.env).filter(k => k.includes('SUPABASE')),
+        })
+        return res.status(500).json({
+          error: {
+            message: 'Server configuration error: Missing Supabase credentials',
+            code: 'CONFIG_ERROR',
+          },
+          timestamp: new Date().toISOString(),
+        })
+      }
+
       // Try to extract access token from httpOnly cookie first (new auth)
       let accessToken = getCookie(req, COOKIE_NAMES.ACCESS_TOKEN)
 
