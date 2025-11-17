@@ -13,6 +13,99 @@ const supabaseUrl = process.env.SUPABASE_URL || ''
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || ''
 
+/**
+ * Parse cookies from request headers
+ */
+function parseCookies(req: VercelRequest): Record<string, string> {
+  const cookieHeader = req.headers.cookie
+  if (!cookieHeader) return {}
+
+  return cookieHeader.split(';').reduce((cookies, cookie) => {
+    const [name, ...rest] = cookie.trim().split('=')
+    if (name && rest.length > 0) {
+      cookies[name] = rest.join('=')
+    }
+    return cookies
+  }, {} as Record<string, string>)
+}
+
+/**
+ * Get a specific cookie value
+ */
+function getCookie(req: VercelRequest, name: string): string | undefined {
+  const cookies = parseCookies(req)
+  return cookies[name]
+}
+
+/**
+ * Authentication result
+ */
+interface AuthResult {
+  userId: string
+  email: string
+  role: string
+}
+
+/**
+ * Authenticate request using either Authorization header or cookie
+ * Supports both header-based and cookie-based authentication
+ */
+async function authenticateRequest(req: VercelRequest): Promise<AuthResult | null> {
+  // Check environment variables
+  if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
+    console.error('❌ Missing Supabase environment variables:', {
+      hasUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey,
+      hasAnonKey: !!supabaseAnonKey,
+    })
+    return null
+  }
+
+  // Try Authorization header first
+  let accessToken: string | undefined
+  const authHeader = req.headers.authorization
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    accessToken = authHeader.substring(7)
+  }
+
+  // Fallback to cookie if no Authorization header
+  if (!accessToken) {
+    accessToken = getCookie(req, 'sb-access-token')
+  }
+
+  if (!accessToken) {
+    return null
+  }
+
+  // Verify user and check admin role
+  const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  })
+
+  const { data: { user }, error: authError } = await authClient.auth.getUser(accessToken)
+  if (authError || !user) {
+    console.error('Auth error:', authError)
+    return null
+  }
+
+  // Check admin role
+  const { data: profile } = await authClient
+    .from('user_profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile || !['admin', 'super_admin'].includes(profile.role)) {
+    return null
+  }
+
+  return {
+    userId: user.id,
+    email: user.email || '',
+    role: profile.role
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow GET requests
   if (req.method !== 'GET') {
@@ -20,50 +113,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Check environment variables
-    if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
-      console.error('❌ Missing Supabase environment variables:', {
-        hasUrl: !!supabaseUrl,
-        hasServiceKey: !!supabaseServiceKey,
-        hasAnonKey: !!supabaseAnonKey,
-      })
-      return res.status(500).json({
-        error: 'Server configuration error',
-        details: 'Missing Supabase credentials',
-      })
-    }
-
-    // Simple auth check - get token from Authorization header
-    const authHeader = req.headers.authorization
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Authenticate and verify admin role
+    const auth = await authenticateRequest(req)
+    if (!auth) {
       return res.status(401).json({ error: 'No authentication token provided' })
     }
 
-    const accessToken = authHeader.substring(7)
-
-    // Verify user and check admin role
-    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: `Bearer ${accessToken}` } },
-    })
-
-    const { data: { user }, error: authError } = await authClient.auth.getUser(accessToken)
-    if (authError || !user) {
-      console.error('Auth error:', authError)
-      return res.status(401).json({ error: 'Invalid or expired token' })
-    }
-
-    // Check admin role
-    const { data: profile } = await authClient
-      .from('user_profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || !['admin', 'super_admin'].includes(profile.role)) {
-      return res.status(403).json({ error: 'Admin access required' })
-    }
-
-    console.log(`📊 Admin ${user.email} fetching all projects`)
+    console.log(`📊 Admin ${auth.email} fetching all projects`)
 
     // Create admin client for querying
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {

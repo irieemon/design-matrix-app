@@ -11,10 +11,97 @@
  * Performance: Cached responses (5min TTL), < 2s fresh queries
  */
 
-import type { VercelResponse } from '@vercel/node'
-import { adminEndpoint } from '../_lib/middleware/compose'
-import { supabaseAdmin } from '../_lib/utils/supabaseAdmin'
-import type { AuthenticatedRequest } from '../_lib/middleware/types'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { createClient } from '@supabase/supabase-js'
+
+// Direct environment variable access (no shared module)
+const supabaseUrl = process.env.SUPABASE_URL || ''
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || ''
+
+// ============================================================================
+// INLINE AUTH UTILITIES (to avoid middleware import issues)
+// ============================================================================
+
+interface AuthResult {
+  userId: string
+  email: string
+  role: string
+}
+
+function parseCookies(cookieHeader: string | undefined): Record<string, string> {
+  if (!cookieHeader) return {}
+  const cookies: Record<string, string> = {}
+  cookieHeader.split(';').forEach(cookie => {
+    const [name, ...rest] = cookie.split('=')
+    const value = rest.join('=').trim()
+    if (name && value) {
+      try {
+        cookies[name.trim()] = decodeURIComponent(value)
+      } catch {
+        // Invalid cookie value, skip
+      }
+    }
+  })
+  return cookies
+}
+
+function getCookie(req: { headers: { cookie?: string } }, name: string): string | undefined {
+  const cookies = parseCookies(req.headers.cookie)
+  return cookies[name]
+}
+
+async function authenticateRequest(req: VercelRequest): Promise<AuthResult | null> {
+  // Check environment variables
+  if (!supabaseUrl || !supabaseServiceKey || !supabaseAnonKey) {
+    console.error('❌ Missing Supabase environment variables')
+    return null
+  }
+
+  // Try to extract access token from Authorization header first
+  let accessToken: string | undefined
+  const authHeader = req.headers.authorization
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    accessToken = authHeader.substring(7)
+  }
+
+  // Fallback to cookie if no Authorization header
+  if (!accessToken) {
+    accessToken = getCookie(req, 'sb-access-token')
+  }
+
+  if (!accessToken) {
+    return null
+  }
+
+  // Verify user and check admin role
+  const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  })
+
+  const { data: { user }, error: authError } = await authClient.auth.getUser(accessToken)
+  if (authError || !user) {
+    console.error('Auth error:', authError)
+    return null
+  }
+
+  // Check admin role
+  const { data: profile } = await authClient
+    .from('user_profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile || !['admin', 'super_admin'].includes(profile.role)) {
+    return null
+  }
+
+  return {
+    userId: user.id,
+    email: user.email || '',
+    role: profile.role
+  }
+}
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -480,7 +567,7 @@ async function getTopEndpoints(supabase: any, startDate: Date, endDate: Date, li
 // MAIN HANDLER
 // ============================================================================
 
-async function getAnalytics(req: AuthenticatedRequest, res: VercelResponse) {
+async function getAnalytics(req: VercelRequest, res: VercelResponse) {
   const startTime = Date.now()
 
   // Only allow GET requests
@@ -489,9 +576,18 @@ async function getAnalytics(req: AuthenticatedRequest, res: VercelResponse) {
   }
 
   try {
-    // Admin user is already verified by withAdmin middleware
-    // Non-null assertion is safe here because withAdmin middleware guarantees user exists
-    console.log(`📊 Admin ${req.user!.email} fetching analytics`)
+    // Authenticate and verify admin role
+    const auth = await authenticateRequest(req)
+    if (!auth) {
+      return res.status(401).json({ error: 'No authentication token provided' })
+    }
+
+    console.log(`📊 Admin ${auth.email} fetching analytics`)
+
+    // Create admin Supabase client
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
 
     // Parse query parameters
     const {
@@ -596,5 +692,5 @@ async function getAnalytics(req: AuthenticatedRequest, res: VercelResponse) {
   }
 }
 
-// Export with admin middleware (includes rate limiting, CSRF, auth, and admin check)
-export default adminEndpoint(getAnalytics)
+// Export handler directly (auth is handled inline)
+export default getAnalytics
