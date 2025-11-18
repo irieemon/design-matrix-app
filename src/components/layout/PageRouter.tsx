@@ -42,6 +42,9 @@ interface PageRouterProps {
   onSetEditingIdea?: (idea: IdeaCard | null) => void
   onSetShowAddModal?: (show: boolean) => void
   onSetShowAIModal?: (show: boolean) => void
+  showAddModal?: boolean
+  showAIModal?: boolean
+  addIdea?: (idea: Partial<IdeaCard>) => Promise<void>
   deleteIdea?: (ideaId: string) => Promise<void>
   updateIdea?: (updatedIdea: IdeaCard) => Promise<void>
   toggleCollapse?: (ideaId: string, collapsed?: boolean) => Promise<void>
@@ -82,6 +85,9 @@ const PageRouter: React.FC<PageRouterProps> = ({
   onSetEditingIdea,
   onSetShowAddModal,
   onSetShowAIModal,
+  showAddModal,
+  showAIModal,
+  addIdea,
   deleteIdea,
   updateIdea: _updateIdea,
   toggleCollapse,
@@ -132,6 +138,10 @@ const PageRouter: React.FC<PageRouterProps> = ({
             onSetEditingIdea={onSetEditingIdea}
             onSetShowAddModal={onSetShowAddModal}
             onSetShowAIModal={onSetShowAIModal}
+            showAddModal={showAddModal}
+            showAIModal={showAIModal}
+            addIdea={addIdea}
+            updateIdea={_updateIdea}
             ideas={ideas}
             deleteIdea={deleteIdea}
             toggleCollapse={toggleCollapse}
