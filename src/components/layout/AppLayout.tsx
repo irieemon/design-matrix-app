@@ -147,9 +147,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({
             onSetEditingIdea: setEditingIdea,
             onSetShowAddModal: setShowAddModal,
             onSetShowAIModal: setShowAIModal,
+            showAddModal,
+            showAIModal,
             ideas,
-            deleteIdea,
+            addIdea,
             updateIdea,
+            deleteIdea,
             toggleCollapse,
             handleDragEnd
           })}
@@ -193,8 +196,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({
         </DndContext>
       </main>
 
-      {/* Modals - wrapped in Suspense for lazy loading */}
-      {addIdea && showAddModal && (
+      {/* Modals - wrapped in Suspense for lazy loading
+          Only render if NOT in fullscreen mode (fullscreen view handles its own modals) */}
+      {!document.fullscreenElement && addIdea && showAddModal && (
         <Suspense fallback={null}>
           <AddIdeaModal
             isOpen={showAddModal}
@@ -205,7 +209,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
         </Suspense>
       )}
 
-      {showAIModal && addIdea && (
+      {!document.fullscreenElement && showAIModal && addIdea && (
         <Suspense fallback={null}>
           <AIIdeaModal
             onClose={() => setShowAIModal(false)}
@@ -216,7 +220,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
         </Suspense>
       )}
 
-      {updateIdea && deleteIdea && editingIdea && (
+      {!document.fullscreenElement && updateIdea && deleteIdea && editingIdea && (
         <Suspense fallback={null}>
           <EditIdeaModal
             idea={editingIdea}

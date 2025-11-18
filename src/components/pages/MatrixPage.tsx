@@ -29,6 +29,11 @@ interface MatrixPageProps {
   deleteIdea?: (ideaId: string) => Promise<void>
   toggleCollapse?: (ideaId: string, collapsed?: boolean) => Promise<void>
   handleDragEnd?: (event: any) => Promise<void>
+  // Modal state for fullscreen rendering
+  showAddModal?: boolean
+  showAIModal?: boolean
+  addIdea?: (idea: Partial<IdeaCard>) => Promise<void>
+  updateIdea?: (ideaId: string, updates: Partial<IdeaCard>) => Promise<void>
 }
 
 const MatrixPage: React.FC<MatrixPageProps> = ({
@@ -46,7 +51,11 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
   ideas = [],
   deleteIdea,
   toggleCollapse,
-  handleDragEnd
+  handleDragEnd,
+  showAddModal,
+  showAIModal,
+  addIdea,
+  updateIdea
 }) => {
   // Full-screen state
   const [isFullScreen, setIsFullScreen] = useState(false)
@@ -92,6 +101,11 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
             onShowAIModal()
             _onSetShowAIModal?.(true)
           }}
+          showAddModal={showAddModal}
+          showAIModal={showAIModal}
+          editingIdea={_editingIdea}
+          onAddIdea={addIdea}
+          onUpdateIdea={updateIdea}
         />,
         document.body
       )}

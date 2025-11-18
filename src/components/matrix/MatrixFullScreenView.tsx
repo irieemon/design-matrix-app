@@ -12,7 +12,7 @@
  * - Grid and label visibility controls
  */
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { DndContext, DragOverlay, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { X, Plus, Sparkles } from 'lucide-react'
 import { IdeaCard, User, Project } from '../../types'
@@ -20,6 +20,11 @@ import DesignMatrix from '../DesignMatrix'
 import { OptimizedIdeaCard } from './OptimizedIdeaCard'
 import { logger } from '../../utils/logger'
 import { Button } from '../ui/Button'
+
+// Lazy load modals for performance
+const AddIdeaModal = lazy(() => import('../AddIdeaModal'))
+const AIIdeaModal = lazy(() => import('../AIIdeaModal'))
+const EditIdeaModal = lazy(() => import('../EditIdeaModal'))
 
 interface MatrixFullScreenViewProps {
   /** Whether full-screen mode is active */
@@ -44,6 +49,14 @@ interface MatrixFullScreenViewProps {
   onShowAddModal?: () => void
   /** Callback to show AI Generate modal */
   onShowAIModal?: () => void
+  /** Modal state - passed from AppLayout for fullscreen rendering */
+  showAddModal?: boolean
+  showAIModal?: boolean
+  editingIdea?: IdeaCard | null
+  /** Callback to add new idea */
+  onAddIdea?: (idea: Partial<IdeaCard>) => Promise<void>
+  /** Callback to update idea */
+  onUpdateIdea?: (ideaId: string, updates: Partial<IdeaCard>) => Promise<void>
 }
 
 /**
@@ -63,7 +76,12 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   onToggleCollapse,
   onDragEnd,
   onShowAddModal,
-  onShowAIModal
+  onShowAIModal,
+  showAddModal,
+  showAIModal,
+  editingIdea,
+  onAddIdea,
+  onUpdateIdea
 }) => {
   // View preferences state
   const [showGrid, setShowGrid] = useState(true)
@@ -403,6 +421,45 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
           </DragOverlay>
         </DndContext>
       </div>
+
+      {/* Modals - Rendered inside fullscreen container for proper visibility */}
+      {showAddModal && onAddIdea && (
+        <Suspense fallback={null}>
+          <AddIdeaModal
+            isOpen={showAddModal}
+            onClose={() => onShowAddModal?.()}
+            onAdd={onAddIdea}
+            currentUser={currentUser}
+          />
+        </Suspense>
+      )}
+
+      {showAIModal && onAddIdea && (
+        <Suspense fallback={null}>
+          <AIIdeaModal
+            onClose={() => onShowAIModal?.()}
+            onAdd={onAddIdea}
+            currentProject={currentProject}
+            currentUser={currentUser}
+          />
+        </Suspense>
+      )}
+
+      {editingIdea && onUpdateIdea && (
+        <Suspense fallback={null}>
+          <EditIdeaModal
+            idea={editingIdea}
+            isOpen={!!editingIdea}
+            onClose={() => onEditIdea(null)}
+            onUpdate={async (updates) => {
+              await onUpdateIdea(editingIdea.id, updates)
+              onEditIdea(null)
+            }}
+            onDelete={onDeleteIdea}
+            currentUser={currentUser}
+          />
+        </Suspense>
+      )}
     </div>
   )
 }
