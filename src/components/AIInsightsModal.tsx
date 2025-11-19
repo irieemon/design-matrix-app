@@ -139,18 +139,9 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
   // Insights saving operation
   const saveOperation = useAsyncOperation(
     async (insights: InsightsReport) => {
-      console.log('💾 SAVE OPERATION STARTING...', { projectId: currentProject?.id, hasInsights: !!insights })
-
       if (!currentProject) {
-        console.error('❌ SAVE ERROR: No project selected')
         throw new Error('No project selected')
       }
-
-      console.log('📊 Calling saveProjectInsights with:', {
-        projectId: currentProject.id,
-        ownerId: currentProject.owner_id,
-        ideaCount: (ideas || []).length
-      })
 
       // saveProjectInsights now throws errors instead of returning null
       const savedId = await ProjectRepository.saveProjectInsights(
@@ -160,12 +151,10 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
         (ideas || []).length
       )
 
-      console.log('✅ SAVE SUCCESS! Insight ID:', savedId)
       return savedId
     },
     {
       onSuccess: (savedId) => {
-        console.log('✅ onSuccess callback triggered:', savedId)
         logger.debug('✅ Insights saved successfully:', savedId)
         setSavedInsightId(savedId)
         if (onInsightSaved) {
@@ -173,7 +162,6 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
         }
       },
       onError: (error) => {
-        console.error('❌ onError callback triggered:', error)
         logger.error('❌ Failed to save insights:', error)
         // Error will be displayed to user via useAsyncOperation error state
       }

@@ -514,12 +514,10 @@ export class ProjectRepository {
     userId: string,
     ideaCount: number
   ): Promise<string> {
-    console.log('🔧 saveProjectInsights called:', { projectId, userId, ideaCount })
     logger.debug('Saving project insights for project:', projectId, 'with', ideaCount, 'ideas')
 
     // ✅ Use authenticated client with RLS enforcement
     // Get the next version number
-    console.log('📊 Fetching version number...')
     const { data: existingInsights, error: versionError } = await supabase
       .from('project_insights')
       .select('version')
@@ -528,14 +526,12 @@ export class ProjectRepository {
       .limit(1)
 
     if (versionError) {
-      console.error('❌ Version fetch error:', versionError)
       logger.error('Error fetching insight version:', versionError)
       throw new Error(`Failed to get insight version: ${versionError.message}`)
     }
 
     const nextVersion = (existingInsights?.[0]?.version || 0) + 1
     const insightsName = `Insights v${nextVersion} - ${new Date().toLocaleDateString()}`
-    console.log('📝 Creating insight:', { nextVersion, insightsName })
 
     const insightData = {
       project_id: projectId,
@@ -546,7 +542,6 @@ export class ProjectRepository {
       ideas_analyzed: ideaCount
     }
 
-    console.log('💾 Inserting into database...')
     const { data, error } = await supabase
       .from('project_insights')
       .insert([insightData])
@@ -554,12 +549,6 @@ export class ProjectRepository {
       .single()
 
     if (error) {
-      console.error('❌ INSERT ERROR:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint
-      })
       logger.error('Error saving project insights:', {
         code: error.code,
         message: error.message,
@@ -570,11 +559,9 @@ export class ProjectRepository {
     }
 
     if (!data) {
-      console.error('❌ No data returned from insert')
       throw new Error('No data returned after saving insights')
     }
 
-    console.log('✅ Insight saved successfully! ID:', data.id)
     logger.debug('✅ Project insights saved successfully:', data.id)
     return data.id
   }
