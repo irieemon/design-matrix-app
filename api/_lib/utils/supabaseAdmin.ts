@@ -53,6 +53,12 @@ export async function trackTokenUsage(params: {
   errorMessage?: string
 }) {
   try {
+    // CRITICAL: Check if supabaseAdmin is initialized
+    if (!supabaseAdmin) {
+      console.error('❌ Supabase admin client not initialized - cannot track token usage')
+      return // Don't throw - token tracking failures shouldn't break user flow
+    }
+
     // Calculate costs based on model pricing
     const costs = getModelCosts(params.model)
     const inputCost = (params.usage.prompt_tokens / 1000000) * costs.input
