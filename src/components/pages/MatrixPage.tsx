@@ -101,6 +101,8 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
             onShowAIModal()
             _onSetShowAIModal?.(true)
           }}
+          onCloseAddModal={() => _onSetShowAddModal?.(false)}
+          onCloseAIModal={() => _onSetShowAIModal?.(false)}
           showAddModal={showAddModal}
           showAIModal={showAIModal}
           editingIdea={_editingIdea}

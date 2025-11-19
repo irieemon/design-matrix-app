@@ -124,3 +124,4 @@ PHASE_*.md
 UNKNOWN_*.md
 UPDATE_*.md
 ZERO_*.md
+.env*.local

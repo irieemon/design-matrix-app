@@ -42,6 +42,8 @@ interface DesignMatrixProps {
   showLabels?: boolean
   /** Whether component is in fullscreen mode */
   isFullscreen?: boolean
+  /** Whether any modal is currently open (for pointer-events management) */
+  hasOpenModal?: boolean
 }
 
 // Matrix component reference for imperative operations
@@ -76,7 +78,8 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   zoomLevel = 1,
   showGrid = true,
   showLabels = true,
-  isFullscreen = false
+  isFullscreen = false,
+  hasOpenModal = false
 }, ref) => {
   const [hoveredQuadrant, setHoveredQuadrant] = useState<string | null>(null)
 
@@ -250,7 +253,11 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   return (
     <div
       className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-8"
-      style={isFullscreen ? { height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' } : { height: 'auto' }}
+      style={{
+        ...(isFullscreen ? { height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' } : { height: 'auto' }),
+        // CRITICAL FIX: Disable pointer events when modals are open to prevent blocking
+        pointerEvents: hasOpenModal ? 'none' : 'auto'
+      }}
     >
       {/* Matrix Container */}
       <div
@@ -269,7 +276,9 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
           transform: `scale(${zoomLevel})`,
           transformOrigin: 'center center',
           transition: 'transform 200ms ease-out',
-          ...(isFullscreen ? { flex: 1, minHeight: 0 } : {})
+          ...(isFullscreen ? { flex: 1, minHeight: 0 } : {}),
+          // CRITICAL FIX: Disable pointer events when modals are open to prevent blocking
+          pointerEvents: hasOpenModal ? 'none' : 'auto'
         }}
       >
         {/* Matrix Grid Background */}
@@ -394,8 +403,8 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
 
         {/* Enhanced Empty State */}
         {(ideas || []).length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center p-8">
+          <div className="absolute inset-0 flex items-center justify-center" style={{ pointerEvents: 'none' }}>
+            <div className="text-center p-8" style={{ pointerEvents: 'auto' }}>
               <div className="text-slate-400 text-5xl mb-6 animate-bounce">💡</div>
               <h3 className="text-xl font-semibold text-slate-900 mb-3">Ready to prioritize?</h3>
               <p className="text-slate-600 mb-6 max-w-md">Add your first idea to get started with the priority matrix. Drag ideas between quadrants to organize by value and effort.</p>

@@ -18,6 +18,8 @@ interface BaseModalProps {
   className?: string
   loading?: boolean
   loadingText?: string
+  /** Custom portal target (defaults to document.body). Use this for fullscreen contexts. */
+  portalTarget?: HTMLElement
 }
 
 const sizeClasses = {
@@ -42,7 +44,8 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   closeOnEscape = true,
   className = '',
   loading = false,
-  loadingText
+  loadingText,
+  portalTarget
 }) => {
   const modalRef = useRef<HTMLDivElement>(null)
   const titleId = useAccessibleId('modal-title')
@@ -98,10 +101,10 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 modal-overlay-container"
       onClick={handleBackdropClick}
-      style={{ zIndex: 9999 }}
+      style={{ zIndex: 9999, pointerEvents: 'none' }}
     >
       {/* Backdrop */}
-      <div className="lux-modal-backdrop" />
+      <div className="lux-modal-backdrop" style={{ pointerEvents: 'auto' }} />
 
       {/* Modal */}
       <div
@@ -117,7 +120,8 @@ export const BaseModal: React.FC<BaseModalProps> = ({
           position: 'relative',
           transform: 'none',
           left: 'auto',
-          top: 'auto'
+          top: 'auto',
+          pointerEvents: 'auto'
         }}
         {...getAccessibleModalProps(title ? titleId : undefined, contentId, true)}
       >
@@ -153,8 +157,9 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     </div>
   )
 
-  // Render modal content to document.body using React portal
-  return createPortal(modalContent, document.body)
+  // Render modal content to portal target (defaults to document.body)
+  // CRITICAL: For fullscreen mode, portal target must be the fullscreen container
+  return createPortal(modalContent, portalTarget || document.body)
 }
 
 interface ConfirmModalProps {

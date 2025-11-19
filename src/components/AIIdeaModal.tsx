@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Sparkles, Wand2, Target, RefreshCw } from 'lucide-react'
 import { IdeaCard, Project, User } from '../types'
 import { aiService } from '../lib/aiService'
@@ -11,9 +12,11 @@ interface AIIdeaModalProps {
   onAdd: (idea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>) => void
   currentProject?: Project | null
   currentUser?: User | null
+  /** Custom portal target for fullscreen mode */
+  portalTarget?: HTMLElement
 }
 
-const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProject, currentUser }) => {
+const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProject, currentUser, portalTarget }) => {
   const [title, setTitle] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedIdea, setGeneratedIdea] = useState<{
@@ -94,10 +97,10 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
     await generateIdea()
   }
 
-  return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-      <div className="lux-modal-backdrop" onClick={onClose} />
-      <div className="lux-modal max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+  const modalContent = (
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ pointerEvents: 'none' }}>
+      <div className="lux-modal-backdrop" onClick={onClose} style={{ pointerEvents: 'auto' }} />
+      <div className="lux-modal max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{ pointerEvents: 'auto' }}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--hairline-default)', backgroundColor: 'var(--canvas-secondary)' }}>
           <div className="flex items-center space-x-3">
@@ -231,6 +234,10 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
       </div>
     </div>
   )
+
+  // Render modal content to portal target (defaults to document.body)
+  // CRITICAL: For fullscreen mode, portal target must be the fullscreen container
+  return createPortal(modalContent, portalTarget || document.body)
 }
 
 export default AIIdeaModal

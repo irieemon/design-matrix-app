@@ -49,6 +49,10 @@ interface MatrixFullScreenViewProps {
   onShowAddModal?: () => void
   /** Callback to show AI Generate modal */
   onShowAIModal?: () => void
+  /** Callback to close Add Idea modal */
+  onCloseAddModal?: () => void
+  /** Callback to close AI Generate modal */
+  onCloseAIModal?: () => void
   /** Modal state - passed from AppLayout for fullscreen rendering */
   showAddModal?: boolean
   showAIModal?: boolean
@@ -77,6 +81,8 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   onDragEnd,
   onShowAddModal,
   onShowAIModal,
+  onCloseAddModal,
+  onCloseAIModal,
   showAddModal,
   showAIModal,
   editingIdea,
@@ -90,6 +96,9 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
 
   // Track if we've successfully entered fullscreen
   const hasEnteredFullscreen = useRef(false)
+
+  // Ref for fullscreen container (used as modal portal target)
+  const fullscreenContainerRef = useRef<HTMLDivElement | null>(null)
 
   // Local drag state for fullscreen DndContext
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -115,6 +124,9 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
    * This is called during the user's click action, so it's a valid user gesture
    */
   const handleContainerRef = React.useCallback((node: HTMLDivElement | null) => {
+    // Store ref for modal portal target
+    fullscreenContainerRef.current = node
+
     if (node && isActive && !hasEnteredFullscreen.current) {
       // Request fullscreen immediately on mount (within user gesture context)
       node.requestFullscreen()
@@ -297,19 +309,32 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   return (
     <div
       ref={handleContainerRef}
-      className="fixed inset-0 z-[9999] bg-slate-900"
+      className="fixed inset-0 z-[9999]"
       style={{
         width: '100vw',
         height: '100vh',
         position: 'fixed',
         top: 0,
-        left: 0
+        left: 0,
+        pointerEvents: 'none' // Allow clicks to pass through to modals
       }}
     >
+      {/* Background layer - separate from interactive elements */}
+      <div
+        className="absolute inset-0 bg-slate-900"
+        style={{
+          // CRITICAL FIX: Disable pointer events when modals are open to prevent blocking
+          pointerEvents: (showAddModal || showAIModal || editingIdea) ? 'none' : 'auto'
+        }}
+      />
       {/* Persistent Action Bar - Always Visible */}
       <div
         className="absolute top-0 left-0 right-0 z-[101] bg-slate-900/95 backdrop-blur-md border-b border-white/10"
-        style={{ height: '64px' }}
+        style={{
+          height: '64px',
+          // CRITICAL FIX: Only enable pointer events when NO modals are open
+          pointerEvents: (showAddModal || showAIModal || editingIdea) ? 'none' : 'auto'
+        }}
       >
         <div className="h-full px-6 flex items-center justify-between">
           {/* Left: Exit + Project Info */}
@@ -365,7 +390,9 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
         className="absolute left-0 right-0 bottom-0"
         style={{
           top: '64px',
-          height: 'calc(100% - 64px)'
+          height: 'calc(100% - 64px)',
+          // CRITICAL FIX: Disable pointer events when modals are open to prevent blocking
+          pointerEvents: (showAddModal || showAIModal || editingIdea) ? 'none' : 'auto'
         }}
       >
         {/* Fullscreen DndContext - keeps drag operations inside fullscreen element */}
@@ -385,6 +412,7 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
             showGrid={showGrid}
             showLabels={showLabels}
             isFullscreen={true}
+            hasOpenModal={!!(showAddModal || showAIModal || editingIdea)}
           />
 
           {/* DragOverlay - rendered inside fullscreen container */}
@@ -422,44 +450,51 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
         </DndContext>
       </div>
 
-      {/* Modals - Rendered inside fullscreen container for proper visibility */}
-      {showAddModal && onAddIdea && (
-        <Suspense fallback={null}>
-          <AddIdeaModal
-            isOpen={showAddModal}
-            onClose={() => onShowAddModal?.()}
-            onAdd={onAddIdea}
-            currentUser={currentUser}
-          />
-        </Suspense>
-      )}
+      {/* Modals - Rendered inside fullscreen container with pointer events enabled */}
+      <div style={{
+        pointerEvents: 'auto'
+      }}>
+        {showAddModal && onAddIdea && (
+          <Suspense fallback={null}>
+            <AddIdeaModal
+              isOpen={showAddModal}
+              onClose={() => onCloseAddModal?.()}
+              onAdd={onAddIdea}
+              currentUser={currentUser}
+              portalTarget={fullscreenContainerRef.current || undefined}
+            />
+          </Suspense>
+        )}
 
-      {showAIModal && onAddIdea && (
-        <Suspense fallback={null}>
-          <AIIdeaModal
-            onClose={() => onShowAIModal?.()}
-            onAdd={onAddIdea}
-            currentProject={currentProject}
-            currentUser={currentUser}
-          />
-        </Suspense>
-      )}
+        {showAIModal && onAddIdea && (
+          <Suspense fallback={null}>
+            <AIIdeaModal
+              onClose={() => onCloseAIModal?.()}
+              onAdd={onAddIdea}
+              currentProject={currentProject}
+              currentUser={currentUser}
+              portalTarget={fullscreenContainerRef.current || undefined}
+            />
+          </Suspense>
+        )}
 
-      {editingIdea && onUpdateIdea && (
-        <Suspense fallback={null}>
-          <EditIdeaModal
-            idea={editingIdea}
-            isOpen={!!editingIdea}
-            onClose={() => onEditIdea(null)}
-            onUpdate={async (updates) => {
-              await onUpdateIdea(editingIdea.id, updates)
-              onEditIdea(null)
-            }}
-            onDelete={onDeleteIdea}
-            currentUser={currentUser}
-          />
-        </Suspense>
-      )}
+        {editingIdea && onUpdateIdea && (
+          <Suspense fallback={null}>
+            <EditIdeaModal
+              idea={editingIdea}
+              isOpen={!!editingIdea}
+              onClose={() => onEditIdea(null)}
+              onUpdate={async (updates) => {
+                await onUpdateIdea(editingIdea.id, updates)
+                onEditIdea(null)
+              }}
+              onDelete={onDeleteIdea}
+              currentUser={currentUser}
+              portalTarget={fullscreenContainerRef.current || undefined}
+            />
+          </Suspense>
+        )}
+      </div>
     </div>
   )
 }

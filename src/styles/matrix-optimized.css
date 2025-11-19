@@ -43,6 +43,7 @@
   position: absolute;
   inset: 0;
   z-index: var(--z-default);
+  pointer-events: none; /* Allow clicks to pass through to modals */
 
   /* 4-Quadrant Grid Background */
   background-image:

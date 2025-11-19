@@ -11,9 +11,11 @@ interface AddIdeaModalProps {
   onClose: () => void
   onAdd: (idea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>) => void
   currentUser?: User | null
+  /** Custom portal target for fullscreen mode */
+  portalTarget?: HTMLElement
 }
 
-const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ isOpen, onClose, onAdd, currentUser }) => {
+const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ isOpen, onClose, onAdd, currentUser, portalTarget }) => {
   const [content, setContent] = useState('')
   const [details, setDetails] = useState('')
   const [x, setX] = useState(260) // Center of 520px usable area
@@ -50,6 +52,7 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ isOpen, onClose, onAdd, cur
       onClose={onClose}
       title="Add New Idea"
       size="xl"
+      portalTarget={portalTarget}
     >
       <div data-testid="add-idea-modal">
         <div className="flex items-center space-x-3 mb-6">

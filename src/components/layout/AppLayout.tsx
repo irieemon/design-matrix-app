@@ -60,9 +60,20 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   handleDragEnd
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [isInFullscreen, setIsInFullscreen] = useState(false)
 
   // Initialize skip links for accessibility
   useSkipLinks()
+
+  // Track fullscreen state changes to prevent duplicate modal rendering
+  React.useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsInFullscreen(!!document.fullscreenElement)
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
 
   // Use external state if provided, otherwise internal state
   const [internalActiveId, setInternalActiveId] = useState<string | null>(null)
@@ -198,7 +209,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
 
       {/* Modals - wrapped in Suspense for lazy loading
           Only render if NOT in fullscreen mode (fullscreen view handles its own modals) */}
-      {!document.fullscreenElement && addIdea && showAddModal && (
+      {!isInFullscreen && addIdea && showAddModal && (
         <Suspense fallback={null}>
           <AddIdeaModal
             isOpen={showAddModal}
@@ -209,7 +220,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
         </Suspense>
       )}
 
-      {!document.fullscreenElement && showAIModal && addIdea && (
+      {!isInFullscreen && showAIModal && addIdea && (
         <Suspense fallback={null}>
           <AIIdeaModal
             onClose={() => setShowAIModal(false)}
@@ -220,7 +231,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
         </Suspense>
       )}
 
-      {!document.fullscreenElement && updateIdea && deleteIdea && editingIdea && (
+      {!isInFullscreen && updateIdea && deleteIdea && editingIdea && (
         <Suspense fallback={null}>
           <EditIdeaModal
             idea={editingIdea}

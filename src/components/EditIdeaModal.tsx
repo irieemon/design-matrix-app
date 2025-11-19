@@ -16,9 +16,11 @@ interface EditIdeaModalProps {
   onClose: () => void
   onUpdate: (idea: IdeaCard) => void
   onDelete: (ideaId: string) => void
+  /** Custom portal target for fullscreen mode */
+  portalTarget?: HTMLElement
 }
 
-const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser, onClose, onUpdate, onDelete }) => {
+const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser, onClose, onUpdate, onDelete, portalTarget }) => {
   const { showWarning, showError, showSuccess } = useToast()
   const [content, setContent] = useState(idea?.content || '')
   const [details, setDetails] = useState(idea?.details || '')
@@ -196,6 +198,7 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
       onClose={handleCancel}
       title="Edit Idea"
       size="xl"
+      portalTarget={portalTarget}
     >
       <div className="p-6" data-testid="edit-idea-modal">
         <div className="flex items-center space-x-3 mb-6">
