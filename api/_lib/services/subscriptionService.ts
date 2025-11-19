@@ -7,7 +7,7 @@
  * DO NOT import from ../../../src/ - those are frontend-only modules!
  */
 
-import { supabaseAdmin } from '../utils/supabaseAdmin'
+import { supabaseAdmin } from '../utils/supabaseAdmin.js'
 
 export interface LimitCheckResult {
   canUse: boolean
