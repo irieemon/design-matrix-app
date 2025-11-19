@@ -23,27 +23,27 @@ export {
   parseCookies,
   getCookie,
   generateCSRFToken,
-} from './cookies'
+} from './cookies.js'
 
 // Authentication middleware
 export {
   withAuth,
   withAdmin,
   withOptionalAuth,
-} from './withAuth'
+} from './withAuth.js'
 
 // CSRF protection
 export {
   withCSRF,
   withOriginValidation,
-} from './withCSRF'
+} from './withCSRF.js'
 
 // Rate limiting
 export {
   withRateLimit,
   withStrictRateLimit,
   withUserRateLimit,
-} from './withRateLimit'
+} from './withRateLimit.js'
 
 // Composition utilities
 export {
@@ -51,4 +51,4 @@ export {
   publicEndpoint,
   authenticatedEndpoint,
   adminEndpoint,
-} from './compose'
+} from './compose.js'

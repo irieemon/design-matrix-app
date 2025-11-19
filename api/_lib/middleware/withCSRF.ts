@@ -7,7 +7,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type { AuthenticatedRequest, MiddlewareHandler, MiddlewareWrapper, CSRFConfig } from './types'
-import { getCookie, COOKIE_NAMES } from './cookies'
+import { getCookie, COOKIE_NAMES } from './cookies.js'
 
 /**
  * Default CSRF configuration
