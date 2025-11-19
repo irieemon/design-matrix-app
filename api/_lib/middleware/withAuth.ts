@@ -141,6 +141,13 @@ export const withAuth: MiddlewareWrapper = (handler: MiddlewareHandler) => {
       // Call the handler
       return await handler(authReq, res)
     } catch (error) {
+      // Check if this is an authentication error (invalid/expired token)
+      if (error && typeof error === 'object' && '__isAuthError' in error) {
+        console.error('Auth verification error (caught exception):', error)
+        return sendUnauthorized(res, 'Invalid or expired token')
+      }
+
+      // For all other errors, return 500
       console.error('withAuth middleware error:', error)
       return res.status(500).json({
         error: {
