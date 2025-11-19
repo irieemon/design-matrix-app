@@ -101,8 +101,27 @@ export class AIInsightsService {
     }
 
     try {
-      // In a real implementation, get actual auth token
-      headers['Authorization'] = 'Bearer placeholder-token'
+      // CRITICAL FIX: Read token from localStorage directly to avoid getSession() timeout
+      // This is the SAME pattern used throughout the app (ProfileService, useAuth, ProjectContext)
+      const SUPABASE_STORAGE_KEY = 'sb-vfovtgtjailvrphsgafv-auth-token'
+      const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
+
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          const token = parsed.access_token
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`
+            logger.debug('🔑 AIInsightsService: Using access token from localStorage')
+          } else {
+            logger.warn('⚠️ AIInsightsService: No access token found in localStorage session')
+          }
+        } catch (parseError) {
+          logger.error('❌ AIInsightsService: Error parsing localStorage session:', parseError)
+        }
+      } else {
+        logger.warn('⚠️ AIInsightsService: No session found in localStorage')
+      }
     } catch (error) {
       logger.warn('Failed to get auth headers:', { error: error instanceof Error ? error.message : String(error) })
     }
