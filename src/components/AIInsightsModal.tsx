@@ -143,16 +143,13 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
         throw new Error('No project selected')
       }
 
+      // saveProjectInsights now throws errors instead of returning null
       const savedId = await ProjectRepository.saveProjectInsights(
         currentProject.id,
         insights,
         currentProject.owner_id || 'unknown',
         (ideas || []).length
       )
-
-      if (!savedId) {
-        throw new Error('Failed to save insights')
-      }
 
       return savedId
     },
@@ -164,7 +161,10 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
           onInsightSaved(savedId)
         }
       },
-      onError: (error) => logger.error('Failed to save insights:', error)
+      onError: (error) => {
+        logger.error('❌ Failed to save insights:', error)
+        // Error will be displayed to user via useAsyncOperation error state
+      }
     }
   )
 

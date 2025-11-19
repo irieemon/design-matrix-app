@@ -513,48 +513,57 @@ export class ProjectRepository {
     insights: any,
     userId: string,
     ideaCount: number
-  ): Promise<string | null> {
-    try {
-      logger.debug('Saving project insights for project:', projectId, 'with', ideaCount, 'ideas')
+  ): Promise<string> {
+    logger.debug('Saving project insights for project:', projectId, 'with', ideaCount, 'ideas')
 
-      // ✅ Use authenticated client with RLS enforcement
-      // Get the next version number
-      const { data: existingInsights } = await supabase
-        .from('project_insights')
-        .select('version')
-        .eq('project_id', projectId)
-        .order('version', { ascending: false })
-        .limit(1)
+    // ✅ Use authenticated client with RLS enforcement
+    // Get the next version number
+    const { data: existingInsights, error: versionError } = await supabase
+      .from('project_insights')
+      .select('version')
+      .eq('project_id', projectId)
+      .order('version', { ascending: false })
+      .limit(1)
 
-      const nextVersion = (existingInsights?.[0]?.version || 0) + 1
-      const insightsName = `Insights v${nextVersion} - ${new Date().toLocaleDateString()}`
-
-      const insightData = {
-        project_id: projectId,
-        version: nextVersion,
-        name: insightsName,
-        insights_data: insights,
-        created_by: userId,
-        ideas_analyzed: ideaCount
-      }
-
-      const { data, error } = await supabase
-        .from('project_insights')
-        .insert([insightData])
-        .select()
-        .single()
-
-      if (error) {
-        logger.error('Error saving project insights:', error)
-        throw new Error(error.message)
-      }
-
-      logger.debug('Project insights saved successfully:', data.id)
-      return data.id
-    } catch (error) {
-      logger.error('Failed to save project insights:', error)
-      return null
+    if (versionError) {
+      logger.error('Error fetching insight version:', versionError)
+      throw new Error(`Failed to get insight version: ${versionError.message}`)
     }
+
+    const nextVersion = (existingInsights?.[0]?.version || 0) + 1
+    const insightsName = `Insights v${nextVersion} - ${new Date().toLocaleDateString()}`
+
+    const insightData = {
+      project_id: projectId,
+      version: nextVersion,
+      name: insightsName,
+      insights_data: insights,
+      created_by: userId,
+      ideas_analyzed: ideaCount
+    }
+
+    const { data, error } = await supabase
+      .from('project_insights')
+      .insert([insightData])
+      .select()
+      .single()
+
+    if (error) {
+      logger.error('Error saving project insights:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      })
+      throw new Error(`Failed to save insights: ${error.message}`)
+    }
+
+    if (!data) {
+      throw new Error('No data returned after saving insights')
+    }
+
+    logger.debug('✅ Project insights saved successfully:', data.id)
+    return data.id
   }
 
   /**
