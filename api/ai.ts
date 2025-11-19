@@ -16,10 +16,10 @@ import { InputValidator, commonRules } from './_lib/utils/validation.js'
 import { withAuth } from './_lib/middleware/withAuth.js'
 import type { AuthenticatedRequest } from './_lib/middleware/types.js'
 
-// Import subscription services for limit enforcement
-// Note: Using relative paths since these are TypeScript files in src/
-import { subscriptionService } from '../src/lib/services/subscriptionService.js'
-import { usageTrackingService } from '../src/lib/services/usageTrackingService.js'
+// Import SERVER-SIDE subscription services for limit enforcement
+// CRITICAL: Must use backend services, NOT frontend code!
+// Frontend services use import.meta.env which doesn't exist in Node.js
+import { checkLimit, trackAIUsage } from './_lib/services/subscriptionService.js'
 
 // Import admin utilities for token tracking
 import { trackTokenUsage } from './_lib/utils/supabaseAdmin.js'
@@ -53,7 +53,7 @@ async function handleGenerateIdeas(req: AuthenticatedRequest, res: VercelRespons
     const userId = req.user!.id // Guaranteed to exist because of withAuth
     console.log('🔍 Checking AI limit for user:', userId)
 
-    const limitCheck = await subscriptionService.checkLimit(userId, 'ai_ideas')
+    const limitCheck = await checkLimit(userId, 'ai_ideas')
     console.log('📊 AI limit status:', {
       canUse: limitCheck.canUse,
       current: limitCheck.current,
@@ -136,7 +136,7 @@ async function handleGenerateIdeas(req: AuthenticatedRequest, res: VercelRespons
     // ✅ USAGE TRACKING: Track AI idea generation
     console.log('📝 Tracking AI usage for user:', userId)
     try {
-      await usageTrackingService.trackAIUsage(userId)
+      await trackAIUsage(userId, 'ai_ideas')
       console.log('✅ AI usage tracked successfully')
     } catch (trackingError) {
       console.error('⚠️ Failed to track AI usage (non-critical):', trackingError)
