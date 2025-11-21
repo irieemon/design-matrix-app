@@ -36,7 +36,7 @@ export class IdeaRepository {
       }
 
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get all ideas:', error)
       throw error
     }
@@ -59,7 +59,7 @@ export class IdeaRepository {
       }
 
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get project ideas:', error)
       throw error
     }
@@ -94,7 +94,7 @@ export class IdeaRepository {
       }
 
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get ideas by project:', error)
       throw error
     }
@@ -132,7 +132,7 @@ export class IdeaRepository {
 
       logger.debug('Idea created successfully:', data.id)
       return createSuccessResponse(data)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to create idea:', error)
       return createErrorResponse<IdeaCard>(
         error instanceof Error ? error.message : 'Unknown error occurred',
@@ -170,7 +170,7 @@ export class IdeaRepository {
 
       logger.debug('Idea updated successfully:', id)
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to update idea:', error)
       return null
     }
@@ -195,7 +195,7 @@ export class IdeaRepository {
 
       logger.debug('Idea deleted successfully:', id)
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to delete idea:', error)
       return false
     }
@@ -249,7 +249,7 @@ export class IdeaRepository {
 
       logger.debug('Idea locked successfully:', ideaId)
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to lock idea:', error)
       return false
     }
@@ -278,7 +278,7 @@ export class IdeaRepository {
 
       logger.debug('Idea unlocked successfully:', ideaId)
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to unlock idea:', error)
       return false
     }
@@ -308,7 +308,7 @@ export class IdeaRepository {
       }
 
       logger.debug('Stale locks cleaned up successfully')
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to cleanup stale locks:', error)
     }
   }
@@ -330,7 +330,7 @@ export class IdeaRepository {
       }
 
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get locked ideas:', error)
       return []
     }
@@ -366,7 +366,7 @@ export class IdeaRepository {
               ? await IdeaRepository.getProjectIdeas(projectId)
               : await IdeaRepository.getAllIdeas()
             callback(ideas)
-          } catch (error) {
+          } catch (_error) {
             logger.error('Error loading initial ideas:', error)
             callback(null)
           }
@@ -397,7 +397,7 @@ export class IdeaRepository {
                   ? await IdeaRepository.getProjectIdeas(projectId)
                   : await IdeaRepository.getAllIdeas()
                 callback(ideas)
-              } catch (error) {
+              } catch (_error) {
                 logger.error('Error refreshing ideas:', error)
                 callback(null)
               }
@@ -412,7 +412,7 @@ export class IdeaRepository {
         logger.debug('🔴 Unsubscribing from ideas channel:', channelName)
         supabase.removeChannel(channel)
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to set up ideas subscription:', error)
       return () => {} // Return empty unsubscribe function
     }

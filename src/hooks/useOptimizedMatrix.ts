@@ -73,7 +73,7 @@ export const useOptimizedMatrix = (options: UseOptimizedMatrixOptions): UseOptim
           }, supabase)
         }
         logger.debug('✅ Batch position update completed:', updates.length, 'ideas')
-      } catch (error) {
+      } catch (_error) {
         logger.error('❌ Batch position update failed:', error)
         setError('Failed to update idea positions')
       } finally {
@@ -116,7 +116,7 @@ export const useOptimizedMatrix = (options: UseOptimizedMatrixOptions): UseOptim
       setIdeas(loadedIdeas || [])
       logger.debug('✅ Loaded ideas from database:', loadedIdeas?.length || 0)
 
-    } catch (err) {
+    } catch (_err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load ideas'
       logger.error('❌ Failed to load ideas:', errorMessage)
       setError(errorMessage)
@@ -179,7 +179,7 @@ export const useOptimizedMatrix = (options: UseOptimizedMatrixOptions): UseOptim
       setShowAddModal?.(false)
       setShowAIModal?.(false)
 
-    } catch (err) {
+    } catch (_err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to add idea'
       logger.error('❌ Failed to add idea:', errorMessage)
       setError(errorMessage)
@@ -226,7 +226,7 @@ export const useOptimizedMatrix = (options: UseOptimizedMatrixOptions): UseOptim
 
       setEditingIdea?.(null)
 
-    } catch (err) {
+    } catch (_err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update idea'
       logger.error('❌ Failed to update idea:', errorMessage)
       setError(errorMessage)
@@ -266,7 +266,7 @@ export const useOptimizedMatrix = (options: UseOptimizedMatrixOptions): UseOptim
 
       setEditingIdea?.(null)
 
-    } catch (err) {
+    } catch (_err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete idea'
       logger.error('❌ Failed to delete idea:', errorMessage)
       setError(errorMessage)
@@ -292,7 +292,7 @@ export const useOptimizedMatrix = (options: UseOptimizedMatrixOptions): UseOptim
       await DatabaseService.updateIdea(ideaId, {
         is_collapsed: newCollapsedState
       }, supabase)
-    } catch (err) {
+    } catch (_err) {
       logger.error('❌ Failed to toggle collapse:', err)
       // Revert on error
       setIdeas(prev => prev.map(i =>
@@ -341,7 +341,7 @@ export const useOptimizedMatrix = (options: UseOptimizedMatrixOptions): UseOptim
 
       logger.debug('🚚 Moved idea:', ideaId, 'to', newPosition)
 
-    } catch (err) {
+    } catch (_err) {
       logger.error('❌ Failed to handle drag end:', err)
       setError('Failed to move idea')
     } finally {

@@ -179,7 +179,7 @@ class AuthPerformanceValidator {
       )
 
       conflicts.push(...authKeys, ...userKeys)
-    } catch (error) {
+    } catch (_error) {
       logger.warn('⚠️ Could not check storage conflicts:', error)
     }
 

@@ -116,7 +116,7 @@ describe('NetworkPerformanceMonitor', () => {
 
       try {
         await fetch('/api/fail')
-      } catch (error) {
+      } catch (_error) {
         // Expected error
       }
 
@@ -595,7 +595,7 @@ describe('NetworkPerformanceMonitor', () => {
 
       try {
         await fetch('/api/timeout')
-      } catch (error) {
+      } catch (_error) {
         // Expected
       }
 
@@ -679,7 +679,7 @@ describe('NetworkPerformanceMonitor', () => {
 
       try {
         await fetch('/api/fail')
-      } catch (error) {
+      } catch (_error) {
         // Expected
       }
 

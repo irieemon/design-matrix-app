@@ -23,21 +23,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
   // Use context user data as primary, fallback to props for backwards compatibility
   const currentUser = contextUser || propCurrentUser
 
-  // Early return if no user data available
-  if (!currentUser) {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <h3 className="text-lg font-semibold text-yellow-900 mb-2">Loading User Data...</h3>
-          <p className="text-yellow-700 mb-4">Please wait while we load your profile information.</p>
-          <div className="mt-4">
-            <div className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
+  // ✅ HOOKS FIX: Move all hooks BEFORE early return (Rules of Hooks requirement)
   const [displayName, setDisplayName] = useState(currentUser?.full_name || currentUser?.email || contextDisplayName || '')
   const [email, setEmail] = useState(currentUser?.email || contextEmail || '')
   const [isEditing, setIsEditing] = useState(false)
@@ -54,12 +40,27 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
           setSubscription(sub)
           setLoadingSubscription(false)
         })
-        .catch(err => {
-          console.error('Failed to load subscription:', err)
+        .catch(_err => {
+          console.error('Failed to load subscription:', _err)
           setLoadingSubscription(false)
         })
     }
   }, [currentUser?.id])
+
+  // Early return if no user data available (AFTER all hooks)
+  if (!currentUser) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <h3 className="text-lg font-semibold text-yellow-900 mb-2">Loading User Data...</h3>
+          <p className="text-yellow-700 mb-4">Please wait while we load your profile information.</p>
+          <div className="mt-4">
+            <div className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const handleSaveProfile = async () => {
     setSaveStatus('saving')
@@ -78,7 +79,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
 
       // Reset save status after 2 seconds
       setTimeout(() => setSaveStatus('idle'), 2000)
-    } catch (error) {
+    } catch (_error) {
       setSaveStatus('error')
       setTimeout(() => setSaveStatus('idle'), 3000)
     }
@@ -115,7 +116,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
 
       const { url } = await response.json()
       window.location.href = url
-    } catch (error) {
+    } catch (_error) {
       console.error('Error creating portal session:', error)
       alert('Failed to open subscription management. Please try again.')
       setManagingSubscription(false)

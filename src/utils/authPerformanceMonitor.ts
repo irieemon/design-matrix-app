@@ -292,7 +292,7 @@ class AuthPerformanceMonitor {
       }
 
       return storageTime
-    } catch (error) {
+    } catch (_error) {
       this.logger.error('❌ Storage performance check failed:', error as Error)
       return -1
     }
@@ -319,7 +319,7 @@ class AuthPerformanceMonitor {
       }
 
       return networkTime
-    } catch (error) {
+    } catch (_error) {
       const networkTime = performance.now() - start
       this.logger.warn('⚠️ Network check failed:', { error, time: `${networkTime.toFixed(1)}ms` })
       return networkTime
@@ -345,13 +345,13 @@ class AuthPerformanceMonitor {
   }
 
   // Async version for actual measurement (currently unused)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   // @ts-expect-error - Preserved for future async measurement
   private async _measureAnimationFrameRateAsync(): Promise<number> {
     if (typeof requestAnimationFrame === 'undefined') return 60
 
     let frameCount = 0
-    let startTime = performance.now()
+    const startTime = performance.now()
     const duration = 1000 // Measure for 1 second
 
     return new Promise<number>((resolve) => {
@@ -461,7 +461,7 @@ if (import.meta.env.DEV) {
           const { AuthPerformanceTest } = await import('./authPerformanceTest')
           const report = AuthPerformanceTest.generateOptimizationReport()
           authPerformanceMonitor['logger'].debug('Performance report generated', { report })
-        } catch (error) {
+        } catch (_error) {
           authPerformanceMonitor['logger'].warn('Failed to generate performance report', { error: error as Error })
         }
         testScheduled = false

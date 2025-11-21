@@ -113,7 +113,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
         logger.debug('🔍 DIAGNOSTIC: About to call setIdeas')
         setIdeas(ideas)
         logger.debug('🔍 DIAGNOSTIC: setIdeas completed')
-      } catch (error) {
+      } catch (_error) {
         logger.error('🚨 ERROR in loadIdeas:', error)
         setIdeas([])
       }
@@ -227,20 +227,20 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
   }, []) // ✅ Empty dependencies - pure functional updates
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
-    console.log('🔵 useIdeas.handleDragEnd CALLED', event)
-    const { active, delta, over } = event
+    logger.debug('🔵 useIdeas.handleDragEnd CALLED', event)
+    const { active, delta, over: _over } = event
 
-    console.log('🔵 Delta:', delta)
+    logger.debug('🔵 Delta:', delta)
     if (!delta || (delta.x === 0 && delta.y === 0)) {
-      console.log('⚠️ No delta or zero delta, returning early')
+      logger.debug('⚠️ No delta or zero delta, returning early')
       return
     }
 
     const ideaId = active.id as string
     const idea = optimisticData.find(i => i.id === ideaId)
-    console.log('🔵 Found idea:', idea ? idea.id : 'NOT FOUND')
+    logger.debug('🔵 Found idea:', idea ? idea.id : 'NOT FOUND')
     if (!idea) {
-      console.log('⚠️ Idea not found in optimisticData, returning early')
+      logger.debug('⚠️ Idea not found in optimisticData, returning early')
       return
     }
 

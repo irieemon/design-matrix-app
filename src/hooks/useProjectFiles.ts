@@ -31,7 +31,7 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
       }))
       
       logger.debug('📂 Loaded project files from backend:', files.length)
-    } catch (error) {
+    } catch (_error) {
       logger.error('❌ Error loading project files from backend:', error)
     } finally {
       setIsLoading(false)
@@ -68,7 +68,7 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
 
             return prev
           })
-        } catch (error) {
+        } catch (_error) {
           logger.error('❌ Error polling for status updates:', error)
         }
       }, 5000) // Poll every 5 seconds
@@ -214,7 +214,7 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
             })
           }
         }, 2000)
-      } catch (error) {
+      } catch (_error) {
         // NON-BLOCKING: If subscription setup fails, just log and continue with polling
         logger.warn('⚠️ Failed to set up real-time subscription (non-blocking, using polling fallback):', error)
       }
@@ -225,7 +225,7 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
         if (subscription) {
           try {
             subscription.unsubscribe()
-          } catch (error) {
+          } catch (_error) {
             logger.warn('⚠️ Error unsubscribing from channel:', error)
           }
         }
@@ -276,7 +276,7 @@ export const useProjectFiles = (currentProject: Project | null): UseProjectFiles
         logger.error('❌ Failed to delete file:', result.error)
         throw new Error(result.error)
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 Error deleting file:', error)
       throw error
     }

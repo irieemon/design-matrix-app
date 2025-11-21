@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+ 
 /**
  * Simple browser console test functions for locking
  * Copy and paste these into browser console

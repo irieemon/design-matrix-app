@@ -137,7 +137,7 @@ export const FormTestPage: React.FC = () => {
         setSubmitResults(prev => [...prev, `${new Date().toLocaleTimeString()}: Form reset completed`]);
       }, 3000);
 
-    } catch (error) {
+    } catch (_error) {
       setSubmitResults(prev => [...prev, `${new Date().toLocaleTimeString()}: Form submission failed`]);
       if (submitRef.current) {
         submitRef.current.setError?.('Submission failed. Please try again.');

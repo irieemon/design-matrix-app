@@ -65,7 +65,7 @@ export abstract class BaseAiService {
           const parsed = JSON.parse(stored)
           token = parsed.access_token
           logger.debug('🔑 BaseAiService: Using access token from localStorage (bypassing getSession)')
-        } catch (error) {
+        } catch (_error) {
           logger.error('BaseAiService: Error parsing localStorage session:', error)
         }
       }
@@ -76,7 +76,7 @@ export abstract class BaseAiService {
           'Authorization': `Bearer ${token}`
         }
       }
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Could not get auth token:', error)
     }
 
@@ -109,7 +109,7 @@ export abstract class BaseAiService {
       }
 
       return await response.json()
-    } catch (error) {
+    } catch (_error) {
       logger.error(`Error calling ${endpoint}:`, error)
       throw error
     }

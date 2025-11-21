@@ -462,7 +462,7 @@ export async function exportInsightsToPDFProfessional(
     pdfMakeInstance.createPdf(documentDefinition).download(fileName)
 
     insightsLogger.info('Professional insights PDF generated successfully', { fileName })
-  } catch (error) {
+  } catch (_error) {
     insightsLogger.error('Failed to generate professional insights PDF', error)
     throw error
   }

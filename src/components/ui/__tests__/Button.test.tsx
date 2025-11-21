@@ -42,7 +42,7 @@ vi.mock('../../../hooks/useComponentState', () => ({
     executeAction: vi.fn(async (action: () => Promise<void>) => {
       try {
         await action()
-      } catch (error) {
+      } catch (_error) {
         // Error handling is done in component
         throw error
       }

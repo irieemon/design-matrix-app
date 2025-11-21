@@ -51,7 +51,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
       try {
         const url = await FileService.getFileUrl(file.storage_path)
         setFileUrl(url)
-      } catch (error) {
+      } catch (_error) {
         logger.error('Failed to load file URL:', error)
         setFileUrl(null)
       } finally {
@@ -98,7 +98,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ file, isOpen, onClose }) => {
       // Cleanup
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error downloading file:', error)
       showError('Failed to download file. Please try again.')
     }

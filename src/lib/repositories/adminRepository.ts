@@ -127,7 +127,7 @@ export class AdminRepository {
         monthly_tokens: 0, // TODO: Compute from ai_token_usage
         monthly_cost_usd: 0 // TODO: Compute from ai_token_usage
       }))
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get all user stats:', error)
       return []
     }
@@ -210,7 +210,7 @@ export class AdminRepository {
         monthlyRevenue,
         monthlyAPIcost
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get dashboard stats:', error)
       throw error
     }
@@ -245,7 +245,7 @@ export class AdminRepository {
       }, {} as Record<string, TokenUsageByDay>)
 
       return Object.values(byDay).sort((a, b) => a.date.localeCompare(b.date))
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get token usage by day:', error)
       return []
     }
@@ -277,7 +277,7 @@ export class AdminRepository {
       }, {} as Record<string, { tokens: number; cost: number; calls: number }>)
 
       return byEndpoint
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get token usage by endpoint:', error)
       return {}
     }
@@ -325,7 +325,7 @@ export class AdminRepository {
       return Object.values(userStats)
         .sort((a, b) => b.totalCost - a.totalCost)
         .slice(0, limit)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get top users by token cost:', error)
       return []
     }
@@ -369,7 +369,7 @@ export class AdminRepository {
         owner: Array.isArray(project.owner) ? project.owner[0] : project.owner,
         idea_count: ideaCountMap[project.id] || 0
       }))
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get all projects:', error)
       return []
     }
@@ -409,7 +409,7 @@ export class AdminRepository {
 
       if (error) throw error
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to search users:', error)
       return []
     }
@@ -450,7 +450,7 @@ export class AdminRepository {
         user: userStats,
         recentTokenUsage: tokenUsage || []
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get user details:', error)
       return {
         user: null,
@@ -473,7 +473,7 @@ export class AdminRepository {
 
       logger.info('Successfully refreshed admin_user_stats materialized view')
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to refresh user stats:', error)
       return false
     }

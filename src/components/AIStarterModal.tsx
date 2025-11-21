@@ -92,7 +92,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
       } else {
         setStep('review')
       }
-    } catch (err) {
+    } catch (_err) {
       logger.error('Error in AI analysis:', err)
       setError(AI_STARTER_MESSAGES.ERROR_ANALYSIS_FAILED)
     } finally {
@@ -149,7 +149,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         generatedIdeas: result
       })
       setStep('review')
-    } catch (err) {
+    } catch (_err) {
       logger.error('Error in follow-up analysis:', err)
       setError(AI_STARTER_MESSAGES.ERROR_GENERATION_FAILED)
     } finally {
@@ -220,7 +220,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
       onProjectCreated(project, createdIdeas)
       onClose()
 
-    } catch (err) {
+    } catch (_err) {
       logger.error('Error creating project:', err)
       setError(AI_STARTER_MESSAGES.ERROR_CREATION_FAILED)
     } finally {

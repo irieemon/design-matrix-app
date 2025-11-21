@@ -24,7 +24,7 @@ export async function getAuthHeaders(): Promise<HeadersInit> {
     if (session?.access_token) {
       headers['Authorization'] = `Bearer ${session.access_token}`
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Failed to get auth session:', error)
   }
 
@@ -52,7 +52,7 @@ export function getAuthHeadersSync(): HeadersInit {
         headers['Authorization'] = `Bearer ${accessToken}`
       }
     }
-  } catch (error) {
+  } catch (_error) {
     console.error('Failed to get auth token from localStorage:', error)
   }
 

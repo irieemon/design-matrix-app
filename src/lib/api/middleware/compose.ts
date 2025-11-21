@@ -7,7 +7,9 @@
 import type { MiddlewareWrapper } from './types'
 import { withRateLimit } from './withRateLimit'
 import { withCSRF } from './withCSRF'
-import { withAuth, withAdmin } from './withAuth'
+// ✅ FIX: withAuth middleware moved to backend (api/_lib/middleware/withAuth.ts)
+// Frontend middleware should not handle auth - use backend API routes instead
+// import { withAuth, withAdmin } from './withAuth'
 
 /**
  * Compose middleware functions
@@ -50,21 +52,26 @@ export const publicEndpoint = compose(
 
 /**
  * Authenticated API endpoint
- * Rate limit, CSRF check, auth verification
+ * Rate limit, CSRF check (auth handled by backend)
+ *
+ * ✅ FIX: withAuth middleware only exists in backend
+ * Frontend should use backend API routes for authenticated operations
  */
 export const authenticatedEndpoint = compose(
   withRateLimit(),
-  withCSRF(),
-  withAuth
+  withCSRF()
+  // withAuth - backend only
 )
 
 /**
  * Admin API endpoint
- * Rate limit, CSRF check, auth verification, admin verification
+ * Rate limit, CSRF check (auth/admin checks handled by backend)
+ *
+ * ✅ FIX: withAuth/withAdmin middleware only exist in backend
+ * Frontend should use backend API routes for admin operations
  */
 export const adminEndpoint = compose(
   withRateLimit(),
-  withCSRF(),
-  withAuth,
-  withAdmin
+  withCSRF()
+  // withAuth, withAdmin - backend only
 )

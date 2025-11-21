@@ -33,7 +33,7 @@ const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
         const usage = (memory.usedJSHeapSize / memory.totalJSHeapSize) * 100
         setMemoryUsage(usage)
       }
-    } catch (error) {
+    } catch (_error) {
       console.warn('Performance overlay update failed:', error)
     }
   }, [])
@@ -227,8 +227,8 @@ const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
             <div className="border-t pt-3 flex space-x-2">
               <button
                 onClick={() => {
-                  console.log('🚀 Performance Report:')
-                  console.log(authPerformanceValidator.generatePerformanceReport())
+                  logger.debug('🚀 Performance Report:')
+                  logger.debug(authPerformanceValidator.generatePerformanceReport())
                 }}
                 className="flex-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
               >

@@ -14,12 +14,19 @@
 
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { DndContext, DragOverlay, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
-import { X, Plus, Sparkles } from 'lucide-react'
+import { X, Plus, Sparkles, Smartphone } from 'lucide-react'
 import { IdeaCard, User, Project } from '../../types'
+import type { BrainstormSession } from '../../types/BrainstormSession'
 import DesignMatrix from '../DesignMatrix'
 import { OptimizedIdeaCard } from './OptimizedIdeaCard'
 import { logger } from '../../utils/logger'
 import { Button } from '../ui/Button'
+import { BrainstormSessionService } from '../../lib/services/BrainstormSessionService'
+import SessionQRCode from '../brainstorm/SessionQRCode'
+import SessionControls from '../brainstorm/SessionControls'
+import DesktopParticipantPanel from '../brainstorm/DesktopParticipantPanel'
+import { useBrainstormRealtime } from '../../hooks/useBrainstormRealtime'
+import { isFeatureEnabled } from '../../lib/config'
 
 // Lazy load modals for performance
 const AddIdeaModal = lazy(() => import('../AddIdeaModal'))
@@ -97,6 +104,74 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   // Track if we've successfully entered fullscreen
   const hasEnteredFullscreen = useRef(false)
 
+  // Phase Four: Brainstorm session state
+  const [brainstormSession, setBrainstormSession] = useState<
+    (BrainstormSession & { qrCodeData: string }) | null
+  >(null)
+  const [isCreatingSession, setIsCreatingSession] = useState(false)
+  const [showSessionQR, setShowSessionQR] = useState(false)
+  const [mobileIdeaIds, setMobileIdeaIds] = useState<Set<string>>(new Set())
+
+  // Phase Four: Real-time brainstorm data (participants, ideas, session state)
+  const realtimeData = useBrainstormRealtime(brainstormSession?.id || null, {
+    onIdeaCreated: (idea) => {
+      logger.debug('Mobile idea created:', idea.id)
+      // Track this idea as coming from mobile
+      setMobileIdeaIds((prev) => new Set(prev).add(idea.id))
+      // Add the mobile idea to the main matrix via onAddIdea callback
+      if (onAddIdea) {
+        onAddIdea({
+          content: idea.content,
+          details: idea.details,
+          priority: idea.priority,
+          x_position: idea.x_position,
+          y_position: idea.y_position
+        }).catch((error) => {
+          logger.error('Failed to add mobile idea to matrix:', error)
+        })
+      }
+    },
+    onIdeaUpdated: (idea) => {
+      logger.debug('Mobile idea updated:', idea.id)
+      // Update the idea in the main matrix
+      if (onUpdateIdea) {
+        onUpdateIdea(idea.id, {
+          content: idea.content,
+          details: idea.details,
+          priority: idea.priority,
+          x_position: idea.x_position,
+          y_position: idea.y_position
+        }).catch((error) => {
+          logger.error('Failed to update mobile idea in matrix:', error)
+        })
+      }
+    },
+    onIdeaDeleted: (ideaId) => {
+      logger.debug('Mobile idea deleted:', ideaId)
+      // Delete the idea from the main matrix
+      if (onDeleteIdea) {
+        onDeleteIdea(ideaId).catch((error) => {
+          logger.error('Failed to delete mobile idea from matrix:', error)
+        })
+      }
+    },
+    onParticipantJoined: (participant) => {
+      logger.debug('Participant joined:', participant.participant_name)
+    },
+    onParticipantLeft: (participantId) => {
+      logger.debug('Participant left:', participantId)
+    },
+    onSessionStateChanged: (state) => {
+      logger.debug('Session state changed:', state.status)
+      // Update the session status in state
+      if (brainstormSession) {
+        setBrainstormSession((prev) =>
+          prev ? { ...prev, status: state.status } : null
+        )
+      }
+    }
+  })
+
   // Ref for fullscreen container (used as modal portal target)
   const fullscreenContainerRef = useRef<HTMLDivElement | null>(null)
 
@@ -115,7 +190,7 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   // Debug log to verify fullscreen view is rendering
   React.useEffect(() => {
     if (isActive) {
-      console.log('✅ MatrixFullScreenView is ACTIVE', { ideasCount: ideas.length, hasOnDragEnd: !!onDragEnd })
+      logger.debug('✅ MatrixFullScreenView is ACTIVE', { ideasCount: ideas.length, hasOnDragEnd: !!onDragEnd })
     }
   }, [isActive, ideas.length, onDragEnd])
 
@@ -147,7 +222,7 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
     if (!isActive) return
 
     const handleFullscreenChange = () => {
-      console.log('🔔 fullscreenchange event fired!', {
+      logger.debug('🔔 fullscreenchange event fired!', {
         hasFullscreenElement: !!document.fullscreenElement,
         hasEnteredFlag: hasEnteredFullscreen.current,
         willCallOnExit: !document.fullscreenElement && hasEnteredFullscreen.current
@@ -155,7 +230,7 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
 
       if (!document.fullscreenElement && hasEnteredFullscreen.current) {
         // User exited fullscreen via browser controls (F11, ESC, etc)
-        console.log('📤 Calling onExit() - user exited fullscreen')
+        logger.debug('📤 Calling onExit() - user exited fullscreen')
         hasEnteredFullscreen.current = false
         onExit()
         logger.debug('Browser fullscreen exited')
@@ -165,14 +240,14 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
     document.addEventListener('fullscreenchange', handleFullscreenChange)
 
     return () => {
-      console.log('🧹 Cleanup running for fullscreenchange useEffect', {
+      logger.debug('🧹 Cleanup running for fullscreenchange useEffect', {
         hasFullscreenElement: !!document.fullscreenElement,
         hasEnteredFlag: hasEnteredFullscreen.current
       })
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
       // Exit fullscreen if component unmounts while in fullscreen
       if (document.fullscreenElement) {
-        console.log('📤 Cleanup exiting fullscreen')
+        logger.debug('📤 Cleanup exiting fullscreen')
         hasEnteredFullscreen.current = false
         document.exitFullscreen().catch((err) => {
           logger.error('Failed to exit fullscreen on unmount:', err)
@@ -205,7 +280,7 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
    * Drag handlers for fullscreen DndContext
    */
   const handleDragStart = (event: any) => {
-    console.log('🎯 FULLSCREEN Drag started!', event.active.id)
+    logger.debug('🎯 FULLSCREEN Drag started!', event.active.id)
     setActiveId(event.active.id as string)
     logger.debug('🎯 FULLSCREEN Drag started:', {
       ideaId: event.active.id,
@@ -214,8 +289,8 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   }
 
   const handleDragEndWrapper = async (event: DragEndEvent) => {
-    console.log('🎯 FULLSCREEN Drag ended!', event.active.id, event.delta)
-    console.log('📺 Fullscreen status at drag end:', {
+    logger.debug('🎯 FULLSCREEN Drag ended!', event.active.id, event.delta)
+    logger.debug('📺 Fullscreen status at drag end:', {
       hasFullscreenElement: !!document.fullscreenElement,
       hasEnteredFlag: hasEnteredFullscreen.current
     })
@@ -228,13 +303,13 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
 
     try {
       await onDragEnd(event)
-      console.log('✅ Fullscreen drag completed successfully')
-      console.log('📺 Fullscreen status after completion:', {
+      logger.debug('✅ Fullscreen drag completed successfully')
+      logger.debug('📺 Fullscreen status after completion:', {
         hasFullscreenElement: !!document.fullscreenElement,
         hasEnteredFlag: hasEnteredFullscreen.current
       })
       logger.debug('✅ Fullscreen drag completed successfully')
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Fullscreen drag failed:', error)
       logger.error('❌ Fullscreen drag failed:', error)
     }
@@ -259,6 +334,60 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
     } else {
       logger.warn('AI generate callback not provided')
     }
+  }
+
+  /**
+   * Phase Four: Enable Mobile Join
+   * Creates a new brainstorm session and displays QR code
+   */
+  const handleEnableMobileJoin = async () => {
+    if (!currentProject || !currentUser?.id) {
+      logger.error('Cannot create session: missing project or user')
+      return
+    }
+
+    setIsCreatingSession(true)
+
+    try {
+      const response = await BrainstormSessionService.createSession({
+        projectId: currentProject.id,
+        facilitatorId: currentUser.id,
+        name: `${currentProject.name} Brainstorm`,
+        durationMinutes: 60,
+        maxParticipants: 50,
+        allowAnonymous: true,
+        requireApproval: false,
+        enableVoting: false
+      })
+
+      if (response.success && response.session) {
+        setBrainstormSession(response.session)
+        setShowSessionQR(true)
+        logger.debug('Brainstorm session created:', response.session.id)
+      } else {
+        logger.error('Failed to create session:', response.error)
+      }
+    } catch (error) {
+      logger.error('Error creating session:', error)
+    } finally {
+      setIsCreatingSession(false)
+    }
+  }
+
+  /**
+   * Phase Four: Close session QR overlay
+   */
+  const handleCloseSessionQR = () => {
+    setShowSessionQR(false)
+  }
+
+  /**
+   * Phase Four: Handle session updates from controls
+   */
+  const handleSessionUpdated = (updatedSession: BrainstormSession) => {
+    setBrainstormSession((prev) =>
+      prev ? { ...prev, ...updatedSession } : null
+    )
   }
 
   // Get the active idea for drag overlay
@@ -365,6 +494,27 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
 
           {/* Right: Action Buttons */}
           <div className="flex items-center gap-3">
+            {/* Phase Four: Session Controls (when session active) */}
+            {isFeatureEnabled('MOBILE_BRAINSTORM_PHASE4') && brainstormSession && (
+              <SessionControls
+                session={brainstormSession}
+                onSessionUpdated={handleSessionUpdated}
+              />
+            )}
+
+            {/* Phase Four: Mobile Join Button (when no session) */}
+            {isFeatureEnabled('MOBILE_BRAINSTORM_PHASE4') && !brainstormSession && (
+              <Button
+                onClick={handleEnableMobileJoin}
+                variant="secondary"
+                size="md"
+                icon={<Smartphone className="w-4 h-4" />}
+                disabled={isCreatingSession}
+              >
+                {isCreatingSession ? 'Starting...' : 'Enable Mobile Join'}
+              </Button>
+            )}
+
             <Button
               onClick={handleAIGenerate}
               variant="sapphire"
@@ -384,6 +534,33 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Phase Four: Paused Session Visual Treatment */}
+      {isFeatureEnabled('MOBILE_BRAINSTORM_PHASE4') &&
+        brainstormSession &&
+        brainstormSession.status === 'paused' && (
+          <>
+            {/* Dim overlay */}
+            <div
+              className="absolute inset-0 z-[100] bg-black/40 pointer-events-none"
+              style={{ top: '64px' }}
+            />
+            {/* Pause banner */}
+            <div
+              className="absolute left-1/2 top-32 -translate-x-1/2 z-[100] px-6 py-4 bg-amber-500 text-white rounded-lg shadow-2xl pointer-events-none"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-white rounded-full animate-pulse-subtle" />
+                <p className="text-lg font-semibold">Session Paused</p>
+              </div>
+              <p className="text-sm text-white/90 mt-1">
+                Mobile participants cannot submit ideas while paused
+              </p>
+            </div>
+          </>
+        )}
 
       {/* Matrix Canvas - Full Viewport Below Action Bar */}
       <div
@@ -412,6 +589,7 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
             showGrid={showGrid}
             showLabels={showLabels}
             isFullscreen={true}
+            mobileIdeaIds={mobileIdeaIds}
             hasOpenModal={!!(showAddModal || showAIModal || editingIdea)}
           />
 
@@ -495,6 +673,29 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
           </Suspense>
         )}
       </div>
+
+      {/* Phase Four: Desktop Participant Panel (when session active) */}
+      {isFeatureEnabled('MOBILE_BRAINSTORM_PHASE4') && brainstormSession && (
+        <div className="fixed top-20 right-4 z-40 pointer-events-auto">
+          <DesktopParticipantPanel
+            participants={realtimeData.participants}
+            sessionId={brainstormSession.id}
+          />
+        </div>
+      )}
+
+      {/* Phase Four: Session QR Code Overlay */}
+      {isFeatureEnabled('MOBILE_BRAINSTORM_PHASE4') &&
+        brainstormSession &&
+        showSessionQR && (
+          <SessionQRCode
+            sessionId={brainstormSession.id}
+            qrCodeData={brainstormSession.qrCodeData}
+            joinCode={brainstormSession.join_code}
+            expiresAt={brainstormSession.expires_at}
+            onClose={handleCloseSessionQR}
+          />
+        )}
     </div>
   )
 }

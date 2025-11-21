@@ -104,7 +104,7 @@ type DateRange = '7d' | '30d' | '90d' | 'all'
 // MAIN COMPONENT
 // ============================================================================
 
-export default function AdminAnalytics({ currentUser }: AdminAnalyticsProps) {
+export default function AdminAnalytics({ currentUser: _currentUser }: AdminAnalyticsProps) {
   // State management
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -151,7 +151,7 @@ export default function AdminAnalytics({ currentUser }: AdminAnalyticsProps) {
       setData(result.analytics)
       setLastUpdated(new Date(result.generatedAt))
       setCacheStatus(result.cacheStatus)
-    } catch (err) {
+    } catch (_err) {
       console.error('Failed to load analytics:', err)
       setError(err instanceof Error ? err.message : 'Failed to load analytics')
     } finally {
@@ -341,8 +341,8 @@ export default function AdminAnalytics({ currentUser }: AdminAnalyticsProps) {
           topUsers={data.topUsers}
           topProjects={data.topProjects}
           topEndpoints={data.topEndpoints}
-          onUserClick={(userId) => console.log('View user:', userId)}
-          onProjectClick={(projectId) => console.log('View project:', projectId)}
+          onUserClick={(userId) => logger.debug('View user:', userId)}
+          onProjectClick={(projectId) => logger.debug('View project:', projectId)}
         />
       </div>
     </div>

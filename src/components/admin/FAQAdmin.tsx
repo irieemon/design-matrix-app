@@ -26,7 +26,7 @@ export default function FAQAdmin() {
       const data = await faqService.getCategoriesWithItems(false) // Load all, including unpublished
       setCategories(data)
       setError(null)
-    } catch (err) {
+    } catch (_err) {
       logger.error('Failed to load FAQ categories:', err)
       setError('Failed to load FAQ data')
     } finally {
@@ -59,7 +59,7 @@ export default function FAQAdmin() {
       await loadCategories()
       setEditingCategory(null)
       setCreatingCategory(false)
-    } catch (err) {
+    } catch (_err) {
       logger.error('Failed to save category:', err)
       setError('Failed to save category')
     }
@@ -71,7 +71,7 @@ export default function FAQAdmin() {
     try {
       await faqService.deleteCategory(categoryId)
       await loadCategories()
-    } catch (err) {
+    } catch (_err) {
       logger.error('Failed to delete category:', err)
       setError('Failed to delete category')
     }
@@ -92,7 +92,7 @@ export default function FAQAdmin() {
       await loadCategories()
       setEditingItem(null)
       setCreatingItem(null)
-    } catch (err) {
+    } catch (_err) {
       logger.error('Failed to save FAQ item:', err)
       setError('Failed to save FAQ item')
     }
@@ -104,7 +104,7 @@ export default function FAQAdmin() {
     try {
       await faqService.deleteItem(itemId)
       await loadCategories()
-    } catch (err) {
+    } catch (_err) {
       logger.error('Failed to delete FAQ item:', err)
       setError('Failed to delete FAQ item')
     }
@@ -122,7 +122,7 @@ export default function FAQAdmin() {
         await faqService.updateItem(id, { is_published: !currentStatus })
       }
       await loadCategories()
-    } catch (err) {
+    } catch (_err) {
       logger.error('Failed to toggle publish status:', err)
       setError('Failed to update publish status')
     }

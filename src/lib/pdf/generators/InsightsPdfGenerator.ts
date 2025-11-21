@@ -469,7 +469,7 @@ export function exportInsightsToPDF(
     doc.save(fileName)
 
     insightsLogger.info('Insights PDF generated successfully', { fileName })
-  } catch (error) {
+  } catch (_error) {
     insightsLogger.error('Failed to generate insights PDF', error)
     throw error
   }

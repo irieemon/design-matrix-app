@@ -75,7 +75,7 @@ export class StripeService {
       })
 
       return session
-    } catch (error) {
+    } catch (_error) {
       console.error('Error creating checkout session:', error)
       throw new Error('Failed to create checkout session')
     }
@@ -92,7 +92,7 @@ export class StripeService {
       })
 
       return session
-    } catch (error) {
+    } catch (_error) {
       console.error('Error creating portal session:', error)
       throw new Error('Failed to create portal session')
     }
@@ -112,7 +112,7 @@ export class StripeService {
     try {
       const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
       return event
-    } catch (error) {
+    } catch (_error) {
       console.error('Webhook signature verification failed:', error)
       throw new Error('Invalid webhook signature')
     }
@@ -125,7 +125,7 @@ export class StripeService {
     try {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId)
       return subscription
-    } catch (error) {
+    } catch (_error) {
       console.error('Error retrieving subscription:', error)
       throw new Error('Failed to retrieve subscription')
     }
@@ -140,7 +140,7 @@ export class StripeService {
         cancel_at_period_end: true,
       })
       return subscription
-    } catch (error) {
+    } catch (_error) {
       console.error('Error canceling subscription:', error)
       throw new Error('Failed to cancel subscription')
     }
@@ -155,7 +155,7 @@ export class StripeService {
         cancel_at_period_end: false,
       })
       return subscription
-    } catch (error) {
+    } catch (_error) {
       console.error('Error reactivating subscription:', error)
       throw new Error('Failed to reactivate subscription')
     }

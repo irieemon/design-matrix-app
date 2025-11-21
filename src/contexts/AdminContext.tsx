@@ -121,7 +121,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       })
 
       return response.isAdmin
-    } catch (error) {
+    } catch (_error) {
       logger.error('AdminContext: Failed to verify admin status:', error)
       return false
     } finally {
@@ -153,7 +153,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
       // Previous code stored admin mode in sessionStorage (vulnerable to XSS privilege escalation)
       // Admin mode is now only in memory and verified via backend on each session
       // This prevents client-side privilege escalation attacks
-    } catch (error) {
+    } catch (_error) {
       logger.error('AdminContext: Failed to switch to admin mode:', error)
       throw error
     }
@@ -183,7 +183,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         // Admin mode defaults to false - user must explicitly enable
         setIsAdminMode(false)
         logger.debug('AdminContext: Admin mode initialized to false (requires explicit activation)')
-      } catch (error) {
+      } catch (_error) {
         logger.error('AdminContext: Error initializing admin context:', error)
       } finally {
         setAdminInitialized(true)

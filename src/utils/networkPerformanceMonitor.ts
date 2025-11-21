@@ -39,7 +39,7 @@ interface ConnectionQuality {
 
 class NetworkPerformanceMonitor {
   private requests: NetworkRequest[] = []
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   // @ts-expect-error - Preserved for future monitoring control
   private _isMonitoring = false
   private originalFetch: typeof fetch
@@ -104,7 +104,7 @@ class NetworkPerformanceMonitor {
         }
 
         return response
-      } catch (error) {
+      } catch (_error) {
         const endTime = performance.now()
         const duration = endTime - startTime
 
@@ -186,7 +186,7 @@ class NetworkPerformanceMonitor {
         })
 
         observer.observe({ entryTypes: ['resource'] })
-      } catch (error) {
+      } catch (_error) {
         logger.warn('PerformanceObserver not supported:', error)
       }
     }
@@ -329,7 +329,7 @@ class NetworkPerformanceMonitor {
       })
 
       return performance.now() - start
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Latency test failed:', error)
       return -1
     }
@@ -362,7 +362,7 @@ class NetworkPerformanceMonitor {
         const fileSize = parseInt(response.headers.get('content-length') || '1024')
         downloadSpeed = (fileSize * 8) / (downloadTime / 1000) // bits per second
       }
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Download speed test failed:', error)
     }
 

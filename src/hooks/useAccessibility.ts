@@ -258,7 +258,10 @@ export function useReducedMotion() {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setPrefersReducedMotion(mediaQuery.matches)
+    // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+    setTimeout(() => {
+      setPrefersReducedMotion(mediaQuery.matches)
+    }, 0)
 
     const handleChange = (e: MediaQueryListEvent) => {
       setPrefersReducedMotion(e.matches)
@@ -294,7 +297,10 @@ export function useHighContrast() {
   useEffect(() => {
     // Check for Windows high contrast mode
     const mediaQuery = window.matchMedia('(prefers-contrast: high)')
-    setHighContrast(mediaQuery.matches)
+    // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+    setTimeout(() => {
+      setHighContrast(mediaQuery.matches)
+    }, 0)
 
     const handleChange = (e: MediaQueryListEvent) => {
       setHighContrast(e.matches)

@@ -175,7 +175,7 @@ export const ComponentStateProvider: React.FC<ComponentStateProviderProps> = ({
       setTransition(null);
       onComplete?.();
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('State transition animation failed:', error);
       setIsTransitioning(false);
       setTransition(null);

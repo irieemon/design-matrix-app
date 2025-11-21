@@ -134,7 +134,10 @@ export const usePremiumAnimations = () => {
   // Check user's animation preferences
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    setIsAnimationEnabled(!prefersReducedMotion)
+    // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+    setTimeout(() => {
+      setIsAnimationEnabled(!prefersReducedMotion)
+    }, 0)
   }, [])
 
   // Animate element with predefined animation
@@ -164,7 +167,7 @@ export const usePremiumAnimations = () => {
       webAnimation.addEventListener('cancel', cleanup)
 
       return webAnimation
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Failed to create animation', { animationName, error })
       return null
     }
@@ -195,7 +198,7 @@ export const usePremiumAnimations = () => {
       webAnimation.addEventListener('cancel', cleanup)
 
       return webAnimation
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Failed to create custom animation', { error })
       return null
     }

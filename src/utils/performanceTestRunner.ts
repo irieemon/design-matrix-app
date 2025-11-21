@@ -201,7 +201,7 @@ export class PerformanceTestRunner {
 
       // Run test
       authPerformanceMonitor.startSession()
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+       
       await scenario.test()
 
       // Get metrics
@@ -231,7 +231,7 @@ export class PerformanceTestRunner {
         memoryDelta: memoryAfter - memoryBefore
       }
 
-    } catch (error) {
+    } catch (_error) {
       logger.error(`❌ Scenario failed: ${scenario.name}`, error as Error)
 
       if (scenario.cleanup) {
@@ -327,7 +327,7 @@ export class PerformanceTestRunner {
 
   private evaluateScenario(
     metrics: any,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     _validation: any,
     thresholds: TestScenario['expectedThresholds']
   ): boolean {

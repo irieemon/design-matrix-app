@@ -33,7 +33,7 @@ interface MatrixPageProps {
   showAddModal?: boolean
   showAIModal?: boolean
   addIdea?: (idea: Partial<IdeaCard>) => Promise<void>
-  updateIdea?: (ideaId: string, updates: Partial<IdeaCard>) => Promise<void>
+  updateIdea?: (updatedIdea: IdeaCard) => Promise<void> // Signature from useIdeas hook
 }
 
 const MatrixPage: React.FC<MatrixPageProps> = ({
@@ -66,7 +66,28 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
   }, [])
 
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
-  
+
+  // Adapter function to convert MatrixFullScreenView's signature to useIdeas signature
+  const handleUpdateIdea = useCallback(async (ideaId: string, updates: Partial<IdeaCard>) => {
+    if (!updateIdea) return
+
+    // Find the existing idea
+    const existingIdea = ideas.find(idea => idea.id === ideaId)
+    if (!existingIdea) {
+      logger.warn('Cannot update idea - not found:', { ideaId })
+      return
+    }
+
+    // Merge updates with existing idea to create full IdeaCard
+    const updatedIdea: IdeaCard = {
+      ...existingIdea,
+      ...updates
+    }
+
+    // Call the actual updateIdea function with full IdeaCard
+    await updateIdea(updatedIdea)
+  }, [updateIdea, ideas])
+
   // Performance-optimized logging - only log significant changes
   React.useEffect(() => {
     const ideaCount = ideas?.length || 0
@@ -107,7 +128,7 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
           showAIModal={showAIModal}
           editingIdea={_editingIdea}
           onAddIdea={addIdea}
-          onUpdateIdea={updateIdea}
+          onUpdateIdea={handleUpdateIdea}
         />,
         document.body
       )}

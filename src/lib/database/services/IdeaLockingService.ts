@@ -81,7 +81,7 @@ export class IdeaLockingService {
       }
 
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('Database error in lockIdeaForEditing:', error)
       return false
     }
@@ -108,7 +108,7 @@ export class IdeaLockingService {
       }
 
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('Database error in unlockIdea:', error)
       return false
     }
@@ -129,7 +129,7 @@ export class IdeaLockingService {
         })
         .lt('editing_at', fiveMinutesAgo)
         .not('editing_by', 'is', null)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error cleaning up stale locks:', error)
     }
   }
@@ -163,7 +163,7 @@ export class IdeaLockingService {
         lockedAt: data.editing_at,
         expiresAt: expiresAt.toISOString()
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error getting lock info:', error)
       return { isLocked: false }
     }

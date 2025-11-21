@@ -30,6 +30,8 @@ interface OptimizedIdeaCardProps {
   onEdit: () => void
   onDelete: () => void
   onToggleCollapse: (ideaId: string, collapsed: boolean) => void
+  isFromMobile?: boolean // Phase Three: Indicates idea was submitted from mobile device
+  isNewIdea?: boolean // Phase Three: Triggers scale-in animation for newly created ideas
 }
 
 // S-tier priority configuration using design system tokens
@@ -117,7 +119,9 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
   isDragOverlay = false,
   onEdit,
   onDelete,
-  onToggleCollapse
+  onToggleCollapse,
+  isFromMobile = false,
+  isNewIdea = false
 }) => {
   const logger = useLogger('OptimizedIdeaCard')
 
@@ -345,9 +349,19 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
         ${isCollapsed ? 'w-[100px] h-[50px] max-w-[100px] max-h-[50px]' : 'w-[130px] min-h-[90px]'}
         ${isCollapsed && (isDragging || isDragOverlay) ? '!w-[100px] !h-[50px] !max-w-[100px] !max-h-[50px]' : ''}
         ${lockStatus.isLockedByOther ? 'opacity-60 cursor-not-allowed grayscale' : ''}
+        ${isNewIdea ? 'animate-scale-in' : ''}
         transition-all duration-200 ease-out
       `}
     >
+      {/* Phase Four: Blue pulse indicator for mobile-submitted ideas */}
+      {isFromMobile && !isDragOverlay && (
+        <div
+          className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full bg-blue-500 animate-pulse-subtle z-10"
+          aria-label="Idea submitted from mobile device"
+          title="Submitted from mobile"
+        />
+      )}
+
       {/* Delete Button - S-tier design with semantic colors */}
       {!isDragging && !isDragOverlay && (
         <button
@@ -656,6 +670,41 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
         </div>
       )}
 
+      {/* Phase Three: Mobile Indicator - Blue pulse for mobile-submitted ideas */}
+      {isFromMobile && !isDragOverlay && (
+        <div
+          className="absolute z-5"
+          style={{
+            bottom: isCollapsed ? '-4px' : '-4px',
+            right: isCollapsed ? '-4px' : '-4px',
+            width: '12px',
+            height: '12px'
+          }}
+          role="status"
+          aria-label="Submitted from mobile device"
+        >
+          {/* Pulse ring animation */}
+          <div
+            className="absolute inset-0 rounded-full animate-pulse-subtle"
+            style={{
+              background: 'rgba(59, 130, 246, 0.2)',
+              animation: 'pulseSubtle 2s infinite'
+            }}
+          />
+          {/* Solid blue dot */}
+          <div
+            className="absolute inset-0 rounded-full"
+            style={{
+              width: '12px',
+              height: '12px',
+              background: '#3B82F6',
+              border: '2px solid white',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          />
+        </div>
+      )}
+
     </div>
   )
 }
@@ -665,6 +714,8 @@ export default React.memo(OptimizedIdeaCard, (prevProps, nextProps) => {
   return (
     areIdeasEqual(prevProps.idea, nextProps.idea) &&
     prevProps.currentUser?.id === nextProps.currentUser?.id &&
-    prevProps.isDragOverlay === nextProps.isDragOverlay
+    prevProps.isDragOverlay === nextProps.isDragOverlay &&
+    prevProps.isFromMobile === nextProps.isFromMobile &&
+    prevProps.isNewIdea === nextProps.isNewIdea
   )
 })

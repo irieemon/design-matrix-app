@@ -26,11 +26,13 @@ export {
 } from './cookies'
 
 // Authentication middleware
-export {
-  withAuth,
-  withAdmin,
-  withOptionalAuth,
-} from './withAuth'
+// ✅ FIX: withAuth middleware moved to backend (api/_lib/middleware/withAuth.ts)
+// Frontend middleware should not handle auth - use backend API routes instead
+// export {
+//   withAuth,
+//   withAdmin,
+//   withOptionalAuth,
+// } from './withAuth'
 
 // CSRF protection
 export {

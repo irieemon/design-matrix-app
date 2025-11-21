@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Search, Filter, FolderOpen, Users, Calendar, Activity, Trash2, Eye, AlertTriangle, CheckCircle } from 'lucide-react'
 import { AdminProject, User } from '../../types'
 import { AdminService } from '../../lib/adminService'
+import { ProjectService } from '../../lib/services/ProjectService'
 import { logger } from '../../utils/logger'
 import { getAuthHeadersSync } from '../../lib/authHeaders'
 
@@ -43,7 +44,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = () => {
       } else {
         throw new Error(data.error || 'Failed to load projects')
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error loading projects:', error)
     } finally {
       setIsLoading(false)
@@ -52,10 +53,11 @@ const ProjectManagement: React.FC<ProjectManagementProps> = () => {
 
   const handleDeleteProject = async (projectId: string) => {
     try {
-      await AdminService.deleteProject(projectId)
+      // ✅ SECURITY FIX: Use RLS-enforced ProjectService instead of admin bypass
+      await ProjectService.deleteProject(projectId)
       setProjects(prev => prev.filter(p => p.id !== projectId))
       setShowDeleteConfirm(null)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error deleting project:', error)
     }
   }

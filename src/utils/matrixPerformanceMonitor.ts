@@ -31,7 +31,7 @@ interface AnimationMetrics {
 }
 
 class MatrixPerformanceMonitor {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   // @ts-expect-error - Preserved for future monitoring re-enablement
   private _metrics: PerformanceMetrics[] = [];
   private hoverMetrics: HoverMetrics[] = [];
@@ -40,10 +40,10 @@ class MatrixPerformanceMonitor {
   // ALL MONITORING DISABLED - unused properties preserved for future monitoring re-enablement
   private readonly HOVER_RESPONSE_THRESHOLD = 8;
   private readonly MIN_FRAMERATE = 58;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   // @ts-expect-error - Preserved for future monitoring re-enablement
   private readonly _MAX_PAINT_COMPLEXITY = 50;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   // @ts-expect-error - Preserved for future monitoring re-enablement
   private readonly _MAX_LAYOUT_THRASH = 1;
   private frameCount = 0;
@@ -100,7 +100,7 @@ class MatrixPerformanceMonitor {
   /**
    * Measure paint complexity using Performance Observer - DISABLED
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   // @ts-expect-error - Preserved for future monitoring re-enablement
   private _setupPerformanceObserver(): void {
     // NO-OP: All performance observers disabled
@@ -109,7 +109,7 @@ class MatrixPerformanceMonitor {
   /**
    * Setup User Timing API for custom measurements - DISABLED
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   // @ts-expect-error - Preserved for future monitoring re-enablement
   private _setupUserTimingAPI(): void {
     // NO-OP: All user timing disabled
@@ -118,7 +118,7 @@ class MatrixPerformanceMonitor {
   /**
    * Track animation loop for continuous framerate monitoring - DISABLED
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   // @ts-expect-error - Preserved for future monitoring re-enablement
   private _trackAnimationLoop(): void {
     // NO-OP: All frame tracking disabled
@@ -261,7 +261,7 @@ class MatrixPerformanceMonitor {
   /**
    * EMERGENCY: Estimate GPU layer count for diagnostic - DISABLED
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   // @ts-expect-error - Preserved for future monitoring re-enablement
   private _estimateLayerCount(element: HTMLElement): number {
     const styles = getComputedStyle(element);
@@ -281,7 +281,7 @@ class MatrixPerformanceMonitor {
   /**
    * EMERGENCY: Estimate paint complexity for diagnostic - DISABLED
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   // @ts-expect-error - Preserved for future monitoring re-enablement
   private _estimatePaintComplexity(element: HTMLElement): number {
     const styles = getComputedStyle(element);

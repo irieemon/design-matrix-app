@@ -26,7 +26,7 @@ import { LoggingContext } from '../contexts/LoggingContext'
  *       const data = await api.fetchData()
  *       end() // Records success
  *       return data
- *     } catch (error) {
+ *     } catch (_error) {
  *       end() // Records failure
  *       throw error
  *     }
@@ -116,7 +116,7 @@ export function usePerformanceLogger(
 
         logger.performance(metric)
         return result
-      } catch (error) {
+      } catch (_error) {
         const duration = performance.now() - startTime
 
         const metric: PerformanceMetric = {

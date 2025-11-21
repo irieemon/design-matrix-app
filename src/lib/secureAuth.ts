@@ -122,7 +122,7 @@ export async function login(
     }
 
     return response
-  } catch (error) {
+  } catch (_error) {
     logger.error('❌ Secure login failed:', error)
     return {
       success: false,
@@ -157,7 +157,7 @@ export async function signup(
     }
 
     return response
-  } catch (error) {
+  } catch (_error) {
     logger.error('❌ Secure signup failed:', error)
     return {
       success: false,
@@ -185,7 +185,7 @@ export async function logout(): Promise<AuthResponse> {
     logger.debug('✅ Secure logout successful, cookies cleared')
 
     return response
-  } catch (error) {
+  } catch (_error) {
     logger.error('❌ Secure logout failed:', error)
     clearCSRFToken()
 
@@ -214,7 +214,7 @@ export async function getSession(): Promise<AuthResponse> {
     }
 
     return response
-  } catch (error) {
+  } catch (_error) {
     logger.debug('⚠️ Secure session check failed:', error)
     return {
       success: false,
@@ -244,7 +244,7 @@ export async function refreshSession(): Promise<AuthResponse> {
     }
 
     return response
-  } catch (error) {
+  } catch (_error) {
     logger.error('❌ Secure session refresh failed:', error)
     return {
       success: false,

@@ -14,6 +14,17 @@ import {
   ComponentSize
 } from '../../types/componentState';
 
+// ✅ HOOKS FIX: Custom hook to safely access optional context
+// This allows unconditional hook call while handling missing provider
+function useOptionalComponentStateContext() {
+  try {
+    return useComponentStateContext();
+  } catch {
+    // Context provider not available, return null
+    return null;
+  }
+}
+
 // Enhanced variant system for inputs
 export type InputVariant = ComponentVariant;
 
@@ -126,13 +137,9 @@ export const Input = forwardRef<InputRef, InputProps>(({
     errorRecoveryTimeout: errorDismissAfter
   });
 
-  // Try to access global state context (optional)
-  let contextState = null;
-  try {
-    contextState = useComponentStateContext();
-  } catch {
-    // Context not available, use local state
-  }
+  // ✅ HOOKS FIX: Always call hook unconditionally (Rules of Hooks requirement)
+  // Optional context - will be null if provider not available
+  const contextState = useOptionalComponentStateContext();
 
   // Register element for animations
   useEffect(() => {

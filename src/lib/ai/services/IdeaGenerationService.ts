@@ -64,7 +64,7 @@ export class IdeaGenerationService extends BaseAiService {
             const { MockDataGenerator } = await import('../mocks/MockDataGenerator')
             return MockDataGenerator.generateMockIdea(title, projectContext)
           }
-        } catch (error) {
+        } catch (_error) {
           logger.error('Error generating idea:', error)
           // Return mock idea for non-critical errors
           const { MockDataGenerator } = await import('../mocks/MockDataGenerator')
@@ -130,7 +130,7 @@ export class IdeaGenerationService extends BaseAiService {
             const { MockDataGenerator } = await import('../mocks/MockDataGenerator')
             return MockDataGenerator.generateMockIdeas(title, description, projectType, count)
           }
-        } catch (error) {
+        } catch (_error) {
           logger.warn('🚫 AI generation failed, using mock:', error)
           const { MockDataGenerator } = await import('../mocks/MockDataGenerator')
           return MockDataGenerator.generateMockIdeas(title, description, projectType, count)

@@ -169,7 +169,68 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
   )
 
   // Web Worker integration for premium performance
-  const { } = useAIWorker()
+  // Note: useAIWorker called for side effects only (worker initialization)
+  useAIWorker()
+
+  // ✅ CRITICAL FIX: Move function declaration BEFORE useEffect that calls it
+  // This prevents "Cannot access variable before it is declared" error
+  const loadProjectFiles = async () => {
+    if (!currentProject?.id) {
+      logger.debug('📁 No current project ID, skipping file load')
+      return
+    }
+
+    try {
+      logger.debug('📁 Loading project files from backend for project:', { projectId: currentProject.id })
+      const files = await FileService.getProjectFiles(currentProject.id)
+      logger.debug('📁 Files loaded from backend:', { fileCount: files.length })
+
+      // Log each file to see what we have
+      files.forEach((file: ProjectFile, index: number) => {
+        logger.debug(`📄 File ${index + 1}: ${file.name} (${file.file_type}) - content_preview: ${file.content_preview ? 'YES' : 'NO'}`)
+        if (file.content_preview) {
+          logger.debug(`📝 Content preview length: ${file.content_preview.length} characters`)
+        }
+      })
+
+      // Include ALL uploaded files for AI analysis display
+      // Multi-modal processing handles images, audio, video even without content_preview
+      const allUploadedFiles = files.filter(file =>
+        file.name && file.file_type // Just need basic file info
+      )
+      setFilesWithContent(allUploadedFiles)
+
+      logger.debug('📁 FINAL RESULT: Loaded project files:', { totalFiles: files.length, filesForAnalysis: allUploadedFiles.length })
+
+      if (allUploadedFiles.length > 0) {
+        logger.debug('✅ ALL FILES FOUND FOR AI ANALYSIS - should show in UI!')
+        allUploadedFiles.forEach((file: ProjectFile, index: number) => {
+          logger.debug(`✅ File ${index + 1}: ${file.name} (${file.file_type})`)
+          if (file.content_preview) {
+            logger.debug(`📝 File ${index + 1} has content preview: ${file.content_preview.length} chars`)
+          } else if (file.file_type?.startsWith('image/')) {
+            logger.debug(`🖼️ File ${index + 1} is image - will be analyzed with GPT-4V`)
+          } else if (file.file_type?.startsWith('audio/') || file.file_type?.startsWith('video/')) {
+            logger.debug(`🎵 File ${index + 1} is audio/video - will be transcribed with Whisper`)
+          }
+        })
+
+        // Also log for debugging
+        logger.debug('Files prepared for analysis', {
+          fileCount: allUploadedFiles.length,
+          fileNames: allUploadedFiles.map(f => f.name),
+          fileTypes: allUploadedFiles.map(f => f.file_type)
+        })
+      } else {
+        logger.warn('No files found for project', {
+          projectId: currentProject?.id,
+          projectName: currentProject?.name
+        })
+      }
+    } catch (_error) {
+      logger.warn('Could not load project files from backend:', { error })
+    }
+  }
 
   useEffect(() => {
     // Only run when modal is opened and we have ideas or are loading historical insight
@@ -188,8 +249,11 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
       historicalData: !!historicalOperation.state.data
     })
 
+    // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
     // Load project files first
-    loadProjectFiles()
+    setTimeout(() => {
+      loadProjectFiles()
+    }, 0)
 
     if (selectedInsightId) {
       // Load historical insight - only if not already loading/loaded
@@ -219,72 +283,17 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
       historicalOperation.reset()
       saveOperation.reset()
 
-      // Reset progress tracking
-      setAiProgress(0)
-      setAiStage('analyzing')
-      setProcessingSteps([])
-      setEstimatedTime(0)
-      setSavedInsightId(null)
+      // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+      setTimeout(() => {
+        // Reset progress tracking
+        setAiProgress(0)
+        setAiStage('analyzing')
+        setProcessingSteps([])
+        setEstimatedTime(0)
+        setSavedInsightId(null)
+      }, 0)
     }
   }, [isOpen])
-
-  const loadProjectFiles = async () => {
-    if (!currentProject?.id) {
-      logger.debug('📁 No current project ID, skipping file load')
-      return
-    }
-    
-    try {
-      logger.debug('📁 Loading project files from backend for project:', { projectId: currentProject.id })
-      const files = await FileService.getProjectFiles(currentProject.id)
-      logger.debug('📁 Files loaded from backend:', { fileCount: files.length })
-      
-      // Log each file to see what we have
-      files.forEach((file: ProjectFile, index: number) => {
-        logger.debug(`📄 File ${index + 1}: ${file.name} (${file.file_type}) - content_preview: ${file.content_preview ? 'YES' : 'NO'}`)
-        if (file.content_preview) {
-          logger.debug(`📝 Content preview length: ${file.content_preview.length} characters`)
-        }
-      })
-      
-      // Include ALL uploaded files for AI analysis display
-      // Multi-modal processing handles images, audio, video even without content_preview
-      const allUploadedFiles = files.filter(file => 
-        file.name && file.file_type // Just need basic file info
-      )
-      setFilesWithContent(allUploadedFiles)
-
-      logger.debug('📁 FINAL RESULT: Loaded project files:', { totalFiles: files.length, filesForAnalysis: allUploadedFiles.length })
-      
-      if (allUploadedFiles.length > 0) {
-        logger.debug('✅ ALL FILES FOUND FOR AI ANALYSIS - should show in UI!')
-        allUploadedFiles.forEach((file: ProjectFile, index: number) => {
-          logger.debug(`✅ File ${index + 1}: ${file.name} (${file.file_type})`)
-          if (file.content_preview) {
-            logger.debug(`📝 File ${index + 1} has content preview: ${file.content_preview.length} chars`)
-          } else if (file.file_type?.startsWith('image/')) {
-            logger.debug(`🖼️ File ${index + 1} is image - will be analyzed with GPT-4V`)
-          } else if (file.file_type?.startsWith('audio/') || file.file_type?.startsWith('video/')) {
-            logger.debug(`🎵 File ${index + 1} is audio/video - will be transcribed with Whisper`)
-          }
-        })
-        
-        // Also log for debugging
-        logger.debug('Files prepared for analysis', {
-          fileCount: allUploadedFiles.length,
-          fileNames: allUploadedFiles.map(f => f.name),
-          fileTypes: allUploadedFiles.map(f => f.file_type)
-        })
-      } else {
-        logger.warn('No files found for project', {
-          projectId: currentProject?.id,
-          projectName: currentProject?.name
-        })
-      }
-    } catch (error) {
-      logger.warn('Could not load project files from backend:', { error })
-    }
-  }
 
 
   const handleDownloadPDF = async () => {
@@ -292,7 +301,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
     if (insights) {
       try {
         await exportGraphicalInsightsToPDF(insights, currentProject?.name)
-      } catch (error) {
+      } catch (_error) {
         logger.error('PDF export failed', error, {
           ideaCount: (ideas || []).length,
           fileCount: filesWithContent.length,

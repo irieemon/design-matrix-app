@@ -40,7 +40,7 @@ self.onmessage = async (event: MessageEvent<AIWorkerMessage>) => {
       default:
         throw new Error(`Unknown worker message type: ${type}`)
     }
-  } catch (error) {
+  } catch (_error) {
     postMessage({
       type: 'ERROR',
       requestId,

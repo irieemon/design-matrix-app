@@ -92,7 +92,7 @@ export class CardLockingTester {
         logger.debug(`⚠️ Session ${sessionId} failed to lock idea ${ideaId} (already locked)`)
         return false
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error(`❌ Error locking idea in session ${sessionId}:`, error)
       return false
     }
@@ -120,7 +120,7 @@ export class CardLockingTester {
         logger.debug(`⚠️ Session ${sessionId} failed to unlock idea ${ideaId}`)
         return false
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error(`❌ Error unlocking idea in session ${sessionId}:`, error)
       return false
     }
@@ -221,7 +221,7 @@ export class CardLockingTester {
 
       return testPassed
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('❌ Card locking test failed with error:', error)
       this.cleanupAllSessions()
       return false

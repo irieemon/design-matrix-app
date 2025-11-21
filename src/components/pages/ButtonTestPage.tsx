@@ -33,7 +33,7 @@ export const ButtonTestPage: React.FC = () => {
         setInteractiveState('idle');
         setAsyncTestResults(prev => [...prev, `${new Date().toLocaleTimeString()}: Reset to idle state`]);
       }, 3000);
-    } catch (error) {
+    } catch (_error) {
       setInteractiveState('error');
       setAsyncTestResults(prev => [...prev, `${new Date().toLocaleTimeString()}: Async action failed`]);
     }

@@ -122,7 +122,7 @@ export class LockingDiagnostic {
       this.checkLockStatePropagation(ideaId, userId)
 
       return lockResult
-    } catch (error) {
+    } catch (_error) {
       logger.error(`💥 Error simulating card open for ${userId}:`, error)
       return false
     }
@@ -150,7 +150,7 @@ export class LockingDiagnostic {
       this.checkUnlockStatePropagation(ideaId)
 
       return unlockResult
-    } catch (error) {
+    } catch (_error) {
       logger.error(`💥 Error simulating card close for ${userId}:`, error)
       return false
     }
@@ -332,7 +332,7 @@ export class LockingDiagnostic {
       logger.debug('✅ Comprehensive locking test completed successfully!')
       return true
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 Locking test failed:', error)
       return false
     } finally {

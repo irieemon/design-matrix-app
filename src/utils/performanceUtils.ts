@@ -253,7 +253,7 @@ export function once<T extends (...args: any[]) => any>(fn: T): T {
  * ```typescript
  * const measure = measurePerformance()
  * expensiveOperation()
- * console.log(`Took ${measure()} ms`)
+ * logger.debug(`Took ${measure()} ms`)
  * ```
  */
 export function measurePerformance(): () => number {
@@ -301,7 +301,7 @@ export function asyncDebounce<T extends (...args: any[]) => Promise<any>>(
         try {
           const result = await func(...args)
           currentResolveList.forEach(r => r(result))
-        } catch (error) {
+        } catch (_error) {
           currentRejectList.forEach(r => r(error))
         }
 

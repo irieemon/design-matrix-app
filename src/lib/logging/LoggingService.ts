@@ -76,7 +76,7 @@ export class LoggingService {
 
     // Log initialization in dev
     if (this.isDebugEnabled()) {
-      console.log(
+      logger.debug(
         '%c🚀 Logging Service Initialized',
         'color: #00ff00; font-weight: bold; font-size: 12px;',
         `Environment: ${this.environment}, Levels: ${Array.from(this.enabledLevels).join(', ')}`
@@ -132,7 +132,7 @@ export class LoggingService {
           return 'debug'
         }
         return 'info'
-      } catch (err) {
+      } catch (_err) {
         // Fallback if browser APIs fail
         return 'info'
       }
@@ -166,14 +166,14 @@ export class LoggingService {
       if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
         localStorage.setItem('debugMode', 'true')
       }
-      console.log('%c🐛 DEBUG MODE ENABLED', 'color: #00ff00; font-weight: bold;')
+      logger.debug('%c🐛 DEBUG MODE ENABLED', 'color: #00ff00; font-weight: bold;')
     } else {
       this.enabledLevels = new Set(['warn', 'error'])
       // Only use localStorage in browser environment
       if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
         localStorage.setItem('debugMode', 'false')
       }
-      console.log('%c🔇 DEBUG MODE DISABLED', 'color: #ff6600; font-weight: bold;')
+      logger.debug('%c🔇 DEBUG MODE DISABLED', 'color: #ff6600; font-weight: bold;')
     }
   }
 
@@ -227,7 +227,7 @@ export class LoggingService {
     if (this.config.transport) {
       try {
         this.config.transport(entry)
-      } catch (err) {
+      } catch (_err) {
         console.error('Transport error:', err)
       }
     }
@@ -241,10 +241,10 @@ export class LoggingService {
 
     switch (entry.level) {
       case 'debug':
-        console.log(formatted, entry.data ?? '')
+        logger.debug(formatted, entry.data ?? '')
         break
       case 'info':
-        console.log(formatted, entry.data ?? '')
+        logger.debug(formatted, entry.data ?? '')
         break
       case 'warn':
         console.warn(formatted, entry.data ?? '')
@@ -329,7 +329,7 @@ export class LoggingService {
     // If enough time has passed, reset and allow
     if (now - state.lastLogged > this.THROTTLE_INTERVAL) {
       if (state.skipCount > 0 && this.isDebugEnabled()) {
-        console.log(
+        logger.debug(
           `[THROTTLED] Skipped ${state.skipCount} similar messages: "${message.substring(0, 50)}..."`
         )
       }

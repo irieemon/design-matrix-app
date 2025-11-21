@@ -180,7 +180,7 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
       onProjectCreated(project, createdIdeas)
       onClose()
 
-    } catch (err) {
+    } catch (_err) {
       logger.error('Error creating project:', err)
       setError('Failed to create project. Please try again.')
     } finally {
@@ -202,7 +202,7 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
         )
         setAiAnalysis(analysis)
         logger.debug('✅ AI analysis complete:', analysis)
-      } catch (err) {
+      } catch (_err) {
         logger.error('AI analysis failed:', err)
         setError('AI analysis failed. Project will be created without AI insights.')
       } finally {

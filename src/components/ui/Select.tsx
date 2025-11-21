@@ -15,6 +15,17 @@ import {
   ComponentSize
 } from '../../types/componentState';
 
+// ✅ HOOKS FIX: Custom hook to safely access optional context
+// This allows unconditional hook call while handling missing provider
+function useOptionalComponentStateContext() {
+  try {
+    return useComponentStateContext();
+  } catch {
+    // Context provider not available, return null
+    return null;
+  }
+}
+
 // Enhanced variant system for selects
 export type SelectVariant = ComponentVariant;
 
@@ -180,13 +191,9 @@ export const Select = forwardRef<SelectRef, SelectProps>(({
     errorRecoveryTimeout: errorDismissAfter
   });
 
-  // Try to access global state context (optional)
-  let contextState = null;
-  try {
-    contextState = useComponentStateContext();
-  } catch {
-    // Context not available, use local state
-  }
+  // ✅ HOOKS FIX: Always call hook unconditionally (Rules of Hooks requirement)
+  // Optional context - will be null if provider not available
+  const contextState = useOptionalComponentStateContext();
 
   // Register element for animations
   useEffect(() => {
@@ -262,7 +269,7 @@ export const Select = forwardRef<SelectRef, SelectProps>(({
 
   // Type guard to check if an item is a SelectOptionGroup
   // Currently unused but kept for future group support
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   // @ts-expect-error - Preserved for future group support
   const _isSelectOptionGroup = (item: SelectOption | SelectOptionGroup): item is SelectOptionGroup => {
     return 'options' in item;

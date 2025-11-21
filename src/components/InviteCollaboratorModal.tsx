@@ -73,7 +73,7 @@ const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = ({
       } else {
         setError('Failed to send invitation. User may already be a collaborator.')
       }
-    } catch (err) {
+    } catch (_err) {
       setError('An error occurred while sending the invitation')
     } finally {
       setIsLoading(false)

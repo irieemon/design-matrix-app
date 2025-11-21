@@ -57,7 +57,7 @@ const StorageDebugPanel: React.FC<StorageDebugPanelProps> = ({ projectId, onClos
         default:
           addResult('❌ Unknown debug type')
       }
-    } catch (error) {
+    } catch (_error) {
       addResult(`❌ Debug failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       logger.error('Debug panel error:', error)
     } finally {

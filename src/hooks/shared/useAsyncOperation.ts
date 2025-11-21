@@ -34,7 +34,7 @@ interface UseAsyncOperationOptions {
  * const { state, execute, reset } = useAsyncOperation(
  *   async (userId: string) => DatabaseService.getUser(userId),
  *   {
- *     onSuccess: (user) => console.log('User loaded:', user),
+ *     onSuccess: (user) => logger.debug('User loaded:', user),
  *     onError: (error) => toast.error(error)
  *   }
  * )
@@ -90,7 +90,7 @@ export function useAsyncOperation<T, P extends unknown[]>(
       }
 
       return result
-    } catch (error) {
+    } catch (_error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
 
       setState({

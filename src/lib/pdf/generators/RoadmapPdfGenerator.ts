@@ -1109,7 +1109,7 @@ export function exportRoadmapToPDF(
       totalPages,
       phaseCount: phases.length
     })
-  } catch (error) {
+  } catch (_error) {
     roadmapLogger.error('Failed to generate roadmap PDF', error, {
       ideaCount,
       projectName: project?.name

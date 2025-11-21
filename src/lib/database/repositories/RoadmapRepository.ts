@@ -68,7 +68,7 @@ export class RoadmapRepository {
 
       logger.debug('✅ RoadmapRepository: Roadmap saved successfully:', data.id)
       return data.id
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 RoadmapRepository: Error in saveProjectRoadmap:', error)
       return null
     }
@@ -100,7 +100,7 @@ export class RoadmapRepository {
       }
 
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 RoadmapRepository: Error in getProjectRoadmaps:', error)
       return []
     }
@@ -126,7 +126,7 @@ export class RoadmapRepository {
       }
 
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 RoadmapRepository: Error in getProjectRoadmap:', error)
       return null
     }
@@ -157,7 +157,7 @@ export class RoadmapRepository {
 
       logger.debug('✅ RoadmapRepository: Roadmap updated successfully')
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 RoadmapRepository: Error in updateProjectRoadmap:', error)
       return false
     }
@@ -182,7 +182,7 @@ export class RoadmapRepository {
 
       logger.debug('✅ RoadmapRepository: Roadmap deleted successfully')
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 RoadmapRepository: Error in deleteProjectRoadmap:', error)
       return false
     }
@@ -210,7 +210,7 @@ export class RoadmapRepository {
       }
 
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 RoadmapRepository: Error in getLatestRoadmap:', error)
       return null
     }

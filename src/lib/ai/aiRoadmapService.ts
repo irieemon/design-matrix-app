@@ -82,7 +82,7 @@ export class AIRoadmapService {
     try {
       // In a real implementation, get actual auth token
       headers['Authorization'] = 'Bearer placeholder-token'
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Failed to get auth headers:', error)
     }
 
@@ -158,7 +158,7 @@ export class AIRoadmapService {
         logger.debug('🔄 Transforming legacy roadmap format')
         return this.transformLegacyRoadmap(roadmap)
 
-      } catch (error) {
+      } catch (_error) {
         logger.warn('🚫 AI roadmap failed, using mock:', error)
         logger.debug('Roadmap API error details:', {
           projectName,

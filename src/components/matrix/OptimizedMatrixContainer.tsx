@@ -152,8 +152,11 @@ export const OptimizedMatrixContainer: React.FC<OptimizedMatrixContainerProps> =
       }, 16) // ~60fps
     }
 
-    // Initial calculation
-    setViewportDimensions(calculateOptimizedDimensions())
+    // ✅ CRITICAL FIX: Use setTimeout(0) instead of synchronous setState
+    // This prevents cascading renders and improves performance
+    setTimeout(() => {
+      setViewportDimensions(calculateOptimizedDimensions())
+    }, 0)
 
     // Passive event listener for better performance
     window.addEventListener('resize', handleResize, { passive: true })
@@ -199,26 +202,7 @@ export const OptimizedMatrixContainer: React.FC<OptimizedMatrixContainerProps> =
     willChange: 'transform, opacity' as const
   }), [])
 
-  if (isEnterpriseMode) {
-    return (
-      <div
-        ref={containerRef}
-        className={`matrix-container-enterprise ${className || ''}`}
-        style={enterpriseStyles}
-      >
-        <MatrixCanvas
-          ideas={ideas}
-          currentUser={currentUser}
-          activeId={activeId}
-          dimensions={finalDimensions}
-          onEditIdea={onEditIdea}
-          onDeleteIdea={onDeleteIdea}
-          onToggleCollapse={onToggleCollapse}
-        />
-      </div>
-    )
-  }
-
+  // ✅ HOOKS FIX: Move useMemo BEFORE early return (Rules of Hooks requirement)
   // Legacy mode with GPU optimizations
   const legacyStyles = useMemo(() => ({
     width: finalDimensions.width,
@@ -250,6 +234,26 @@ export const OptimizedMatrixContainer: React.FC<OptimizedMatrixContainerProps> =
     backdropFilter: 'blur(20px) saturate(120%)',
     border: '1px solid rgba(255, 255, 255, 0.6)'
   }), [finalDimensions])
+
+  if (isEnterpriseMode) {
+    return (
+      <div
+        ref={containerRef}
+        className={`matrix-container-enterprise ${className || ''}`}
+        style={enterpriseStyles}
+      >
+        <MatrixCanvas
+          ideas={ideas}
+          currentUser={currentUser}
+          activeId={activeId}
+          dimensions={finalDimensions}
+          onEditIdea={onEditIdea}
+          onDeleteIdea={onDeleteIdea}
+          onToggleCollapse={onToggleCollapse}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className={`matrix-container w-full h-full flex items-center justify-center p-4 ${className || ''}`}>

@@ -7,6 +7,17 @@ import { Button, Input } from '../ui'
 import { useSecureAuthContext } from '../../contexts/SecureAuthContext'
 // EMERGENCY FIX: Removed useComponentState to eliminate state conflicts
 
+// ✅ HOOKS FIX: Custom hook to safely access optional context
+// This allows unconditional hook call while handling missing provider
+function useOptionalSecureAuthContext() {
+  try {
+    return useSecureAuthContext()
+  } catch {
+    // SecureAuthContext not available, return null
+    return null
+  }
+}
+
 interface AuthScreenProps {
   onAuthSuccess: (user: any) => void
 }
@@ -19,14 +30,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   // Feature flag: use new httpOnly cookie auth or old localStorage auth
   const useNewAuth = import.meta.env.VITE_FEATURE_HTTPONLY_AUTH === 'true'
 
-  // Try to get new auth context (only available if feature flag is enabled)
-  let secureAuth: ReturnType<typeof useSecureAuthContext> | null = null
-  try {
-    if (useNewAuth) {
-      secureAuth = useSecureAuthContext()
-    }
-  } catch (e) {
-    // SecureAuthContext not available, fall back to old auth
+  // ✅ HOOKS FIX: Always call hook unconditionally (Rules of Hooks requirement)
+  // Optional context - will be null if provider not available
+  const secureAuth = useOptionalSecureAuthContext()
+  if (!secureAuth) {
     logger.debug('SecureAuthContext not available, using old auth')
   }
 

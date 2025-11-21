@@ -191,7 +191,7 @@ export abstract class BaseService {
         })
 
         return this.createSuccessResult(result)
-      } catch (error) {
+      } catch (_error) {
         lastError = error
         retryCount++
 
@@ -265,7 +265,7 @@ export abstract class BaseService {
       // For now, return true for authenticated users
       // In production, implement proper RBAC/ABAC
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('Permission check failed:', error)
       return false
     }

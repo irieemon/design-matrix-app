@@ -34,7 +34,7 @@ export default function FAQPage() {
       const allCategoryIds = new Set(data.map(c => c.id))
       setExpandedCategories(allCategoryIds)
       setError(null)
-    } catch (err) {
+    } catch (_err) {
       logger.error('Failed to load FAQs:', err)
       setError('Failed to load FAQ content. Please try again later.')
     } finally {
@@ -46,7 +46,7 @@ export default function FAQPage() {
     try {
       const results = await faqService.searchFAQs(searchQuery)
       setSearchResults(results)
-    } catch (err) {
+    } catch (_err) {
       logger.error('Failed to search FAQs:', err)
       // Silent fail for search, don't show error to user
     }

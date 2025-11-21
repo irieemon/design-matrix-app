@@ -56,7 +56,7 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
 
       // Call parent close handler
       onClose()
-    } catch (error) {
+    } catch (_error) {
       handleError(error, 'close modal')
       // Still try to close even if unlock fails
       onClose()
@@ -153,7 +153,7 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
       // Close modal after successful update
       await safeClose()
 
-    } catch (error) {
+    } catch (_error) {
       handleError(error, 'update idea')
     } finally {
       setIsSubmitting(false)
@@ -163,7 +163,7 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
   const handleCancel = async () => {
     try {
       await safeClose()
-    } catch (error) {
+    } catch (_error) {
       handleError(error, 'cancel edit')
     }
   }
@@ -183,7 +183,7 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
 
       // Close modal after successful deletion
       await safeClose()
-    } catch (error) {
+    } catch (_error) {
       handleError(error, 'delete idea')
     } finally {
       setIsSubmitting(false)

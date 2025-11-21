@@ -146,7 +146,7 @@ class PdfLibraryLoader {
       const result = await this.loadingPromise
       this.state = LoadingState.LOADED
       return result
-    } catch (error) {
+    } catch (_error) {
       this.state = LoadingState.FAILED
       throw error
     } finally {
@@ -180,7 +180,7 @@ class PdfLibraryLoader {
 
         return library
 
-      } catch (error) {
+      } catch (_error) {
         lastError = error as Error
 
         pdfLoaderLogger.warn('pdfMake load attempt failed', {
@@ -254,7 +254,7 @@ class PdfLibraryLoader {
 
       return pdfMakeLib
 
-    } catch (error) {
+    } catch (_error) {
       pdfLoaderLogger.error('Failed to load pdfMake modules', error, {
         operation: 'performLoad',
         errorType: error instanceof Error ? error.name : 'unknown'
@@ -313,7 +313,7 @@ class PdfLibraryLoader {
         structure: 'pdfFonts (direct)'
       })
 
-    } catch (error) {
+    } catch (_error) {
       pdfLoaderLogger.error('Font configuration failed', error, {
         operation: 'configureFonts',
         hasPdfMake: !!pdfMakeLib,

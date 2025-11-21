@@ -44,7 +44,7 @@ export function getCachedAuthToken(): string | null {
             cacheRefreshed: true
           })
         }
-      } catch (error) {
+      } catch (_error) {
         logger.error('Error parsing localStorage auth token:', error)
         tokenCache.value = null
         tokenCache.timestamp = 0

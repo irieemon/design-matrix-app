@@ -10,7 +10,7 @@ interface MatrixQuadrantsProps {
   dimensions: MatrixDimensions
 }
 
-export const MatrixQuadrants: React.FC<MatrixQuadrantsProps> = ({ /* dimensions */ }) => {
+export const MatrixQuadrants: React.FC<MatrixQuadrantsProps> = (_props) => {
   return (
     <div className="matrix-quadrants" style={{ zIndex: Z_INDEX.QUADRANT_LABELS }}>
       {/* Quick Wins - Top Left */}

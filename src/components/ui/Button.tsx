@@ -16,6 +16,17 @@ import {
 import LoadingSpinner from './LoadingSpinner';
 import { logger } from '../../utils/logger';
 
+// ✅ HOOKS FIX: Custom hook to safely access optional context
+// This allows unconditional hook call while handling missing provider
+function useOptionalComponentStateContext() {
+  try {
+    return useComponentStateContext();
+  } catch {
+    // Context provider not available, return null
+    return null;
+  }
+}
+
 // Enhanced variant system (6 variants)
 export type ButtonVariant = ComponentVariant;
 
@@ -123,13 +134,9 @@ export const Button = forwardRef<ButtonRef, ButtonProps>(({
     errorRecoveryTimeout: errorDismissAfter
   });
 
-  // Try to access global state context (optional)
-  let contextState = null;
-  try {
-    contextState = useComponentStateContext();
-  } catch {
-    // Context not available, use local state
-  }
+  // ✅ HOOKS FIX: Always call hook unconditionally (Rules of Hooks requirement)
+  // Optional context - will be null if provider not available
+  const contextState = useOptionalComponentStateContext();
 
   // Register element for animations
   useEffect(() => {
@@ -185,7 +192,7 @@ export const Button = forwardRef<ButtonRef, ButtonProps>(({
       if (onClick && !componentState.isDisabled) {
         onClick(event);
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Button action failed:', error);
       componentState.setError(error instanceof Error ? error.message : 'Action failed');
     }

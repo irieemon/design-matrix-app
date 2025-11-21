@@ -30,7 +30,7 @@ const ProjectCollaboration: React.FC<ProjectCollaborationProps> = ({
     try {
       const role = await DatabaseService.getUserProjectRole(currentProject.id, currentUser.id)
       setUserRole(role || 'viewer')
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error loading user role:', error)
     } finally {
       setLoading(false)
@@ -41,7 +41,7 @@ const ProjectCollaboration: React.FC<ProjectCollaborationProps> = ({
     try {
       const collaborators = await DatabaseService.getProjectCollaborators(currentProject.id)
       setCollaboratorCount(collaborators.length + 1) // +1 for owner
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error loading collaborator count:', error)
     }
   }

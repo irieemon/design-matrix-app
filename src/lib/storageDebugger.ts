@@ -76,7 +76,7 @@ export class StorageDebugger {
         logger.warn('⚠️ No files found in /files subdirectory:', filesDirError)
       }
       
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 Storage debug failed:', error)
     }
   }
@@ -121,7 +121,7 @@ export class StorageDebugger {
         }
       }
       
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 Database path verification failed:', error)
     }
   }
@@ -167,7 +167,7 @@ export class StorageDebugger {
       
       await listRecursive(projectPath)
       
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 Failed to list project files:', error)
     }
   }
@@ -223,7 +223,7 @@ export class StorageDebugger {
         logger.debug('🗑️ Test file cleaned up')
       }
       
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 Upload/retrieval test failed:', error)
     }
   }

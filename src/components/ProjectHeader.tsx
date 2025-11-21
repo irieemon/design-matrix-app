@@ -32,14 +32,17 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
 
   // Auto-collapse long descriptions
   useEffect(() => {
-    if (currentProject?.description) {
-      // Estimate lines: approximately 80 characters per line
-      const estimatedLines = Math.ceil(currentProject.description.length / 80)
-      // Auto-collapse if more than 3 lines
-      setIsDescriptionCollapsed(estimatedLines > 3)
-    } else {
-      setIsDescriptionCollapsed(false)
-    }
+    // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+    setTimeout(() => {
+      if (currentProject?.description) {
+        // Estimate lines: approximately 80 characters per line
+        const estimatedLines = Math.ceil(currentProject.description.length / 80)
+        // Auto-collapse if more than 3 lines
+        setIsDescriptionCollapsed(estimatedLines > 3)
+      } else {
+        setIsDescriptionCollapsed(false)
+      }
+    }, 0)
   }, [currentProject?.description])
 
   // No longer loading project independently - using the currentProject prop instead

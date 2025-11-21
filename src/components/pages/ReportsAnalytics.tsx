@@ -87,7 +87,7 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
       const history = await DatabaseService.getProjectInsights(currentProject.id)
       setInsightsHistory(history)
       logger.debug('📊 Loaded insights history:', history.length, 'versions')
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error loading insights history:', error)
     } finally {
       // setIsLoadingHistory(false)

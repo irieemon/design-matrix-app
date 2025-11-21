@@ -68,7 +68,7 @@ const loadPdfJs = async () => {
       pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`
 
       logger.debug('✅ PDF.js loaded successfully')
-    } catch (error) {
+    } catch (_error) {
       logger.error('❌ Failed to load PDF.js:', error)
       throw error
     }
@@ -193,7 +193,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         return `[PDF document: ${file.name} - PDF contains no extractable text, but file uploaded successfully for AI reference]`
       }
       
-    } catch (error) {
+    } catch (_error) {
       logger.warn('❌ Could not extract text from PDF:', error)
       return `[PDF document: ${file.name} - PDF text extraction not available, but file uploaded successfully for AI reference]`
     }
@@ -219,7 +219,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         return `[Word document: ${file.name} - Content will be available to AI but cannot be previewed in browser]`
       }
       
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Could not read file content:', error)
     }
     
@@ -286,7 +286,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
       logger.debug(`🎉 All files uploaded successfully: ${uploadedFiles.length} files`)
       onFilesUploaded(uploadedFiles)
       setError(null)
-    } catch (err) {
+    } catch (_err) {
       logger.error('Error uploading files:', err)
       setError('Failed to upload files. Please try again.')
     } finally {

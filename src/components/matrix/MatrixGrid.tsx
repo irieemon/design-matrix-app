@@ -10,7 +10,7 @@ interface MatrixGridProps {
   dimensions: MatrixDimensions
 }
 
-export const MatrixGrid: React.FC<MatrixGridProps> = ({ /* dimensions */ }) => {
+export const MatrixGrid: React.FC<MatrixGridProps> = (_props) => {
   return (
     <div
       className="absolute inset-0 matrix-grid-background matrix-depth-field"

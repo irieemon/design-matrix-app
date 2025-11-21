@@ -82,7 +82,7 @@ export const useAIWorker = () => {
           })
           pendingRequests.current.clear()
         }
-      } catch (error) {
+      } catch (_error) {
         logger.warn('Web Workers not supported, falling back to main thread', { error })
       }
     }

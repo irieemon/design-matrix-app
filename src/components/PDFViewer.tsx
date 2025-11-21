@@ -30,8 +30,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl, fileName, onDownload }) 
         const PDFJS = await import('pdfjs-dist')
 
         // Configure worker
+        // ✅ SECURITY FIX: Updated to pdfjs-dist 5.4.394 to fix GHSA-wgrm-67xf-hhpq (arbitrary JS execution)
         if (PDFJS.GlobalWorkerOptions) {
-          PDFJS.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`
+          PDFJS.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.394/pdf.worker.min.js`
         }
 
         // Load PDF document
@@ -46,7 +47,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl, fileName, onDownload }) 
         setPdf(pdfDoc)
         setNumPages(pdfDoc.numPages)
         logger.debug('PDF loaded successfully', { numPages: pdfDoc.numPages, fileName })
-      } catch (err) {
+      } catch (_err) {
         logger.error('PDF load error:', err)
         setError('Failed to load PDF document')
       } finally {
@@ -92,14 +93,16 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl, fileName, onDownload }) 
         canvas.style.height = 'auto'
 
         // Render PDF page to canvas
+        // ✅ PDFJS v5 FIX: RenderParameters now requires 'canvas' property
         const renderContext = {
           canvasContext: context,
-          viewport: scaledViewport
+          viewport: scaledViewport,
+          canvas: canvas
         }
 
         await page.render(renderContext).promise
         logger.debug('Page rendered', { pageNum, scale: finalScale })
-      } catch (err) {
+      } catch (_err) {
         logger.error('Page render error:', err)
         setError('Failed to render page')
       }

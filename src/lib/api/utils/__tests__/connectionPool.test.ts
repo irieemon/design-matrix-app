@@ -40,7 +40,7 @@ describe('connectionPool.ts', () => {
     try {
       const pool = getConnectionPool()
       pool.destroy()
-    } catch (e) {
+    } catch (_e) {
       // Ignore if pool doesn't exist
     }
   })
@@ -490,7 +490,7 @@ describe('connectionPool.ts', () => {
       try {
         const client = await acquirePromise
         expect(client).toBeDefined()
-      } catch (error) {
+      } catch (_error) {
         // Acceptable to fail after destroy
         expect(error).toBeDefined()
       }

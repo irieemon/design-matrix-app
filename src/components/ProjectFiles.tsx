@@ -26,11 +26,14 @@ const ProjectFiles: React.FC<ProjectFilesProps> = ({
 
   // Auto-switch to manage tab if files exist (only on initial load, not user clicks)
   const [hasAutoSwitched, setHasAutoSwitched] = useState(false)
-  
+
   useEffect(() => {
     if (files.length > 0 && activeTab === 'upload' && !hasAutoSwitched) {
-      setActiveTab('manage')
-      setHasAutoSwitched(true)
+      // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+      setTimeout(() => {
+        setActiveTab('manage')
+        setHasAutoSwitched(true)
+      }, 0)
     }
   }, [files.length, activeTab, hasAutoSwitched])
 

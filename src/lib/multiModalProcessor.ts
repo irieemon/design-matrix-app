@@ -67,7 +67,7 @@ export class MultiModalProcessor {
       
       return context
       
-    } catch (error) {
+    } catch (_error) {
       logger.error('❌ Multi-modal processing failed:', error)
       return {
         textDocuments: [],
@@ -110,7 +110,7 @@ export class MultiModalProcessor {
           content: file.content_preview || `Document: ${file.name} (${file.file_type})`
         }
       }
-    } catch (error) {
+    } catch (_error) {
       logger.warn(`⚠️ Failed to process file ${file.name}:`, error)
       return {
         ...baseContent,
@@ -149,7 +149,7 @@ export class MultiModalProcessor {
           extractedText = '[OCR Placeholder] This image likely contains text content that could be extracted via OCR'
         }
       }
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Failed to analyze image:', error)
       visualDescription = `Image file: ${file.name} (Analysis unavailable)`
     }
@@ -186,7 +186,7 @@ export class MultiModalProcessor {
       // Simulate audio transcription detection
       audioTranscript = '[Transcription Placeholder] Audio content from this video could be transcribed using Whisper API'
       
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Failed to analyze video:', error)
       visualDescription = `Video file: ${file.name} (Analysis unavailable)`
     }
@@ -220,7 +220,7 @@ export class MultiModalProcessor {
       // For now, simulate transcription
       audioTranscript = '[Transcription Placeholder] This audio file could be transcribed using OpenAI Whisper API to extract spoken content'
       
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Failed to transcribe audio:', error)
       audioTranscript = `Audio file: ${file.name} (Transcription unavailable)`
     }

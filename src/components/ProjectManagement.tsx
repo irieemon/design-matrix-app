@@ -74,7 +74,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
       logger.debug('Direct load received', { count: projects?.length })
       setProjects(projects)
       setIsLoading(false)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Direct load error', error)
       setProjects([])
       setIsLoading(false)
@@ -82,7 +82,10 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
   }, [userId])
 
   useEffect(() => {
-    loadProjectsDirectly()
+    // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+    setTimeout(() => {
+      loadProjectsDirectly()
+    }, 0)
   }, [loadProjectsDirectly])
 
   const handleProjectCreated = useCallback((project: Project, ideas?: IdeaCard[]) => {
@@ -122,7 +125,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
       if (updatedProject) {
         setProjects(prev => prev.map(p => p.id === projectId ? updatedProject : p))
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error updating project status:', error)
     }
     setShowProjectMenu(null)
@@ -144,7 +147,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
           onProjectSelect((projects || []).find(p => p.id !== project.id) || null as any)
         }
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error deleting project:', error)
     }
     setShowDeleteConfirm({ project: null as any, show: false })

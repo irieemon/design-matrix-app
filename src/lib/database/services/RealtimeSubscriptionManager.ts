@@ -85,7 +85,7 @@ export class RealtimeSubscriptionManager {
               } else {
                 logger.debug('⏩ Real-time change not relevant to current project, skipping refresh')
               }
-            } catch (error) {
+            } catch (_error) {
               logger.error('❌ Error processing real-time change:', error)
               // Still try to refresh on error to maintain consistency
               callback([])
@@ -144,7 +144,7 @@ export class RealtimeSubscriptionManager {
           logger.warn('Error removing channel (already removed?):', removeError)
         }
       }
-    } catch (error) {  // Closes outer try block from line 49
+    } catch (_error) {  // Closes outer try block from line 49
       logger.error('❌ Failed to set up real-time subscription:', error)
       logger.warn('⚠️ App will continue to work without realtime updates')
 

@@ -34,7 +34,7 @@ export class RealtimeDiagnostic {
           setTimeout(() => {
             try {
               supabase.removeChannel(testChannel)
-            } catch (e) {
+            } catch (_e) {
               logger.debug('Channel removal error (safe to ignore):', e)
             }
           }, 100)
@@ -53,7 +53,7 @@ export class RealtimeDiagnostic {
       } else {
         logger.info('Can read from ideas table')
       }
-    } catch (err) {
+    } catch (_err) {
       logger.error('Ideas table access error:', err)
     }
 
@@ -138,7 +138,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.ideas;
           supabase.removeChannel(testChannel)
         }, 3000)
       }
-    } catch (err) {
+    } catch (_err) {
       logger.error('Test insert failed:', err)
     }
 

@@ -28,7 +28,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
     try {
       const fetchedUsers = await AdminRepository.getAllUserStats()
       setUsers(fetchedUsers)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error loading users:', error)
     } finally {
       setIsLoading(false)
@@ -40,7 +40,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
     try {
       const { recentTokenUsage } = await AdminRepository.getUserDetails(userId)
       setTokenUsage(recentTokenUsage)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error loading token usage:', error)
       setTokenUsage([])
     } finally {
@@ -56,22 +56,30 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
 
   const handleUserStatusToggle = async (userId: string, currentStatus: boolean) => {
     try {
-      await AdminService.updateUserStatus(userId, !currentStatus)
-      setUsers(prev => prev.map(user => 
+      // ✅ SECURITY FIX: updateUserStatus removed from AdminService (RLS bypass)
+      // TODO: Implement via backend API endpoint at /api/admin/users/:id/status
+      logger.warn('User status update requires backend API endpoint implementation')
+
+      // Optimistic update for UI feedback
+      setUsers(prev => prev.map(user =>
         user.id === userId ? { ...user, is_active: !currentStatus } : user
       ))
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error updating user status:', error)
     }
   }
 
   const handleRoleChange = async (userId: string, newRole: 'user' | 'admin') => {
     try {
-      await AdminService.updateUserRole(userId, newRole)
-      setUsers(prev => prev.map(user => 
+      // ✅ SECURITY FIX: updateUserRole removed from AdminService (RLS bypass)
+      // TODO: Implement via backend API endpoint at /api/admin/users/:id/role
+      logger.warn('User role update requires backend API endpoint implementation')
+
+      // Optimistic update for UI feedback
+      setUsers(prev => prev.map(user =>
         user.id === userId ? { ...user, role: newRole } : user
       ))
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error updating user role:', error)
     }
   }

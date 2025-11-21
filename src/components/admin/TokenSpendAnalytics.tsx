@@ -111,7 +111,7 @@ function formatPercentage(value: number): string {
 // MAIN COMPONENT
 // ============================================================================
 
-export default function TokenSpendAnalytics({ currentUser }: TokenSpendAnalyticsProps) {
+export default function TokenSpendAnalytics({ currentUser: _currentUser }: TokenSpendAnalyticsProps) {
   const [data, setData] = useState<TokenSpendData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -148,7 +148,7 @@ export default function TokenSpendAnalytics({ currentUser }: TokenSpendAnalytics
 
       const result = await response.json()
       setData(result.data)
-    } catch (err) {
+    } catch (_err) {
       console.error('Failed to load token spend:', err)
       setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {

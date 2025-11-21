@@ -102,7 +102,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
       }
 
       throw new Error(`Profile fetch failed: ${response.status}`)
-    } catch (error) {
+    } catch (_error) {
       clearTimeout(timeoutId)
 
       // Fallback user on any error
@@ -148,7 +148,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
       const hasProjects = result?.count && result.count > 0
       logger.debug('Project check result:', hasProjects ? 'has projects' : 'no projects')
 
-    } catch (error) {
+    } catch (_error) {
       logger.debug('Project check failed (non-critical):', error)
     }
   }
@@ -185,7 +185,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
         })
       }
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 Error in auth processing:', error)
 
       // Always set a user to prevent infinite loading
@@ -210,7 +210,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
     logger.debug('🎉 Authentication successful:', authUser.email)
     try {
       await handleAuthUser(authUser)
-    } catch (error) {
+    } catch (_error) {
       logger.error('❌ Error in auth success handler:', error)
       setIsLoading(false)  // Ensure loading stops even on error
     }
@@ -220,7 +220,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
     try {
       logger.debug('🚪 Logging out...')
       await supabase.auth.signOut()
-    } catch (error) {
+    } catch (_error) {
       logger.error('Logout error:', error)
       // Force cleanup on error
       setCurrentUser(null)
@@ -249,7 +249,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
         try {
           sessionResult = await supabase.auth.getSession()
           clearTimeout(timeoutId)
-        } catch (error) {
+        } catch (_error) {
           clearTimeout(timeoutId)
           logger.debug('Session check timeout - proceeding with no session')
           sessionResult = { data: { session: null }, error: null }
@@ -278,7 +278,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
           // Clear any legacy storage
           try {
             localStorage.removeItem('prioritasUser')
-          } catch (e) {
+          } catch (_e) {
             // Ignore
           }
 
@@ -288,7 +288,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
             setIsLoading(false)
           }
         }
-      } catch (error) {
+      } catch (_error) {
         logger.error('💥 Auth initialization error:', error)
         authPerformanceMonitor.finishSession('error')
         if (mounted) setIsLoading(false)

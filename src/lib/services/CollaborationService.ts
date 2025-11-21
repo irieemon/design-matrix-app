@@ -201,7 +201,7 @@ export class CollaborationService extends BaseService {
 
       // For demo purposes: Generate display email from user_id
       // In production: Join with user_profiles table to get actual email
-      const collaboratorsWithUserData: CollaboratorWithUser[] = (data || []).map(collaborator => {
+      const collaboratorsWithUserData: CollaboratorWithUser[] = (data || []).map((collaborator: any) => {
         // Demo: Decode base64-encoded email from user_id (reverse of btoa encoding)
         let actualEmail: string
         try {
@@ -460,7 +460,7 @@ export class CollaborationService extends BaseService {
           table: 'project_collaborators',
           filter: `project_id=eq.${projectId}`
         },
-        async (payload) => {
+        async (payload: any) => {
           logger.debug('📡 Real-time collaborator update:', payload.eventType)
           logger.debug('🔄 Payload data:', payload)
 
@@ -474,7 +474,7 @@ export class CollaborationService extends BaseService {
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: any) => {
         logger.debug('📡 Project collaborators subscription status:', status)
       })
 

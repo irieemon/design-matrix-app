@@ -53,7 +53,7 @@ export async function withFallback<T>(
 ): Promise<T> {
   try {
     return await promise
-  } catch (error) {
+  } catch (_error) {
     return typeof fallback === 'function' ? (fallback as () => T)() : fallback
   }
 }

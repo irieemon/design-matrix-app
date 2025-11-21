@@ -43,7 +43,7 @@ const StorageRepairPanel: React.FC<StorageRepairPanelProps> = ({ projectId }) =>
 
       logger.debug('Repair action completed', { action, data })
 
-    } catch (err) {
+    } catch (_err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       setError(`${action} failed: ${errorMessage}`)
       logger.error('Repair action failed', { action, error: err })

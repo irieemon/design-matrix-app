@@ -61,6 +61,8 @@ function StatCard({
   change,
   changeType = 'neutral'
 }: StatCardProps) {
+  // ✅ CRITICAL FIX: Don't create components during render
+  // Use the component reference directly in JSX instead
   const getTrendIcon = () => {
     if (changeType === 'increase') return TrendingUp
     if (changeType === 'decrease') return TrendingDown
@@ -73,8 +75,6 @@ function StatCard({
     return 'text-slate-500'
   }
 
-  const TrendIcon = getTrendIcon()
-
   return (
     <div className={`${bgColor} rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow`}>
       {/* Header with icon */}
@@ -82,12 +82,15 @@ function StatCard({
         <div className={`p-2 ${iconColor} bg-opacity-10 rounded-lg`}>
           <Icon className={`w-6 h-6 ${iconColor}`} />
         </div>
-        {change !== undefined && (
-          <div className={`flex items-center gap-1 ${getTrendColor()}`}>
-            <TrendIcon className="w-4 h-4" />
-            <span className="text-xs font-medium">{Math.abs(change)}%</span>
-          </div>
-        )}
+        {change !== undefined && (() => {
+          const TrendIcon = getTrendIcon()
+          return (
+            <div className={`flex items-center gap-1 ${getTrendColor()}`}>
+              <TrendIcon className="w-4 h-4" />
+              <span className="text-xs font-medium">{Math.abs(change)}%</span>
+            </div>
+          )
+        })()}
       </div>
 
       {/* Title */}

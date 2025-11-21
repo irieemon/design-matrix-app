@@ -65,6 +65,38 @@ export function useLazyImage(options: UseLazyImageOptions = {}): UseLazyImageRet
   const [error, setError] = useState<Error | null>(null)
   const [loading, setLoading] = useState(false)
 
+  // ✅ CRITICAL FIX: Move function declaration BEFORE useEffect that calls it
+  // This prevents "Cannot access variable before it is declared" error
+  const loadImage = (imgElement: HTMLImageElement) => {
+    const src = imgElement.dataset.src
+    if (!src) return
+
+    setLoading(true)
+    setError(null)
+
+    // Create temporary image to test loading
+    const tempImg = new Image()
+
+    tempImg.onload = () => {
+      imgElement.src = src
+      setLoaded(true)
+      setLoading(false)
+    }
+
+    tempImg.onerror = () => {
+      const error = new Error(`Failed to load image: ${src}`)
+      setError(error)
+      setLoading(false)
+
+      // Show placeholder on error if provided
+      if (placeholder && imgElement.src !== placeholder) {
+        imgElement.src = placeholder
+      }
+    }
+
+    tempImg.src = src
+  }
+
   useEffect(() => {
     const imgElement = imgRef.current
     if (!imgElement) return
@@ -102,36 +134,6 @@ export function useLazyImage(options: UseLazyImageOptions = {}): UseLazyImageRet
       }
     }
   }, [rootMargin, threshold])
-
-  const loadImage = (imgElement: HTMLImageElement) => {
-    const src = imgElement.dataset.src
-    if (!src) return
-
-    setLoading(true)
-    setError(null)
-
-    // Create temporary image to test loading
-    const tempImg = new Image()
-
-    tempImg.onload = () => {
-      imgElement.src = src
-      setLoaded(true)
-      setLoading(false)
-    }
-
-    tempImg.onerror = () => {
-      const error = new Error(`Failed to load image: ${src}`)
-      setError(error)
-      setLoading(false)
-
-      // Show placeholder on error if provided
-      if (placeholder && imgElement.src !== placeholder) {
-        imgElement.src = placeholder
-      }
-    }
-
-    tempImg.src = src
-  }
 
   return {
     imgRef,
@@ -260,6 +262,25 @@ export function useLazyBackgroundImage(
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
+  // ✅ CRITICAL FIX: Move function declaration BEFORE useEffect that calls it
+  // This prevents "Cannot access variable before it is declared" error
+  const loadBackgroundImage = (divElement: HTMLDivElement) => {
+    // Preload image
+    const tempImg = new Image()
+
+    tempImg.onload = () => {
+      divElement.style.backgroundImage = `url(${imageUrl})`
+      setLoaded(true)
+    }
+
+    tempImg.onerror = () => {
+      const error = new Error(`Failed to load background image: ${imageUrl}`)
+      setError(error)
+    }
+
+    tempImg.src = imageUrl
+  }
+
   useEffect(() => {
     const divElement = divRef.current
     if (!divElement) return
@@ -293,23 +314,6 @@ export function useLazyBackgroundImage(
       }
     }
   }, [imageUrl, rootMargin, threshold])
-
-  const loadBackgroundImage = (divElement: HTMLDivElement) => {
-    // Preload image
-    const tempImg = new Image()
-
-    tempImg.onload = () => {
-      divElement.style.backgroundImage = `url(${imageUrl})`
-      setLoaded(true)
-    }
-
-    tempImg.onerror = () => {
-      const error = new Error(`Failed to load background image: ${imageUrl}`)
-      setError(error)
-    }
-
-    tempImg.src = imageUrl
-  }
 
   return {
     divRef,

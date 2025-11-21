@@ -40,7 +40,10 @@ export default function AuthenticationFlow({
       const timer = setTimeout(() => setShowTroubleshooting(true), 5000)
       return () => clearTimeout(timer)
     } else {
-      setShowTroubleshooting(false)
+      // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+      setTimeout(() => {
+        setShowTroubleshooting(false)
+      }, 0)
     }
   }, [isLoading])
 
@@ -50,7 +53,7 @@ export default function AuthenticationFlow({
       localStorage.clear()
       sessionStorage.clear()
       window.location.href = '/?fresh=true'
-    } catch (e) {
+    } catch (_e) {
       window.location.reload()
     }
   }
@@ -75,8 +78,8 @@ export default function AuthenticationFlow({
           <h1 className="text-2xl font-bold text-slate-900 mb-2">Prioritas</h1>
           <p className="text-slate-600 mb-8">Smart Priority Matrix Platform</p>
 
-          {/* EMERGENCY FIX: Remove timeout error state - useAuth handles this */}
-          {false ? (
+          {/* EMERGENCY FIX: Timeout error state disabled - useAuth handles this */}
+          {false && (
             <div className="space-y-6">
               <div className="bg-red-50 border border-red-200 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-red-800 mb-2">Initialization Timeout</h3>

@@ -116,13 +116,13 @@ export class AIInsightsService {
           } else {
             logger.warn('⚠️ AIInsightsService: No access token found in localStorage session')
           }
-        } catch (parseError) {
+        } catch (_parseError) {
           logger.error('❌ AIInsightsService: Error parsing localStorage session:', parseError)
         }
       } else {
         logger.warn('⚠️ AIInsightsService: No session found in localStorage')
       }
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Failed to get auth headers:', { error: error instanceof Error ? error.message : String(error) })
     }
 
@@ -259,7 +259,7 @@ export class AIInsightsService {
           throw new Error('AI service returned invalid insights format. Please check your API configuration.')
         }
 
-      } catch (error) {
+      } catch (_error) {
         logger.error('🚫 AI insights generation failed:', error)
 
         // In development, provide intelligent mock data for testing AI optimizations
@@ -321,7 +321,7 @@ export class AIInsightsService {
         // Get document context
         documentContext = await this.buildDocumentContext(projectId)
 
-      } catch (error) {
+      } catch (_error) {
         logger.warn('Could not fetch additional project context:', { error: error instanceof Error ? error.message : String(error) })
       }
     }
@@ -367,7 +367,7 @@ export class AIInsightsService {
       this.logDocumentContext(documentContext)
       return documentContext
 
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Could not load project files from backend:', { error: error instanceof Error ? error.message : String(error) })
       return []
     }
@@ -964,7 +964,7 @@ export class AIInsightsService {
         risks: insights.riskAssessment?.risks || [],
         mitigations: insights.riskAssessment?.mitigations || []
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('❌ Comprehensive risk assessment failed:', error)
       throw error
     }

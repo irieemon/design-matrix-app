@@ -178,7 +178,7 @@ export function findNonConflictingPosition(
   maxAttempts: number = 50
 ): PixelPosition {
   // First, constrain to bounds
-  let position = constrainToBounds(targetPosition, targetDimensions, matrixDimensions)
+  const position = constrainToBounds(targetPosition, targetDimensions, matrixDimensions)
 
   // Check if already non-conflicting
   const conflicts = findConflictingCards(position, targetDimensions, existingCards, excludeId)

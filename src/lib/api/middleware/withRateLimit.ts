@@ -154,7 +154,7 @@ export function withRateLimit(
         if (opts.skipSuccessfulRequests && res.statusCode < 400) {
           entry.count--
         }
-      } catch (error) {
+      } catch (_error) {
         // Optionally don't count failed requests
         if (opts.skipFailedRequests) {
           entry.count--

@@ -42,7 +42,7 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
       const aiResponse = await aiService.generateIdea(title.trim(), projectContext)
       logger.debug('✅ AIIdeaModal: AI response received:', aiResponse)
       setGeneratedIdea(aiResponse)
-    } catch (error) {
+    } catch (_error) {
       logger.error('❌ AIIdeaModal: Error generating AI idea:', error)
       // Fallback to mock if AI service fails
       const fallbackIdea = generateFallbackIdea(title.trim())

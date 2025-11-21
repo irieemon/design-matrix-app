@@ -168,7 +168,7 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
               reject(new Error(`Content not rendered - children: ${container.children.length}, innerHTML: ${container.innerHTML.length}`))
             }
           }, 2000)  // Wait for rendering
-        } catch (error) {
+        } catch (_error) {
           logger.error('Error during render', error)
           reject(error)
         }
@@ -200,7 +200,7 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
       root.unmount()
       document.body.removeChild(container)
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('Export failed', error, {
         exportMode,
         exportFormat,

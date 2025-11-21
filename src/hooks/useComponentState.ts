@@ -348,7 +348,7 @@ export const useComponentState = (options: UseComponentStateOptions = {}): UseCo
       }, 2000);
 
       return result;
-    } catch (error) {
+    } catch (_error) {
       setError(error instanceof Error ? error.message : 'An error occurred');
       throw error;
     }

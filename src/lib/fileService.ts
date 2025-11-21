@@ -142,7 +142,7 @@ export class FileService {
         file: projectFile
       }
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 Upload exception:', error)
       return {
         success: false,
@@ -207,7 +207,7 @@ export class FileService {
       logger.debug('📂 Loaded project files:', files.length)
       return files
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 Error loading project files:', error)
       return []
     }
@@ -261,7 +261,7 @@ export class FileService {
       logger.debug('✅ File deleted successfully:', fileId)
       return { success: true }
 
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 Delete exception:', error)
       return {
         success: false,
@@ -337,7 +337,7 @@ export class FileService {
 
       logger.debug('✅ Successfully created signed URL')
       return data.signedUrl
-    } catch (error) {
+    } catch (_error) {
       logger.error('❌ Error getting file URL:', error)
       return null
     }
@@ -352,7 +352,7 @@ export class FileService {
         .from(this.BUCKET_NAME)
         .remove([storagePath])
       logger.debug('🧹 Cleaned up failed upload:', storagePath)
-    } catch (error) {
+    } catch (_error) {
       logger.warn('⚠️ Could not cleanup failed upload:', error)
     }
   }
@@ -383,7 +383,7 @@ export class FileService {
       const result = await response.json()
       logger.debug('✅ File analysis completed:', result.cached ? 'cached' : 'new')
       
-    } catch (error) {
+    } catch (_error) {
       logger.error('❌ File analysis trigger failed:', error)
       throw error
     }
@@ -411,7 +411,7 @@ export class FileService {
           logger.debug('✅ Storage bucket created:', this.BUCKET_NAME)
         }
       }
-    } catch (error) {
+    } catch (_error) {
       logger.warn('⚠️ Bucket initialization failed:', error)
     }
   }

@@ -23,7 +23,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) => {
     try {
       const dashboardStats = await AdminRepository.getDashboardStats()
       setStats(dashboardStats)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error loading dashboard stats:', error)
     } finally {
       setIsLoading(false)
@@ -38,7 +38,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) => {
       // Reload stats
       await loadStats()
       logger.info('Admin stats refreshed successfully')
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error refreshing stats:', error)
     } finally {
       setIsRefreshing(false)

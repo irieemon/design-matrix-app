@@ -53,7 +53,7 @@ export const loadPDFMake = async (): Promise<PDFMakeModule> => {
     })
 
     return pdfMakeCache
-  } catch (error) {
+  } catch (_error) {
     pdfLoaderLogger.error('Failed to load PDF library', error, {
       operation: 'loadPDFMake'
     })
@@ -86,7 +86,7 @@ export const loadHTML2Canvas = async (): Promise<HTML2CanvasModule> => {
     })
 
     return html2CanvasCache as HTML2CanvasModule
-  } catch (error) {
+  } catch (_error) {
     pdfLoaderLogger.error('Failed to load screenshot library', error, {
       operation: 'loadHTML2Canvas'
     })
@@ -117,7 +117,7 @@ export const loadPDFLibraries = async (): Promise<{
     })
 
     return { pdfMake, html2canvas }
-  } catch (error) {
+  } catch (_error) {
     pdfLoaderLogger.error('Failed to load PDF bundle', error, {
       operation: 'loadPDFLibraries'
     })

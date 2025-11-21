@@ -75,7 +75,7 @@ export class RoadmapService extends BaseAiService {
               keyMilestones: roadmap.keyMilestones || []
             }
           }
-        } catch (error) {
+        } catch (_error) {
           logger.warn('🚫 AI roadmap failed, using mock:', error)
           logger.debug('Roadmap API error details:', {
             projectName,

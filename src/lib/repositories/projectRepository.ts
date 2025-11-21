@@ -92,7 +92,7 @@ export class ProjectRepository {
       }
 
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get all projects:', error)
       throw error
     }
@@ -133,7 +133,7 @@ export class ProjectRepository {
 
       logger.debug(`✅ Successfully fetched ${data?.length || 0} projects for user`)
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('Exception in getUserOwnedProjects', error)
       logger.error('Failed to get user projects:', error)
       throw error
@@ -148,7 +148,7 @@ export class ProjectRepository {
       // This would typically involve a join with project_collaborators table
       // For now, returning owned projects
       return await ProjectRepository.getUserOwnedProjects(userId)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get user accessible projects:', error)
       throw error
     }
@@ -165,7 +165,7 @@ export class ProjectRepository {
         return await ProjectRepository.getProjectById(storedProjectId)
       }
       return null
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get current project:', error)
       return null
     }
@@ -200,7 +200,7 @@ export class ProjectRepository {
       }
 
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get project by ID:', error)
       return null
     }
@@ -249,7 +249,7 @@ export class ProjectRepository {
 
       logger.debug('Project created successfully:', data.id)
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to create project:', error)
       // Re-throw limit errors for frontend handling
       if (error instanceof Error && error.message === 'PROJECT_LIMIT_REACHED') {
@@ -289,7 +289,7 @@ export class ProjectRepository {
 
       logger.debug('Project updated successfully:', projectId)
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to update project:', error)
       return null
     }
@@ -317,7 +317,7 @@ export class ProjectRepository {
 
       logger.debug('Project deleted successfully:', projectId)
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to delete project:', error)
       return false
     }
@@ -330,7 +330,7 @@ export class ProjectRepository {
     try {
       localStorage.setItem('currentProjectId', projectId)
       logger.debug('Current project set:', projectId)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to set current project:', error)
     }
   }
@@ -342,7 +342,7 @@ export class ProjectRepository {
     try {
       localStorage.removeItem('currentProjectId')
       logger.debug('Current project cleared')
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to clear current project:', error)
     }
   }
@@ -388,7 +388,7 @@ export class ProjectRepository {
         collaboratorCount,
         lastActivity: lastActivity?.updated_at || null
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get project stats:', error)
       return {
         ideaCount: 0,
@@ -427,7 +427,7 @@ export class ProjectRepository {
           logger.debug('Calling callback with projects')
           callback(projects)
           logger.debug('Callback executed successfully')
-        } catch (error) {
+        } catch (_error) {
           logger.error('Error in loadInitialData', error)
           logger.error('Error loading initial projects:', error)
           callback(null)
@@ -456,7 +456,7 @@ export class ProjectRepository {
                 ? await ProjectRepository.getUserOwnedProjects(userId)
                 : await ProjectRepository.getAllProjects()
               callback(projects)
-            } catch (error) {
+            } catch (_error) {
               logger.error('Error refreshing projects:', error)
               callback(null)
             }
@@ -469,7 +469,7 @@ export class ProjectRepository {
         logger.debug('🔴 Unsubscribing from projects channel:', channelName)
         supabase.removeChannel(channel)
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to set up projects subscription:', error)
       return () => {} // Return empty unsubscribe function
     }
@@ -499,7 +499,7 @@ export class ProjectRepository {
       }
 
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get project insight:', error)
       return null
     }

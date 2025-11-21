@@ -31,3 +31,91 @@ export const CACHE_DURATIONS = {
   /** Profile data cache duration (2 minutes) */
   PROFILE: 2 * 60 * 1000
 } as const
+
+/**
+ * Feature Flags
+ *
+ * Flags for progressive feature rollout and safe testing.
+ * All flags default to OFF unless explicitly enabled via environment variables.
+ */
+export const FEATURE_FLAGS = {
+  /**
+   * Phase Two: Real-Time Collaborative Brainstorming Infrastructure
+   *
+   * Enables:
+   * - Real-time channel subscriptions (ideas, participants, session state)
+   * - Presence tracking (typing indicators, participant activity)
+   * - Optimistic UI updates with deduplication
+   * - Event batching and automatic reconnection
+   *
+   * When OFF: Phase One functionality remains stable (QR join, backend validation)
+   * When ON: Full real-time collaboration features enabled
+   *
+   * @default false
+   */
+  MOBILE_BRAINSTORM_PHASE2: process.env.REACT_APP_MOBILE_BRAINSTORM_PHASE2 === 'true' || false,
+
+  /**
+   * Phase Three: UI Presentation Layer for Collaborative Brainstorming
+   *
+   * Enables:
+   * - Mobile Join Flow UI with validation states
+   * - Mobile Idea Submission Form with real-time feedback
+   * - Desktop UI integrations (enhanced IdeaCard, ParticipantList, presence indicators)
+   * - Real-time UI bindings to Phase Two hooks
+   * - Animations and visual polish (scale-in, fade, blue pulse)
+   *
+   * When OFF: App behaves exactly as before (no UI changes)
+   * When ON: Full collaborative mobile brainstorming UI becomes available
+   *
+   * @default false
+   */
+  MOBILE_BRAINSTORM_PHASE3: process.env.REACT_APP_MOBILE_BRAINSTORM_PHASE3 === 'true' || false,
+
+  /**
+   * Phase Four: Facilitator Desktop Integration Layer
+   *
+   * Enables:
+   * - QR session activation flow in fullscreen matrix
+   * - SessionQRCode overlay component with join instructions
+   * - Facilitator session controls (pause/resume/end)
+   * - Desktop participant panel with real-time updates
+   * - Blue pulse indicator for mobile-submitted ideas
+   * - Session status indicators and visual treatments
+   * - Full integration of brainstorm features into matrix UI
+   *
+   * When OFF: Existing Idea Matrix behavior unchanged
+   * When ON: Complete facilitator desktop experience available
+   *
+   * @default false
+   */
+  MOBILE_BRAINSTORM_PHASE4: process.env.REACT_APP_MOBILE_BRAINSTORM_PHASE4 === 'true' || false,
+
+  /**
+   * Phase Five: Security, Validation, Rate Limiting & Test Coverage
+   *
+   * Enables:
+   * - Server-side rate limiting (6 ideas/min per participant, session limits)
+   * - Content moderation service (spam, profanity, length validation)
+   * - Session security enforcement (token validation, expiration, participant limits)
+   * - RLS policy validation and testing
+   * - Security logging and audit trails
+   * - Comprehensive E2E test suite coverage
+   * - Performance and load testing
+   *
+   * When OFF: System behaves exactly like Phase Four
+   * When ON: Enhanced security, validation, and testing infrastructure active
+   *
+   * @default false
+   */
+  MOBILE_BRAINSTORM_PHASE5: process.env.REACT_APP_MOBILE_BRAINSTORM_PHASE5 === 'true' || false
+} as const
+
+/**
+ * Check if a feature flag is enabled
+ * @param flag - Feature flag name from FEATURE_FLAGS
+ * @returns boolean indicating if feature is enabled
+ */
+export function isFeatureEnabled(flag: keyof typeof FEATURE_FLAGS): boolean {
+  return FEATURE_FLAGS[flag]
+}

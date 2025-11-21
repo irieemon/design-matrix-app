@@ -63,7 +63,7 @@ export class FAQService {
       }
 
       return categoriesWithItems
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get categories with items:', error)
       throw error
     }
@@ -89,7 +89,7 @@ export class FAQService {
 
       if (error) throw error
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get categories:', error)
       throw error
     }
@@ -112,7 +112,7 @@ export class FAQService {
 
       logger.info('Created FAQ category:', data.name)
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to create category:', error)
       throw error
     }
@@ -136,7 +136,7 @@ export class FAQService {
 
       logger.info('Updated FAQ category:', id)
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to update category:', error)
       throw error
     }
@@ -157,7 +157,7 @@ export class FAQService {
       if (error) throw error
 
       logger.info('Deleted FAQ category:', id)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to delete category:', error)
       throw error
     }
@@ -186,7 +186,7 @@ export class FAQService {
 
       if (error) throw error
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get FAQ items:', error)
       throw error
     }
@@ -210,7 +210,7 @@ export class FAQService {
 
       if (error) throw error
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to search FAQs:', error)
       throw error
     }
@@ -233,7 +233,7 @@ export class FAQService {
 
       logger.info('Created FAQ item:', data.question)
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to create FAQ item:', error)
       throw error
     }
@@ -257,7 +257,7 @@ export class FAQService {
 
       logger.info('Updated FAQ item:', id)
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to update FAQ item:', error)
       throw error
     }
@@ -278,7 +278,7 @@ export class FAQService {
       if (error) throw error
 
       logger.info('Deleted FAQ item:', id)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to delete FAQ item:', error)
       throw error
     }

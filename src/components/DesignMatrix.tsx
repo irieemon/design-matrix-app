@@ -44,6 +44,8 @@ interface DesignMatrixProps {
   isFullscreen?: boolean
   /** Whether any modal is currently open (for pointer-events management) */
   hasOpenModal?: boolean
+  /** Phase Four: Set of idea IDs that were submitted from mobile devices */
+  mobileIdeaIds?: Set<string>
 }
 
 // Matrix component reference for imperative operations
@@ -79,7 +81,8 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   showGrid = true,
   showLabels = true,
   isFullscreen = false,
-  hasOpenModal = false
+  hasOpenModal = false,
+  mobileIdeaIds = new Set()
 }, ref) => {
   const [hoveredQuadrant, setHoveredQuadrant] = useState<string | null>(null)
 
@@ -155,7 +158,7 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
       } else {
         await componentState.executeAction(operation)
       }
-    } catch (err) {
+    } catch (_err) {
       logger.error('Matrix operation failed:', err)
       componentState.setError(err instanceof Error ? err.message : 'Operation failed')
     }
@@ -396,6 +399,7 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
                 onEdit={() => handleEditIdea(idea)}
                 onDelete={() => handleDeleteIdea(idea.id)}
                 onToggleCollapse={(ideaId, collapsed) => handleToggleCollapse(ideaId, collapsed)}
+                isFromMobile={mobileIdeaIds.has(idea.id)}
               />
             </div>
           )

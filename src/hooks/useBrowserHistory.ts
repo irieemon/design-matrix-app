@@ -92,7 +92,10 @@ export const useBrowserHistory = ({
       logger.info('Starting project restoration', { projectId: projectIdFromUrl })
       // CRITICAL FIX: Mark this project as attempted BEFORE calling restore to prevent duplicate calls
       attemptedRestorationRef.current.add(projectIdFromUrl)
-      setIsRestoringProject(true)
+      // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+      setTimeout(() => {
+        setIsRestoringProject(true)
+      }, 0)
 
       // PHASE 1 FIX: Increased restoration timeout to match auth timeout (8s)
       // Allows sufficient time for database query, network latency, and RLS overhead
@@ -133,7 +136,10 @@ export const useBrowserHistory = ({
           attemptedRestorationRef.current.delete(projectIdFromUrl)
         }
       }
-      setIsRestoringProject(false)
+      // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+      setTimeout(() => {
+        setIsRestoringProject(false)
+      }, 0)
     }
   }, [location.search, currentProject, onProjectRestore])
 
@@ -196,7 +202,7 @@ export const useBrowserHistory = ({
 
   // Update document title when page or project changes
   useEffect(() => {
-    const pageTitle = pageToTitle[currentPage] || 'Prioritas'
+    const pageTitle = (currentPage && pageToTitle[currentPage]) || 'Prioritas'
     const baseTitle = 'Prioritas'
     
     if (currentProject) {
@@ -312,7 +318,10 @@ export const useBrowserHistory = ({
             searchParams: location.search
           })
           attemptedRestorationRef.current.add(projectIdFromUrl)
-          setIsRestoringProject(true)
+          // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+          setTimeout(() => {
+            setIsRestoringProject(true)
+          }, 0)
           onProjectRestore(projectIdFromUrl)
         }
       } else if (isInitialLoad) {

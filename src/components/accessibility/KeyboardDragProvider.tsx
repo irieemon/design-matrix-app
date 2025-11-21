@@ -80,7 +80,7 @@ export const KeyboardDragProvider: React.FC<KeyboardDragProviderProps> = ({
     const item = items.get(selectedItem)
     if (!item) return
 
-    let newPosition = { ...item.position }
+    const newPosition = { ...item.position }
 
     switch (direction) {
       case 'up':

@@ -369,7 +369,7 @@ export class RoadmapExporter {
 
       // Remove loading overlay
       document.body.removeChild(loadingOverlay)
-    } catch (error) {
+    } catch (_error) {
       this.exportLogger.error('Multi-page PDF export failed', error, {
         exportMode: options.mode,
         format: options.format,
@@ -469,7 +469,7 @@ export class RoadmapExporter {
 
       // Remove loading overlay
       document.body.removeChild(loadingOverlay)
-    } catch (error) {
+    } catch (_error) {
       this.exportLogger.error('Export failed', error, {
         exportMode: options.mode,
         format: options.format,

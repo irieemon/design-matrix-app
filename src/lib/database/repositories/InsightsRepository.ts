@@ -68,7 +68,7 @@ export class InsightsRepository {
 
       logger.debug('✅ InsightsRepository: Insights saved successfully:', data.id)
       return data.id
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 InsightsRepository: Error in saveProjectInsights:', error)
       return null
     }
@@ -100,7 +100,7 @@ export class InsightsRepository {
       }
 
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 InsightsRepository: Error in getProjectInsights:', error)
       return []
     }
@@ -126,7 +126,7 @@ export class InsightsRepository {
       }
 
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 InsightsRepository: Error in getProjectInsight:', error)
       return null
     }
@@ -157,7 +157,7 @@ export class InsightsRepository {
 
       logger.debug('✅ InsightsRepository: Insight updated successfully')
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 InsightsRepository: Error in updateProjectInsight:', error)
       return false
     }
@@ -182,7 +182,7 @@ export class InsightsRepository {
 
       logger.debug('✅ InsightsRepository: Insight deleted successfully')
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 InsightsRepository: Error in deleteProjectInsight:', error)
       return false
     }
@@ -210,7 +210,7 @@ export class InsightsRepository {
       }
 
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 InsightsRepository: Error in getLatestInsight:', error)
       return null
     }

@@ -86,7 +86,7 @@ export class ProfileService {
       this.cache.clear()
 
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Exception updating user profile:', error)
       throw error
     }
@@ -138,7 +138,7 @@ export class ProfileService {
           const parsed = JSON.parse(stored)
           token = parsed.access_token
           logger.debug('🔑 ProfileService: Using access token from localStorage (bypassing getSession)')
-        } catch (error) {
+        } catch (_error) {
           logger.error('ProfileService: Error parsing localStorage session:', error)
         }
       }
@@ -201,7 +201,7 @@ export class ProfileService {
       } else {
         throw new Error(`Profile fetch failed: ${response.status}`)
       }
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof Error && error.name === 'AbortError') {
         logger.debug('User profile request aborted')
       } else {

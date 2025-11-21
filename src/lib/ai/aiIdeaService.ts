@@ -51,7 +51,7 @@ export class AIIdeaService {
       // In a real implementation, get actual auth token
       // For now, use a placeholder
       headers['Authorization'] = 'Bearer placeholder-token'
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Failed to get auth headers:', error)
     }
 
@@ -102,7 +102,7 @@ export class AIIdeaService {
         } else {
           return this.generateMockIdea(title, projectContext)
         }
-      } catch (error) {
+      } catch (_error) {
         logger.error('Error generating idea:', error)
         return this.generateMockIdea(title, projectContext)
       }
@@ -169,7 +169,7 @@ export class AIIdeaService {
           return this.generateMockIdeas(title, description, projectType, count)
         }
 
-      } catch (error) {
+      } catch (_error) {
         logger.warn('🚫 AI generation failed, using mock:', error)
         return this.generateMockIdeas(title, description, projectType, count)
       }
@@ -237,7 +237,7 @@ export class AIIdeaService {
           return this.generateEnhancedMockIdeas(projectName, description, projectType, count)
         }
 
-      } catch (error) {
+      } catch (_error) {
         logger.warn('🚫 Project idea generation failed, using enhanced mock:', error)
         return this.generateEnhancedMockIdeas(projectName, description, projectType, count)
       }

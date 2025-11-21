@@ -467,7 +467,7 @@ describe('useComponentState', () => {
       await act(async () => {
         try {
           await result.current.executeAction(action)
-        } catch (error) {
+        } catch (_error) {
           // Expected error
         }
       })

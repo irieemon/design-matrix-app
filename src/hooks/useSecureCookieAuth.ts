@@ -50,7 +50,7 @@ export function useSecureCookieAuth(): UseSecureCookieAuthResult {
         setUser(null)
         logger.debug('⚠️ No active secure session found')
       }
-    } catch (err) {
+    } catch (_err) {
       logger.error('❌ Session initialization error:', err)
       setUser(null)
       setError('Failed to initialize session')
@@ -84,7 +84,7 @@ export function useSecureCookieAuth(): UseSecureCookieAuthResult {
         logger.warn('⚠️ Secure login failed:', response.error?.message)
         return false
       }
-    } catch (err) {
+    } catch (_err) {
       const message = err instanceof Error ? err.message : 'Login failed'
       setError(message)
       logger.error('❌ Secure login error:', err)
@@ -131,7 +131,7 @@ export function useSecureCookieAuth(): UseSecureCookieAuthResult {
       setError(response.error?.message || 'Signup failed')
       logger.warn('⚠️ Secure signup failed:', response.error?.message)
       return false
-    } catch (err) {
+    } catch (_err) {
       const message = err instanceof Error ? err.message : 'Signup failed'
       setError(message)
       logger.error('❌ Secure signup error:', err)
@@ -158,7 +158,7 @@ export function useSecureCookieAuth(): UseSecureCookieAuthResult {
 
       setUser(null)
       logger.info('✅ Secure logout successful')
-    } catch (err) {
+    } catch (_err) {
       logger.error('❌ Secure logout error:', err)
       // Still clear user on client side
       setUser(null)
@@ -184,7 +184,7 @@ export function useSecureCookieAuth(): UseSecureCookieAuthResult {
         setUser(null)
         secureAuth.stopAutoRefresh()
       }
-    } catch (err) {
+    } catch (_err) {
       logger.error('❌ Session refresh error:', err)
       setUser(null)
       secureAuth.stopAutoRefresh()

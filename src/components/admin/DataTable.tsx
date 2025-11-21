@@ -13,7 +13,7 @@
  * <DataTable
  *   columns={[{ key: 'name', label: 'Name', sortable: true }]}
  *   data={items}
- *   onRowClick={(item) => console.log(item)}
+ *   onRowClick={(item) => logger.debug(item)}
  * />
  */
 

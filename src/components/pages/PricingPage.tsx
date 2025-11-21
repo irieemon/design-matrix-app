@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Check, X } from 'lucide-react'
 import { useUser } from '../../contexts/UserContext'
 import { subscriptionService } from '../../lib/services/subscriptionService'
-import { supabase } from '../../lib/supabase'
+// supabase import removed - not used in this file
 import { SUPABASE_STORAGE_KEY } from '../../lib/config'
 import type { SubscriptionTier } from '../../types/subscription'
 
@@ -106,7 +106,7 @@ export default function PricingPage() {
   })
 
   const handleUpgrade = async (tier: PricingTier) => {
-    console.log('🔵 handleUpgrade called for tier:', tier.tier)
+    logger.debug('🔵 handleUpgrade called for tier:', tier.tier)
     
     if (!currentUser) {
       setError('Please sign in to upgrade')
@@ -133,7 +133,7 @@ export default function PricingPage() {
     setError(null)
 
     try {
-      console.log('🔵 Reading session from localStorage...')
+      logger.debug('🔵 Reading session from localStorage...')
 
       // CRITICAL FIX: Read session synchronously from localStorage
       // This bypasses the async getSession() call which can timeout
@@ -150,7 +150,7 @@ export default function PricingPage() {
       let session: any
       try {
         session = JSON.parse(stored)
-      } catch (parseError) {
+      } catch (_parseError) {
         console.error('🔴 Failed to parse session:', parseError)
         setError('Invalid session data. Please sign in again.')
         setLoading(null)
@@ -167,12 +167,12 @@ export default function PricingPage() {
         return
       }
 
-      console.log('🔵 Session retrieved synchronously:', {
+      logger.debug('🔵 Session retrieved synchronously:', {
         hasToken: true,
         userId: session.user.id
       })
 
-      console.log('🔵 Making API request to create checkout session...')
+      logger.debug('🔵 Making API request to create checkout session...')
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -185,7 +185,7 @@ export default function PricingPage() {
         }),
       })
 
-      console.log('🔵 API response status:', response.status)
+      logger.debug('🔵 API response status:', response.status)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
@@ -194,11 +194,11 @@ export default function PricingPage() {
       }
 
       const { url } = await response.json()
-      console.log('🔵 Redirecting to Stripe Checkout:', url)
+      logger.debug('🔵 Redirecting to Stripe Checkout:', url)
 
       // Redirect to Stripe Checkout
       window.location.href = url
-    } catch (err) {
+    } catch (_err) {
       console.error('🔴 Upgrade error:', err)
       setError(`Failed to start upgrade process: ${err instanceof Error ? err.message : 'Unknown error'}`)
       setLoading(null)

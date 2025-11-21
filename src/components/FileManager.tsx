@@ -53,7 +53,7 @@ const FileManager: React.FC<FileManagerProps> = ({ files, onDeleteFile, onViewFi
       // Cleanup
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error downloading file:', error)
       showError('Failed to download file. Please try again.')
     }

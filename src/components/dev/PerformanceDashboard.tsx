@@ -105,7 +105,7 @@ const PerformanceDashboard: React.FC = () => {
           lastCheck: Date.now()
         }
       }))
-    } catch (error) {
+    } catch (_error) {
       setStats(prev => ({
         ...prev,
         networkStats: {
@@ -171,7 +171,7 @@ const PerformanceDashboard: React.FC = () => {
       // Update cache stats
       estimateCacheStats()
 
-    } catch (error) {
+    } catch (_error) {
       logger.warn('Performance stats update failed:', error)
     }
   }, [performanceHistory, estimateCacheStats])
@@ -210,7 +210,7 @@ const PerformanceDashboard: React.FC = () => {
 
       // Generate and log report
       const report = AuthPerformanceTest.generateOptimizationReport()
-      console.log(report)
+      logger.debug(report)
 
       // Update current validation
       const validation = await authPerformanceValidator.validateCurrentPerformance()
@@ -218,7 +218,7 @@ const PerformanceDashboard: React.FC = () => {
         ...prev,
         validation
       }))
-    } catch (error) {
+    } catch (_error) {
       logger.error('❌ Performance test failed:', error)
     }
   }, [])

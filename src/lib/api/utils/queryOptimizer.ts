@@ -152,7 +152,7 @@ class QueryOptimizer {
       }
 
       return result
-    } catch (error) {
+    } catch (_error) {
       const queryTime = performance.now() - queryStart
       this.recordMetrics(operation, queryTime, false)
 
@@ -238,7 +238,7 @@ class QueryOptimizer {
 
       logger.debug(`Batch profile query: ${profileData.length}/${userIds.length} profiles in ${queryTime.toFixed(1)}ms`)
 
-    } catch (error) {
+    } catch (_error) {
       const queryTime = performance.now() - queryStart
       this.recordMetrics(operation, queryTime, false)
       logger.warn('Batch profile query failed:', error)

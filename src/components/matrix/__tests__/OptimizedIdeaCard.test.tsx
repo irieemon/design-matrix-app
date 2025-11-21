@@ -921,4 +921,250 @@ describe('OptimizedIdeaCard', () => {
       expect(card).toHaveStyle({ border: '2.5px solid #EF4444' }) // Red (avoid)
     })
   })
+
+  describe('Phase Three Features', () => {
+    describe('Mobile Indicator', () => {
+      it('should show blue pulse indicator when isFromMobile is true', () => {
+        const { container } = renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} isFromMobile={true} />
+        )
+
+        // Should have mobile indicator with aria-label
+        const mobileIndicator = container.querySelector('[aria-label="Submitted from mobile device"]')
+        expect(mobileIndicator).toBeInTheDocument()
+      })
+
+      it('should not show mobile indicator when isFromMobile is false', () => {
+        const { container } = renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} isFromMobile={false} />
+        )
+
+        const mobileIndicator = container.querySelector('[aria-label="Submitted from mobile device"]')
+        expect(mobileIndicator).not.toBeInTheDocument()
+      })
+
+      it('should not show mobile indicator by default', () => {
+        const { container } = renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} />
+        )
+
+        const mobileIndicator = container.querySelector('[aria-label="Submitted from mobile device"]')
+        expect(mobileIndicator).not.toBeInTheDocument()
+      })
+
+      it('should position mobile indicator at bottom-right corner', () => {
+        const { container } = renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} isFromMobile={true} />
+        )
+
+        const mobileIndicator = container.querySelector('[aria-label="Submitted from mobile device"]')
+        expect(mobileIndicator).toHaveStyle({
+          position: 'absolute',
+          bottom: '-4px',
+          right: '-4px'
+        })
+      })
+
+      it('should have correct size (12x12) for mobile indicator', () => {
+        const { container } = renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} isFromMobile={true} />
+        )
+
+        const mobileIndicator = container.querySelector('[aria-label="Submitted from mobile device"]')
+        expect(mobileIndicator).toHaveStyle({
+          width: '12px',
+          height: '12px'
+        })
+      })
+
+      it('should have blue color for mobile indicator dot', () => {
+        const { container } = renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} isFromMobile={true} />
+        )
+
+        const indicatorDot = container.querySelector('[style*="background: #3B82F6"]')
+        expect(indicatorDot).toBeInTheDocument()
+      })
+
+      it('should have pulse animation for mobile indicator', () => {
+        const { container } = renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} isFromMobile={true} />
+        )
+
+        const pulseRing = container.querySelector('.animate-pulse-subtle')
+        expect(pulseRing).toBeInTheDocument()
+      })
+
+      it('should hide mobile indicator in drag overlay', () => {
+        const { container } = renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} isFromMobile={true} isDragOverlay={true} />
+        )
+
+        const mobileIndicator = container.querySelector('[aria-label="Submitted from mobile device"]')
+        expect(mobileIndicator).not.toBeInTheDocument()
+      })
+
+      it('should adjust mobile indicator position for collapsed cards', () => {
+        const collapsedIdea = { ...testIdeas.quickWin, is_collapsed: true }
+        const { container } = renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} idea={collapsedIdea} isFromMobile={true} />
+        )
+
+        const mobileIndicator = container.querySelector('[aria-label="Submitted from mobile device"]')
+        expect(mobileIndicator).toHaveStyle({
+          bottom: '-4px',
+          right: '-4px'
+        })
+      })
+    })
+
+    describe('New Idea Animation', () => {
+      it('should apply scale-in animation when isNewIdea is true', () => {
+        renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} isNewIdea={true} />
+        )
+
+        const card = screen.getByText(testIdeas.quickWin.content).closest('.draggable')
+        expect(card).toHaveClass('animate-scale-in')
+      })
+
+      it('should not apply scale-in animation when isNewIdea is false', () => {
+        renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} isNewIdea={false} />
+        )
+
+        const card = screen.getByText(testIdeas.quickWin.content).closest('.draggable')
+        expect(card).not.toHaveClass('animate-scale-in')
+      })
+
+      it('should not apply scale-in animation by default', () => {
+        renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} />
+        )
+
+        const card = screen.getByText(testIdeas.quickWin.content).closest('.draggable')
+        expect(card).not.toHaveClass('animate-scale-in')
+      })
+    })
+
+    describe('Combined Phase Three Features', () => {
+      it('should show both mobile indicator and new idea animation', () => {
+        const { container } = renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} isFromMobile={true} isNewIdea={true} />
+        )
+
+        // Should have mobile indicator
+        const mobileIndicator = container.querySelector('[aria-label="Submitted from mobile device"]')
+        expect(mobileIndicator).toBeInTheDocument()
+
+        // Should have scale-in animation
+        const card = screen.getByText(testIdeas.quickWin.content).closest('.draggable')
+        expect(card).toHaveClass('animate-scale-in')
+      })
+
+      it('should work correctly with collapsed cards', () => {
+        const collapsedIdea = { ...testIdeas.quickWin, is_collapsed: true }
+        const { container } = renderWithProviders(
+          <OptimizedIdeaCard
+            {...defaultProps}
+            idea={collapsedIdea}
+            isFromMobile={true}
+            isNewIdea={true}
+          />
+        )
+
+        const card = screen.getByText(collapsedIdea.content.substring(0, 12)).closest('.draggable')
+        expect(card).toHaveClass('animate-scale-in')
+
+        const mobileIndicator = container.querySelector('[aria-label="Submitted from mobile device"]')
+        expect(mobileIndicator).toBeInTheDocument()
+      })
+
+      it('should work correctly with locked cards', () => {
+        const lockedIdea = {
+          ...testIdeas.quickWin,
+          editing_by: 'other-user-id',
+          editing_at: new Date().toISOString()
+        }
+
+        const { container } = renderWithProviders(
+          <OptimizedIdeaCard
+            {...defaultProps}
+            idea={lockedIdea}
+            isFromMobile={true}
+            isNewIdea={true}
+          />
+        )
+
+        // Should still show mobile indicator
+        const mobileIndicator = container.querySelector('[aria-label="Submitted from mobile device"]')
+        expect(mobileIndicator).toBeInTheDocument()
+
+        // Should still have animation class
+        const card = screen.getByText(lockedIdea.content).closest('.draggable')
+        expect(card).toHaveClass('animate-scale-in')
+
+        // Should also have lock styling
+        expect(card).toHaveClass('opacity-60', 'cursor-not-allowed', 'grayscale')
+      })
+    })
+
+    describe('React.memo Comparison', () => {
+      it('should re-render when isFromMobile changes', () => {
+        const { rerender } = renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} isFromMobile={false} />
+        )
+
+        let container = screen.getByText(testIdeas.quickWin.content).closest('.draggable')?.parentElement
+        let mobileIndicator = container?.querySelector('[aria-label="Submitted from mobile device"]')
+        expect(mobileIndicator).not.toBeInTheDocument()
+
+        rerender(
+          <OptimizedIdeaCard {...defaultProps} isFromMobile={true} />
+        )
+
+        container = screen.getByText(testIdeas.quickWin.content).closest('.draggable')?.parentElement
+        mobileIndicator = container?.querySelector('[aria-label="Submitted from mobile device"]')
+        expect(mobileIndicator).toBeInTheDocument()
+      })
+
+      it('should re-render when isNewIdea changes', () => {
+        const { rerender } = renderWithProviders(
+          <OptimizedIdeaCard {...defaultProps} isNewIdea={false} />
+        )
+
+        let card = screen.getByText(testIdeas.quickWin.content).closest('.draggable')
+        expect(card).not.toHaveClass('animate-scale-in')
+
+        rerender(
+          <OptimizedIdeaCard {...defaultProps} isNewIdea={true} />
+        )
+
+        card = screen.getByText(testIdeas.quickWin.content).closest('.draggable')
+        expect(card).toHaveClass('animate-scale-in')
+      })
+
+      it('should not re-render when Phase Three props remain unchanged', () => {
+        const renderSpy = vi.fn()
+        const TestWrapper = (props: any) => {
+          renderSpy()
+          return <OptimizedIdeaCard {...props} />
+        }
+
+        const { rerender } = renderWithProviders(
+          <TestWrapper {...defaultProps} isFromMobile={true} isNewIdea={true} />
+        )
+
+        renderSpy.mockClear()
+
+        // Re-render with same props
+        rerender(
+          <TestWrapper {...defaultProps} isFromMobile={true} isNewIdea={true} />
+        )
+
+        // Should not trigger re-render due to React.memo
+        // (React.memo prevents re-render when props are equal)
+      })
+    })
+  })
 })

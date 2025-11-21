@@ -136,7 +136,7 @@ const AuthDebugMonitor: React.FC = () => {
           });
 
           return response;
-        } catch (error) {
+        } catch (_error) {
           const endTime = performance.now();
           const duration = endTime - startTime;
 
@@ -175,7 +175,7 @@ const AuthDebugMonitor: React.FC = () => {
               sessionCheck: [...prev.sessionCheck.slice(-9), authMetrics.sessionCheckTime]
             }));
           }
-        } catch (error) {
+        } catch (_error) {
           // Silently ignore if metrics not available
         }
       }

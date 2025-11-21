@@ -227,7 +227,7 @@ export class ProjectService extends BaseService {
         .eq('user_id', userId)
         .eq('status', 'active')
 
-      const collaboratedProjects = collaborations?.map(c => c.project).filter(Boolean) || []
+      const collaboratedProjects = collaborations?.map((c: any) => c.project).filter(Boolean) || []
 
       if (ownedError || collabError) {
         logger.error('Error fetching user projects:', { ownedError, collabError })
@@ -443,7 +443,7 @@ export class ProjectService extends BaseService {
           schema: 'public',
           table: 'projects'
         },
-        async (payload) => {
+        async (payload: any) => {
           logger.debug('📡 Real-time project update:', payload.eventType)
           logger.debug('🔄 Payload data:', payload)
 
@@ -457,7 +457,7 @@ export class ProjectService extends BaseService {
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: any) => {
         logger.debug('📡 Projects subscription status:', status)
       })
 

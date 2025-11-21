@@ -88,7 +88,7 @@ export function useSecureAuth(): UseSecureAuthReturn {
 
       setUser(response.user)
       logger.debug('Session verified', { userId: response.user.id })
-    } catch (err) {
+    } catch (_err) {
       logger.warn('Session verification failed', {
         error: err instanceof Error ? err.message : 'Unknown error'
       })
@@ -127,7 +127,7 @@ export function useSecureAuth(): UseSecureAuthReturn {
 
       setUser(response.user)
       logger.debug('Login successful', { userId: response.user.id })
-    } catch (err) {
+    } catch (_err) {
       logger.error('Login failed:', err)
       setError(err instanceof Error ? err : new Error('Login failed'))
       throw err
@@ -152,7 +152,7 @@ export function useSecureAuth(): UseSecureAuthReturn {
 
       setUser(null)
       logger.debug('Logout successful')
-    } catch (err) {
+    } catch (_err) {
       logger.error('Logout error:', err)
       // Even if logout fails, clear local state
       setUser(null)
@@ -174,7 +174,7 @@ export function useSecureAuth(): UseSecureAuthReturn {
 
       setUser(response.user)
       logger.debug('Session refresh successful', { userId: response.user.id })
-    } catch (err) {
+    } catch (_err) {
       logger.error('Session refresh failed:', err)
       setUser(null)
       setError(err instanceof Error ? err : new Error('Refresh failed'))

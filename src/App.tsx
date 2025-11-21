@@ -17,6 +17,9 @@ const MonochromaticDemo = lazy(() => import('./components/demo/MonochromaticDemo
 const MonochromeLuxDemo = lazy(() => import('./components/demo/MonochromeLuxDemo'))
 const MonochromeLuxAnimated = lazy(() => import('./components/demo/MonochromeLuxAnimated'))
 
+// Lazy load brainstorm mobile join page (Phase One)
+const MobileJoinPage = lazy(() => import('./pages/MobileJoinPage'))
+
 function App() {
   const [currentHash, setCurrentHash] = useState(window.location.hash)
 
@@ -53,6 +56,16 @@ function App() {
     return (
       <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading demo...</div>}>
         <MonochromeLuxAnimated />
+      </Suspense>
+    )
+  }
+
+  // Mobile brainstorm join page (Phase One)
+  // Pattern: #join/uuid-access-token
+  if (currentHash.startsWith('#join/')) {
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center h-screen">Joining session...</div>}>
+        <MobileJoinPage />
       </Suspense>
     )
   }

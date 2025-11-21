@@ -157,7 +157,7 @@ export const useErrorRecovery = (options: ErrorRecoveryOptions = {}) => {
         retryAttempts.current.delete(contextKey)
         
         return result
-      } catch (error) {
+      } catch (_error) {
         const classification = classifyError(error)
         const errorId = `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         

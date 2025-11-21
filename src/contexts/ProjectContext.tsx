@@ -157,7 +157,7 @@ export function ProjectProvider({ children }: ProjectProviderProps) {
         showError('Unable to load project. You may not have access or the project may not exist.')
         // Don't clear current project if restoration fails - user might not have access
       }
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof Error && error.message.includes('Project restoration timeout')) {
         logger.error('🚨 Project: Restoration timeout for project:', projectId)
         logger.error('Project restoration timed out', error, {

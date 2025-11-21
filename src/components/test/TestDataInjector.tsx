@@ -31,7 +31,7 @@ export default function TestDataInjector() {
 
         logger.debug('✅ TEST DATA INJECTOR: Test data injection complete!')
 
-      } catch (error) {
+      } catch (_error) {
         logger.error('❌ TEST DATA INJECTOR: Error injecting test data:', error)
       }
     }

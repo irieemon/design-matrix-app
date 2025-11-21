@@ -73,7 +73,7 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
       logger.debug('📋 ProjectCollaborators: Received collaborator data:', data)
       setCollaborators(data as unknown as Collaborator[])
       logger.debug('✅ ProjectCollaborators: Updated collaborators state with', data.length, 'items')
-    } catch (error) {
+    } catch (_error) {
       logger.error('❌ ProjectCollaborators: Error loading collaborators:', error)
     } finally {
       setLoading(false)
@@ -108,7 +108,7 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
       }
       logger.error('❌ ProjectCollaborators: Invitation failed')
       return false
-    } catch (error) {
+    } catch (_error) {
       logger.error('💥 ProjectCollaborators: Error inviting collaborator:', error)
       return false
     }
@@ -121,7 +121,7 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
       if (success) {
         await loadCollaborators()
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error updating role:', error)
     } finally {
       setUpdating(null)
@@ -144,7 +144,7 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
       if (success) {
         await loadCollaborators()
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error removing collaborator:', error)
     } finally {
       setUpdating(null)

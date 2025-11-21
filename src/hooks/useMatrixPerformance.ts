@@ -88,12 +88,15 @@ export const useMatrixPerformance = (
   useEffect(() => {
     // NO-OP: All metric updates disabled
     // Set static "excellent" performance status to prevent any performance concerns
-    setPerformanceStatus('excellent');
-    setLiveMetrics({
-      averageHoverTime: 8, // Static excellent response time
-      currentFrameRate: 60, // Static 60fps
-      activeAnimations: 0   // No active animations tracked
-    });
+    // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+    setTimeout(() => {
+      setPerformanceStatus('excellent');
+      setLiveMetrics({
+        averageHoverTime: 8, // Static excellent response time
+        currentFrameRate: 60, // Static 60fps
+        activeAnimations: 0   // No active animations tracked
+      });
+    }, 0);
   }, []);
 
   // ALL MONITORING FUNCTIONS DISABLED - NO-OP CALLBACKS

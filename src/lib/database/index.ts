@@ -57,7 +57,7 @@ export type { InsightData } from './repositories/InsightsRepository'
  * // Get ideas using the service
  * const result = await IdeaService.getIdeasByProject(projectId)
  * if (result.success) {
- *   console.log(result.data)
+ *   logger.debug(result.data)
  * }
  *
  * // Use utilities directly

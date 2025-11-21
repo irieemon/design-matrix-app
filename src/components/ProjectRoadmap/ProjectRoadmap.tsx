@@ -36,6 +36,170 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   const [roadmapHistory, setRoadmapHistory] = useState<ProjectRoadmapType[]>([])
   const [viewMode, setViewMode] = useState<RoadmapViewMode['mode']>('timeline')
 
+  // ✅ HOOKS FIX: Define helper function BEFORE hooks that use it
+  const convertToTimelineFeatures = () => {
+    if (!roadmapData?.roadmapAnalysis?.phases || !currentProject) {
+      logger.debug('🚫 convertToTimelineFeatures: Missing roadmap data or project', {
+        hasRoadmapData: !!roadmapData,
+        hasAnalysis: !!roadmapData?.roadmapAnalysis,
+        hasPhases: !!roadmapData?.roadmapAnalysis?.phases,
+        phasesLength: roadmapData?.roadmapAnalysis?.phases?.length,
+        hasCurrentProject: !!currentProject
+      })
+      return []
+    }
+
+    logger.debug('🎯 convertToTimelineFeatures: Starting conversion', {
+      phasesCount: roadmapData.roadmapAnalysis.phases.length,
+      projectType: currentProject.project_type
+    })
+
+    const features: any[] = []
+    let currentMonth = 0
+
+    const getTeamForEpic = (epic: any): string => {
+      if (epic.team) return epic.team
+
+      if (currentProject?.project_type) {
+        const projectType = currentProject.project_type.toLowerCase()
+        if (projectType.includes('web') || projectType.includes('frontend')) {
+          return 'web'
+        }
+        if (projectType.includes('mobile') || projectType.includes('app')) {
+          return 'mobile'
+        }
+        if (projectType.includes('backend') || projectType.includes('api')) {
+          return 'backend'
+        }
+      }
+
+      const combined = `${epic.title || ''} ${epic.description || ''}`.toLowerCase()
+
+      const backendKeywords = ['backend', 'api', 'server', 'database', 'auth', 'integration', 'microservice']
+      if (backendKeywords.some(keyword => combined.includes(keyword))) {
+        return 'backend'
+      }
+
+      const frontendKeywords = ['frontend', 'ui', 'user interface', 'react', 'vue', 'angular', 'design', 'css', 'html', 'web']
+      if (frontendKeywords.some(keyword => combined.includes(keyword))) {
+        return 'web'
+      }
+
+      const mobileKeywords = ['mobile', 'app', 'ios', 'android', 'smartphone', 'tablet']
+      if (mobileKeywords.some(keyword => combined.includes(keyword))) {
+        return 'mobile'
+      }
+
+      const testingKeywords = ['test', 'testing', 'qa', 'quality', 'automation', 'validation']
+      if (testingKeywords.some(keyword => combined.includes(keyword))) {
+        return 'testing'
+      }
+
+      return 'platform'
+    }
+
+    roadmapData.roadmapAnalysis.phases.forEach((phase, phaseIndex) => {
+      logger.debug(`🏗️ Processing phase ${phaseIndex}:`, {
+        phase: phase.phase,
+        epicsCount: phase.epics?.length || 0,
+        duration: phase.duration
+      })
+
+      const durationText = phase.duration || '1 month'
+      let phaseDuration = 1
+
+      if (durationText.includes('week')) {
+        const weeks = parseInt(durationText) || 2
+        phaseDuration = Math.ceil(weeks / 4)
+      } else if (durationText.includes('month')) {
+        phaseDuration = parseInt(durationText) || 1
+      }
+
+      phase.epics?.forEach((epic, epicIndex) => {
+        logger.debug(`  📦 Processing epic ${epicIndex}:`, {
+          title: epic.title,
+          startMonth: epic.startMonth,
+          duration: epic.duration,
+          team: epic.team
+        })
+        const priority = epic.priority?.toLowerCase() as 'high' | 'medium' | 'low' || 'medium'
+
+        features.push({
+          id: (epic as any).originalFeatureId || `${phaseIndex}-${epicIndex}`,
+          title: epic.title || `Epic ${epicIndex + 1}`,
+          description: epic.description,
+          startMonth: epic.startMonth !== undefined ? epic.startMonth : currentMonth,
+          duration: epic.duration !== undefined ? epic.duration : Math.max(1, Math.floor(phaseDuration / (phase.epics?.length || 1))),
+          team: epic.team || getTeamForEpic(epic),
+          priority,
+          status: epic.status || (phaseIndex === 0 ? ('in-progress' as const) : ('planned' as const)),
+          userStories: epic.userStories,
+          deliverables: epic.deliverables,
+          relatedIdeas: epic.relatedIdeas,
+          risks: phase.risks,
+          successCriteria: phase.successCriteria,
+          complexity: epic.complexity,
+          phaseIndex,
+          epicIndex
+        })
+      })
+
+      currentMonth += phaseDuration
+    })
+
+    logger.debug('✅ Generated timeline features', { featureCount: features.length })
+    logger.debug('🎯 Feature teams:', { teams: features.map(f => ({ title: f.title, team: f.team })) })
+    logger.debug('🏢 Unique teams found:', { uniqueTeams: [...new Set(features.map(f => f.team))] })
+
+    return features
+  }
+
+  // ✅ HOOKS FIX: Move ALL hooks BEFORE early returns (Rules of Hooks requirement)
+  // These hooks use roadmapData which may be null - they handle this safely
+  const timelineFeatures = useMemo(() => {
+    const features = convertToTimelineFeatures()
+    logger.debug('Timeline features generated', {
+      featureCount: features.length,
+      features: features.map(f => ({ id: f.id, title: f.title, team: f.team }))
+    })
+    return features
+  }, [roadmapData, currentProject?.project_type])
+
+  const roadmapPhases = useMemo(() => {
+    return roadmapData?.roadmapAnalysis?.phases || roadmapData?.phases || []
+  }, [roadmapData])
+
+  const keyMilestones = useMemo(() => {
+    return roadmapData?.executionStrategy?.keyMilestones || []
+  }, [roadmapData])
+
+  // Debounced save to avoid excessive database calls during drag operations
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Load existing roadmaps when component mounts or project changes
+  useEffect(() => {
+    if (currentProject?.id) {
+      loadRoadmapHistory()
+    }
+  }, [currentProject?.id])
+
+  const loadRoadmapHistory = async () => {
+    if (!currentProject?.id) return
+
+    try {
+      const history = await DatabaseService.getProjectRoadmaps(currentProject.id)
+      setRoadmapHistory(history)
+
+      if (history.length > 0 && !roadmapData) {
+        setState(prev => ({ ...prev, selectedRoadmapId: history[0].id }))
+        setRoadmapData(history[0].roadmap_data)
+        logger.debug('📋 Loaded most recent roadmap:', history[0].id)
+      }
+    } catch (_error) {
+      logger.error('Error loading roadmap history:', error)
+    }
+  }
+
   // Early return AFTER all hooks - if no project selected
   if (!currentProject) {
     return (
@@ -64,31 +228,6 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         </div>
       </div>
     )
-  }
-
-  // Load existing roadmaps when component mounts or project changes
-  useEffect(() => {
-    if (currentProject?.id) {
-      loadRoadmapHistory()
-    }
-  }, [currentProject?.id])
-
-  const loadRoadmapHistory = async () => {
-    if (!currentProject?.id) return
-
-    try {
-      const history = await DatabaseService.getProjectRoadmaps(currentProject.id)
-      setRoadmapHistory(history)
-
-      // Load the most recent roadmap if available and no roadmap is currently loaded
-      if (history.length > 0 && !roadmapData) {
-        setState(prev => ({ ...prev, selectedRoadmapId: history[0].id }))
-        setRoadmapData(history[0].roadmap_data)
-        logger.debug('📋 Loaded most recent roadmap:', history[0].id)
-      }
-    } catch (error) {
-      logger.error('Error loading roadmap history:', error)
-    }
   }
 
   const handleGenerateRoadmap = () => {
@@ -146,7 +285,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
             await loadRoadmapHistory()
             logger.debug('✅ Roadmap saved and history updated:', { roadmapId })
           }
-        } catch (error) {
+        } catch (_error) {
           logger.error('Error saving roadmap:', error)
           // Don't show error to user since roadmap generation succeeded
         }
@@ -156,7 +295,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         setState(prev => ({ ...prev, error: 'Failed to generate roadmap. Please try again.' }))
         logger.error('❌ Roadmap generation failed - no data returned')
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Error generating roadmap:', error)
       setState(prev => ({ ...prev, error: 'Failed to generate roadmap. Please try again.' }))
     } finally {
@@ -176,154 +315,6 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
     })
     logger.debug('📋 New expanded phases:', { expandedPhases: Array.from(state.expandedPhases) })
   }
-
-  // Generate timeline features for timeline view
-  const convertToTimelineFeatures = () => {
-    if (!roadmapData?.roadmapAnalysis?.phases || !currentProject) {
-      logger.debug('🚫 convertToTimelineFeatures: Missing roadmap data or project', {
-        hasRoadmapData: !!roadmapData,
-        hasAnalysis: !!roadmapData?.roadmapAnalysis,
-        hasPhases: !!roadmapData?.roadmapAnalysis?.phases,
-        phasesLength: roadmapData?.roadmapAnalysis?.phases?.length,
-        hasCurrentProject: !!currentProject
-      })
-      return []
-    }
-
-    logger.debug('🎯 convertToTimelineFeatures: Starting conversion', {
-      phasesCount: roadmapData.roadmapAnalysis.phases.length,
-      projectType: currentProject.project_type
-    })
-
-    const features: any[] = []
-    let currentMonth = 1
-
-    const getTeamForEpic = (epic: any) => {
-      const projectType = currentProject.project_type?.toLowerCase() || 'software'
-      const combined = `${epic.title} ${epic.description} ${(epic.userStories || []).join(' ')} ${(epic.deliverables || []).join(' ')}`.toLowerCase()
-
-      if (projectType.includes('marketing') || projectType.includes('campaign') || projectType.includes('brand')) {
-        // Marketing project teams
-        const creativeKeywords = ['creative', 'design', 'visual', 'brand', 'graphics', 'content', 'copy', 'creative asset', 'visual design']
-        if (creativeKeywords.some(keyword => combined.includes(keyword))) {
-          return 'creative'
-        }
-
-        const digitalKeywords = ['digital', 'social', 'online', 'social media', 'paid ads', 'sem', 'seo', 'email', 'website']
-        if (digitalKeywords.some(keyword => combined.includes(keyword))) {
-          return 'digital'
-        }
-
-        const analyticsKeywords = ['analytics', 'tracking', 'measurement', 'metrics', 'data', 'reporting', 'analysis', 'performance']
-        if (analyticsKeywords.some(keyword => combined.includes(keyword))) {
-          return 'analytics'
-        }
-
-        const operationsKeywords = ['operations', 'logistics', 'coordination', 'planning', 'management', 'execution', 'launch']
-        if (operationsKeywords.some(keyword => combined.includes(keyword))) {
-          return 'operations'
-        }
-
-        return 'creative' // Default for marketing projects
-      } else if (projectType.includes('software') || projectType.includes('web') || projectType.includes('app')) {
-        // Software project teams
-        const frontendKeywords = ['frontend', 'ui', 'user interface', 'react', 'vue', 'angular', 'design', 'css', 'html', 'web']
-        if (frontendKeywords.some(keyword => combined.includes(keyword))) {
-          return 'web'
-        }
-
-        const mobileKeywords = ['mobile', 'app', 'ios', 'android', 'smartphone', 'tablet']
-        if (mobileKeywords.some(keyword => combined.includes(keyword))) {
-          return 'mobile'
-        }
-
-        const testingKeywords = ['test', 'testing', 'qa', 'quality', 'automation', 'validation']
-        if (testingKeywords.some(keyword => combined.includes(keyword))) {
-          return 'testing'
-        }
-
-        return 'platform'
-      }
-
-      return 'creative' // Fallback default
-    }
-
-    roadmapData.roadmapAnalysis.phases.forEach((phase, phaseIndex) => {
-      logger.debug(`🏗️ Processing phase ${phaseIndex}:`, {
-        phase: phase.phase,
-        epicsCount: phase.epics?.length || 0,
-        duration: phase.duration
-      })
-
-      const durationText = phase.duration || '1 month'
-      let phaseDuration = 1
-
-      if (durationText.includes('week')) {
-        const weeks = parseInt(durationText) || 2
-        phaseDuration = Math.ceil(weeks / 4)
-      } else if (durationText.includes('month')) {
-        phaseDuration = parseInt(durationText) || 1
-      }
-
-      phase.epics?.forEach((epic, epicIndex) => {
-        logger.debug(`  📦 Processing epic ${epicIndex}:`, {
-          title: epic.title,
-          startMonth: epic.startMonth,
-          duration: epic.duration,
-          team: epic.team
-        })
-        const priority = epic.priority?.toLowerCase() as 'high' | 'medium' | 'low' || 'medium'
-
-        features.push({
-          id: (epic as any).originalFeatureId || `${phaseIndex}-${epicIndex}`,
-          title: epic.title || `Epic ${epicIndex + 1}`,
-          description: epic.description,
-          startMonth: epic.startMonth !== undefined ? epic.startMonth : currentMonth,
-          duration: epic.duration !== undefined ? epic.duration : Math.max(1, Math.floor(phaseDuration / (phase.epics?.length || 1))),
-          team: epic.team || getTeamForEpic(epic),
-          priority,
-          status: epic.status || (phaseIndex === 0 ? ('in-progress' as const) : ('planned' as const)),
-          userStories: epic.userStories,
-          deliverables: epic.deliverables,
-          relatedIdeas: epic.relatedIdeas,
-          risks: phase.risks,
-          successCriteria: phase.successCriteria,
-          complexity: epic.complexity,
-          // Add mapping information to track back to original epic
-          phaseIndex,
-          epicIndex
-        })
-      })
-
-      currentMonth += phaseDuration
-    })
-
-    logger.debug('✅ Generated timeline features', { featureCount: features.length })
-    logger.debug('🎯 Feature teams:', { teams: features.map(f => ({ title: f.title, team: f.team })) })
-    logger.debug('🏢 Unique teams found:', { uniqueTeams: [...new Set(features.map(f => f.team))] })
-
-    return features
-  }
-
-  const timelineFeatures = useMemo(() => {
-    const features = convertToTimelineFeatures()
-    logger.debug('Timeline features generated', {
-      featureCount: features.length,
-      features: features.map(f => ({ id: f.id, title: f.title, team: f.team }))
-    })
-    return features
-  }, [roadmapData, currentProject?.project_type])
-
-  const roadmapPhases = useMemo(() => {
-    return roadmapData?.roadmapAnalysis?.phases || roadmapData?.phases || []
-  }, [roadmapData])
-
-  const keyMilestones = useMemo(() => {
-    return roadmapData?.executionStrategy?.keyMilestones || []
-  }, [roadmapData])
-
-  // Debounced save to avoid excessive database calls during drag operations
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const handleFeaturesChange = async (updatedFeatures: any[]) => {
     if (!roadmapData || !currentProject?.id || !state.selectedRoadmapId) {
@@ -380,7 +371,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           updatedRoadmapData
         )
         logger.debug('✅ Feature changes saved successfully')
-      } catch (error) {
+      } catch (_error) {
         logger.error('❌ Error saving feature changes:', error)
         // Don't show error to user since they can still continue working
       }

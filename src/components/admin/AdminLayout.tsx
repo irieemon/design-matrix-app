@@ -48,7 +48,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
       const adminStatus = await UserRepository.isUserAdmin(user.id)
       setIsAdmin(adminStatus)
-    } catch (error) {
+    } catch (_error) {
       console.error('Failed to check admin access:', error)
       setIsAdmin(false)
     } finally {

@@ -47,8 +47,8 @@ export interface UseFullScreenModeReturn {
  * @example
  * ```tsx
  * const { isFullScreen, enterFullScreen, exitFullScreen, toggleFullScreen } = useFullScreenMode({
- *   onEnter: () => console.log('Entered full-screen'),
- *   onExit: () => console.log('Exited full-screen')
+ *   onEnter: () => logger.debug('Entered full-screen'),
+ *   onExit: () => logger.debug('Exited full-screen')
  * })
  *
  * return (
@@ -128,7 +128,7 @@ export function useFullScreenMode(
       } else {
         throw new Error('Fullscreen API not supported')
       }
-    } catch (err) {
+    } catch (_err) {
       const error = err instanceof Error ? err : new Error('Failed to enter full-screen')
       logger.error('Full-screen request failed:', error)
       throw error
@@ -152,7 +152,7 @@ export function useFullScreenMode(
         // @ts-ignore - MS prefix
         await document.msExitFullscreen()
       }
-    } catch (err) {
+    } catch (_err) {
       const error = err instanceof Error ? err : new Error('Failed to exit full-screen')
       logger.error('Full-screen exit failed:', error)
       throw error
@@ -180,7 +180,7 @@ export function useFullScreenMode(
       const targetElement = element || document.documentElement
       await requestFullScreen(targetElement)
       logger.debug('Entered full-screen mode')
-    } catch (err) {
+    } catch (_err) {
       const error = err instanceof Error ? err : new Error('Failed to enter full-screen')
       setError(error)
       onErrorRef.current?.(error)
@@ -200,7 +200,7 @@ export function useFullScreenMode(
       setError(null)
       await exitFullScreenInternal()
       logger.debug('Exited full-screen mode')
-    } catch (err) {
+    } catch (_err) {
       const error = err instanceof Error ? err : new Error('Failed to exit full-screen')
       setError(error)
       onErrorRef.current?.(error)

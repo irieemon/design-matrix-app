@@ -913,7 +913,7 @@ export async function exportGraphicalInsightsToPDF(
     pdfMakeInstance.createPdf(documentDefinition).download(fileName)
 
     insightsLogger.info('Graphical insights PDF generated successfully', { fileName })
-  } catch (error) {
+  } catch (_error) {
     insightsLogger.error('Failed to generate graphical insights PDF', error)
     throw error
   }

@@ -70,7 +70,7 @@ export class UsageTrackingService {
       }
 
       logger.debug(`Tracked ${resourceType} usage for user ${userId}`);
-    } catch (error) {
+    } catch (_error) {
       logger.error(`Failed to track ${resourceType} usage:`, error);
       // Don't throw - usage tracking failures shouldn't break user flows
     }
@@ -100,7 +100,7 @@ export class UsageTrackingService {
       }
 
       return data?.count || 0;
-    } catch (error) {
+    } catch (_error) {
       logger.error(`Failed to get monthly ${resourceType} usage:`, error);
       return 0;
     }
@@ -169,7 +169,7 @@ export class UsageTrackingService {
 
       if (error) throw error;
       return data || [];
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get usage history:', error);
       return [];
     }
@@ -203,7 +203,7 @@ export class UsageTrackingService {
       if (error) throw error;
 
       logger.info(`Reset ${resourceType} usage for user ${userId}`);
-    } catch (error) {
+    } catch (_error) {
       logger.error(`Failed to reset ${resourceType} usage:`, error);
       throw error;
     }

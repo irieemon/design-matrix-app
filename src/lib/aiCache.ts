@@ -88,7 +88,7 @@ export class AICache {
       const result = await promise
       this.set(key, result, ttl)
       return result
-    } catch (error) {
+    } catch (_error) {
       // Don't cache errors
       throw error
     } finally {

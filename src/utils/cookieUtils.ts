@@ -33,7 +33,7 @@ export function parseCookies(cookieString: string = document.cookie): Record<str
     if (name && value) {
       try {
         cookies[name.trim()] = decodeURIComponent(value)
-      } catch (error) {
+      } catch (_error) {
         // Invalid cookie value, skip
         logger.warn('Failed to parse cookie', { name, error })
       }

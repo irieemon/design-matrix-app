@@ -54,7 +54,7 @@ export class SubscriptionService {
       }
 
       return data;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get subscription:', error);
       throw error;
     }
@@ -84,7 +84,7 @@ export class SubscriptionService {
 
       logger.info(`Created ${tier} subscription for user ${userId}`);
       return data;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to create subscription:', error);
       throw error;
     }
@@ -108,7 +108,7 @@ export class SubscriptionService {
       if (error) throw error;
 
       logger.info(`Updated subscription for user ${userId}:`, updates);
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to update subscription:', error);
       throw error;
     }
@@ -152,7 +152,7 @@ export class SubscriptionService {
         isUnlimited: unlimited,
         percentageUsed
       };
-    } catch (error) {
+    } catch (_error) {
       logger.error(`Failed to check limit for ${resource}:`, error);
       throw error;
     }
@@ -200,7 +200,7 @@ export class SubscriptionService {
 
       if (error) throw error;
       return count || 0;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get project count:', error);
       return 0;
     }
@@ -236,7 +236,7 @@ export class SubscriptionService {
       }
 
       return data?.count || 0;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get monthly AI usage:', error);
       return 0;
     }
@@ -269,7 +269,7 @@ export class SubscriptionService {
 
       if (error) throw error;
       return data?.user_id || null;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get user ID from Stripe customer:', error);
       return null;
     }
@@ -282,7 +282,7 @@ export class SubscriptionService {
     try {
       const subscription = await this.getSubscription(userId);
       return subscription?.stripe_customer_id || null;
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get Stripe customer ID:', error);
       return null;
     }

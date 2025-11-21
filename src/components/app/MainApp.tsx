@@ -19,7 +19,7 @@ import { useModal } from '../../contexts/ModalContext'
 import { useUser } from '../../contexts/UserContext'
 import { useIdeas } from '../../hooks/useIdeas'
 import { useBrowserHistory } from '../../hooks/useBrowserHistory'
-import { logger } from '../../utils/logger'
+// logger import removed - not used in this file
 
 interface MainAppProps {
   currentUser: User
@@ -87,7 +87,7 @@ export default function MainApp({
   // Intelligent initial route determination
   // Routes users with projects to /projects, users without to /matrix
   useEffect(() => {
-    console.log('🎯 MainApp useEffect triggered', {
+    logger.debug('🎯 MainApp useEffect triggered', {
       hasEffectiveUser: !!effectiveUser,
       projectsLoaded,
       currentPage,
@@ -96,13 +96,13 @@ export default function MainApp({
 
     // Only run when we have user data and projects have loaded
     if (!effectiveUser || !projectsLoaded || currentPage !== null) {
-      console.log('🎯 MainApp: Skipping route determination', {
+      logger.debug('🎯 MainApp: Skipping route determination', {
         reason: !effectiveUser ? 'no user' : !projectsLoaded ? 'projects not loaded' : 'page already set'
       })
       return
     }
 
-    console.log('🎯 MainApp: Determining initial route', {
+    logger.debug('🎯 MainApp: Determining initial route', {
       userId: effectiveUser.id,
       projectsLoaded,
       projectCount: projects?.length,
@@ -116,7 +116,7 @@ export default function MainApp({
 
     const userHasProjects = (projects?.length ?? 0) > 0
 
-    console.log('🎯 MainApp: Route decision factors', {
+    logger.debug('🎯 MainApp: Route decision factors', {
       userHasProjects,
       hasProjectInUrl,
       hasSpecificPath,

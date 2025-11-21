@@ -22,7 +22,7 @@ export class UserRepository {
       }
 
       return user as AuthUser | null
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get current user:', error)
       return null
     }
@@ -49,7 +49,7 @@ export class UserRepository {
       }
 
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get user by ID:', error)
       return null
     }
@@ -75,7 +75,7 @@ export class UserRepository {
       }
 
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get user by email:', error)
       return null
     }
@@ -110,7 +110,7 @@ export class UserRepository {
 
       logger.debug('User profile upserted successfully:', userId)
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to upsert user profile:', error)
       return null
     }
@@ -145,7 +145,7 @@ export class UserRepository {
 
       logger.debug('User profile updated successfully:', userId)
       return data
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to update user profile:', error)
       return null
     }
@@ -170,7 +170,7 @@ export class UserRepository {
 
       logger.debug('User profile deleted successfully:', userId)
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to delete user profile:', error)
       return false
     }
@@ -192,7 +192,7 @@ export class UserRepository {
       }
 
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get all users:', error)
       throw error
     }
@@ -215,7 +215,7 @@ export class UserRepository {
       }
 
       return data || []
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to search users:', error)
       return []
     }
@@ -234,7 +234,7 @@ export class UserRepository {
       if (error) {
         logger.error('Error updating last login:', error)
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to update last login:', error)
     }
   }
@@ -282,7 +282,7 @@ export class UserRepository {
         joinDate: userProfile?.created_at || null,
         lastActivity: userProfile?.last_login || null
       }
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to get user stats:', error)
       return {
         projectCount: 0,
@@ -300,7 +300,7 @@ export class UserRepository {
     try {
       const user = await UserRepository.getUserById(userId)
       return user?.role === 'admin' || user?.role === 'super_admin'
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to check admin status:', error)
       return false
     }
@@ -328,7 +328,7 @@ export class UserRepository {
 
       logger.debug('User role updated successfully:', userId, role)
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to update user role:', error)
       return false
     }
@@ -356,7 +356,7 @@ export class UserRepository {
 
       logger.debug('User deactivated successfully:', userId)
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to deactivate user:', error)
       return false
     }
@@ -384,7 +384,7 @@ export class UserRepository {
 
       logger.debug('User reactivated successfully:', userId)
       return true
-    } catch (error) {
+    } catch (_error) {
       logger.error('Failed to reactivate user:', error)
       return false
     }

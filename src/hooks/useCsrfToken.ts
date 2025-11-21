@@ -62,7 +62,10 @@ export function useCsrfToken(): UseCsrfTokenReturn {
    */
   useEffect(() => {
     // Initial load
-    refreshToken()
+    // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+    setTimeout(() => {
+      refreshToken()
+    }, 0)
 
     // Watch for changes (e.g., after token refresh)
     const unwatch = watchCsrfToken((newToken) => {

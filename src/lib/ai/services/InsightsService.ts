@@ -176,10 +176,10 @@ export class InsightsService extends BaseAiService {
                   logger.debug('📭 No document context found - no files with extractable content')
                 }
               }
-            } catch (error) {
+            } catch (_error) {
               logger.warn('Could not load project files from backend:', error)
             }
-          } catch (error) {
+          } catch (_error) {
             logger.warn('Could not fetch additional project context:', error)
           }
         }
@@ -272,7 +272,7 @@ export class InsightsService extends BaseAiService {
             logger.error('❌ AI service returned invalid insights format:', insights)
             throw new Error('AI service returned invalid insights format. Please check your API configuration.')
           }
-        } catch (error) {
+        } catch (_error) {
           logger.error('🚫 AI insights generation failed:', error)
 
           // In development, if the API is not available, provide mock data with file context

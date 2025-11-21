@@ -52,28 +52,31 @@ export const useFeatureModalState = ({
 
   // Initialize edited feature when feature or mode changes
   useEffect(() => {
-    if (feature) {
-      setEditedFeature({ ...feature })
-    } else if (mode === 'create') {
-      // Create new feature template
-      setEditedFeature({
-        id: `temp-${Date.now()}`,
-        title: '',
-        description: '',
-        startMonth: 0,
-        duration: 1,
-        team: availableTeams[0] || 'PLATFORM',
-        priority: 'medium',
-        status: 'planned',
-        userStories: [],
-        deliverables: [],
-        relatedIdeas: [],
-        risks: [],
-        successCriteria: [],
-        complexity: 'medium'
-      })
-    }
-    setEditMode(mode === 'edit' || mode === 'create')
+    // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
+    setTimeout(() => {
+      if (feature) {
+        setEditedFeature({ ...feature })
+      } else if (mode === 'create') {
+        // Create new feature template
+        setEditedFeature({
+          id: `temp-${Date.now()}`,
+          title: '',
+          description: '',
+          startMonth: 0,
+          duration: 1,
+          team: availableTeams[0] || 'PLATFORM',
+          priority: 'medium',
+          status: 'planned',
+          userStories: [],
+          deliverables: [],
+          relatedIdeas: [],
+          risks: [],
+          successCriteria: [],
+          complexity: 'medium'
+        })
+      }
+      setEditMode(mode === 'edit' || mode === 'create')
+    }, 0)
   }, [feature, mode, availableTeams])
 
   // Helper to update feature properties
