@@ -69,9 +69,10 @@ export class BrainstormSessionService {
       })
 
       // Generate QR code data (full URL for mobile join)
+      // NOTE: Using hash-based routing (#join/) to match App.tsx routing logic
       const baseUrl =
         typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_BASE_URL
-      const qrCodeData = `${baseUrl}/join/${accessToken}`
+      const qrCodeData = `${baseUrl}#join/${accessToken}`
 
       return {
         success: true,
