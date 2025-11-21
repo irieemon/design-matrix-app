@@ -19,7 +19,7 @@ import { useModal } from '../../contexts/ModalContext'
 import { useUser } from '../../contexts/UserContext'
 import { useIdeas } from '../../hooks/useIdeas'
 import { useBrowserHistory } from '../../hooks/useBrowserHistory'
-// logger import removed - not used in this file
+import { logger } from '../../utils/logger'
 
 interface MainAppProps {
   currentUser: User
