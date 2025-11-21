@@ -194,6 +194,28 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
     }
   }, [isActive, ideas.length, onDragEnd])
 
+  // CRITICAL: Debug feature flag and session state for brainstorm button
+  React.useEffect(() => {
+    const phase4Enabled = isFeatureEnabled('MOBILE_BRAINSTORM_PHASE4')
+    const hasSession = !!brainstormSession
+    const buttonShouldShow = phase4Enabled && !hasSession
+
+    logger.debug('🎯 Brainstorm Button Visibility Check', {
+      phase4Enabled,
+      hasSession,
+      buttonShouldShow,
+      sessionId: brainstormSession?.id || 'none',
+      timestamp: new Date().toISOString()
+    })
+
+    // Log to console for easy debugging
+    console.log('=== BRAINSTORM BUTTON DEBUG ===')
+    console.log('Feature Flag PHASE4:', phase4Enabled ? '✅ ENABLED' : '❌ DISABLED')
+    console.log('Has Active Session:', hasSession ? '✅ YES' : '❌ NO')
+    console.log('Button Should Show:', buttonShouldShow ? '✅ YES' : '❌ NO')
+    console.log('==============================')
+  }, [brainstormSession])
+
   /**
    * Ref callback to enter fullscreen when container is mounted
    * This is called during the user's click action, so it's a valid user gesture
@@ -494,6 +516,13 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
 
           {/* Right: Action Buttons */}
           <div className="flex items-center gap-3">
+            {/* DEV MODE: Diagnostic Banner */}
+            {import.meta.env.DEV && (
+              <div className="px-3 py-1 rounded bg-yellow-500/20 border border-yellow-500/50 text-xs text-yellow-200">
+                Phase4: {isFeatureEnabled('MOBILE_BRAINSTORM_PHASE4') ? '✅' : '❌'} | Session: {brainstormSession ? '✅' : '❌'}
+              </div>
+            )}
+
             {/* Phase Four: Session Controls (when session active) */}
             {isFeatureEnabled('MOBILE_BRAINSTORM_PHASE4') && brainstormSession && (
               <SessionControls
