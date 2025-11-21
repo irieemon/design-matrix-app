@@ -29,7 +29,9 @@ import type {
   EndSessionInput,
   EndSessionResponse,
   ToggleSessionPauseInput,
-  ToggleSessionPauseResponse
+  ToggleSessionPauseResponse,
+  SubmitIdeaInput,
+  SubmitIdeaResponse
 } from '../../types/BrainstormSession'
 
 export class BrainstormSessionService {
@@ -435,6 +437,39 @@ export class BrainstormSessionService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  /**
+   * Submit an idea to a brainstorm session (Phase Three: Mobile UI)
+   */
+  static async submitIdea(input: SubmitIdeaInput): Promise<SubmitIdeaResponse> {
+    try {
+      const response = await fetch('/api/brainstorm/submit-idea', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(input)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        return {
+          success: false,
+          error: errorData.error || 'Failed to submit idea',
+          code: errorData.code
+        }
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        code: 'NETWORK_ERROR'
       }
     }
   }
