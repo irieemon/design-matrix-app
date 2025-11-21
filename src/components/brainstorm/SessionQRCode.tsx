@@ -72,12 +72,20 @@ export default function SessionQRCode({
     return null
   }
 
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only close if clicking the backdrop itself, not the panel
+    if (e.target === e.currentTarget && onClose) {
+      onClose()
+    }
+  }
+
   return (
     <div
       className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in ${className}`}
       role="dialog"
       aria-labelledby="session-qr-title"
       aria-modal="true"
+      onClick={handleBackdropClick}
     >
       {/* Overlay Panel */}
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-slide-up">

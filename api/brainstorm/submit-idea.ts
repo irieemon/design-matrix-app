@@ -149,8 +149,8 @@ export default async function handler(
           priority: input.priority || 'moderate',
           submitted_via: 'mobile',
           // Set default position in bottom-right quadrant (low impact, low effort)
-          x_position: 75,
-          y_position: 75
+          x: 75,
+          y: 75
         }
       ])
       .select()
