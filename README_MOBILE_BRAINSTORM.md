@@ -1,15 +1,19 @@
 # Mobile Brainstorm Feature - NOW LIVE
 
-## Status: ✅ ENABLED (Production Fixed)
+## Status: 🔄 DEPLOYING (Fix In Progress)
 
-The "Enable Mobile Join" button is now visible in production.
+The "Enable Mobile Join" button will be visible after the current deployment completes.
 
 ## Root Cause of Missing Button
 
-**Problem**: Environment variable prefix mismatch  
-**Details**: config.ts used `process.env.REACT_APP_*` but Vite requires `import.meta.env.VITE_*`  
-**Impact**: Feature flags evaluated to FALSE, hiding the button  
-**Fix**: Updated config.ts + Vercel environment variables to use `VITE_` prefix
+**Problem 1**: Environment variable prefix mismatch
+**Details**: config.ts used `process.env.REACT_APP_*` but Vite requires `import.meta.env.VITE_*`
+**Fix 1**: Updated config.ts to use `import.meta.env.VITE_*` (commit 76a4b46)
+
+**Problem 2**: Build timing issue
+**Details**: Environment variables were added to Vercel AFTER the code fix was built
+**Impact**: Feature flags in production bundle were FALSE (!1 in minified JS)
+**Fix 2**: Triggered rebuild to inject environment variables at build time (commit 8ea32da)
 
 ## How to Access
 
