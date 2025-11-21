@@ -79,7 +79,7 @@ export default function AuthenticationFlow({
           <p className="text-slate-600 mb-8">Smart Priority Matrix Platform</p>
 
           {/* EMERGENCY FIX: Timeout error state disabled - useAuth handles this */}
-          {false && (
+          {false ? (
             <div className="space-y-6">
               <div className="bg-red-50 border border-red-200 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-red-800 mb-2">Initialization Timeout</h3>
