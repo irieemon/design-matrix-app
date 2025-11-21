@@ -49,6 +49,7 @@ export function createAuthenticatedClient(accessToken: string): SupabaseClient {
       persistSession: false,
       detectSessionInUrl: false,
       storage: undefined, // No storage for server-side clients
+      storageKey: `sb-api-client-${Date.now()}`  // DIFFERENT key prevents GoTrueClient conflicts
     },
     db: {
       schema: 'public'

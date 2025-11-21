@@ -65,7 +65,8 @@ class SupabaseConnectionPool {
         autoRefreshToken: false,
         persistSession: false,
         detectSessionInUrl: false,
-        storage: undefined  // Prevent GoTrueClient instance conflicts
+        storage: undefined,  // No storage needed for pooled connections
+        storageKey: `sb-pool-${connectionId}`  // DIFFERENT key per connection prevents GoTrueClient conflicts
       },
       // PERFORMANCE: Optimized headers for connection reuse
       global: {

@@ -508,7 +508,7 @@ export const createAuthenticatedClientFromLocalStorage = () => {
 
     // Create new Supabase client with access token in headers
     // This authenticates ALL requests without needing getSession/setSession
-    // No storage or storageKey needed since persistSession is false
+    // CRITICAL: Must use DIFFERENT storageKey than main client to prevent GoTrueClient conflicts
     const authenticatedClient = createClient(
       supabaseUrl || 'https://placeholder.supabase.co',
       supabaseAnonKey || 'placeholder-key',
@@ -517,7 +517,8 @@ export const createAuthenticatedClientFromLocalStorage = () => {
           autoRefreshToken: false,  // Disable to prevent getSession() calls
           persistSession: false,     // Disable to prevent session storage writes
           detectSessionInUrl: false,
-          storage: undefined         // No storage for fallback client (prevents GoTrueClient conflicts)
+          storage: undefined,        // No storage needed for fallback client
+          storageKey: 'sb-fallback-auth-client-no-persist'  // DIFFERENT key prevents GoTrueClient conflicts
         },
         global: {
           headers: {
