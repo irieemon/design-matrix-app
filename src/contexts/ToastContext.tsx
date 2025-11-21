@@ -60,6 +60,16 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast(message, 'info', duration)
   }, [showToast])
 
+  // PERFORMANCE OPTIMIZATION: Memoize context value to prevent unnecessary re-renders
+  // All callbacks must be defined BEFORE useMemo to avoid TDZ errors
+  const contextValue = useMemo(() => ({
+    showToast,
+    showSuccess,
+    showError,
+    showWarning,
+    showInfo
+  }), [showToast, showSuccess, showError, showWarning, showInfo])
+
   const getToastIcon = (type: Toast['type']) => {
     switch (type) {
       case 'success': return CheckCircle
@@ -77,16 +87,6 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       case 'info': return 'bg-blue-500 text-white'
     }
   }
-
-  // PERFORMANCE OPTIMIZATION: Memoize context value to prevent unnecessary re-renders
-  // Functions are already memoized with useCallback, just memoize the object itself
-  const contextValue = useMemo(() => ({
-    showToast,
-    showSuccess,
-    showError,
-    showWarning,
-    showInfo
-  }), [showToast, showSuccess, showError, showWarning, showInfo])
 
   return (
     <ToastContext.Provider value={contextValue}>
