@@ -74,9 +74,9 @@ export class LoggingService {
     this.enabledLevels = this.determineEnabledLevels()
     this.resetRateLimitCounters()
 
-    // Log initialization in dev
-    if (this.isDebugEnabled()) {
-      logger.debug(
+    // Log initialization in dev (directly to console to avoid circular dependency)
+    if (this.isDebugEnabled() && this.environment === 'development') {
+      console.debug(
         '%c🚀 Logging Service Initialized',
         'color: #00ff00; font-weight: bold; font-size: 12px;',
         `Environment: ${this.environment}, Levels: ${Array.from(this.enabledLevels).join(', ')}`
