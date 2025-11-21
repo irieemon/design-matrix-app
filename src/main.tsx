@@ -5,7 +5,11 @@ import App from './App.tsx'
 import { ToastProvider } from './contexts/ToastContext'
 import './index.css'
 
-// Cache bust for CDN update - 2025-11-21 15:00
+// Build version marker for cache invalidation
+const BUILD_VERSION = '2025-11-21T20:22:00Z'
+if (import.meta.env.DEV) {
+  console.log('🚀 Prioritas Build:', BUILD_VERSION)
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
