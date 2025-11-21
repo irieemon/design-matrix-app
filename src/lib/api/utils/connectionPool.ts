@@ -64,7 +64,8 @@ class SupabaseConnectionPool {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
-        detectSessionInUrl: false
+        detectSessionInUrl: false,
+        storage: undefined  // Prevent GoTrueClient instance conflicts
       },
       // PERFORMANCE: Optimized headers for connection reuse
       global: {
