@@ -53,7 +53,7 @@ export const FEATURE_FLAGS = {
    *
    * @default false
    */
-  MOBILE_BRAINSTORM_PHASE2: process.env.REACT_APP_MOBILE_BRAINSTORM_PHASE2 === 'true' || false,
+  MOBILE_BRAINSTORM_PHASE2: import.meta.env.VITE_MOBILE_BRAINSTORM_PHASE2 === 'true' || false,
 
   /**
    * Phase Three: UI Presentation Layer for Collaborative Brainstorming
@@ -70,7 +70,7 @@ export const FEATURE_FLAGS = {
    *
    * @default false
    */
-  MOBILE_BRAINSTORM_PHASE3: process.env.REACT_APP_MOBILE_BRAINSTORM_PHASE3 === 'true' || false,
+  MOBILE_BRAINSTORM_PHASE3: import.meta.env.VITE_MOBILE_BRAINSTORM_PHASE3 === 'true' || false,
 
   /**
    * Phase Four: Facilitator Desktop Integration Layer
@@ -89,7 +89,7 @@ export const FEATURE_FLAGS = {
    *
    * @default false
    */
-  MOBILE_BRAINSTORM_PHASE4: process.env.REACT_APP_MOBILE_BRAINSTORM_PHASE4 === 'true' || false,
+  MOBILE_BRAINSTORM_PHASE4: import.meta.env.VITE_MOBILE_BRAINSTORM_PHASE4 === 'true' || false,
 
   /**
    * Phase Five: Security, Validation, Rate Limiting & Test Coverage
@@ -108,7 +108,7 @@ export const FEATURE_FLAGS = {
    *
    * @default false
    */
-  MOBILE_BRAINSTORM_PHASE5: process.env.REACT_APP_MOBILE_BRAINSTORM_PHASE5 === 'true' || false
+  MOBILE_BRAINSTORM_PHASE5: import.meta.env.VITE_MOBILE_BRAINSTORM_PHASE5 === 'true' || false
 } as const
 
 /**
