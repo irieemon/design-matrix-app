@@ -29,8 +29,9 @@ class Logger {
     if (isDebugMode) {
       // Debug mode: show all logs
       this.enabledLevels = new Set(['debug', 'info', 'warn', 'error'])
-      logger.debug('%c🐛 DEBUG MODE ENABLED', 'color: #00ff00; font-weight: bold; font-size: 14px;')
-      logger.debug('Debug logs are enabled. Add ?debug=false to URL to disable.')
+      // Use console.debug directly to avoid TDZ error (logger not yet initialized)
+      console.debug('%c🐛 DEBUG MODE ENABLED', 'color: #00ff00; font-weight: bold; font-size: 14px;')
+      console.debug('Debug logs are enabled. Add ?debug=false to URL to disable.')
     } else {
       // Production mode: only show warnings and errors
       this.enabledLevels = new Set(['warn', 'error'])
@@ -76,11 +77,11 @@ class Logger {
     if (enabled) {
       this.enabledLevels = new Set(['debug', 'info', 'warn', 'error'])
       localStorage.setItem('debugMode', 'true')
-      logger.debug('%c🐛 DEBUG MODE ENABLED', 'color: #00ff00; font-weight: bold;')
+      this.debug('%c🐛 DEBUG MODE ENABLED', 'color: #00ff00; font-weight: bold;')
     } else {
       this.enabledLevels = new Set(['warn', 'error'])
       localStorage.setItem('debugMode', 'false')
-      logger.debug('%c🔇 DEBUG MODE DISABLED', 'color: #ff6600; font-weight: bold;')
+      this.debug('%c🔇 DEBUG MODE DISABLED', 'color: #ff6600; font-weight: bold;')
     }
   }
 
@@ -151,7 +152,7 @@ class Logger {
     if (now - state.lastLogged > this.THROTTLE_INTERVAL) {
       if (state.skipCount > 0) {
         // Log summary of skipped messages
-        logger.debug(`[THROTTLED] Skipped ${state.skipCount} similar messages: "${message.substring(0, 50)}..."`)
+        this.debug(`[THROTTLED] Skipped ${state.skipCount} similar messages: "${message.substring(0, 50)}..."`)
       }
 
       this.throttleState.set(key, {
@@ -180,13 +181,13 @@ class Logger {
 
   debug(message: string, ...args: any[]): void {
     if (this.shouldLog('debug', message)) {
-      logger.debug(`[DEBUG] ${message}`, ...args)
+      console.debug(`[DEBUG] ${message}`, ...args)
     }
   }
 
   info(message: string, ...args: any[]): void {
     if (this.shouldLog('info', message)) {
-      logger.debug(`[INFO] ${message}`, ...args)
+      console.debug(`[INFO] ${message}`, ...args)
     }
   }
 
@@ -213,7 +214,7 @@ class Logger {
 
     if (!state || now - state.lastLogged > perfThrottleInterval) {
       if (this.shouldLog('debug', message)) {
-        logger.debug(`[PERF] ${message}`, ...args)
+        console.debug(`[PERF] ${message}`, ...args)
         this.throttleState.set(key, {
           lastLogged: now,
           count: 1,
