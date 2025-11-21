@@ -506,11 +506,9 @@ export const createAuthenticatedClientFromLocalStorage = () => {
     // Token changed or no cache exists, create new client
     logger.debug('Creating new authenticated client (token changed or first call)')
 
-    // CRITICAL FIX: Use unique storage key to prevent "Multiple GoTrueClient instances" warning
-    const uniqueStorageKey = `sb-fallback-${parsed.access_token.substring(0, 12)}`
-
     // Create new Supabase client with access token in headers
     // This authenticates ALL requests without needing getSession/setSession
+    // No storage or storageKey needed since persistSession is false
     const authenticatedClient = createClient(
       supabaseUrl || 'https://placeholder.supabase.co',
       supabaseAnonKey || 'placeholder-key',
@@ -519,8 +517,7 @@ export const createAuthenticatedClientFromLocalStorage = () => {
           autoRefreshToken: false,  // Disable to prevent getSession() calls
           persistSession: false,     // Disable to prevent session storage writes
           detectSessionInUrl: false,
-          storage: undefined,        // No storage for fallback client
-          storageKey: uniqueStorageKey // Unique key to prevent GoTrueClient conflicts
+          storage: undefined         // No storage for fallback client (prevents GoTrueClient conflicts)
         },
         global: {
           headers: {
