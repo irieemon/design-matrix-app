@@ -42,16 +42,13 @@ export function createAuthenticatedClient(accessToken: string): SupabaseClient {
   }
 
   // Create client with user session
-  // Use unique storage key to prevent "Multiple GoTrueClient instances" warning
-  const uniqueStorageKey = `sb-auth-${accessToken.substring(0, 8)}`
-
+  // No storage needed for server-side API clients (persistSession: false)
   const client = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
       detectSessionInUrl: false,
-      storage: undefined,
-      storageKey: uniqueStorageKey, // Unique key per authenticated client
+      storage: undefined, // No storage for server-side clients
     },
     db: {
       schema: 'public'

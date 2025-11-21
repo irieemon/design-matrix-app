@@ -466,8 +466,14 @@ export const loggingService = new Proxy({} as LoggingService, {
   }
 })
 
+// Cache the default logger instance to avoid creating new instances on every property access
+let _defaultLoggerInstance: Logger | null = null
+
 export const logger = new Proxy({} as Logger, {
   get(_target, prop) {
-    return getLogger()[prop as keyof Logger]
+    if (!_defaultLoggerInstance) {
+      _defaultLoggerInstance = getLogger()
+    }
+    return _defaultLoggerInstance[prop as keyof Logger]
   }
 })
