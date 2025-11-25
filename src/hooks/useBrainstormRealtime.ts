@@ -72,6 +72,11 @@ export function useBrainstormRealtime(
   const managerRef = useRef<BrainstormRealtimeManager | null>(null)
   const healthCheckIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
+  // Store callbacks in refs to avoid dependency array issues
+  // This prevents the infinite resubscribe loop caused by options changing every render
+  const optionsRef = useRef(options)
+  optionsRef.current = options
+
   // Initialize manager
   useEffect(() => {
     if (!managerRef.current) {
@@ -89,6 +94,7 @@ export function useBrainstormRealtime(
   }, [])
 
   // Subscribe to session
+  // NOTE: options is NOT in dependency array - we use optionsRef to avoid infinite resubscribe loop
   useEffect(() => {
     if (!sessionId || !managerRef.current) {
       setIsSubscribed(false)
@@ -106,21 +112,21 @@ export function useBrainstormRealtime(
             return prev
           }
           const newIdeas = [...prev, idea as IdeaCard]
-          options.onIdeaCreated?.(idea as IdeaCard)
+          optionsRef.current.onIdeaCreated?.(idea as IdeaCard)
           return newIdeas
         })
       },
       onIdeaUpdated: (idea: any) => {
         setIdeas((prev) => {
           const updated = prev.map((i) => (i.id === idea.id ? (idea as IdeaCard) : i))
-          options.onIdeaUpdated?.(idea as IdeaCard)
+          optionsRef.current.onIdeaUpdated?.(idea as IdeaCard)
           return updated
         })
       },
       onIdeaDeleted: (ideaId: string) => {
         setIdeas((prev) => {
           const filtered = prev.filter((i) => i.id !== ideaId)
-          options.onIdeaDeleted?.(ideaId)
+          optionsRef.current.onIdeaDeleted?.(ideaId)
           return filtered
         })
       },
@@ -131,20 +137,20 @@ export function useBrainstormRealtime(
             return prev
           }
           const newParticipants = [...prev, participant as SessionParticipant]
-          options.onParticipantJoined?.(participant as SessionParticipant)
+          optionsRef.current.onParticipantJoined?.(participant as SessionParticipant)
           return newParticipants
         })
       },
       onParticipantLeft: (participantId: string) => {
         setParticipants((prev) => {
           const filtered = prev.filter((p) => p.id !== participantId)
-          options.onParticipantLeft?.(participantId)
+          optionsRef.current.onParticipantLeft?.(participantId)
           return filtered
         })
       },
       onSessionStateChanged: (state: SessionState) => {
         setSessionState(state)
-        options.onSessionStateChanged?.(state)
+        optionsRef.current.onSessionStateChanged?.(state)
       }
     })
 
@@ -156,7 +162,7 @@ export function useBrainstormRealtime(
         const health = manager.getConnectionHealth()
         setConnectionHealth((prev) => {
           if (prev.isConnected !== health.isConnected) {
-            options.onConnectionChange?.(health.isConnected)
+            optionsRef.current.onConnectionChange?.(health.isConnected)
           }
           return health
         })
@@ -173,7 +179,7 @@ export function useBrainstormRealtime(
         clearInterval(healthCheckIntervalRef.current)
       }
     }
-  }, [sessionId, options])
+  }, [sessionId]) // Only resubscribe when sessionId changes, NOT when options changes
 
   // Wrapper functions for manager methods
   const trackPresence = useCallback((participantId: string, participantName: string) => {

@@ -48,7 +48,9 @@ export class BrainstormRealtimeManager {
     const sessionId = config.sessionId
 
     // Unsubscribe from existing channels first
-    this.cleanup()
+    // IMPORTANT: Pass false to avoid marking manager as permanently cleaned up
+    // This allows subscribe() to be called again for new sessions or resubscriptions
+    this.cleanup(false)
 
     // Reset reconnection state
     this.reconnectAttempts = 0
