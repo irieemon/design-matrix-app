@@ -45,6 +45,8 @@ export interface UseBrainstormRealtimeOptions {
   onIdeaDeleted?: (ideaId: string) => void
   onParticipantJoined?: (participant: SessionParticipant) => void
   onParticipantLeft?: (participantId: string) => void
+  /** Called when participant data is updated (e.g., contribution_count changes) */
+  onParticipantUpdated?: (participant: SessionParticipant) => void
   onSessionStateChanged?: (state: SessionState) => void
   onConnectionChange?: (isConnected: boolean) => void
   /** Called when realtime connection fails after max reconnect attempts - use to activate polling fallback */
@@ -148,6 +150,19 @@ export function useBrainstormRealtime(
           const filtered = prev.filter((p) => p.id !== participantId)
           optionsRef.current.onParticipantLeft?.(participantId)
           return filtered
+        })
+      },
+      onParticipantUpdated: (participant: any) => {
+        console.log('📊 useBrainstormRealtime: Participant updated', {
+          id: participant.id,
+          contribution_count: participant.contribution_count
+        })
+        setParticipants((prev) => {
+          const updated = prev.map((p) =>
+            p.id === participant.id ? (participant as SessionParticipant) : p
+          )
+          optionsRef.current.onParticipantUpdated?.(participant as SessionParticipant)
+          return updated
         })
       },
       onSessionStateChanged: (state: SessionState) => {

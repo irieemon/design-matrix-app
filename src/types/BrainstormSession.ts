@@ -173,6 +173,8 @@ export interface BrainstormRealtimeConfig {
   onIdeaDeleted: (ideaId: string) => void
   onParticipantJoined: (participant: SessionParticipant) => void
   onParticipantLeft: (participantId: string) => void
+  /** Called when participant data is updated (e.g., contribution_count changes) */
+  onParticipantUpdated?: (participant: SessionParticipant) => void
   onSessionStateChanged: (state: { status: string; timeRemaining: number }) => void
   /** Called when realtime connection fails after max reconnect attempts - enables polling fallback */
   onConnectionFailed?: () => void

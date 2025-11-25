@@ -143,6 +143,17 @@ export class BrainstormRealtimeManager {
             if (payload.new.disconnected_at) {
               config.onParticipantLeft(payload.new.id)
               this.removePresence(payload.new.id)
+            } else {
+              // Participant data was updated (e.g., contribution_count changed)
+              // Propagate the update to the UI
+              if (config.onParticipantUpdated) {
+                console.log('📊 Participant updated:', {
+                  id: payload.new.id,
+                  contribution_count: payload.new.contribution_count,
+                  last_active_at: payload.new.last_active_at
+                })
+                config.onParticipantUpdated(payload.new)
+              }
             }
           }
         )
