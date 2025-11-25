@@ -5,6 +5,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { supabaseAdmin } from '../_lib/utils/supabaseAdmin.js'  // explicit .js extension
 
 export default async function handler(
   req: VercelRequest,
@@ -52,7 +53,8 @@ export default async function handler(
         queryCompleted: true,
         hasData: !!data,
         hasError: !!error,
-        errorMessage: error?.message
+        errorMessage: error?.message,
+        supabaseAdminExists: !!supabaseAdmin
       }
     })
   } catch (err) {
