@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from 'react'
+import React, { useEffect, lazy, Suspense } from 'react'
 import { User, Project } from '../../types'
 import MatrixPage from '../pages/MatrixPage'
 import DataManagement from '../pages/DataManagement'
