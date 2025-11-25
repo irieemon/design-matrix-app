@@ -84,6 +84,19 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   hasOpenModal = false,
   mobileIdeaIds = new Set()
 }, ref) => {
+  // DIAGNOSTIC: Log at component entry BEFORE any early returns
+  const brainstormIdeas = (ideas || []).filter((i: any) => i.session_id)
+  const desktopIdeas = (ideas || []).filter((i: any) => !i.session_id)
+  console.log('📊 DesignMatrix ENTRY:', {
+    totalIdeas: (ideas || []).length,
+    brainstormIdeas: brainstormIdeas.length,
+    desktopIdeas: desktopIdeas.length,
+    isLoading,
+    error,
+    // Show all brainstorm positions to see if stacked
+    allBrainstormPositions: brainstormIdeas.map((i: any) => ({ id: i.id?.substring(0, 8), x: i.x, y: i.y }))
+  })
+
   const [hoveredQuadrant, setHoveredQuadrant] = useState<string | null>(null)
 
   // CRITICAL FIX: All hooks must be called before ANY conditional early returns
@@ -369,25 +382,6 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
 
 
         {/* Idea Cards */}
-        {/* DIAGNOSTIC: Log what ideas DesignMatrix receives */}
-        {(() => {
-          const brainstormIdeas = (ideas || []).filter(i => (i as any).session_id)
-          const desktopIdeas = (ideas || []).filter(i => !(i as any).session_id)
-          console.log('📊 DesignMatrix RENDERING:', {
-            totalIdeas: (ideas || []).length,
-            brainstormIdeas: brainstormIdeas.length,
-            desktopIdeas: desktopIdeas.length,
-            // Log position of first few brainstorm ideas
-            brainstormPositions: brainstormIdeas.slice(0, 3).map(i => ({
-              id: i.id.substring(0, 8),
-              x: i.x,
-              y: i.y,
-              xPercent: ((i.x + 40) / 600) * 100,
-              yPercent: ((i.y + 40) / 600) * 100
-            }))
-          })
-          return null
-        })()}
         {(ideas || []).map((idea) => {
           // COORDINATE SCALING FIX:
           // Convert stored coordinates (0-520 range, center 260) to percentages
