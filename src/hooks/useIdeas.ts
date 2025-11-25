@@ -462,6 +462,13 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     setIdeas(ideas)
   }, [])
 
+  // DIAGNOSTIC: Log what we're returning
+  console.log('📊 useIdeas RETURN:', {
+    ideasLength: ideas.length,
+    optimisticDataLength: optimisticData.length,
+    returning: 'optimisticData'
+  })
+
   return {
     ideas: optimisticData, // Use optimistic data for instant UI updates
     setIdeas: setIdeasExternal,

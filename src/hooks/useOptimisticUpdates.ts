@@ -30,6 +30,12 @@ export const useOptimisticUpdates = (
 
   // Sync optimistic data with base data when it changes
   useEffect(() => {
+    console.log('📊 useOptimisticUpdates SYNC:', {
+      baseDataLength: baseData.length,
+      prevOptimisticLength: optimisticData.length,
+      firstBaseId: baseData[0]?.id?.substring(0, 8),
+      firstOptimisticId: optimisticData[0]?.id?.substring(0, 8)
+    })
     setOptimisticData(baseData)
   }, [baseData])
 
