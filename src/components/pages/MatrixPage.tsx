@@ -124,11 +124,19 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
     const ideaCount = ideas?.length || 0
     const projectName = currentProject?.name || 'none'
 
+    // DIAGNOSTIC: Log ideas received in MatrixPage
+    console.log('📊 MatrixPage IDEAS RECEIVED:', {
+      ideaCount,
+      projectName,
+      projectId: currentProject?.id,
+      firstIdeaId: ideas?.[0]?.id?.substring(0, 8)
+    })
+
     // Only log when there's a meaningful change (new project or significant idea count change)
     if (currentProject?.id) {
       logger.performance(`MatrixPage: ${ideaCount} ideas loaded for project: ${projectName}`)
     }
-  }, [currentProject?.id]) // Only trigger on project changes, not idea count changes
+  }, [currentProject?.id, ideas?.length]) // Include ideas.length to track changes
 
   return (
     <>
