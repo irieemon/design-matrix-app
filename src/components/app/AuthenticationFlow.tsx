@@ -26,6 +26,7 @@ export default function AuthenticationFlow({
 }: AuthenticationFlowProps) {
   // EMERGENCY FIX: Simplified state - remove competing timeout systems
   const [showTroubleshooting, setShowTroubleshooting] = useState(false)
+  const [forceShowAuth, setForceShowAuth] = useState(false)
 
   // PHASE 1 FIX: Detect if project is being restored from URL
   const projectIdFromUrl = (() => {
@@ -34,15 +35,28 @@ export default function AuthenticationFlow({
   })()
 
   // EMERGENCY FIX: Simple troubleshooting without competing timeout systems
+  // CRITICAL ADDITION: Absolute maximum loading time to prevent infinite hang
   useEffect(() => {
     if (isLoading) {
       // Simple troubleshooting hint after 5 seconds
-      const timer = setTimeout(() => setShowTroubleshooting(true), 5000)
-      return () => clearTimeout(timer)
+      const troubleshootTimer = setTimeout(() => setShowTroubleshooting(true), 5000)
+
+      // CRITICAL FIX: Force show auth screen after 8 seconds maximum
+      // This is a UI-level safety net in case useAuth's timeout doesn't fire
+      const forceAuthTimer = setTimeout(() => {
+        console.warn('⚠️ AuthenticationFlow: Maximum loading time exceeded, forcing auth screen')
+        setForceShowAuth(true)
+      }, 8000)
+
+      return () => {
+        clearTimeout(troubleshootTimer)
+        clearTimeout(forceAuthTimer)
+      }
     } else {
       // ✅ CRITICAL FIX: Use setTimeout(0) to prevent cascading renders
       setTimeout(() => {
         setShowTroubleshooting(false)
+        setForceShowAuth(false)
       }, 0)
     }
   }, [isLoading])
@@ -64,8 +78,15 @@ export default function AuthenticationFlow({
 
   // CRITICAL FIX: Removed fast-path rendering to prevent flickering conflicts
 
+  // CRITICAL FIX: If forceShowAuth is true, skip loading screen entirely
+  // This is the UI safety net to prevent infinite loading
+  if (forceShowAuth && !currentUser) {
+    console.log('🔓 Forcing auth screen after loading timeout')
+    return <AuthScreen onAuthSuccess={onAuthSuccess} />
+  }
+
   // CRITICAL FIX: Simplified loading condition without competing paths
-  if (isLoading) {
+  if (isLoading && !forceShowAuth) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center max-w-md w-full mx-auto p-6">

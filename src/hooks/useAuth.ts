@@ -424,16 +424,51 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     }
   }, [setCurrentProject, setIdeas])
 
-  // Initialize Supabase auth - STANDARD PATTERN
+  // Initialize Supabase auth - ROBUST PATTERN with guaranteed completion
   useEffect(() => {
-    logger.debug('🔄 useAuth useEffect STARTING - standard Supabase auth pattern')
+    logger.debug('🔄 useAuth useEffect STARTING - robust auth pattern with guaranteed completion')
     let mounted = true
     authPerformanceMonitor.startSession()
 
-    // STANDARD PATTERN: Simple initialization
+    // ROBUST PATTERN: Guaranteed completion with multiple fallback layers
     const initAuth = async () => {
+      // CRITICAL FIX: Absolute maximum time for entire auth initialization
+      // This guarantees the loading screen will NEVER hang indefinitely
+      const MAX_AUTH_INIT_TIME = 5000 // 5 seconds absolute maximum
+
+      const authInitTimeout = setTimeout(() => {
+        if (mounted) {
+          logger.warn('⚠️ AUTH INIT TIMEOUT: Forcing completion after 5 seconds')
+          // Try localStorage fallback one final time
+          try {
+            const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
+            if (stored) {
+              const parsed = JSON.parse(stored)
+              if (parsed.user) {
+                const emergencyUser: User = {
+                  id: ensureUUID(parsed.user.id),
+                  email: parsed.user.email,
+                  full_name: parsed.user.user_metadata?.full_name || parsed.user.email,
+                  avatar_url: parsed.user.user_metadata?.avatar_url || null,
+                  role: parsed.user.user_metadata?.role || 'user',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                }
+                setCurrentUser(emergencyUser)
+                setAuthUser(parsed.user)
+                logger.debug('✅ Emergency timeout fallback: user restored from localStorage')
+              }
+            }
+          } catch (e) {
+            logger.debug('Emergency timeout: no valid localStorage session')
+          }
+          setIsLoading(false)
+          authPerformanceMonitor.finishSession('timeout')
+        }
+      }, MAX_AUTH_INIT_TIME)
+
       try {
-        // STEP 1: Get current session (reads from localStorage, no network request)
+        // STEP 1: Get current session with timeout
         // CRITICAL FIX: Add timeout to getSession() as it hangs on refresh
         const { data: { session }, error } = await withTimeout(
           supabase.auth.getSession(),
@@ -444,21 +479,18 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
         if (error) {
           logger.error('Session error detected:', error)
-          await supabase.auth.signOut()
+          // Don't await signOut - it can also hang
+          supabase.auth.signOut().catch(() => {})
         }
 
         if (session?.user) {
-          // CRITICAL: Wait for session to propagate to client's internal auth state
-          // This ensures RLS (Row Level Security) can access auth.uid() for database queries
-          await new Promise(resolve => setTimeout(resolve, 150))
-          logger.debug('🔐 Session propagated, verifying...')
-
-          // Verify propagation
-          const verifySession = await supabase.auth.getSession()
-          logger.debug('Session verified:', { hasSession: !!verifySession.data.session })
+          // CRITICAL FIX: Skip the verification call that can hang
+          // The session we got is already valid - no need to call getSession() again
+          logger.debug('🔐 Session found, skipping redundant verification')
         }
 
         if (mounted) {
+          clearTimeout(authInitTimeout) // Clear emergency timeout - we completed normally
           if (session?.user) {
             logger.debug('Processing authenticated user:', session.user.email)
             await handleAuthUser(session.user)
@@ -467,9 +499,10 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
           }
           authPerformanceMonitor.finishSession('success')
         }
-      } catch (_error) {
+      } catch (initError) {
         // CRITICAL FIX: If getSession() timed out, read localStorage directly as fallback
-        if (error instanceof Error && error.message.includes('getSession() timeout')) {
+        const error = initError as Error
+        if (error?.message?.includes('getSession() timeout')) {
           logger.debug('getSession() timed out, reading session from localStorage directly')
 
           try {
@@ -495,6 +528,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
                   updated_at: new Date().toISOString()
                 }
 
+                clearTimeout(authInitTimeout) // Clear emergency timeout
                 setCurrentUser(fallbackUser)
                 setAuthUser(parsed.user)
                 setIsLoading(false)
@@ -504,12 +538,14 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
             }
 
             if (mounted) {
+              clearTimeout(authInitTimeout) // Clear emergency timeout
               setIsLoading(false)
             }
             return
           } catch (storageError) {
             logger.error('Error reading localStorage:', storageError)
             if (mounted) {
+              clearTimeout(authInitTimeout) // Clear emergency timeout
               setIsLoading(false)
             }
             return
@@ -518,6 +554,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
         logger.error('💥 Error initializing auth:', error)
         if (mounted) {
+          clearTimeout(authInitTimeout) // Clear emergency timeout
           setIsLoading(false)
           authPerformanceMonitor.finishSession('error')
         }
