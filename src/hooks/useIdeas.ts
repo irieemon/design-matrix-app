@@ -113,7 +113,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
         logger.debug('🔍 DIAGNOSTIC: About to call setIdeas')
         setIdeas(ideas)
         logger.debug('🔍 DIAGNOSTIC: setIdeas completed')
-      } catch (_error) {
+      } catch (error) {
         logger.error('🚨 ERROR in loadIdeas:', error)
         setIdeas([])
       }
