@@ -443,10 +443,18 @@ export class BrainstormSessionService {
 
   /**
    * Submit an idea to a brainstorm session (Phase Three: Mobile UI)
+   *
+   * CRITICAL FIX: Use absolute URL to prevent "string did not match expected pattern" error
+   * When mobile devices access via hash-based routes (#join/token), relative URLs can fail
+   * due to browser URL construction inconsistencies with hash fragments
    */
   static async submitIdea(input: SubmitIdeaInput): Promise<SubmitIdeaResponse> {
     try {
-      const response = await fetch('/api/brainstorm/submit-idea', {
+      // Build absolute URL to avoid issues with hash-based routing on mobile
+      const baseUrl = window.location.origin
+      const apiUrl = `${baseUrl}/api/brainstorm/submit-idea`
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
