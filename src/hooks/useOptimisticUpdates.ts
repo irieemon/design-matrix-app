@@ -344,8 +344,21 @@ export const useOptimisticUpdates = (
     }
   }, [optimisticData, pendingUpdates])
 
+  // CRITICAL FIX: When there are no pending updates, return baseData directly
+  // This prevents the race condition where optimisticData hasn't synced yet
+  // but baseData already has the fresh data from the API
+  const effectiveData = pendingUpdates.size > 0 ? optimisticData : baseData
+
+  console.log('📊 useOptimisticUpdates RETURN:', {
+    pendingCount: pendingUpdates.size,
+    returning: pendingUpdates.size > 0 ? 'optimisticData' : 'baseData',
+    baseDataLength: baseData.length,
+    optimisticDataLength: optimisticData.length,
+    effectiveDataLength: effectiveData.length
+  })
+
   return {
-    optimisticData,
+    optimisticData: effectiveData, // Return effective data for better sync
     createIdeaOptimistic,
     updateIdeaOptimistic,
     deleteIdeaOptimistic,
