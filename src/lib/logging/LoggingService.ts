@@ -97,18 +97,10 @@ export class LoggingService {
       return 'production'
     }
 
-    // In browser/Vite context, use import.meta.env safely via eval
-    // CRITICAL: Direct import.meta access causes parse-time errors in CommonJS environments
-    try {
-      // eslint-disable-next-line no-eval
-      const env = eval('typeof import.meta !== "undefined" && import.meta.env')
-      if (env) {
-        if (env.MODE === 'test') return 'test'
-        if (env.DEV) return 'development'
-      }
-    } catch {
-      // import.meta not available (Node.js/CommonJS environment)
-    }
+    // In browser/Vite context, use direct import.meta.env access
+    // Vite statically replaces these at build time
+    if (import.meta.env.MODE === 'test') return 'test'
+    if (import.meta.env.DEV) return 'development'
 
     return 'production'
   }

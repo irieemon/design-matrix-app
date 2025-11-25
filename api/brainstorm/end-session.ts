@@ -118,12 +118,12 @@ export default async function handler(
       })
     }
 
-    // Deactivate all participants
+    // Disconnect all active participants (set disconnected_at timestamp)
     await supabase
       .from('session_participants')
-      .update({ status: 'left' })
+      .update({ disconnected_at: new Date().toISOString() })
       .eq('session_id', input.sessionId)
-      .eq('status', 'active')
+      .is('disconnected_at', null)
 
     return res.status(200).json({
       success: true

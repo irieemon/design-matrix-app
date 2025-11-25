@@ -63,6 +63,7 @@ export default function MainApp({
   const {
     ideas,
     setIdeas,
+    loadIdeas,
     addIdea,
     updateIdea,
     deleteIdea,
@@ -187,6 +188,7 @@ export default function MainApp({
         deleteIdea={deleteIdea}
         toggleCollapse={toggleCollapse}
         handleDragEnd={handleDragEnd}
+        loadIdeas={loadIdeas}
       >
         <PageRouter
           currentPage={currentPage}
@@ -202,6 +204,7 @@ export default function MainApp({
           ideas={ideas}
           setIdeas={setIdeas}
           isRestoringProject={isRestoringProject}
+          loadIdeas={loadIdeas}
         />
       </AppLayout>
       <Analytics />

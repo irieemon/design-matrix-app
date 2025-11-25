@@ -64,24 +64,8 @@ class Logger {
 
     // In development mode, default to false unless explicitly enabled
     // This prevents accidental debug spam during development
-    // CRITICAL FIX: Use eval to safely check import.meta for Vercel serverless compatibility
-    // Direct import.meta access causes parse-time errors in CommonJS environments
-    let isDev = false
-    try {
-      // Check process.env first (works in both Node.js and Vercel)
-      if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
-        isDev = true
-      } else {
-        // Try Vite's import.meta.env safely
-        // eslint-disable-next-line no-eval
-        const env = eval('typeof import.meta !== "undefined" && import.meta.env')
-        if (env && env.DEV) {
-          isDev = true
-        }
-      }
-    } catch {
-      // import.meta not available
-    }
+    // Use direct import.meta.env access for Vite static replacement at build time
+    const isDev = import.meta.env.DEV === true
     if (storedDebug === null && isDev) {
       localStorage.setItem('debugMode', 'false')
       return false

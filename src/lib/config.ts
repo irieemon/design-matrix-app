@@ -33,37 +33,13 @@ export const CACHE_DURATIONS = {
 } as const
 
 /**
- * Helper to get environment variable that works in both Vite (browser) and Node.js (serverless)
- * CRITICAL: This enables API routes to import from src/lib/* without crashing
- *
- * IMPORTANT: We cannot use `import.meta` directly because Vercel serverless functions
- * compile to CommonJS where import.meta is a syntax error at parse time.
- * We use eval to defer the syntax check to runtime where we can catch it.
- */
-function getEnvVar(viteName: string, processName?: string): string {
-  // Check process.env first (Node.js/Vercel serverless)
-  if (typeof process !== 'undefined' && process.env) {
-    const processValue = process.env[processName || viteName] || process.env[viteName]
-    if (processValue) return processValue
-  }
-  // Fallback to import.meta.env (Vite/browser) using safe eval accessor
-  try {
-    // eslint-disable-next-line no-eval
-    const env = eval('typeof import.meta !== "undefined" && import.meta.env')
-    if (env && env[viteName]) {
-      return env[viteName]
-    }
-  } catch {
-    // import.meta not available (Node.js/CommonJS environment)
-  }
-  return ''
-}
-
-/**
  * Feature Flags
  *
  * Flags for progressive feature rollout and safe testing.
  * All flags default to OFF unless explicitly enabled via environment variables.
+ *
+ * CRITICAL: Use direct import.meta.env access for Vite static replacement at build time.
+ * This file is only used by the frontend (browser). API serverless functions are self-contained.
  */
 export const FEATURE_FLAGS = {
   /**
@@ -80,7 +56,7 @@ export const FEATURE_FLAGS = {
    *
    * @default false
    */
-  MOBILE_BRAINSTORM_PHASE2: getEnvVar('VITE_MOBILE_BRAINSTORM_PHASE2', 'MOBILE_BRAINSTORM_PHASE2') === 'true',
+  MOBILE_BRAINSTORM_PHASE2: import.meta.env.VITE_MOBILE_BRAINSTORM_PHASE2 === 'true',
 
   /**
    * Phase Three: UI Presentation Layer for Collaborative Brainstorming
@@ -97,7 +73,7 @@ export const FEATURE_FLAGS = {
    *
    * @default false
    */
-  MOBILE_BRAINSTORM_PHASE3: getEnvVar('VITE_MOBILE_BRAINSTORM_PHASE3', 'MOBILE_BRAINSTORM_PHASE3') === 'true',
+  MOBILE_BRAINSTORM_PHASE3: import.meta.env.VITE_MOBILE_BRAINSTORM_PHASE3 === 'true',
 
   /**
    * Phase Four: Facilitator Desktop Integration Layer
@@ -116,7 +92,7 @@ export const FEATURE_FLAGS = {
    *
    * @default false
    */
-  MOBILE_BRAINSTORM_PHASE4: getEnvVar('VITE_MOBILE_BRAINSTORM_PHASE4', 'MOBILE_BRAINSTORM_PHASE4') === 'true',
+  MOBILE_BRAINSTORM_PHASE4: import.meta.env.VITE_MOBILE_BRAINSTORM_PHASE4 === 'true',
 
   /**
    * Phase Five: Security, Validation, Rate Limiting & Test Coverage
@@ -135,7 +111,7 @@ export const FEATURE_FLAGS = {
    *
    * @default false
    */
-  MOBILE_BRAINSTORM_PHASE5: getEnvVar('VITE_MOBILE_BRAINSTORM_PHASE5', 'MOBILE_BRAINSTORM_PHASE5') === 'true'
+  MOBILE_BRAINSTORM_PHASE5: import.meta.env.VITE_MOBILE_BRAINSTORM_PHASE5 === 'true'
 } as const
 
 /**

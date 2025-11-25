@@ -4,48 +4,16 @@ import { SUPABASE_STORAGE_KEY, CACHE_DURATIONS } from './config'
 import { withTimeout } from '../utils/promiseUtils'
 import { ProfileService } from '../services/ProfileService'
 
-// CRITICAL FIX: Support both Vite (browser) and Node.js (Vercel serverless) environments
-// Vite uses import.meta.env.VITE_*, while Node.js/Vercel uses process.env.*
-// The API routes (api/*.ts) import this file, so we need to support both runtimes
+// CRITICAL: Use direct import.meta.env access for Vite static replacement at build time
+// Vite performs static replacement of import.meta.env.VITE_* during the build process
+// Using eval() or dynamic access prevents this replacement, causing empty values in production
 //
-// IMPORTANT: We cannot use `import.meta` directly because Vercel serverless functions
-// compile to CommonJS where import.meta is a syntax error at parse time.
-// We use a safe accessor function that tries to access it dynamically.
+// Note: This file is now only used by the frontend (browser). All API serverless functions
+// are self-contained and create their own Supabase clients using process.env directly.
 
-/**
- * Safely access Vite's import.meta.env without causing parse-time errors in Node.js/CommonJS
- * This function uses eval to defer the syntax check to runtime where we can catch it
- */
-function getViteEnv(key: string): string {
-  try {
-    // Only works in Vite/browser environment with ESM
-    // eslint-disable-next-line no-eval
-    const env = eval('typeof import.meta !== "undefined" && import.meta.env')
-    if (env && env[key]) {
-      return env[key]
-    }
-  } catch {
-    // import.meta not available (Node.js/CommonJS environment)
-  }
-  return ''
-}
-
-// Check if we're in a Node.js/serverless environment
-const isServerEnvironment = typeof process !== 'undefined' && process.env && typeof window === 'undefined'
-
-// Get Supabase URL with fallback for server environments
-let supabaseUrl: string = ''
-let supabaseAnonKey: string = ''
-
-if (isServerEnvironment) {
-  // Server-side: use process.env (Vercel serverless functions)
-  supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
-  supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
-} else {
-  // Client-side: try Vite's import.meta.env safely
-  supabaseUrl = getViteEnv('VITE_SUPABASE_URL') || ''
-  supabaseAnonKey = getViteEnv('VITE_SUPABASE_ANON_KEY') || ''
-}
+// Direct access to Vite environment variables - these get statically replaced at build time
+const supabaseUrl: string = import.meta.env.VITE_SUPABASE_URL || ''
+const supabaseAnonKey: string = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 // ✅ SECURITY FIX: Service role key removed from frontend
 // Frontend uses ONLY authenticated anon key clients with RLS enforcement
@@ -53,28 +21,14 @@ if (isServerEnvironment) {
 logger.debug('🔧 Supabase config check:', {
   hasUrl: !!supabaseUrl,
   hasKey: !!supabaseAnonKey,
-  isServerEnv: isServerEnvironment,
   urlPreview: supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'missing',
   keyPreview: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'missing'
 })
 
 if (!supabaseUrl || !supabaseAnonKey) {
   logger.error('❌ Missing Supabase environment variables')
-  if (!isServerEnvironment) {
-    try {
-      // eslint-disable-next-line no-eval
-      const env = eval('typeof import.meta !== "undefined" && import.meta.env')
-      if (env) {
-        logger.debug('Available Vite env vars:', Object.keys(env).filter((key: string) => key.startsWith('VITE_')))
-      }
-    } catch {
-      // import.meta not available
-    }
-  }
-  if (isServerEnvironment) {
-    logger.debug('Available process.env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')))
-  }
-  logger.error('You need to set SUPABASE_URL and SUPABASE_ANON_KEY (or VITE_ prefixed versions) in your environment')
+  logger.debug('Available Vite env vars:', Object.keys(import.meta.env).filter((key: string) => key.startsWith('VITE_')))
+  logger.error('You need to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment')
 }
 
 // CRITICAL FIX: Clean up ALL storage to fix persistSession: true migration

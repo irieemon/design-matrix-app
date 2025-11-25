@@ -50,6 +50,8 @@ interface PageRouterProps {
   toggleCollapse?: (ideaId: string, collapsed?: boolean) => Promise<void>
   handleDragEnd?: (event: any) => Promise<void>
   isRestoringProject?: boolean
+  /** Callback to reload ideas (polling fallback) */
+  loadIdeas?: (projectId?: string, skipClear?: boolean) => Promise<void>
 }
 
 // Loading fallback component for lazy-loaded routes
@@ -92,7 +94,8 @@ const PageRouter: React.FC<PageRouterProps> = ({
   updateIdea: _updateIdea,
   toggleCollapse,
   handleDragEnd,
-  isRestoringProject = false
+  isRestoringProject = false,
+  loadIdeas
 }) => {
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
 
@@ -146,6 +149,7 @@ const PageRouter: React.FC<PageRouterProps> = ({
             deleteIdea={deleteIdea}
             toggleCollapse={toggleCollapse}
             handleDragEnd={handleDragEnd}
+            loadIdeas={loadIdeas}
           />
         )
       

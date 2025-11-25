@@ -8,6 +8,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
 // ============================================
 // Types (inline to avoid src/ imports)
@@ -224,9 +225,10 @@ export default async function handler(
     }
 
     // Validate participant exists and belongs to session
+    // Note: session_participants table uses is_approved and disconnected_at, not status
     const { data: participant, error: participantError } = await supabase
       .from('session_participants')
-      .select('id, session_id, participant_name, status')
+      .select('id, session_id, participant_name, is_approved, disconnected_at, contribution_count')
       .eq('id', input.participantId)
       .single()
 
@@ -246,19 +248,38 @@ export default async function handler(
       })
     }
 
-    if (participant.status !== 'active') {
+    // Check if participant is approved and not disconnected
+    if (!participant.is_approved) {
       return res.status(403).json({
         success: false,
-        error: 'Participant is not active',
-        code: 'PARTICIPANT_NOT_ACTIVE'
+        error: 'Participant is not approved',
+        code: 'PARTICIPANT_NOT_APPROVED'
+      })
+    }
+
+    if (participant.disconnected_at) {
+      return res.status(403).json({
+        success: false,
+        error: 'Participant has disconnected',
+        code: 'PARTICIPANT_DISCONNECTED'
       })
     }
 
     // Create idea in database
+    // Note: The ideas table doesn't have a default UUID generator, so we must provide one
+    const ideaId = crypto.randomUUID()
+    console.log('📝 Creating idea with:', {
+      ideaId,
+      project_id: session.project_id,
+      session_id: input.sessionId,
+      participant_id: input.participantId,
+      content: contentValidation.sanitizedContent?.substring(0, 50)
+    })
     const { data: idea, error: insertError } = await supabase
       .from('ideas')
       .insert([
         {
+          id: ideaId,
           project_id: session.project_id,
           session_id: input.sessionId,
           participant_id: input.participantId,
@@ -266,6 +287,7 @@ export default async function handler(
           details: input.details || null,
           priority: input.priority || 'moderate',
           submitted_via: 'mobile',
+          created_by: null, // Anonymous mobile submission
           // Set default position in bottom-right quadrant (low impact, low effort)
           x: 75,
           y: 75
@@ -278,9 +300,24 @@ export default async function handler(
       console.error('Error creating idea:', insertError)
       return res.status(500).json({
         success: false,
-        error: 'Failed to create idea',
-        code: 'DATABASE_ERROR'
+        error: `Failed to create idea: ${insertError.message}`,
+        code: 'DATABASE_ERROR',
+        details: insertError.details || insertError.hint || undefined
       })
+    }
+
+    // Update participant's contribution count and last active timestamp
+    try {
+      await supabase
+        .from('session_participants')
+        .update({
+          contribution_count: (participant.contribution_count || 0) + 1,
+          last_active_at: new Date().toISOString()
+        })
+        .eq('id', input.participantId)
+    } catch (countError) {
+      console.warn('Failed to update contribution count:', countError)
+      // Don't fail the request - the idea was still created
     }
 
     // Log activity (best effort, don't fail if it errors)

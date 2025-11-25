@@ -108,10 +108,16 @@ export default async function handler(
 
     if (error) {
       console.error('Error fetching ideas:', error)
+      console.error('Error details:', JSON.stringify(error, null, 2))
       return res.status(500).json({ error: error.message })
     }
 
+    // Debug: Log how many ideas are from brainstorm sessions
+    const brainstormIdeas = (data || []).filter((idea: any) => idea.session_id)
+    const desktopIdeas = (data || []).filter((idea: any) => !idea.session_id)
     console.log(`✅ API: Fetched ${data.length} ideas for project ${projectId} (with RLS)`)
+    console.log(`   - Brainstorm ideas: ${brainstormIdeas.length}`)
+    console.log(`   - Desktop ideas: ${desktopIdeas.length}`)
     return res.status(200).json({ ideas: data })
 
   } catch (error) {

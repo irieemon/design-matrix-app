@@ -34,6 +34,8 @@ interface AppLayoutProps {
   deleteIdea?: (ideaId: string) => Promise<void>
   toggleCollapse?: (ideaId: string, collapsed?: boolean) => Promise<void>
   handleDragEnd?: (event: any) => Promise<void>
+  /** Callback to reload ideas (polling fallback) */
+  loadIdeas?: (projectId?: string, skipClear?: boolean) => Promise<void>
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({
@@ -57,7 +59,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   updateIdea,
   deleteIdea,
   toggleCollapse,
-  handleDragEnd
+  handleDragEnd,
+  loadIdeas
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isInFullscreen, setIsInFullscreen] = useState(false)

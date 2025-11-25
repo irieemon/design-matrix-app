@@ -68,6 +68,8 @@ interface MatrixFullScreenViewProps {
   onAddIdea?: (idea: Partial<IdeaCard>) => Promise<void>
   /** Callback to update idea */
   onUpdateIdea?: (ideaId: string, updates: Partial<IdeaCard>) => Promise<void>
+  /** Callback to refresh ideas (polling fallback when real-time fails) */
+  onRefreshIdeas?: () => Promise<void>
 }
 
 /**
@@ -94,7 +96,8 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   showAIModal,
   editingIdea,
   onAddIdea,
-  onUpdateIdea
+  onUpdateIdea,
+  onRefreshIdeas
 }) => {
   // View preferences state
   const [showGrid, setShowGrid] = useState(true)
@@ -113,47 +116,26 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   const [mobileIdeaIds, setMobileIdeaIds] = useState<Set<string>>(new Set())
 
   // Phase Four: Real-time brainstorm data (participants, ideas, session state)
+  // NOTE: Ideas are handled by the main useIdeas hook's real-time subscription (project-based).
+  // The brainstorm realtime manager tracks session-specific events but does NOT manage the
+  // main ideas array - that's handled by useIdeas which already has its own postgres_changes subscription.
+  // We only use this for mobile idea tracking (blue pulse indicator) and participant presence.
   const realtimeData = useBrainstormRealtime(brainstormSession?.id || null, {
     onIdeaCreated: (idea) => {
-      logger.debug('Mobile idea created:', idea.id)
-      // Track this idea as coming from mobile
+      logger.debug('Mobile idea created (notification only):', idea.id)
+      // Track this idea as coming from mobile for visual indicator (blue pulse)
+      // The actual idea data will be loaded by useIdeas's project-based subscription
       setMobileIdeaIds((prev) => new Set(prev).add(idea.id))
-      // Add the mobile idea to the main matrix via onAddIdea callback
-      if (onAddIdea) {
-        onAddIdea({
-          content: idea.content,
-          details: idea.details,
-          priority: idea.priority,
-          x_position: idea.x_position,
-          y_position: idea.y_position
-        }).catch((error) => {
-          logger.error('Failed to add mobile idea to matrix:', error)
-        })
-      }
+      // NOTE: Do NOT call onAddIdea here! The idea already exists in the database.
+      // The useIdeas hook's real-time subscription will pick up the change automatically.
     },
     onIdeaUpdated: (idea) => {
-      logger.debug('Mobile idea updated:', idea.id)
-      // Update the idea in the main matrix
-      if (onUpdateIdea) {
-        onUpdateIdea(idea.id, {
-          content: idea.content,
-          details: idea.details,
-          priority: idea.priority,
-          x_position: idea.x_position,
-          y_position: idea.y_position
-        }).catch((error) => {
-          logger.error('Failed to update mobile idea in matrix:', error)
-        })
-      }
+      logger.debug('Mobile idea updated (notification only):', idea.id)
+      // NOTE: Do NOT call onUpdateIdea here! The useIdeas hook handles this.
     },
     onIdeaDeleted: (ideaId) => {
-      logger.debug('Mobile idea deleted:', ideaId)
-      // Delete the idea from the main matrix
-      if (onDeleteIdea) {
-        onDeleteIdea(ideaId).catch((error) => {
-          logger.error('Failed to delete mobile idea from matrix:', error)
-        })
-      }
+      logger.debug('Mobile idea deleted (notification only):', ideaId)
+      // NOTE: Do NOT call onDeleteIdea here! The useIdeas hook handles this.
     },
     onParticipantJoined: (participant) => {
       logger.debug('Participant joined:', participant.participant_name)
@@ -215,6 +197,42 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
     console.log('Button Should Show:', buttonShouldShow ? '✅ YES' : '❌ NO')
     console.log('==============================')
   }, [brainstormSession])
+
+  // Phase Four: Polling fallback for ideas when brainstorm session is active
+  // Real-time subscriptions may fail with "binding mismatch" errors, so we poll every 3 seconds
+  useEffect(() => {
+    // DEBUG: Log polling conditions
+    logger.debug('📡 Polling conditions check:', {
+      hasBrainstormSession: !!brainstormSession,
+      sessionStatus: brainstormSession?.status,
+      hasOnRefreshIdeas: !!onRefreshIdeas
+    })
+
+    // Only poll when:
+    // 1. A brainstorm session is active
+    // 2. The session status is 'active' (not paused or ended)
+    // 3. We have an onRefreshIdeas callback
+    if (!brainstormSession || brainstormSession.status !== 'active' || !onRefreshIdeas) {
+      logger.debug('📡 Polling NOT started - conditions not met')
+      return
+    }
+
+    logger.debug('📡 Starting ideas polling fallback for brainstorm session:', brainstormSession.id)
+
+    // Poll immediately on session start to catch any missed ideas
+    onRefreshIdeas().catch(err => logger.warn('Polling failed:', err))
+
+    // Set up interval for polling every 3 seconds
+    const pollInterval = setInterval(() => {
+      logger.debug('📡 Polling for new ideas...')
+      onRefreshIdeas().catch(err => logger.warn('Polling failed:', err))
+    }, 3000)
+
+    return () => {
+      logger.debug('📡 Stopping ideas polling')
+      clearInterval(pollInterval)
+    }
+  }, [brainstormSession?.id, brainstormSession?.status, onRefreshIdeas])
 
   /**
    * Ref callback to enter fullscreen when container is mounted
@@ -714,16 +732,19 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
       )}
 
       {/* Phase Four: Session QR Code Overlay */}
+      {/* CRITICAL: Must wrap in pointer-events-auto since parent has pointer-events: none */}
       {isFeatureEnabled('MOBILE_BRAINSTORM_PHASE4') &&
         brainstormSession &&
         showSessionQR && (
-          <SessionQRCode
-            sessionId={brainstormSession.id}
-            qrCodeData={brainstormSession.qrCodeData}
-            joinCode={brainstormSession.join_code}
-            expiresAt={brainstormSession.expires_at}
-            onClose={handleCloseSessionQR}
-          />
+          <div style={{ pointerEvents: 'auto' }}>
+            <SessionQRCode
+              sessionId={brainstormSession.id}
+              qrCodeData={brainstormSession.qrCodeData}
+              joinCode={brainstormSession.join_code}
+              expiresAt={brainstormSession.expires_at}
+              onClose={handleCloseSessionQR}
+            />
+          </div>
         )}
     </div>
   )

@@ -34,6 +34,8 @@ interface MatrixPageProps {
   showAIModal?: boolean
   addIdea?: (idea: Partial<IdeaCard>) => Promise<void>
   updateIdea?: (updatedIdea: IdeaCard) => Promise<void> // Signature from useIdeas hook
+  /** Callback to reload ideas (polling fallback) */
+  loadIdeas?: (projectId?: string, skipClear?: boolean) => Promise<void>
 }
 
 const MatrixPage: React.FC<MatrixPageProps> = ({
@@ -55,7 +57,8 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
   showAddModal,
   showAIModal,
   addIdea,
-  updateIdea
+  updateIdea,
+  loadIdeas
 }) => {
   // Full-screen state
   const [isFullScreen, setIsFullScreen] = useState(false)
@@ -87,6 +90,13 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
     // Call the actual updateIdea function with full IdeaCard
     await updateIdea(updatedIdea)
   }, [updateIdea, ideas])
+
+  // Memoize refresh callback for polling fallback (brainstorm sessions)
+  // CRITICAL: Pass skipClear=true to prevent flickering during polling refreshes
+  const handleRefreshIdeas = useCallback(async () => {
+    if (!loadIdeas || !currentProject?.id) return
+    await loadIdeas(currentProject.id, true) // skipClear=true prevents clearing ideas before fetch
+  }, [loadIdeas, currentProject?.id])
 
   // Performance-optimized logging - only log significant changes
   React.useEffect(() => {
@@ -129,6 +139,7 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
           editingIdea={_editingIdea}
           onAddIdea={addIdea}
           onUpdateIdea={handleUpdateIdea}
+          onRefreshIdeas={handleRefreshIdeas}
         />,
         document.body
       )}
