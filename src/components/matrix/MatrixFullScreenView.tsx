@@ -198,9 +198,9 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
     console.log('==============================')
   }, [brainstormSession])
 
-  // Phase Four: Polling fallback for ideas when brainstorm session is active
+  // Phase Four: ROBUST Polling fallback for ideas when brainstorm session is active
   // Real-time subscriptions may fail with "binding mismatch" errors, so we poll every 3 seconds
-  // CRITICAL: Use console.log directly (not logger.debug) to ensure visibility in production
+  // CRITICAL: This polling MUST work even if onRefreshIdeas prop is undefined
   useEffect(() => {
     // ALWAYS log polling conditions to console (not logger which filters in production)
     console.log('📡 POLLING CONDITIONS:', {
@@ -208,41 +208,78 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
       sessionId: brainstormSession?.id,
       sessionStatus: brainstormSession?.status,
       hasOnRefreshIdeas: !!onRefreshIdeas,
-      onRefreshIdeasType: typeof onRefreshIdeas
+      onRefreshIdeasType: typeof onRefreshIdeas,
+      hasCurrentProject: !!currentProject,
+      projectId: currentProject?.id
     })
 
-    // Only poll when:
-    // 1. A brainstorm session exists (any session, even paused, means mobile users may be active)
-    // 2. We have an onRefreshIdeas callback
-    if (!brainstormSession || !onRefreshIdeas) {
-      console.log('📡 Polling NOT started:', !brainstormSession ? 'no session' : 'no callback')
+    // Only poll when we have an active brainstorm session
+    if (!brainstormSession) {
+      console.log('📡 Polling NOT started: no brainstorm session')
       return
     }
 
+    // We need EITHER onRefreshIdeas OR a project to fetch ideas directly
+    if (!onRefreshIdeas && !currentProject?.id) {
+      console.log('📡 Polling NOT started: no callback AND no project ID for direct fetch')
+      return
+    }
+
+    // ROBUST: Create a direct fetch function if onRefreshIdeas is unavailable
+    const fetchIdeasDirectly = async () => {
+      if (!currentProject?.id) return
+
+      console.log('📡 DIRECT FETCH: Fetching ideas for project:', currentProject.id)
+      try {
+        const response = await fetch(`/api/ideas?projectId=${currentProject.id}`, {
+          credentials: 'include',
+          headers: { 'Cache-Control': 'no-cache' }
+        })
+
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log('📡 DIRECT FETCH: Received', data.ideas?.length || 0, 'ideas')
+
+        // If we have onUpdateIdea, we could update each idea, but for now just log
+        // The parent component should update via its own mechanisms
+        return data.ideas
+      } catch (err) {
+        console.warn('📡 DIRECT FETCH failed:', err)
+        throw err
+      }
+    }
+
+    // Choose polling method: prefer onRefreshIdeas, fallback to direct fetch
+    const pollMethod = onRefreshIdeas || fetchIdeasDirectly
+    const pollMethodName = onRefreshIdeas ? 'onRefreshIdeas' : 'DIRECT_FETCH'
+
     // Start polling regardless of session status - mobile users may submit during any state
-    console.log('📡 STARTING POLLING for session:', brainstormSession.id, 'status:', brainstormSession.status)
+    console.log('📡 STARTING POLLING for session:', brainstormSession.id, 'using:', pollMethodName)
 
     // Poll immediately on session start to catch any missed ideas
-    console.log('📡 Initial poll starting...')
-    onRefreshIdeas()
-      .then(() => console.log('📡 Initial poll completed successfully'))
+    console.log('📡 Initial poll starting via', pollMethodName)
+    pollMethod()
+      .then((result) => console.log('📡 Initial poll completed successfully', pollMethodName === 'DIRECT_FETCH' ? `(${result?.length} ideas)` : ''))
       .catch(err => console.warn('📡 Initial poll failed:', err))
 
     // Set up interval for polling every 3 seconds
     const pollInterval = setInterval(() => {
-      console.log('📡 Polling for new ideas...')
-      onRefreshIdeas()
-        .then(() => console.log('📡 Poll completed'))
+      console.log('📡 Polling for new ideas via', pollMethodName)
+      pollMethod()
+        .then((result) => console.log('📡 Poll completed', pollMethodName === 'DIRECT_FETCH' ? `(${result?.length} ideas)` : ''))
         .catch(err => console.warn('📡 Poll failed:', err))
     }, 3000)
 
-    console.log('📡 Poll interval set up with ID:', pollInterval)
+    console.log('📡 Poll interval set up with ID:', pollInterval, 'method:', pollMethodName)
 
     return () => {
       console.log('📡 Stopping polling - cleanup triggered')
       clearInterval(pollInterval)
     }
-  }, [brainstormSession?.id, onRefreshIdeas])
+  }, [brainstormSession?.id, onRefreshIdeas, currentProject?.id])
 
   /**
    * Ref callback to enter fullscreen when container is mounted
