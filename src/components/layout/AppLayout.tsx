@@ -29,6 +29,7 @@ interface AppLayoutProps {
   onSetShowAIModal?: (show: boolean) => void
   // Ideas data and functions from parent
   ideas?: IdeaCard[]
+  setIdeas?: React.Dispatch<React.SetStateAction<IdeaCard[]>>
   addIdea?: (newIdea: Omit<IdeaCard, 'id' | 'created_at' | 'updated_at'>) => Promise<void>
   updateIdea?: (updatedIdea: IdeaCard) => Promise<void>
   deleteIdea?: (ideaId: string) => Promise<void>
@@ -55,6 +56,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   onSetShowAddModal,
   onSetShowAIModal,
   ideas = [],
+  setIdeas,
   addIdea,
   updateIdea,
   deleteIdea,
@@ -164,6 +166,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
             showAddModal,
             showAIModal,
             ideas,
+            setIdeas,
             addIdea,
             updateIdea,
             deleteIdea,

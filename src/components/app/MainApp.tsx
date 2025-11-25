@@ -191,6 +191,7 @@ export default function MainApp({
         onSetShowAddModal={setShowAddModal}
         onSetShowAIModal={setShowAIModal}
         ideas={ideas}
+        setIdeas={setIdeas}
         addIdea={addIdea}
         updateIdea={updateIdea}
         deleteIdea={deleteIdea}

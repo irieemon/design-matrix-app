@@ -70,6 +70,8 @@ interface MatrixFullScreenViewProps {
   onUpdateIdea?: (ideaId: string, updates: Partial<IdeaCard>) => Promise<void>
   /** Callback to refresh ideas (polling fallback when real-time fails) */
   onRefreshIdeas?: () => Promise<void>
+  /** Direct state setter for ideas (fallback when onRefreshIdeas is unavailable) */
+  setIdeas?: React.Dispatch<React.SetStateAction<IdeaCard[]>>
 }
 
 /**
@@ -97,7 +99,8 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   editingIdea,
   onAddIdea,
   onUpdateIdea,
-  onRefreshIdeas
+  onRefreshIdeas,
+  setIdeas
 }) => {
   // View preferences state
   const [showGrid, setShowGrid] = useState(true)
@@ -209,6 +212,7 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
       sessionStatus: brainstormSession?.status,
       hasOnRefreshIdeas: !!onRefreshIdeas,
       onRefreshIdeasType: typeof onRefreshIdeas,
+      hasSetIdeas: !!setIdeas,
       hasCurrentProject: !!currentProject,
       projectId: currentProject?.id
     })
@@ -219,15 +223,16 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
       return
     }
 
-    // We need EITHER onRefreshIdeas OR a project to fetch ideas directly
-    if (!onRefreshIdeas && !currentProject?.id) {
-      console.log('📡 Polling NOT started: no callback AND no project ID for direct fetch')
+    // We need EITHER onRefreshIdeas OR (project + setIdeas for direct fetch)
+    const canDirectFetch = currentProject?.id && setIdeas
+    if (!onRefreshIdeas && !canDirectFetch) {
+      console.log('📡 Polling NOT started: no callback AND no (project + setIdeas) for direct fetch')
       return
     }
 
-    // ROBUST: Create a direct fetch function if onRefreshIdeas is unavailable
-    const fetchIdeasDirectly = async () => {
-      if (!currentProject?.id) return
+    // ROBUST: Create a direct fetch function that UPDATES STATE
+    const fetchIdeasDirectly = async (): Promise<void> => {
+      if (!currentProject?.id || !setIdeas) return
 
       console.log('📡 DIRECT FETCH: Fetching ideas for project:', currentProject.id)
       try {
@@ -241,20 +246,20 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
         }
 
         const data = await response.json()
-        console.log('📡 DIRECT FETCH: Received', data.ideas?.length || 0, 'ideas')
+        const fetchedIdeas = data.ideas || []
+        console.log('📡 DIRECT FETCH: Received', fetchedIdeas.length, 'ideas - UPDATING STATE')
 
-        // If we have onUpdateIdea, we could update each idea, but for now just log
-        // The parent component should update via its own mechanisms
-        return data.ideas
+        // CRITICAL: Actually update the state so UI reflects new ideas
+        setIdeas(fetchedIdeas)
       } catch (err) {
         console.warn('📡 DIRECT FETCH failed:', err)
         throw err
       }
     }
 
-    // Choose polling method: prefer onRefreshIdeas, fallback to direct fetch
+    // Choose polling method: prefer onRefreshIdeas, fallback to direct fetch with state update
     const pollMethod = onRefreshIdeas || fetchIdeasDirectly
-    const pollMethodName = onRefreshIdeas ? 'onRefreshIdeas' : 'DIRECT_FETCH'
+    const pollMethodName = onRefreshIdeas ? 'onRefreshIdeas' : 'DIRECT_FETCH_WITH_STATE'
 
     // Start polling regardless of session status - mobile users may submit during any state
     console.log('📡 STARTING POLLING for session:', brainstormSession.id, 'using:', pollMethodName)
@@ -262,14 +267,14 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
     // Poll immediately on session start to catch any missed ideas
     console.log('📡 Initial poll starting via', pollMethodName)
     pollMethod()
-      .then((result) => console.log('📡 Initial poll completed successfully', pollMethodName === 'DIRECT_FETCH' ? `(${result?.length} ideas)` : ''))
+      .then(() => console.log('📡 Initial poll completed successfully via', pollMethodName))
       .catch(err => console.warn('📡 Initial poll failed:', err))
 
     // Set up interval for polling every 3 seconds
     const pollInterval = setInterval(() => {
       console.log('📡 Polling for new ideas via', pollMethodName)
       pollMethod()
-        .then((result) => console.log('📡 Poll completed', pollMethodName === 'DIRECT_FETCH' ? `(${result?.length} ideas)` : ''))
+        .then(() => console.log('📡 Poll completed via', pollMethodName))
         .catch(err => console.warn('📡 Poll failed:', err))
     }, 3000)
 
@@ -279,7 +284,7 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
       console.log('📡 Stopping polling - cleanup triggered')
       clearInterval(pollInterval)
     }
-  }, [brainstormSession?.id, onRefreshIdeas, currentProject?.id])
+  }, [brainstormSession?.id, onRefreshIdeas, setIdeas, currentProject?.id])
 
   /**
    * Ref callback to enter fullscreen when container is mounted

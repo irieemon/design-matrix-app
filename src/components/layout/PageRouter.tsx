@@ -154,6 +154,7 @@ const PageRouter: React.FC<PageRouterProps> = ({
             addIdea={addIdea}
             updateIdea={_updateIdea}
             ideas={ideas}
+            setIdeas={setIdeas}
             deleteIdea={deleteIdea}
             toggleCollapse={toggleCollapse}
             handleDragEnd={handleDragEnd}

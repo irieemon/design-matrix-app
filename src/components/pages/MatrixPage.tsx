@@ -26,6 +26,7 @@ interface MatrixPageProps {
   onSetShowAIModal?: (show: boolean) => void
   // Ideas data and handlers passed down from AppLayout
   ideas?: IdeaCard[]
+  setIdeas?: React.Dispatch<React.SetStateAction<IdeaCard[]>>
   deleteIdea?: (ideaId: string) => Promise<void>
   toggleCollapse?: (ideaId: string, collapsed?: boolean) => Promise<void>
   handleDragEnd?: (event: any) => Promise<void>
@@ -51,6 +52,7 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
   onSetShowAddModal: _onSetShowAddModal,
   onSetShowAIModal: _onSetShowAIModal,
   ideas = [],
+  setIdeas,
   deleteIdea,
   toggleCollapse,
   handleDragEnd,
@@ -159,6 +161,7 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
           onAddIdea={addIdea}
           onUpdateIdea={handleUpdateIdea}
           onRefreshIdeas={handleRefreshIdeas}
+          setIdeas={setIdeas}
         />,
         document.body
       )}
