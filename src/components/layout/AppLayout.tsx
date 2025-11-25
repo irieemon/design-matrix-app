@@ -168,7 +168,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({
             updateIdea,
             deleteIdea,
             toggleCollapse,
-            handleDragEnd
+            handleDragEnd,
+            loadIdeas
           })}
 
           <DragOverlay
