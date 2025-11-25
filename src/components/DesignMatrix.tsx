@@ -87,14 +87,75 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   // DIAGNOSTIC: Log at component entry BEFORE any early returns
   const brainstormIdeas = (ideas || []).filter((i: any) => i.session_id)
   const desktopIdeas = (ideas || []).filter((i: any) => !i.session_id)
+
+  // ENHANCED DIAGNOSTIC: Check for coordinate validity
+  const brainstormWithInvalidCoords = brainstormIdeas.filter((i: any) =>
+    typeof i.x !== 'number' || !isFinite(i.x) || typeof i.y !== 'number' || !isFinite(i.y)
+  )
+
+  // AUTO-POSITIONING: Create a map of auto-positions for stacked brainstorm ideas
+  // Since brainstorm ideas are inserted at (75, 75), they stack on each other
+  // We spread them out in a grid pattern for visibility
+  const brainstormPositions = React.useMemo(() => {
+    const positionMap = new Map<string, { x: number; y: number }>()
+    const stackedBrainstormIdeas = brainstormIdeas.filter((i: any) => {
+      // Check if at default position (75, 75) or very close
+      return Math.abs(i.x - 75) < 5 && Math.abs(i.y - 75) < 5
+    })
+
+    // Spread stacked ideas in a grid pattern in the Quick Wins quadrant
+    // Grid starts at (30, 30) and spreads across the quadrant
+    const GRID_COLS = 5
+    const GRID_SPACING_X = 40 // pixels between cards
+    const GRID_SPACING_Y = 45 // pixels between cards
+    const START_X = 30
+    const START_Y = 30
+
+    stackedBrainstormIdeas.forEach((idea: any, index: number) => {
+      const col = index % GRID_COLS
+      const row = Math.floor(index / GRID_COLS)
+      positionMap.set(idea.id, {
+        x: START_X + (col * GRID_SPACING_X),
+        y: START_Y + (row * GRID_SPACING_Y)
+      })
+    })
+
+    if (stackedBrainstormIdeas.length > 0) {
+      console.log('🎯 Auto-positioned stacked brainstorm ideas:', {
+        count: stackedBrainstormIdeas.length,
+        gridCols: GRID_COLS,
+        positions: Array.from(positionMap.entries()).slice(0, 3).map(([id, pos]) => ({
+          id: id.substring(0, 8),
+          ...pos
+        }))
+      })
+    }
+
+    return positionMap
+  }, [brainstormIdeas])
+
   console.log('📊 DesignMatrix ENTRY:', {
     totalIdeas: (ideas || []).length,
     brainstormIdeas: brainstormIdeas.length,
     desktopIdeas: desktopIdeas.length,
+    brainstormWithInvalidCoords: brainstormWithInvalidCoords.length,
+    autoPositionedCount: brainstormPositions.size,
     isLoading,
     error,
-    // Show all brainstorm positions to see if stacked
-    allBrainstormPositions: brainstormIdeas.map((i: any) => ({ id: i.id?.substring(0, 8), x: i.x, y: i.y }))
+    // Show ALL brainstorm positions with coordinate validity check
+    allBrainstormPositions: brainstormIdeas.slice(0, 5).map((i: any) => ({
+      id: i.id?.substring(0, 8),
+      x: i.x,
+      y: i.y,
+      hasValidX: typeof i.x === 'number' && isFinite(i.x),
+      hasValidY: typeof i.y === 'number' && isFinite(i.y)
+    })),
+    // Show first desktop idea for comparison
+    sampleDesktopIdea: desktopIdeas[0] ? {
+      id: desktopIdeas[0].id?.substring(0, 8),
+      x: desktopIdeas[0].x,
+      y: desktopIdeas[0].y
+    } : null
   })
 
   const [hoveredQuadrant, setHoveredQuadrant] = useState<string | null>(null)
@@ -388,8 +449,34 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
           // This makes positioning responsive to container size
           // Coordinate space: 0-520 + 40px padding each side = 600px total reference
           // Formula: ((coordinate + 40px) / 600) * 100 = percentage position
-          const xPercent = ((idea.x + 40) / 600) * 100
-          const yPercent = ((idea.y + 40) / 600) * 100
+
+          // CRITICAL FIX: Ensure valid coordinates - default to center (260,260) if missing/invalid
+          // This fixes brainstorm ideas that may have undefined x/y from field name mismatches
+          let safeX = (typeof idea.x === 'number' && isFinite(idea.x)) ? idea.x : 260
+          let safeY = (typeof idea.y === 'number' && isFinite(idea.y)) ? idea.y : 260
+
+          // AUTO-POSITIONING: Check if this idea has an auto-position (stacked brainstorm ideas)
+          const autoPosition = brainstormPositions.get(idea.id)
+          if (autoPosition) {
+            safeX = autoPosition.x
+            safeY = autoPosition.y
+          }
+
+          // Log coordinate issues for debugging (only first occurrence per idea)
+          if (idea.x !== safeX || idea.y !== safeY) {
+            console.warn('⚠️ DesignMatrix: Coordinates adjusted', {
+              ideaId: idea.id?.substring(0, 8),
+              originalX: idea.x,
+              originalY: idea.y,
+              adjustedX: safeX,
+              adjustedY: safeY,
+              isAutoPositioned: !!autoPosition,
+              isBrainstorm: !!(idea as any).session_id
+            })
+          }
+
+          const xPercent = ((safeX + 40) / 600) * 100
+          const yPercent = ((safeY + 40) / 600) * 100
 
           return (
             <div
