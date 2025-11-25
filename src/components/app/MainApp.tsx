@@ -5,7 +5,7 @@
  * Uses context providers to eliminate prop drilling and manage state cleanly.
  */
 
-import { useMemo, useEffect } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import AdminPortal from '../admin/AdminPortal'
 import AppLayout from '../layout/AppLayout'

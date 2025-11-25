@@ -47,6 +47,8 @@ export interface UseBrainstormRealtimeOptions {
   onParticipantLeft?: (participantId: string) => void
   onSessionStateChanged?: (state: SessionState) => void
   onConnectionChange?: (isConnected: boolean) => void
+  /** Called when realtime connection fails after max reconnect attempts - use to activate polling fallback */
+  onConnectionFailed?: () => void
 }
 
 export function useBrainstormRealtime(
@@ -151,6 +153,10 @@ export function useBrainstormRealtime(
       onSessionStateChanged: (state: SessionState) => {
         setSessionState(state)
         optionsRef.current.onSessionStateChanged?.(state)
+      },
+      onConnectionFailed: () => {
+        console.log('📡 useBrainstormRealtime: Connection failed - triggering polling fallback')
+        optionsRef.current.onConnectionFailed?.()
       }
     })
 

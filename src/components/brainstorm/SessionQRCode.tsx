@@ -6,7 +6,7 @@
  * for mobile participants to join the brainstorming session
  */
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { isFeatureEnabled } from '../../lib/config'
 

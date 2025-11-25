@@ -14,6 +14,7 @@
  * - Responsive grid layout
  */
 
+import React from 'react'
 import { Users, FolderKanban, Zap, DollarSign, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 // ============================================================================

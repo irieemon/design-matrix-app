@@ -18,6 +18,7 @@
  * Install: npm install recharts
  */
 
+import React from 'react'
 import {
   LineChart,
   Line,

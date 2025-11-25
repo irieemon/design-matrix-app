@@ -1,3 +1,4 @@
+import React from 'react'
 import { X, FileText, Image, Download, Play, Volume2 } from 'lucide-react'
 import { ProjectFile } from '../types'
 import { logger } from '../utils/logger'

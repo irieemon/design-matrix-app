@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Sparkles, Wand2, Target, RefreshCw } from 'lucide-react'
 import { IdeaCard, Project, User } from '../types'

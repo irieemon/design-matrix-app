@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Upload, FolderOpen } from 'lucide-react'
 import { ProjectFile, Project } from '../types'
 import FileUpload from './FileUpload'

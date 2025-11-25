@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { IdeaCard, User } from '../types'
 import { BaseModal } from './shared'

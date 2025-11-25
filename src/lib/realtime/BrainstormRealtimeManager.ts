@@ -375,6 +375,7 @@ export class BrainstormRealtimeManager {
 
   /**
    * Handle disconnection and attempt reconnection
+   * ENHANCED: Calls onConnectionFailed callback when max attempts reached to enable polling fallback
    */
   private handleDisconnection(channelType: string): void {
     if (this.isCleanedUp) return
@@ -382,7 +383,12 @@ export class BrainstormRealtimeManager {
     console.warn(`Channel ${channelType} disconnected, attempting reconnection...`)
 
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached')
+      console.error('📡 REALTIME: Max reconnection attempts reached - triggering polling fallback')
+      // CRITICAL: Notify the UI that realtime has failed so polling can be activated
+      if (this.config?.onConnectionFailed) {
+        console.log('📡 REALTIME: Calling onConnectionFailed callback')
+        this.config.onConnectionFailed()
+      }
       return
     }
 

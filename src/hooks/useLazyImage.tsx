@@ -28,7 +28,7 @@
  * ```
  */
 
-import { useEffect, useRef, useState, RefObject } from 'react'
+import React, { useEffect, useRef, useState, RefObject } from 'react'
 
 interface UseLazyImageOptions {
   /** Margin around viewport to trigger loading early (default: '50px') */

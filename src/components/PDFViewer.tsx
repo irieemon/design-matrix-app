@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { FileText, ZoomIn, ZoomOut, Download, ChevronLeft, ChevronRight } from 'lucide-react'
 import { logger } from '../utils/logger'
 import type { PDFDocumentProxy } from 'pdfjs-dist'

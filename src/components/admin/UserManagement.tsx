@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Search, Filter, UserCheck, UserX, Shield, Mail, Calendar, Activity, Eye, DollarSign, Zap } from 'lucide-react'
 import { User } from '../../types'
 import { AdminRepository, AdminUserStats, TokenUsageDetail } from '../../lib/repositories'

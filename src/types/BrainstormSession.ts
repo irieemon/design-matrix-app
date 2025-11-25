@@ -174,6 +174,8 @@ export interface BrainstormRealtimeConfig {
   onParticipantJoined: (participant: SessionParticipant) => void
   onParticipantLeft: (participantId: string) => void
   onSessionStateChanged: (state: { status: string; timeRemaining: number }) => void
+  /** Called when realtime connection fails after max reconnect attempts - enables polling fallback */
+  onConnectionFailed?: () => void
 }
 
 export interface SessionState {

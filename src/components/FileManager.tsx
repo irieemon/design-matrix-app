@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { FileText, Image, File, Download, Trash2, Eye, Calendar, User, FileIcon, Brain, CheckCircle, XCircle, Clock } from 'lucide-react'
 import { ProjectFile, FileType } from '../types'
 import DeleteConfirmModal from './DeleteConfirmModal'

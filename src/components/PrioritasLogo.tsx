@@ -1,3 +1,4 @@
+import React from 'react'
 import { Target } from 'lucide-react'
 
 interface PrioritasLogoProps {

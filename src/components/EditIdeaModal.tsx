@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Edit3, Trash2, AlertCircle } from 'lucide-react'
 import { IdeaCard, User } from '../types'
 import { IdeaRepository } from '../lib/repositories'

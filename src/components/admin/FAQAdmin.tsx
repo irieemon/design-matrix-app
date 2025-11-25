@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Plus, Edit2, Trash2, ChevronDown, ChevronRight, Save, X } from 'lucide-react'
 import { faqService } from '../../lib/services/faqService'
 import type { FAQCategory, FAQItem, FAQCategoryWithItems } from '../../types/faq'

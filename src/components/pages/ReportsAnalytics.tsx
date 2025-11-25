@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { BarChart3, PieChart, TrendingUp, Users, Target, Lightbulb, Calendar, Sparkles, History, Clock, AlertTriangle, Cpu, ChevronDown } from 'lucide-react'
 import { IdeaCard, Project, ProjectInsights as ProjectInsightsType, User } from '../../types'
 import { DatabaseService } from '../../lib/database'

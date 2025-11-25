@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Settings, Save, LogOut, UserCircle, Calendar, Shield, CreditCard, TrendingUp, ExternalLink, HelpCircle, FileText } from 'lucide-react'
 import { User } from '../../types'
 import { useCurrentUser, useUserDisplay } from '../../contexts/UserContext'

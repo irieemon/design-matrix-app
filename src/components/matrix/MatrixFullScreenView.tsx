@@ -231,14 +231,35 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
     }
 
     // ROBUST: Create a direct fetch function that UPDATES STATE
+    // CRITICAL FIX: Include Authorization header for authenticated API requests
     const fetchIdeasDirectly = async (): Promise<void> => {
       if (!currentProject?.id || !setIdeas) return
 
       console.log('📡 DIRECT FETCH: Fetching ideas for project:', currentProject.id)
       try {
+        // Get auth token from localStorage (same pattern as useIdeas hook)
+        let accessToken: string | null = null
+        try {
+          const storedAuth = localStorage.getItem('sb-rvjxvppxmrdwasctplxo-auth-token')
+          if (storedAuth) {
+            const parsed = JSON.parse(storedAuth)
+            accessToken = parsed?.access_token
+          }
+        } catch {
+          console.warn('📡 DIRECT FETCH: Could not parse auth token')
+        }
+
+        const headers: HeadersInit = { 'Cache-Control': 'no-cache' }
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`
+          console.log('📡 DIRECT FETCH: Including Authorization header')
+        } else {
+          console.warn('📡 DIRECT FETCH: No auth token - request may fail')
+        }
+
         const response = await fetch(`/api/ideas?projectId=${currentProject.id}`, {
           credentials: 'include',
-          headers: { 'Cache-Control': 'no-cache' }
+          headers
         })
 
         if (!response.ok) {

@@ -5,7 +5,7 @@
  * Manages loading screen, auth screen, and authenticated app states with enhanced UI patterns.
  */
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import PrioritasLogo from '../PrioritasLogo'
 import AuthScreen from '../auth/AuthScreen'
 import { SkeletonText, SkeletonCard } from '../ui'

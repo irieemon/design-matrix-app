@@ -1,4 +1,4 @@
-import { useState, useEffect, useTransition } from 'react'
+import React, { useState, useEffect, useTransition } from 'react'
 import { Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Download, Save, FileText, Lightbulb } from 'lucide-react'
 import { IdeaCard, Project, ProjectFile } from '../types'
 import { aiInsightsService } from '../lib/ai/aiInsightsService'

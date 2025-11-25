@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { Upload, X, FileText, AlertCircle } from 'lucide-react'
 import { ProjectFile, Project } from '../types'
 import { logger } from '../utils/logger'

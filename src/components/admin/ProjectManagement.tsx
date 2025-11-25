@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Search, Filter, FolderOpen, Users, Calendar, Activity, Trash2, Eye, AlertTriangle, CheckCircle } from 'lucide-react'
 import { AdminProject, User } from '../../types'
 import { AdminService } from '../../lib/adminService'

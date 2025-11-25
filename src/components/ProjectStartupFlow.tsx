@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { X, ArrowRight, ArrowLeft, Calendar, Users, DollarSign, Tag, Sparkles, Lightbulb, CheckCircle } from 'lucide-react'
 import { Project, ProjectType, IdeaCard, User } from '../types'
 import { DatabaseService } from '../lib/database'

@@ -1,4 +1,4 @@
-import { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { IdeaCard, User } from '../types'
 import { OptimizedIdeaCard } from './matrix/OptimizedIdeaCard'

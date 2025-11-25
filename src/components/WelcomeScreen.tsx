@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { User, ArrowRight } from 'lucide-react'
 import PrioritasLogo from './PrioritasLogo'
 

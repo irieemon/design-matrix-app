@@ -6,7 +6,7 @@
  * Features: Character limits, priority selector, validation, success feedback, recent ideas list
  */
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import type { BrainstormSession, SessionParticipant } from '../types/BrainstormSession'
 import { BrainstormSessionService } from '../lib/services/BrainstormSessionService'
 import LoadingSpinner from './ui/LoadingSpinner'

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { Download, Upload, FileText, AlertCircle, CheckCircle, Database, Trash2 } from 'lucide-react'
 import { IdeaCard } from '../../types'
 import { exportToCSV, parseCSV, validateCSVFile } from '../../utils/csvUtils'

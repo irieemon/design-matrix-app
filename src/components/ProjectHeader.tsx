@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Edit2, Check, X, Plus, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
 import { Project, IdeaCard, User } from '../types'
 import { DatabaseService } from '../lib/database'

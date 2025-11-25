@@ -15,6 +15,7 @@
  * - Color-coded performance indicators
  */
 
+import React from 'react'
 import DataTable, { TableColumn } from './DataTable'
 import { Users, FolderKanban, Activity, Mail, Calendar, DollarSign, Zap } from 'lucide-react'
 

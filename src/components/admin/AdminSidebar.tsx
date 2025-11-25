@@ -1,3 +1,4 @@
+import React from 'react'
 import { LayoutDashboard, Users, FolderOpen, Database, Settings, Shield, ChevronLeft, ChevronRight, LogOut, Home } from 'lucide-react'
 import { User } from '../../types'
 import { AdminService } from '../../lib/adminService'

@@ -1,7 +1,7 @@
+import React, { useMemo, memo, useCallback } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { Edit3, Trash2, User, ChevronDown, ChevronUp } from 'lucide-react'
 import type { IdeaCard, User as UserType } from '../types'
-import { useMemo, memo, useCallback } from 'react'
 import { getAccessibleDragProps, keyboardUtils } from '../utils/accessibility'
 import { useAriaLiveRegion } from '../hooks/useAccessibility'
 import { Button } from './ui/Button'
