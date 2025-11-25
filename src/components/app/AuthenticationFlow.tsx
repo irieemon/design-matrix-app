@@ -86,39 +86,89 @@ export default function AuthenticationFlow({
   }
 
   // CRITICAL FIX: Simplified loading condition without competing paths
+  // DESIGN SYSTEM: Updated to Monochrome-Lux design tokens
   if (isLoading && !forceShowAuth) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{
+          background: 'linear-gradient(to bottom right, var(--canvas-primary), var(--sapphire-50), var(--sapphire-100))'
+        }}
+      >
         <div className="text-center max-w-md w-full mx-auto p-6">
-          {/* Logo Section */}
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-white to-slate-100 rounded-2xl mb-6 shadow-lg">
-            <PrioritasLogo className="text-blue-600 animate-pulse" size={32} />
+          {/* Logo Section - Monochrome-Lux styling */}
+          <div
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6"
+            style={{
+              background: 'linear-gradient(to bottom right, var(--surface-primary), var(--graphite-100))',
+              boxShadow: 'var(--shadow-card)'
+            }}
+          >
+            <PrioritasLogo
+              className="animate-pulse"
+              size={32}
+              style={{ color: 'var(--graphite-700)' }}
+            />
           </div>
 
-          {/* App Name */}
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Prioritas</h1>
-          <p className="text-slate-600 mb-8">Smart Priority Matrix Platform</p>
+          {/* App Name - Graphite text hierarchy */}
+          <h1
+            className="text-2xl font-semibold mb-2"
+            style={{ color: 'var(--graphite-800)' }}
+          >
+            Prioritas
+          </h1>
+          <p
+            className="mb-8"
+            style={{ color: 'var(--graphite-500)' }}
+          >
+            Smart Priority Matrix Platform
+          </p>
 
           {/* EMERGENCY FIX: Timeout error state disabled - useAuth handles this */}
           {false ? (
             <div className="space-y-6">
-              <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-red-800 mb-2">Initialization Timeout</h3>
-                <p className="text-sm text-red-700 mb-4">
+              <div
+                className="rounded-xl p-6"
+                style={{
+                  backgroundColor: 'var(--garnet-50)',
+                  border: '1px solid var(--garnet-700)',
+                  borderOpacity: 0.2
+                }}
+              >
+                <h3
+                  className="text-lg font-semibold mb-2"
+                  style={{ color: 'var(--garnet-700)' }}
+                >
+                  Initialization Timeout
+                </h3>
+                <p
+                  className="text-sm mb-4"
+                  style={{ color: 'var(--garnet-700)', opacity: 0.8 }}
+                >
                   Workspace initialization is taking longer than expected. This may be due to network issues or server problems.
                 </p>
 
                 <div className="space-y-3">
                   <button
                     onClick={handleRefreshPage}
-                    className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    className="w-full px-4 py-3 text-white rounded-lg font-medium transition-all"
+                    style={{
+                      background: 'linear-gradient(to right, var(--graphite-700), var(--graphite-800))',
+                      boxShadow: 'var(--shadow-button)'
+                    }}
                   >
                     Refresh Page
                   </button>
 
                   <button
                     onClick={handleStartFresh}
-                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="w-full px-4 py-2 rounded-lg transition-all"
+                    style={{
+                      border: '1px solid var(--hairline-default)',
+                      color: 'var(--graphite-600)',
+                      backgroundColor: 'var(--surface-primary)'
+                    }}
                   >
                     Clear Data & Start Fresh
                   </button>
@@ -127,19 +177,32 @@ export default function AuthenticationFlow({
             </div>
           ) : (
             <>
-              {/* Enhanced Loading Animation */}
+              {/* Enhanced Loading Animation - Graphite spinner */}
               <div className="flex items-center justify-center mb-8">
-                <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <div
+                  className="w-8 h-8 border-[3px] border-t-transparent rounded-full animate-spin"
+                  style={{ borderColor: 'var(--graphite-700)', borderTopColor: 'transparent' }}
+                ></div>
               </div>
 
               {/* Loading Status with Skeleton */}
               <div className="space-y-4">
-                <div className="text-sm text-slate-500 mb-4">
+                <div
+                  className="text-sm mb-4"
+                  style={{ color: 'var(--graphite-500)' }}
+                >
                   {projectIdFromUrl ? 'Loading your project...' : 'Initializing your workspace...'}
                 </div>
 
-                {/* Skeleton preview of what's loading */}
-                <div className="bg-white/50 backdrop-blur-sm rounded-xl p-6 border border-white/60 shadow-sm">
+                {/* Skeleton preview - Surface card styling */}
+                <div
+                  className="backdrop-blur-sm rounded-xl p-6"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                    border: '1px solid var(--hairline-default)',
+                    boxShadow: 'var(--shadow-card)'
+                  }}
+                >
                   <div className="space-y-3">
                     <SkeletonText width="60%" lines={1} className="mx-auto h-4" />
                     <SkeletonText width="40%" lines={1} className="mx-auto h-3" />
@@ -152,27 +215,51 @@ export default function AuthenticationFlow({
                   </div>
                 </div>
 
-                {/* Loading Steps */}
-                <div className="text-xs text-slate-400 space-y-1">
+                {/* Loading Steps - Gem-tone status indicators */}
+                <div className="text-xs space-y-1" style={{ color: 'var(--graphite-400)' }}>
                   <div className="flex items-center justify-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: 'var(--emerald-700)' }}
+                    ></div>
                     <span>Connecting to services</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <div
+                      className="w-2 h-2 rounded-full animate-pulse"
+                      style={{ backgroundColor: 'var(--sapphire-500)' }}
+                    ></div>
                     <span>{projectIdFromUrl ? 'Restoring project' : 'Loading workspace'}</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
-                    <div className="w-2 h-2 bg-slate-300 rounded-full"></div>
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: 'var(--graphite-300)' }}
+                    ></div>
                     <span>Preparing interface</span>
                   </div>
                 </div>
 
-                {/* Troubleshooting section after 10 seconds */}
+                {/* Troubleshooting section - Amber warning styling */}
                 {showTroubleshooting && (
-                  <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-left">
-                    <h3 className="font-medium text-yellow-800 mb-2">Taking longer than usual?</h3>
-                    <div className="space-y-2 text-sm text-yellow-700">
+                  <div
+                    className="mt-6 rounded-lg p-4 text-left"
+                    style={{
+                      backgroundColor: 'var(--amber-50)',
+                      border: '1px solid var(--amber-700)',
+                      borderOpacity: 0.3
+                    }}
+                  >
+                    <h3
+                      className="font-medium mb-2"
+                      style={{ color: 'var(--amber-700)' }}
+                    >
+                      Taking longer than usual?
+                    </h3>
+                    <div
+                      className="space-y-2 text-sm"
+                      style={{ color: 'var(--amber-700)', opacity: 0.85 }}
+                    >
                       <p>• Check your internet connection</p>
                       <p>• Try refreshing the page</p>
                       <p>• Clear browser cache if issues persist</p>
@@ -180,7 +267,11 @@ export default function AuthenticationFlow({
 
                     <button
                       onClick={handleRefreshPage}
-                      className="mt-3 px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors text-sm"
+                      className="mt-3 px-4 py-2 text-white rounded-md text-sm transition-all"
+                      style={{
+                        background: 'linear-gradient(to right, var(--graphite-700), var(--graphite-800))',
+                        boxShadow: 'var(--shadow-button)'
+                      }}
                     >
                       Refresh Now
                     </button>
@@ -188,8 +279,11 @@ export default function AuthenticationFlow({
                 )}
               </div>
 
-              {/* Additional context for longer loads */}
-              <div className="mt-8 text-xs text-slate-400">
+              {/* Additional context - Tertiary text */}
+              <div
+                className="mt-8 text-xs"
+                style={{ color: 'var(--graphite-400)' }}
+              >
                 Setting up your personalized priority matrix experience
               </div>
             </>

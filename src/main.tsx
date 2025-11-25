@@ -6,10 +6,10 @@ import { ToastProvider } from './contexts/ToastContext'
 import './index.css'
 
 // Build version marker for cache invalidation - UPDATE THIS ON EVERY DEPLOY
-const BUILD_VERSION = '2025-11-26T02:30:00Z'
+const BUILD_VERSION = '2025-11-26T03:00:00Z'
 // Always log build version (not just DEV) to help with debugging cache issues
 console.log('🚀 Prioritas Build:', BUILD_VERSION)
-console.log('🔧 BUILD INCLUDES: Auth refresh hang fix - guaranteed 5s timeout + 8s UI safety net')
+console.log('🔧 BUILD INCLUDES: Loading screen updated to Monochrome-Lux design system')
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
