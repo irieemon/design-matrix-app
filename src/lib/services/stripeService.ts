@@ -75,8 +75,8 @@ export class StripeService {
       })
 
       return session
-    } catch (_error) {
-      console.error('Error creating checkout session:', error)
+    } catch (err) {
+      console.error('Error creating checkout session:', err)
       throw new Error('Failed to create checkout session')
     }
   }
@@ -92,8 +92,8 @@ export class StripeService {
       })
 
       return session
-    } catch (_error) {
-      console.error('Error creating portal session:', error)
+    } catch (err) {
+      console.error('Error creating portal session:', err)
       throw new Error('Failed to create portal session')
     }
   }
@@ -112,8 +112,8 @@ export class StripeService {
     try {
       const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
       return event
-    } catch (_error) {
-      console.error('Webhook signature verification failed:', error)
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err)
       throw new Error('Invalid webhook signature')
     }
   }
@@ -125,8 +125,8 @@ export class StripeService {
     try {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId)
       return subscription
-    } catch (_error) {
-      console.error('Error retrieving subscription:', error)
+    } catch (err) {
+      console.error('Error retrieving subscription:', err)
       throw new Error('Failed to retrieve subscription')
     }
   }
@@ -140,8 +140,8 @@ export class StripeService {
         cancel_at_period_end: true,
       })
       return subscription
-    } catch (_error) {
-      console.error('Error canceling subscription:', error)
+    } catch (err) {
+      console.error('Error canceling subscription:', err)
       throw new Error('Failed to cancel subscription')
     }
   }
@@ -155,8 +155,8 @@ export class StripeService {
         cancel_at_period_end: false,
       })
       return subscription
-    } catch (_error) {
-      console.error('Error reactivating subscription:', error)
+    } catch (err) {
+      console.error('Error reactivating subscription:', err)
       throw new Error('Failed to reactivate subscription')
     }
   }

@@ -54,9 +54,9 @@ export class SubscriptionService {
       }
 
       return data;
-    } catch (_error) {
-      logger.error('Failed to get subscription:', error);
-      throw error;
+    } catch (err) {
+      logger.error('Failed to get subscription:', err);
+      throw err;
     }
   }
 
@@ -84,9 +84,9 @@ export class SubscriptionService {
 
       logger.info(`Created ${tier} subscription for user ${userId}`);
       return data;
-    } catch (_error) {
-      logger.error('Failed to create subscription:', error);
-      throw error;
+    } catch (err) {
+      logger.error('Failed to create subscription:', err);
+      throw err;
     }
   }
 
@@ -108,9 +108,9 @@ export class SubscriptionService {
       if (error) throw error;
 
       logger.info(`Updated subscription for user ${userId}:`, updates);
-    } catch (_error) {
-      logger.error('Failed to update subscription:', error);
-      throw error;
+    } catch (err) {
+      logger.error('Failed to update subscription:', err);
+      throw err;
     }
   }
 
@@ -152,9 +152,9 @@ export class SubscriptionService {
         isUnlimited: unlimited,
         percentageUsed
       };
-    } catch (_error) {
-      logger.error(`Failed to check limit for ${resource}:`, error);
-      throw error;
+    } catch (err) {
+      logger.error(`Failed to check limit for ${resource}:`, err);
+      throw err;
     }
   }
 
@@ -200,8 +200,8 @@ export class SubscriptionService {
 
       if (error) throw error;
       return count || 0;
-    } catch (_error) {
-      logger.error('Failed to get project count:', error);
+    } catch (err) {
+      logger.error('Failed to get project count:', err);
       return 0;
     }
   }
@@ -236,8 +236,8 @@ export class SubscriptionService {
       }
 
       return data?.count || 0;
-    } catch (_error) {
-      logger.error('Failed to get monthly AI usage:', error);
+    } catch (err) {
+      logger.error('Failed to get monthly AI usage:', err);
       return 0;
     }
   }
@@ -269,8 +269,8 @@ export class SubscriptionService {
 
       if (error) throw error;
       return data?.user_id || null;
-    } catch (_error) {
-      logger.error('Failed to get user ID from Stripe customer:', error);
+    } catch (err) {
+      logger.error('Failed to get user ID from Stripe customer:', err);
       return null;
     }
   }
@@ -282,8 +282,8 @@ export class SubscriptionService {
     try {
       const subscription = await this.getSubscription(userId);
       return subscription?.stripe_customer_id || null;
-    } catch (_error) {
-      logger.error('Failed to get Stripe customer ID:', error);
+    } catch (err) {
+      logger.error('Failed to get Stripe customer ID:', err);
       return null;
     }
   }
