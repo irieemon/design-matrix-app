@@ -4,6 +4,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { supabaseAdmin } from '../_lib/utils/supabaseAdmin'
 
 export default async function handler(
   req: VercelRequest,
@@ -12,15 +13,23 @@ export default async function handler(
   console.log('Debug endpoint called - step 1: handler started')
 
   try {
-    // Step 2: Test basic response
-    console.log('Debug endpoint - step 2: about to import supabase')
+    console.log('Debug endpoint - step 2: supabaseAdmin imported')
+    console.log('Debug endpoint - step 3: supabaseAdmin exists:', !!supabaseAdmin)
 
-    // Dynamic import to isolate the issue
-    const { supabase } = await import('../../src/lib/supabase')
-    console.log('Debug endpoint - step 3: supabase imported successfully')
+    if (!supabaseAdmin) {
+      return res.status(500).json({
+        success: false,
+        error: 'Supabase admin client not initialized - check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars',
+        steps: {
+          handlerStarted: true,
+          supabaseImported: true,
+          clientExists: false
+        }
+      })
+    }
 
     // Test if client works
-    const { data, error } = await supabase.from('brainstorm_sessions').select('id').limit(1)
+    const { data, error } = await supabaseAdmin.from('brainstorm_sessions').select('id').limit(1)
     console.log('Debug endpoint - step 4: query completed', { hasData: !!data, hasError: !!error })
 
     return res.status(200).json({
@@ -29,17 +38,19 @@ export default async function handler(
       steps: {
         handlerStarted: true,
         supabaseImported: true,
+        clientExists: true,
         queryCompleted: true,
         hasData: !!data,
-        hasError: !!error
+        hasError: !!error,
+        errorMessage: error?.message
       }
     })
-  } catch (error) {
-    console.error('Debug endpoint error:', error)
+  } catch (err) {
+    console.error('Debug endpoint error:', err)
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      error: err instanceof Error ? err.message : 'Unknown error',
+      stack: err instanceof Error ? err.stack : undefined
     })
   }
 }
