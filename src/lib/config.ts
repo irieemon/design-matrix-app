@@ -35,6 +35,10 @@ export const CACHE_DURATIONS = {
 /**
  * Helper to get environment variable that works in both Vite (browser) and Node.js (serverless)
  * CRITICAL: This enables API routes to import from src/lib/* without crashing
+ *
+ * IMPORTANT: We cannot use `import.meta` directly because Vercel serverless functions
+ * compile to CommonJS where import.meta is a syntax error at parse time.
+ * We use eval to defer the syntax check to runtime where we can catch it.
  */
 function getEnvVar(viteName: string, processName?: string): string {
   // Check process.env first (Node.js/Vercel serverless)
@@ -42,9 +46,15 @@ function getEnvVar(viteName: string, processName?: string): string {
     const processValue = process.env[processName || viteName] || process.env[viteName]
     if (processValue) return processValue
   }
-  // Fallback to import.meta.env (Vite/browser)
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env[viteName] || ''
+  // Fallback to import.meta.env (Vite/browser) using safe eval accessor
+  try {
+    // eslint-disable-next-line no-eval
+    const env = eval('typeof import.meta !== "undefined" && import.meta.env')
+    if (env && env[viteName]) {
+      return env[viteName]
+    }
+  } catch {
+    // import.meta not available (Node.js/CommonJS environment)
   }
   return ''
 }

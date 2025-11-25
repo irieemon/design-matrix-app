@@ -7,22 +7,44 @@ import { ProfileService } from '../services/ProfileService'
 // CRITICAL FIX: Support both Vite (browser) and Node.js (Vercel serverless) environments
 // Vite uses import.meta.env.VITE_*, while Node.js/Vercel uses process.env.*
 // The API routes (api/*.ts) import this file, so we need to support both runtimes
+//
+// IMPORTANT: We cannot use `import.meta` directly because Vercel serverless functions
+// compile to CommonJS where import.meta is a syntax error at parse time.
+// We use a safe accessor function that tries to access it dynamically.
 
-// Check if we're in a Node.js/serverless environment (no import.meta)
-const isServerEnvironment = typeof process !== 'undefined' && process.env && !process.env.VITE_DEV_SERVER
+/**
+ * Safely access Vite's import.meta.env without causing parse-time errors in Node.js/CommonJS
+ * This function uses eval to defer the syntax check to runtime where we can catch it
+ */
+function getViteEnv(key: string): string {
+  try {
+    // Only works in Vite/browser environment with ESM
+    // eslint-disable-next-line no-eval
+    const env = eval('typeof import.meta !== "undefined" && import.meta.env')
+    if (env && env[key]) {
+      return env[key]
+    }
+  } catch {
+    // import.meta not available (Node.js/CommonJS environment)
+  }
+  return ''
+}
+
+// Check if we're in a Node.js/serverless environment
+const isServerEnvironment = typeof process !== 'undefined' && process.env && typeof window === 'undefined'
 
 // Get Supabase URL with fallback for server environments
 let supabaseUrl: string = ''
 let supabaseAnonKey: string = ''
 
-if (isServerEnvironment && process.env.SUPABASE_URL) {
+if (isServerEnvironment) {
   // Server-side: use process.env (Vercel serverless functions)
   supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
   supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
-} else if (typeof import.meta !== 'undefined' && import.meta.env) {
-  // Client-side: use Vite's import.meta.env
-  supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-  supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+} else {
+  // Client-side: try Vite's import.meta.env safely
+  supabaseUrl = getViteEnv('VITE_SUPABASE_URL') || ''
+  supabaseAnonKey = getViteEnv('VITE_SUPABASE_ANON_KEY') || ''
 }
 
 // ✅ SECURITY FIX: Service role key removed from frontend
@@ -38,8 +60,16 @@ logger.debug('🔧 Supabase config check:', {
 
 if (!supabaseUrl || !supabaseAnonKey) {
   logger.error('❌ Missing Supabase environment variables')
-  if (!isServerEnvironment && typeof import.meta !== 'undefined' && import.meta.env) {
-    logger.debug('Available Vite env vars:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')))
+  if (!isServerEnvironment) {
+    try {
+      // eslint-disable-next-line no-eval
+      const env = eval('typeof import.meta !== "undefined" && import.meta.env')
+      if (env) {
+        logger.debug('Available Vite env vars:', Object.keys(env).filter((key: string) => key.startsWith('VITE_')))
+      }
+    } catch {
+      // import.meta not available
+    }
   }
   if (isServerEnvironment) {
     logger.debug('Available process.env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')))
