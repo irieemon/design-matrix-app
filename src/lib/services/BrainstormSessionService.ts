@@ -447,12 +447,43 @@ export class BrainstormSessionService {
    * CRITICAL FIX: Use absolute URL to prevent "string did not match expected pattern" error
    * When mobile devices access via hash-based routes (#join/token), relative URLs can fail
    * due to browser URL construction inconsistencies with hash fragments
+   *
+   * ENHANCED FIX: Added robust URL construction with fallbacks and detailed error logging
+   * to help diagnose mobile browser URL parsing issues
    */
   static async submitIdea(input: SubmitIdeaInput): Promise<SubmitIdeaResponse> {
     try {
-      // Build absolute URL to avoid issues with hash-based routing on mobile
-      const baseUrl = window.location.origin
+      // Build absolute URL with robust fallback handling
+      // Some mobile browsers have issues with window.location.origin in hash-based routing
+      let baseUrl: string
+
+      try {
+        // Primary: Use window.location.origin (most reliable)
+        baseUrl = window.location.origin
+
+        // Defensive: Validate the origin is a proper URL
+        if (!baseUrl || baseUrl === 'null' || !baseUrl.startsWith('http')) {
+          // Fallback: Construct from protocol + host
+          const protocol = window.location.protocol || 'https:'
+          const host = window.location.host
+          baseUrl = `${protocol}//${host}`
+        }
+      } catch (urlError) {
+        // Last resort: Use environment variable or hardcoded production URL
+        baseUrl = 'https://design-matrix-app.vercel.app'
+        console.warn('[BrainstormSessionService] URL construction failed, using fallback:', baseUrl)
+      }
+
       const apiUrl = `${baseUrl}/api/brainstorm/submit-idea`
+
+      // Log for debugging mobile issues
+      console.debug('[BrainstormSessionService] submitIdea URL:', apiUrl)
+      console.debug('[BrainstormSessionService] Input:', JSON.stringify({
+        sessionId: input.sessionId,
+        participantId: input.participantId,
+        contentLength: input.content?.length,
+        priority: input.priority
+      }))
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -464,6 +495,7 @@ export class BrainstormSessionService {
 
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('[BrainstormSessionService] API error response:', errorData)
         return {
           success: false,
           error: errorData.error || 'Failed to submit idea',
@@ -472,11 +504,28 @@ export class BrainstormSessionService {
       }
 
       const data = await response.json()
+      console.debug('[BrainstormSessionService] submitIdea success:', data.idea?.id)
       return data
     } catch (error) {
+      // Enhanced error logging to help diagnose mobile issues
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      const errorStack = error instanceof Error ? error.stack : undefined
+
+      console.error('[BrainstormSessionService] submitIdea failed:', {
+        error: errorMessage,
+        stack: errorStack,
+        location: {
+          href: window.location?.href,
+          origin: window.location?.origin,
+          protocol: window.location?.protocol,
+          host: window.location?.host,
+          hash: window.location?.hash
+        }
+      })
+
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
         code: 'NETWORK_ERROR'
       }
     }
