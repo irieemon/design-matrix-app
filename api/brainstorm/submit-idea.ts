@@ -1,20 +1,118 @@
 /**
  * Submit Idea API Endpoint
- * Phase One Implementation
+ * Serverless-compatible implementation (no src/ imports)
  *
  * POST /api/brainstorm/submit-idea
- * Submits a new idea to a brainstorm session with rate limiting
+ * Submits a new idea to a brainstorm session
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabase } from '../../src/lib/supabase'
-import { BrainstormSessionRepository } from '../../src/lib/repositories/brainstormSessionRepository'
-import { SessionParticipantRepository } from '../../src/lib/repositories/sessionParticipantRepository'
-import { SessionActivityRepository } from '../../src/lib/repositories/sessionActivityRepository'
-import { ContentModerationService } from '../../src/lib/services/ContentModerationService'
-import { getRateLimitService } from '../../src/lib/services/RateLimitService'
-import { SessionSecurityService } from '../../src/lib/services/SessionSecurityService'
-import type { SubmitIdeaInput, SubmitIdeaResponse } from '../../src/types/BrainstormSession'
+import { createClient } from '@supabase/supabase-js'
+
+// ============================================
+// Types (inline to avoid src/ imports)
+// ============================================
+
+interface SubmitIdeaInput {
+  sessionId: string
+  participantId: string
+  content: string
+  details?: string
+  priority?: 'low' | 'moderate' | 'high' | 'critical'
+}
+
+interface ModerationResult {
+  valid: boolean
+  error?: string
+  sanitizedContent?: string
+}
+
+// ============================================
+// Inline Content Moderation
+// ============================================
+
+const MAX_CONTENT_LENGTH = 500
+const MIN_CONTENT_LENGTH = 3
+const MAX_DETAILS_LENGTH = 2000
+const VALID_PRIORITIES = ['low', 'moderate', 'high', 'critical']
+
+function validateIdeaContent(content: string): ModerationResult {
+  if (!content || content.trim().length < MIN_CONTENT_LENGTH) {
+    return { valid: false, error: `Content must be at least ${MIN_CONTENT_LENGTH} characters` }
+  }
+  if (content.length > MAX_CONTENT_LENGTH) {
+    return { valid: false, error: `Content must be less than ${MAX_CONTENT_LENGTH} characters` }
+  }
+  // Basic sanitization
+  const sanitized = content.trim().replace(/\s+/g, ' ')
+  return { valid: true, sanitizedContent: sanitized }
+}
+
+function validateIdeaDetails(details: string): ModerationResult {
+  if (details.length > MAX_DETAILS_LENGTH) {
+    return { valid: false, error: `Details must be less than ${MAX_DETAILS_LENGTH} characters` }
+  }
+  return { valid: true }
+}
+
+function validatePriority(priority?: string): ModerationResult {
+  if (!priority) return { valid: true }
+  if (!VALID_PRIORITIES.includes(priority)) {
+    return { valid: false, error: `Priority must be one of: ${VALID_PRIORITIES.join(', ')}` }
+  }
+  return { valid: true }
+}
+
+// ============================================
+// Inline Rate Limiting (simple in-memory)
+// ============================================
+
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+const MAX_IDEAS_PER_MINUTE = 6
+const WINDOW_MS = 60000
+
+function checkRateLimit(participantId: string): { allowed: boolean; remaining: number; resetIn: number } {
+  const now = Date.now()
+  const record = rateLimitMap.get(participantId)
+
+  // New record or window expired
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(participantId, { count: 1, resetTime: now + WINDOW_MS })
+    return { allowed: true, remaining: MAX_IDEAS_PER_MINUTE - 1, resetIn: WINDOW_MS }
+  }
+
+  // Within window
+  if (record.count >= MAX_IDEAS_PER_MINUTE) {
+    return { allowed: false, remaining: 0, resetIn: record.resetTime - now }
+  }
+
+  record.count++
+  return { allowed: true, remaining: MAX_IDEAS_PER_MINUTE - record.count, resetIn: record.resetTime - now }
+}
+
+// ============================================
+// Create Supabase Client
+// ============================================
+
+function getSupabaseClient() {
+  const supabaseUrl = process.env.SUPABASE_URL || ''
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Missing Supabase configuration')
+  }
+
+  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+}
+
+// ============================================
+// Main Handler
+// ============================================
 
 export default async function handler(
   req: VercelRequest,
@@ -29,6 +127,8 @@ export default async function handler(
   }
 
   try {
+    const supabase = getSupabaseClient()
+
     // Extract and validate input
     const input: SubmitIdeaInput = req.body
 
@@ -56,44 +156,20 @@ export default async function handler(
       })
     }
 
-    // Phase Five: Rate limiting check (6 submissions per minute)
-    const rateLimitService = getRateLimitService()
-    const rateLimitResult = rateLimitService.checkIdeaSubmission(input.participantId)
-
+    // Rate limiting check
+    const rateLimitResult = checkRateLimit(input.participantId)
     if (!rateLimitResult.allowed) {
       return res.status(429).json({
         success: false,
-        error: rateLimitResult.reason || 'Rate limit exceeded. Please wait before submitting another idea.',
+        error: 'Rate limit exceeded. Please wait before submitting another idea.',
         code: 'RATE_LIMIT_EXCEEDED',
-        retryAfter: rateLimitResult.retryAfter,
         remaining: rateLimitResult.remaining,
         resetIn: rateLimitResult.resetIn
       })
     }
 
-    // Phase Five: Comprehensive session security validation
-    const securityValidation = await SessionSecurityService.validateIdeaSubmission(
-      input.sessionId,
-      input.participantId
-    )
-
-    if (!securityValidation.valid) {
-      const statusCode = securityValidation.code === 'SESSION_PAUSED' ? 403 : 400
-      return res.status(statusCode).json({
-        success: false,
-        error: securityValidation.error,
-        code: securityValidation.code
-      })
-    }
-
-    // Get participant for activity logging (already validated above)
-    const participantResult = await SessionParticipantRepository.getParticipantById(
-      input.participantId
-    )
-    const participant = participantResult.data!
-
     // Content moderation - validate content
-    const contentValidation = ContentModerationService.validateIdeaContent(input.content)
+    const contentValidation = validateIdeaContent(input.content)
     if (!contentValidation.valid) {
       return res.status(400).json({
         success: false,
@@ -104,7 +180,7 @@ export default async function handler(
 
     // Content moderation - validate details (if provided)
     if (input.details) {
-      const detailsValidation = ContentModerationService.validateIdeaDetails(input.details)
+      const detailsValidation = validateIdeaDetails(input.details)
       if (!detailsValidation.valid) {
         return res.status(400).json({
           success: false,
@@ -115,7 +191,7 @@ export default async function handler(
     }
 
     // Validate priority (if provided)
-    const priorityValidation = ContentModerationService.validatePriority(input.priority)
+    const priorityValidation = validatePriority(input.priority)
     if (!priorityValidation.valid) {
       return res.status(400).json({
         success: false,
@@ -124,9 +200,14 @@ export default async function handler(
       })
     }
 
-    // Get session to extract project_id
-    const sessionResult = await BrainstormSessionRepository.getSessionById(input.sessionId)
-    if (!sessionResult.success || !sessionResult.data) {
+    // Validate session exists and is active
+    const { data: session, error: sessionError } = await supabase
+      .from('brainstorm_sessions')
+      .select('id, project_id, status')
+      .eq('id', input.sessionId)
+      .single()
+
+    if (sessionError || !session) {
       return res.status(400).json({
         success: false,
         error: 'Session not found',
@@ -134,10 +215,47 @@ export default async function handler(
       })
     }
 
-    const session = sessionResult.data
+    if (session.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        error: 'Session is not active',
+        code: 'SESSION_NOT_ACTIVE'
+      })
+    }
+
+    // Validate participant exists and belongs to session
+    const { data: participant, error: participantError } = await supabase
+      .from('session_participants')
+      .select('id, session_id, participant_name, status')
+      .eq('id', input.participantId)
+      .single()
+
+    if (participantError || !participant) {
+      return res.status(400).json({
+        success: false,
+        error: 'Participant not found',
+        code: 'PARTICIPANT_NOT_FOUND'
+      })
+    }
+
+    if (participant.session_id !== input.sessionId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Participant does not belong to this session',
+        code: 'PARTICIPANT_SESSION_MISMATCH'
+      })
+    }
+
+    if (participant.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        error: 'Participant is not active',
+        code: 'PARTICIPANT_NOT_ACTIVE'
+      })
+    }
 
     // Create idea in database
-    const { data: idea, error } = await supabase
+    const { data: idea, error: insertError } = await supabase
       .from('ideas')
       .insert([
         {
@@ -156,8 +274,8 @@ export default async function handler(
       .select()
       .single()
 
-    if (error) {
-      console.error('Error creating idea:', error)
+    if (insertError) {
+      console.error('Error creating idea:', insertError)
       return res.status(500).json({
         success: false,
         error: 'Failed to create idea',
@@ -165,18 +283,26 @@ export default async function handler(
       })
     }
 
-    // Log activity (idea creation)
-    await SessionActivityRepository.logIdeaCreated(
-      input.sessionId,
-      input.participantId,
-      idea.id,
-      {
-        content: idea.content,
-        details: idea.details,
-        priority: idea.priority,
-        participant_name: participant.participant_name
-      }
-    )
+    // Log activity (best effort, don't fail if it errors)
+    try {
+      await supabase
+        .from('session_activity')
+        .insert([
+          {
+            session_id: input.sessionId,
+            participant_id: input.participantId,
+            activity_type: 'idea_created',
+            metadata: {
+              idea_id: idea.id,
+              content: idea.content,
+              participant_name: participant.participant_name
+            }
+          }
+        ])
+    } catch (activityError) {
+      console.warn('Failed to log activity:', activityError)
+      // Don't fail the request
+    }
 
     return res.status(201).json({
       success: true,
