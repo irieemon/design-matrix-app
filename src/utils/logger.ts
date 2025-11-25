@@ -64,7 +64,10 @@ class Logger {
 
     // In development mode, default to false unless explicitly enabled
     // This prevents accidental debug spam during development
-    if (storedDebug === null && import.meta.env.DEV) {
+    // CRITICAL FIX: Check for import.meta existence for Vercel serverless compatibility
+    const isDev = (typeof import.meta !== 'undefined' && import.meta.env?.DEV) ||
+                  (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development')
+    if (storedDebug === null && isDev) {
       localStorage.setItem('debugMode', 'false')
       return false
     }

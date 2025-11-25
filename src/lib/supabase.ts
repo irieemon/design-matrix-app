@@ -4,8 +4,26 @@ import { SUPABASE_STORAGE_KEY, CACHE_DURATIONS } from './config'
 import { withTimeout } from '../utils/promiseUtils'
 import { ProfileService } from '../services/ProfileService'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// CRITICAL FIX: Support both Vite (browser) and Node.js (Vercel serverless) environments
+// Vite uses import.meta.env.VITE_*, while Node.js/Vercel uses process.env.*
+// The API routes (api/*.ts) import this file, so we need to support both runtimes
+
+// Check if we're in a Node.js/serverless environment (no import.meta)
+const isServerEnvironment = typeof process !== 'undefined' && process.env && !process.env.VITE_DEV_SERVER
+
+// Get Supabase URL with fallback for server environments
+let supabaseUrl: string = ''
+let supabaseAnonKey: string = ''
+
+if (isServerEnvironment && process.env.SUPABASE_URL) {
+  // Server-side: use process.env (Vercel serverless functions)
+  supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
+  supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+} else if (typeof import.meta !== 'undefined' && import.meta.env) {
+  // Client-side: use Vite's import.meta.env
+  supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
+  supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+}
 
 // ✅ SECURITY FIX: Service role key removed from frontend
 // Frontend uses ONLY authenticated anon key clients with RLS enforcement
@@ -13,14 +31,20 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 logger.debug('🔧 Supabase config check:', {
   hasUrl: !!supabaseUrl,
   hasKey: !!supabaseAnonKey,
+  isServerEnv: isServerEnvironment,
   urlPreview: supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'missing',
   keyPreview: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'missing'
 })
 
 if (!supabaseUrl || !supabaseAnonKey) {
   logger.error('❌ Missing Supabase environment variables')
-  logger.debug('Available env vars:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')))
-  logger.error('You need to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file')
+  if (!isServerEnvironment && typeof import.meta !== 'undefined' && import.meta.env) {
+    logger.debug('Available Vite env vars:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')))
+  }
+  if (isServerEnvironment) {
+    logger.debug('Available process.env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')))
+  }
+  logger.error('You need to set SUPABASE_URL and SUPABASE_ANON_KEY (or VITE_ prefixed versions) in your environment')
 }
 
 // CRITICAL FIX: Clean up ALL storage to fix persistSession: true migration
