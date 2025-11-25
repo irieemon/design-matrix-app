@@ -110,12 +110,21 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
           brainstormIdeas: brainstormIdeas.length,
           desktopIdeas: desktopIdeas.length,
           projectId,
-          // Show first brainstorm idea if any
+          // Show first brainstorm idea if any - INCLUDING x/y coordinates
           sampleBrainstormIdea: brainstormIdeas[0] ? {
             id: brainstormIdeas[0].id,
             content: brainstormIdeas[0].content?.substring(0, 50),
             session_id: brainstormIdeas[0].session_id,
-            submitted_via: brainstormIdeas[0].submitted_via
+            x: brainstormIdeas[0].x,
+            y: brainstormIdeas[0].y,
+            x_position: brainstormIdeas[0].x_position,
+            y_position: brainstormIdeas[0].y_position
+          } : null,
+          // Show first desktop idea for comparison
+          sampleDesktopIdea: desktopIdeas[0] ? {
+            id: desktopIdeas[0].id,
+            x: desktopIdeas[0].x,
+            y: desktopIdeas[0].y
           } : null
         })
 
