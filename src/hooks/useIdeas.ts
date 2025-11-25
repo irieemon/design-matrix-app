@@ -100,8 +100,24 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
         }
 
         const data = await response.json()
-        logger.debug(`🔍 DIAGNOSTIC: API returned ${data.ideas ? data.ideas.length : 0} ideas`)
         const ideas = data.ideas || []
+
+        // CRITICAL DIAGNOSTIC: Log exactly what API returns including brainstorm ideas
+        const brainstormIdeas = ideas.filter((i: any) => i.session_id)
+        const desktopIdeas = ideas.filter((i: any) => !i.session_id)
+        console.log(`📊 useIdeas API RESPONSE:`, {
+          totalIdeas: ideas.length,
+          brainstormIdeas: brainstormIdeas.length,
+          desktopIdeas: desktopIdeas.length,
+          projectId,
+          // Show first brainstorm idea if any
+          sampleBrainstormIdea: brainstormIdeas[0] ? {
+            id: brainstormIdeas[0].id,
+            content: brainstormIdeas[0].content?.substring(0, 50),
+            session_id: brainstormIdeas[0].session_id,
+            submitted_via: brainstormIdeas[0].submitted_via
+          } : null
+        })
 
         // Only log detailed info if it's an error scenario or significantly different
         if (ideas.length === 0) {
@@ -110,9 +126,9 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
           logger.debug(`Loaded ${ideas.length} ideas for project: ${projectId}`)
         }
 
-        logger.debug('🔍 DIAGNOSTIC: About to call setIdeas')
+        console.log('📊 useIdeas: Calling setIdeas with', ideas.length, 'ideas')
         setIdeas(ideas)
-        logger.debug('🔍 DIAGNOSTIC: setIdeas completed')
+        console.log('📊 useIdeas: setIdeas completed')
       } catch (error) {
         logger.error('🚨 ERROR in loadIdeas:', error)
         setIdeas([])
