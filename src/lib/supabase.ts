@@ -74,7 +74,7 @@ const cleanupLegacyAuthStorage = () => {
           cleanedCount++
           logger.debug(`🧹 Removed key: ${key}`)
         }
-      } catch (_error) {
+      } catch (error) {
         logger.warn(`⚠️ Failed to clean key ${key}:`, error)
       }
     })
@@ -95,11 +95,11 @@ const cleanupLegacyAuthStorage = () => {
           localStorage.removeItem(key)
           cleanedCount++
           logger.debug(`🧹 Removed discovered Supabase key: ${key}`)
-        } catch (_error) {
+        } catch (error) {
           logger.warn(`⚠️ Failed to clean discovered key ${key}:`, error)
         }
       })
-    } catch (_error) {
+    } catch (error) {
       logger.warn('⚠️ Error scanning localStorage:', error)
     }
 
@@ -107,7 +107,7 @@ const cleanupLegacyAuthStorage = () => {
     try {
       sessionStorage.clear()
       logger.debug('🧹 Cleared all sessionStorage')
-    } catch (_error) {
+    } catch (error) {
       logger.warn('⚠️ Failed to clean sessionStorage:', error)
     }
 
@@ -116,7 +116,7 @@ const cleanupLegacyAuthStorage = () => {
     } else {
       logger.debug('No legacy storage found - clean slate')
     }
-  } catch (_error) {
+  } catch (error) {
     logger.warn('⚠️ Error during storage cleanup:', error)
   }
 }
@@ -158,7 +158,7 @@ if (shouldRunCleanup && typeof window !== 'undefined') {
       version: 'v3'
     }))
     logger.debug('Cleanup flag set - will not run again for 30 days')
-  } catch (_error) {
+  } catch (error) {
     logger.warn('Could not set cleanup flag:', error)
   }
 }
@@ -253,7 +253,7 @@ export const getUserProfile = async (userId: string) => {
     logger.debug('🔍 getUserProfile result:', { profile, timing: `${profileTime.toFixed(1)}ms` })
 
     return profile
-  } catch (_err) {
+  } catch (err) {
     const profileTime = performance.now() - profileStart
     logger.error('💥 Exception in getUserProfile:', err, `(${profileTime.toFixed(1)}ms)`)
     return null
@@ -338,7 +338,7 @@ export const createUserProfile = async (userId: string, email?: string) => {
     
     logger.debug('✅ User profile created successfully:', data, `(${createTime.toFixed(1)}ms)`)
     return data
-  } catch (_err) {
+  } catch (err) {
     const createTime = performance.now() - createStart
     logger.error('💥 Exception creating user profile:', err, `(${createTime.toFixed(1)}ms)`)
 
@@ -536,7 +536,7 @@ export const createAuthenticatedClientFromLocalStorage = () => {
     logger.debug('Authenticated client created and cached successfully')
 
     return authenticatedClient
-  } catch (_error) {
+  } catch (error) {
     logger.error('Error creating authenticated client:', error)
     // On error, clear cache
     cachedAuthenticatedClient = null
@@ -755,7 +755,7 @@ export const checkIsAdmin = async (userId: string): Promise<boolean> => {
     }
 
     return data?.role === 'admin' || data?.role === 'super_admin'
-  } catch (_error) {
+  } catch (error) {
     logger.error('Failed to check admin status:', error)
     return false
   }

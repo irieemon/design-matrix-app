@@ -493,19 +493,40 @@ export class BrainstormSessionService {
         body: JSON.stringify(input)
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('[BrainstormSessionService] API error response:', errorData)
+      // Get response text first to handle non-JSON error responses
+      const responseText = await response.text()
+      console.debug('[BrainstormSessionService] Response status:', response.status)
+      console.debug('[BrainstormSessionService] Response text (first 500 chars):', responseText.substring(0, 500))
+
+      // Try to parse as JSON
+      let responseData: any
+      try {
+        responseData = JSON.parse(responseText)
+      } catch (parseError) {
+        // Response is not valid JSON (e.g., HTML error page from Vercel)
+        console.error('[BrainstormSessionService] Failed to parse response as JSON:', {
+          status: response.status,
+          contentType: response.headers.get('content-type'),
+          textPreview: responseText.substring(0, 200)
+        })
         return {
           success: false,
-          error: errorData.error || 'Failed to submit idea',
-          code: errorData.code
+          error: `Server error (${response.status}): Unable to process response`,
+          code: 'SERVER_ERROR'
         }
       }
 
-      const data = await response.json()
-      console.debug('[BrainstormSessionService] submitIdea success:', data.idea?.id)
-      return data
+      if (!response.ok) {
+        console.error('[BrainstormSessionService] API error response:', responseData)
+        return {
+          success: false,
+          error: responseData.error || 'Failed to submit idea',
+          code: responseData.code
+        }
+      }
+
+      console.debug('[BrainstormSessionService] submitIdea success:', responseData.idea?.id)
+      return responseData
     } catch (error) {
       // Enhanced error logging to help diagnose mobile issues
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
