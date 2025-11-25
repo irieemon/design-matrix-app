@@ -200,39 +200,49 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
 
   // Phase Four: Polling fallback for ideas when brainstorm session is active
   // Real-time subscriptions may fail with "binding mismatch" errors, so we poll every 3 seconds
+  // CRITICAL: Use console.log directly (not logger.debug) to ensure visibility in production
   useEffect(() => {
-    // DEBUG: Log polling conditions
-    logger.debug('📡 Polling conditions check:', {
+    // ALWAYS log polling conditions to console (not logger which filters in production)
+    console.log('📡 POLLING CONDITIONS:', {
       hasBrainstormSession: !!brainstormSession,
+      sessionId: brainstormSession?.id,
       sessionStatus: brainstormSession?.status,
-      hasOnRefreshIdeas: !!onRefreshIdeas
+      hasOnRefreshIdeas: !!onRefreshIdeas,
+      onRefreshIdeasType: typeof onRefreshIdeas
     })
 
     // Only poll when:
-    // 1. A brainstorm session is active
-    // 2. The session status is 'active' (not paused or ended)
-    // 3. We have an onRefreshIdeas callback
-    if (!brainstormSession || brainstormSession.status !== 'active' || !onRefreshIdeas) {
-      logger.debug('📡 Polling NOT started - conditions not met')
+    // 1. A brainstorm session exists (any session, even paused, means mobile users may be active)
+    // 2. We have an onRefreshIdeas callback
+    if (!brainstormSession || !onRefreshIdeas) {
+      console.log('📡 Polling NOT started:', !brainstormSession ? 'no session' : 'no callback')
       return
     }
 
-    logger.debug('📡 Starting ideas polling fallback for brainstorm session:', brainstormSession.id)
+    // Start polling regardless of session status - mobile users may submit during any state
+    console.log('📡 STARTING POLLING for session:', brainstormSession.id, 'status:', brainstormSession.status)
 
     // Poll immediately on session start to catch any missed ideas
-    onRefreshIdeas().catch(err => logger.warn('Polling failed:', err))
+    console.log('📡 Initial poll starting...')
+    onRefreshIdeas()
+      .then(() => console.log('📡 Initial poll completed successfully'))
+      .catch(err => console.warn('📡 Initial poll failed:', err))
 
     // Set up interval for polling every 3 seconds
     const pollInterval = setInterval(() => {
-      logger.debug('📡 Polling for new ideas...')
-      onRefreshIdeas().catch(err => logger.warn('Polling failed:', err))
+      console.log('📡 Polling for new ideas...')
+      onRefreshIdeas()
+        .then(() => console.log('📡 Poll completed'))
+        .catch(err => console.warn('📡 Poll failed:', err))
     }, 3000)
 
+    console.log('📡 Poll interval set up with ID:', pollInterval)
+
     return () => {
-      logger.debug('📡 Stopping ideas polling')
+      console.log('📡 Stopping polling - cleanup triggered')
       clearInterval(pollInterval)
     }
-  }, [brainstormSession?.id, brainstormSession?.status, onRefreshIdeas])
+  }, [brainstormSession?.id, onRefreshIdeas])
 
   /**
    * Ref callback to enter fullscreen when container is mounted

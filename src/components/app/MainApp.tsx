@@ -77,6 +77,14 @@ export default function MainApp({
     setEditingIdea
   })
 
+  // Debug: Log loadIdeas availability from useIdeas hook
+  React.useEffect(() => {
+    console.log('🔧 MainApp: useIdeas hook returned loadIdeas:', {
+      hasLoadIdeas: !!loadIdeas,
+      loadIdeasType: typeof loadIdeas
+    })
+  }, [loadIdeas])
+
   // Browser history integration
   const { isRestoringProject } = useBrowserHistory({
     currentPage,

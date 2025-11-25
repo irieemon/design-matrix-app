@@ -97,6 +97,14 @@ const PageRouter: React.FC<PageRouterProps> = ({
   isRestoringProject = false,
   loadIdeas
 }) => {
+  // Debug: Log loadIdeas prop status
+  React.useEffect(() => {
+    console.log('🔧 PageRouter: loadIdeas prop status:', {
+      hasLoadIdeas: !!loadIdeas,
+      loadIdeasType: typeof loadIdeas
+    })
+  }, [loadIdeas])
+
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
 
   // Handle redirects that require a project when no project is available
