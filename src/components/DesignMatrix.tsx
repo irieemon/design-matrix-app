@@ -93,53 +93,15 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
     typeof i.x !== 'number' || !isFinite(i.x) || typeof i.y !== 'number' || !isFinite(i.y)
   )
 
-  // AUTO-POSITIONING: Create a map of auto-positions for stacked brainstorm ideas
-  // Since brainstorm ideas are inserted at (75, 75), they stack on each other
-  // We spread them out in a grid pattern for visibility
-  const brainstormPositions = React.useMemo(() => {
-    const positionMap = new Map<string, { x: number; y: number }>()
-    const stackedBrainstormIdeas = brainstormIdeas.filter((i: any) => {
-      // Check if at default position (75, 75) or very close
-      return Math.abs(i.x - 75) < 5 && Math.abs(i.y - 75) < 5
-    })
-
-    // Spread stacked ideas in a grid pattern in the Quick Wins quadrant
-    // Grid starts at (30, 30) and spreads across the quadrant
-    const GRID_COLS = 5
-    const GRID_SPACING_X = 40 // pixels between cards
-    const GRID_SPACING_Y = 45 // pixels between cards
-    const START_X = 30
-    const START_Y = 30
-
-    stackedBrainstormIdeas.forEach((idea: any, index: number) => {
-      const col = index % GRID_COLS
-      const row = Math.floor(index / GRID_COLS)
-      positionMap.set(idea.id, {
-        x: START_X + (col * GRID_SPACING_X),
-        y: START_Y + (row * GRID_SPACING_Y)
-      })
-    })
-
-    if (stackedBrainstormIdeas.length > 0) {
-      console.log('🎯 Auto-positioned stacked brainstorm ideas:', {
-        count: stackedBrainstormIdeas.length,
-        gridCols: GRID_COLS,
-        positions: Array.from(positionMap.entries()).slice(0, 3).map(([id, pos]) => ({
-          id: id.substring(0, 8),
-          ...pos
-        }))
-      })
-    }
-
-    return positionMap
-  }, [brainstormIdeas])
+  // NOTE: Auto-positioning of stacked brainstorm ideas is now handled in useIdeas.ts
+  // This ensures state coordinates match visual positions, fixing the first-drag snap-back bug.
+  // The fix applies auto-positions when ideas are loaded, so drag calculations work correctly.
 
   console.log('📊 DesignMatrix ENTRY:', {
     totalIdeas: (ideas || []).length,
     brainstormIdeas: brainstormIdeas.length,
     desktopIdeas: desktopIdeas.length,
     brainstormWithInvalidCoords: brainstormWithInvalidCoords.length,
-    autoPositionedCount: brainstormPositions.size,
     isLoading,
     error,
     // Show ALL brainstorm positions with coordinate validity check
@@ -452,25 +414,17 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
 
           // CRITICAL FIX: Ensure valid coordinates - default to center (260,260) if missing/invalid
           // This fixes brainstorm ideas that may have undefined x/y from field name mismatches
-          let safeX = (typeof idea.x === 'number' && isFinite(idea.x)) ? idea.x : 260
-          let safeY = (typeof idea.y === 'number' && isFinite(idea.y)) ? idea.y : 260
+          // NOTE: Auto-positioning of stacked brainstorm ideas is now handled in useIdeas.ts
+          // so idea.x and idea.y already have the correct spread-out positions
+          const safeX = (typeof idea.x === 'number' && isFinite(idea.x)) ? idea.x : 260
+          const safeY = (typeof idea.y === 'number' && isFinite(idea.y)) ? idea.y : 260
 
-          // AUTO-POSITIONING: Check if this idea has an auto-position (stacked brainstorm ideas)
-          const autoPosition = brainstormPositions.get(idea.id)
-          if (autoPosition) {
-            safeX = autoPosition.x
-            safeY = autoPosition.y
-          }
-
-          // Log coordinate issues for debugging (only first occurrence per idea)
+          // Log coordinate issues for debugging (only for invalid coordinates)
           if (idea.x !== safeX || idea.y !== safeY) {
-            console.warn('⚠️ DesignMatrix: Coordinates adjusted', {
+            console.warn('⚠️ DesignMatrix: Invalid coordinates defaulted to center', {
               ideaId: idea.id?.substring(0, 8),
               originalX: idea.x,
               originalY: idea.y,
-              adjustedX: safeX,
-              adjustedY: safeY,
-              isAutoPositioned: !!autoPosition,
               isBrainstorm: !!(idea as any).session_id
             })
           }

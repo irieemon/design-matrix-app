@@ -100,13 +100,13 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
         }
 
         const data = await response.json()
-        const ideas = data.ideas || []
+        const rawIdeas = data.ideas || []
 
         // CRITICAL DIAGNOSTIC: Log exactly what API returns including brainstorm ideas
-        const brainstormIdeas = ideas.filter((i: any) => i.session_id)
-        const desktopIdeas = ideas.filter((i: any) => !i.session_id)
+        const brainstormIdeas = rawIdeas.filter((i: any) => i.session_id)
+        const desktopIdeas = rawIdeas.filter((i: any) => !i.session_id)
         console.log(`📊 useIdeas API RESPONSE:`, {
-          totalIdeas: ideas.length,
+          totalIdeas: rawIdeas.length,
           brainstormIdeas: brainstormIdeas.length,
           desktopIdeas: desktopIdeas.length,
           projectId,
@@ -126,6 +126,48 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
             x: desktopIdeas[0].x,
             y: desktopIdeas[0].y
           } : null
+        })
+
+        // CRITICAL FIX: Auto-position stacked brainstorm ideas to prevent drag snap-back bug
+        // Brainstorm ideas are inserted at default position (75, 75) causing them to stack.
+        // Previously, DesignMatrix.tsx spread them visually but useIdeas had original coords,
+        // causing first drag to calculate from wrong position and snap back.
+        // Now we spread positions in state so drag calculations match visual positions.
+        const stackedBrainstormIdeas = brainstormIdeas.filter((i: any) => {
+          return Math.abs(i.x - 75) < 5 && Math.abs(i.y - 75) < 5
+        })
+
+        const autoPositionMap = new Map<string, { x: number; y: number }>()
+        if (stackedBrainstormIdeas.length > 1) {
+          // Grid layout for stacked brainstorm ideas
+          const GRID_COLS = 5
+          const GRID_SPACING_X = 40
+          const GRID_SPACING_Y = 45
+          const START_X = 30
+          const START_Y = 30
+
+          stackedBrainstormIdeas.forEach((idea: any, index: number) => {
+            const col = index % GRID_COLS
+            const row = Math.floor(index / GRID_COLS)
+            autoPositionMap.set(idea.id, {
+              x: START_X + (col * GRID_SPACING_X),
+              y: START_Y + (row * GRID_SPACING_Y)
+            })
+          })
+
+          logger.debug('🎯 Auto-positioning stacked brainstorm ideas:', {
+            count: stackedBrainstormIdeas.length,
+            positions: Array.from(autoPositionMap.entries()).slice(0, 3)
+          })
+        }
+
+        // Apply auto-positions to ideas in state
+        const ideas = rawIdeas.map((idea: any) => {
+          const autoPos = autoPositionMap.get(idea.id)
+          if (autoPos) {
+            return { ...idea, x: autoPos.x, y: autoPos.y }
+          }
+          return idea
         })
 
         // Only log detailed info if it's an error scenario or significantly different
