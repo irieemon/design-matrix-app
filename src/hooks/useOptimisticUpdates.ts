@@ -98,28 +98,37 @@ export const useOptimisticUpdates = (
       return newMap
     })
 
-    // Update base data with server response
+    // CRITICAL FIX: Handle delete operations BEFORE the serverData check
+    // Delete operations don't return serverData, but we must still update baseData
+    // to prevent deleted items from reappearing when other state changes trigger
+    // the useEffect that syncs optimisticData with baseData
+    if (update.type === 'delete') {
+      setBaseData((prevData: IdeaCard[]): IdeaCard[] =>
+        prevData.filter((item: IdeaCard) => item.id !== update.optimisticData.id)
+      )
+      onSuccess?.(updateId, serverData)
+      return
+    }
+
+    // Update base data with server response for non-delete operations
     if (serverData) {
       setBaseData((prevData: IdeaCard[]): IdeaCard[] => {
         switch (update.type) {
           case 'create':
             return [...prevData, serverData]
-          
+
           case 'update':
-            return prevData.map((item: IdeaCard) => 
+            return prevData.map((item: IdeaCard) =>
               item.id === serverData.id ? serverData : item
             )
-          
-          case 'delete':
-            return prevData.filter((item: IdeaCard) => item.id !== update.optimisticData.id)
-          
+
           case 'move':
-            return prevData.map((item: IdeaCard) => 
-              item.id === serverData.id ? 
-              { ...item, x: serverData.x, y: serverData.y } : 
+            return prevData.map((item: IdeaCard) =>
+              item.id === serverData.id ?
+              { ...item, x: serverData.x, y: serverData.y } :
               item
             )
-          
+
           default:
             return prevData
         }
@@ -131,10 +140,10 @@ export const useOptimisticUpdates = (
           case 'create':
           case 'update':
           case 'move':
-            return prevData.map(item => 
+            return prevData.map(item =>
               item.id === serverData.id ? serverData : item
             )
-          
+
           default:
             return prevData
         }
