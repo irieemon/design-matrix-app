@@ -5,10 +5,9 @@
  * Manages loading screen, auth screen, and authenticated app states with enhanced UI patterns.
  */
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import PrioritasLogo from '../PrioritasLogo'
 import AuthScreen from '../auth/AuthScreen'
-import { SkeletonText, SkeletonCard } from '../ui'
 import { User } from '../../types'
 
 interface AuthenticationFlowProps {
@@ -86,207 +85,49 @@ export default function AuthenticationFlow({
   }
 
   // CRITICAL FIX: Simplified loading condition without competing paths
-  // DESIGN SYSTEM: Updated to Monochrome-Lux design tokens
+  // DESIGN SYSTEM: Minimal, confident loading screen matching AuthScreen aesthetic
   if (isLoading && !forceShowAuth) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
-        style={{
-          background: 'linear-gradient(to bottom right, var(--canvas-primary), var(--sapphire-50), var(--sapphire-100))'
-        }}
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{ backgroundColor: 'var(--canvas-primary)' }}
       >
-        <div className="text-center max-w-md w-full mx-auto p-6">
-          {/* Logo Section - Monochrome-Lux styling */}
-          <div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6"
-            style={{
-              background: 'linear-gradient(to bottom right, var(--surface-primary), var(--graphite-100))',
-              boxShadow: 'var(--shadow-card)'
-            }}
-          >
-            <PrioritasLogo
-              className="animate-pulse"
-              size={32}
-              style={{ color: 'var(--graphite-700)' }}
+        <div className="text-center max-w-md w-full">
+          {/* Logo - Matches AuthScreen exactly */}
+          <div className="inline-flex items-center justify-center w-16 h-16 card-clean-hover p-4 mb-4">
+            <PrioritasLogo className="text-info-500" size={32} />
+          </div>
+
+          {/* Title - Matches AuthScreen typography */}
+          <h1 className="text-3xl font-bold text-primary mb-2">Prioritas</h1>
+          <p className="text-secondary mb-8">Smart Priority Matrix Platform</p>
+
+          {/* Confident loading indicator - single elegant spinner */}
+          <div className="flex items-center justify-center mb-6">
+            <div
+              className="w-6 h-6 rounded-full border-2 border-current border-t-transparent text-info-500"
+              style={{
+                animation: 'spin 0.8s cubic-bezier(0.4, 0.0, 0.2, 1) infinite'
+              }}
             />
           </div>
 
-          {/* App Name - Graphite text hierarchy */}
-          <h1
-            className="text-2xl font-semibold mb-2"
-            style={{ color: 'var(--graphite-800)' }}
-          >
-            Prioritas
-          </h1>
-          <p
-            className="mb-8"
-            style={{ color: 'var(--graphite-500)' }}
-          >
-            Smart Priority Matrix Platform
+          {/* Single status message - clean and minimal */}
+          <p className="text-secondary text-sm">
+            {projectIdFromUrl ? 'Loading your project...' : 'Loading...'}
           </p>
 
-          {/* EMERGENCY FIX: Timeout error state disabled - useAuth handles this */}
-          {false ? (
-            <div className="space-y-6">
-              <div
-                className="rounded-xl p-6"
-                style={{
-                  backgroundColor: 'var(--garnet-50)',
-                  border: '1px solid var(--garnet-700)',
-                  borderOpacity: 0.2
-                }}
+          {/* Troubleshooting - only shows after delay, kept minimal */}
+          {showTroubleshooting && (
+            <div className="mt-8">
+              <p className="text-tertiary text-xs mb-3">Taking longer than expected?</p>
+              <button
+                onClick={handleRefreshPage}
+                className="btn-primary text-sm px-4 py-2"
               >
-                <h3
-                  className="text-lg font-semibold mb-2"
-                  style={{ color: 'var(--garnet-700)' }}
-                >
-                  Initialization Timeout
-                </h3>
-                <p
-                  className="text-sm mb-4"
-                  style={{ color: 'var(--garnet-700)', opacity: 0.8 }}
-                >
-                  Workspace initialization is taking longer than expected. This may be due to network issues or server problems.
-                </p>
-
-                <div className="space-y-3">
-                  <button
-                    onClick={handleRefreshPage}
-                    className="w-full px-4 py-3 text-white rounded-lg font-medium transition-all"
-                    style={{
-                      background: 'linear-gradient(to right, var(--graphite-700), var(--graphite-800))',
-                      boxShadow: 'var(--shadow-button)'
-                    }}
-                  >
-                    Refresh Page
-                  </button>
-
-                  <button
-                    onClick={handleStartFresh}
-                    className="w-full px-4 py-2 rounded-lg transition-all"
-                    style={{
-                      border: '1px solid var(--hairline-default)',
-                      color: 'var(--graphite-600)',
-                      backgroundColor: 'var(--surface-primary)'
-                    }}
-                  >
-                    Clear Data & Start Fresh
-                  </button>
-                </div>
-              </div>
+                Refresh Page
+              </button>
             </div>
-          ) : (
-            <>
-              {/* Enhanced Loading Animation - Graphite spinner */}
-              <div className="flex items-center justify-center mb-8">
-                <div
-                  className="w-8 h-8 border-[3px] border-t-transparent rounded-full animate-spin"
-                  style={{ borderColor: 'var(--graphite-700)', borderTopColor: 'transparent' }}
-                ></div>
-              </div>
-
-              {/* Loading Status with Skeleton */}
-              <div className="space-y-4">
-                <div
-                  className="text-sm mb-4"
-                  style={{ color: 'var(--graphite-500)' }}
-                >
-                  {projectIdFromUrl ? 'Loading your project...' : 'Initializing your workspace...'}
-                </div>
-
-                {/* Skeleton preview - Surface card styling */}
-                <div
-                  className="backdrop-blur-sm rounded-xl p-6"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                    border: '1px solid var(--hairline-default)',
-                    boxShadow: 'var(--shadow-card)'
-                  }}
-                >
-                  <div className="space-y-3">
-                    <SkeletonText width="60%" lines={1} className="mx-auto h-4" />
-                    <SkeletonText width="40%" lines={1} className="mx-auto h-3" />
-
-                    <div className="grid grid-cols-3 gap-3 mt-4">
-                      <SkeletonCard layout="basic" className="rounded-lg h-10" />
-                      <SkeletonCard layout="basic" className="rounded-lg h-10" />
-                      <SkeletonCard layout="basic" className="rounded-lg h-10" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Loading Steps - Gem-tone status indicators */}
-                <div className="text-xs space-y-1" style={{ color: 'var(--graphite-400)' }}>
-                  <div className="flex items-center justify-center gap-2">
-                    <div
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: 'var(--emerald-700)' }}
-                    ></div>
-                    <span>Connecting to services</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <div
-                      className="w-2 h-2 rounded-full animate-pulse"
-                      style={{ backgroundColor: 'var(--sapphire-500)' }}
-                    ></div>
-                    <span>{projectIdFromUrl ? 'Restoring project' : 'Loading workspace'}</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <div
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: 'var(--graphite-300)' }}
-                    ></div>
-                    <span>Preparing interface</span>
-                  </div>
-                </div>
-
-                {/* Troubleshooting section - Amber warning styling */}
-                {showTroubleshooting && (
-                  <div
-                    className="mt-6 rounded-lg p-4 text-left"
-                    style={{
-                      backgroundColor: 'var(--amber-50)',
-                      border: '1px solid var(--amber-700)',
-                      borderOpacity: 0.3
-                    }}
-                  >
-                    <h3
-                      className="font-medium mb-2"
-                      style={{ color: 'var(--amber-700)' }}
-                    >
-                      Taking longer than usual?
-                    </h3>
-                    <div
-                      className="space-y-2 text-sm"
-                      style={{ color: 'var(--amber-700)', opacity: 0.85 }}
-                    >
-                      <p>• Check your internet connection</p>
-                      <p>• Try refreshing the page</p>
-                      <p>• Clear browser cache if issues persist</p>
-                    </div>
-
-                    <button
-                      onClick={handleRefreshPage}
-                      className="mt-3 px-4 py-2 text-white rounded-md text-sm transition-all"
-                      style={{
-                        background: 'linear-gradient(to right, var(--graphite-700), var(--graphite-800))',
-                        boxShadow: 'var(--shadow-button)'
-                      }}
-                    >
-                      Refresh Now
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Additional context - Tertiary text */}
-              <div
-                className="mt-8 text-xs"
-                style={{ color: 'var(--graphite-400)' }}
-              >
-                Setting up your personalized priority matrix experience
-              </div>
-            </>
           )}
         </div>
       </div>
