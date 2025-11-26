@@ -23,12 +23,18 @@ npm run test:run      # Single run
 npm run test:coverage # With coverage report
 npm run test:ui       # Interactive UI dashboard
 
+# Unit Tests - Single file
+npm run test -- src/hooks/__tests__/useAuth.test.ts
+
 # E2E Tests (Playwright)
 npm run e2e:all       # All E2E tests
 npm run e2e:visual    # Visual regression tests
 npm run e2e:chromium  # Chromium only
 npm run test:functional          # Functional tests
 npm run test:functional:headed   # With browser visible
+
+# E2E - Single test file
+npx playwright test tests/e2e/auth-complete-journey.spec.ts --reporter=html
 ```
 
 ## Architecture
@@ -67,7 +73,7 @@ See `src/lib/logging/README.md` for full API.
 
 When making visual changes:
 1. Reference `/context/brand_standard.yaml` for colors, typography, and component specs
-2. Reference `/context/design-principles.md` for design principles
+2. Reference `/context/design-principles-example.md` for design principles
 3. Maintain accessibility with contrast ratio > 4.5:1 for body text
 
 Key design values:
