@@ -42,34 +42,45 @@ export const useOptimisticUpdates = (
   // Apply optimistic update immediately to UI
   const applyOptimisticUpdate = useCallback((update: OptimisticUpdate) => {
     setPendingUpdates(prev => new Map(prev).set(update.id, update))
-    
+
     // Apply the optimistic change to the display data
     setOptimisticData(prevData => {
       switch (update.type) {
         case 'create':
           return [...prevData, update.optimisticData as IdeaCard]
-        
+
         case 'update':
-          return prevData.map(item => 
-            item.id === update.optimisticData.id ? 
-            { ...item, ...update.optimisticData } : 
+          return prevData.map(item =>
+            item.id === update.optimisticData.id ?
+            { ...item, ...update.optimisticData } :
             item
           )
-        
+
         case 'delete':
           return prevData.filter(item => item.id !== update.optimisticData.id)
-        
+
         case 'move':
-          return prevData.map(item => 
-            item.id === update.optimisticData.id ? 
-            { ...item, x: update.optimisticData.x, y: update.optimisticData.y } : 
+          return prevData.map(item =>
+            item.id === update.optimisticData.id ?
+            { ...item, x: update.optimisticData.x, y: update.optimisticData.y } :
             item
           )
-        
+
         default:
           return prevData
       }
     })
+
+    // CRITICAL FIX: For delete operations, ALSO update baseData immediately
+    // This prevents the deleted item from reappearing when other state changes
+    // trigger the useEffect that syncs optimisticData with baseData.
+    // Without this, there's a race condition: if toggleCollapse runs before
+    // confirmUpdate, the sync would restore the deleted item from baseData.
+    if (update.type === 'delete') {
+      setBaseData((prevData: IdeaCard[]): IdeaCard[] =>
+        prevData.filter((item: IdeaCard) => item.id !== update.optimisticData.id)
+      )
+    }
 
     // Set timeout to auto-revert if not confirmed
     const timeout = setTimeout(() => {
