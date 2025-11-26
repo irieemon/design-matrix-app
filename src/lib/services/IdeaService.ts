@@ -283,16 +283,27 @@ export class IdeaService extends BaseService {
 
       logger.debug('🗑️ IdeaService: Deleting idea:', { id })
 
-      const { error } = await supabase
+      // CRITICAL FIX: Use .select() to verify deletion actually occurred
+      // RLS may silently block DELETE operations (returning error: null but 0 rows affected)
+      // Without this check, optimistic updates would confirm even when the database wasn't modified
+      const { data, error } = await supabase
         .from('ideas')
         .delete()
         .eq('id', id)
+        .select('id')
 
       if (error) {
         throw error
       }
 
-      logger.debug('✅ IdeaService: Idea deleted successfully')
+      // Check if any rows were actually deleted
+      // RLS-blocked deletes return empty array with no error
+      if (!data || data.length === 0) {
+        logger.warn('⚠️ IdeaService: Delete was blocked by RLS or idea not found:', { id })
+        throw new Error('Delete operation failed - permission denied or idea not found')
+      }
+
+      logger.debug('✅ IdeaService: Idea deleted successfully:', { deletedId: data[0]?.id })
       return true
     }, context)
   }
