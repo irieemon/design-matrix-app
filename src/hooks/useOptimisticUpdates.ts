@@ -30,12 +30,6 @@ export const useOptimisticUpdates = (
 
   // Sync optimistic data with base data when it changes
   useEffect(() => {
-    console.log('📊 useOptimisticUpdates SYNC:', {
-      baseDataLength: baseData.length,
-      prevOptimisticLength: optimisticData.length,
-      firstBaseId: baseData[0]?.id?.substring(0, 8),
-      firstOptimisticId: optimisticData[0]?.id?.substring(0, 8)
-    })
     setOptimisticData(baseData)
   }, [baseData])
 
@@ -392,14 +386,6 @@ export const useOptimisticUpdates = (
   // This prevents the race condition where optimisticData hasn't synced yet
   // but baseData already has the fresh data from the API
   const effectiveData = pendingUpdates.size > 0 ? optimisticData : baseData
-
-  console.log('📊 useOptimisticUpdates RETURN:', {
-    pendingCount: pendingUpdates.size,
-    returning: pendingUpdates.size > 0 ? 'optimisticData' : 'baseData',
-    baseDataLength: baseData.length,
-    optimisticDataLength: optimisticData.length,
-    effectiveDataLength: effectiveData.length
-  })
 
   return {
     optimisticData: effectiveData, // Return effective data for better sync

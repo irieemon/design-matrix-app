@@ -84,41 +84,8 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   hasOpenModal = false,
   mobileIdeaIds = new Set()
 }, ref) => {
-  // DIAGNOSTIC: Log at component entry BEFORE any early returns
-  const brainstormIdeas = (ideas || []).filter((i: any) => i.session_id)
-  const desktopIdeas = (ideas || []).filter((i: any) => !i.session_id)
-
-  // ENHANCED DIAGNOSTIC: Check for coordinate validity
-  const brainstormWithInvalidCoords = brainstormIdeas.filter((i: any) =>
-    typeof i.x !== 'number' || !isFinite(i.x) || typeof i.y !== 'number' || !isFinite(i.y)
-  )
-
   // NOTE: Auto-positioning of stacked brainstorm ideas is now handled in useIdeas.ts
   // This ensures state coordinates match visual positions, fixing the first-drag snap-back bug.
-  // The fix applies auto-positions when ideas are loaded, so drag calculations work correctly.
-
-  console.log('📊 DesignMatrix ENTRY:', {
-    totalIdeas: (ideas || []).length,
-    brainstormIdeas: brainstormIdeas.length,
-    desktopIdeas: desktopIdeas.length,
-    brainstormWithInvalidCoords: brainstormWithInvalidCoords.length,
-    isLoading,
-    error,
-    // Show ALL brainstorm positions with coordinate validity check
-    allBrainstormPositions: brainstormIdeas.slice(0, 5).map((i: any) => ({
-      id: i.id?.substring(0, 8),
-      x: i.x,
-      y: i.y,
-      hasValidX: typeof i.x === 'number' && isFinite(i.x),
-      hasValidY: typeof i.y === 'number' && isFinite(i.y)
-    })),
-    // Show first desktop idea for comparison
-    sampleDesktopIdea: desktopIdeas[0] ? {
-      id: desktopIdeas[0].id?.substring(0, 8),
-      x: desktopIdeas[0].x,
-      y: desktopIdeas[0].y
-    } : null
-  })
 
   const [hoveredQuadrant, setHoveredQuadrant] = useState<string | null>(null)
 

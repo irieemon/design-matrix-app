@@ -102,31 +102,9 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
         const data = await response.json()
         const rawIdeas = data.ideas || []
 
-        // CRITICAL DIAGNOSTIC: Log exactly what API returns including brainstorm ideas
+        // Filter ideas by type for auto-positioning
         const brainstormIdeas = rawIdeas.filter((i: any) => i.session_id)
         const desktopIdeas = rawIdeas.filter((i: any) => !i.session_id)
-        console.log(`📊 useIdeas API RESPONSE:`, {
-          totalIdeas: rawIdeas.length,
-          brainstormIdeas: brainstormIdeas.length,
-          desktopIdeas: desktopIdeas.length,
-          projectId,
-          // Show first brainstorm idea if any - INCLUDING x/y coordinates
-          sampleBrainstormIdea: brainstormIdeas[0] ? {
-            id: brainstormIdeas[0].id,
-            content: brainstormIdeas[0].content?.substring(0, 50),
-            session_id: brainstormIdeas[0].session_id,
-            x: brainstormIdeas[0].x,
-            y: brainstormIdeas[0].y,
-            x_position: brainstormIdeas[0].x_position,
-            y_position: brainstormIdeas[0].y_position
-          } : null,
-          // Show first desktop idea for comparison
-          sampleDesktopIdea: desktopIdeas[0] ? {
-            id: desktopIdeas[0].id,
-            x: desktopIdeas[0].x,
-            y: desktopIdeas[0].y
-          } : null
-        })
 
         // CRITICAL FIX: Auto-position stacked brainstorm ideas to prevent drag snap-back bug
         // Brainstorm ideas are inserted at default position (75, 75) causing them to stack.
@@ -177,9 +155,7 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
           logger.debug(`Loaded ${ideas.length} ideas for project: ${projectId}`)
         }
 
-        console.log('📊 useIdeas: Calling setIdeas with', ideas.length, 'ideas')
         setIdeas(ideas)
-        console.log('📊 useIdeas: setIdeas completed')
       } catch (error) {
         logger.error('🚨 ERROR in loadIdeas:', error)
         setIdeas([])
@@ -516,13 +492,6 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     skipNextLoad.current = true
     setIdeas(ideas)
   }, [])
-
-  // DIAGNOSTIC: Log what we're returning
-  console.log('📊 useIdeas RETURN:', {
-    ideasLength: ideas.length,
-    optimisticDataLength: optimisticData.length,
-    returning: 'optimisticData'
-  })
 
   return {
     ideas: optimisticData, // Use optimistic data for instant UI updates

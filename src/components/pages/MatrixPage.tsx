@@ -7,7 +7,6 @@ import ProjectHeader from '../ProjectHeader'
 import ProjectFiles from '../ProjectFiles'
 import MatrixFullScreenView from '../matrix/MatrixFullScreenView'
 import { useProjectFiles } from '../../hooks/useProjectFiles'
-import { logger } from '../../utils/logger'
 import { generateDemoUUID } from '../../utils/uuid'
 import { Button } from '../ui/Button'
 
@@ -96,47 +95,10 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
   // Memoize refresh callback for polling fallback (brainstorm sessions)
   // CRITICAL: Pass skipClear=true to prevent flickering during polling refreshes
   const handleRefreshIdeas = useCallback(async () => {
-    console.log('🔄 handleRefreshIdeas called:', { hasLoadIdeas: !!loadIdeas, projectId: currentProject?.id })
-    if (!loadIdeas) {
-      console.warn('🔄 loadIdeas is undefined - cannot refresh')
-      return
-    }
-    if (!currentProject?.id) {
-      console.warn('🔄 No project ID - cannot refresh')
-      return
-    }
-    console.log('🔄 Calling loadIdeas for project:', currentProject.id)
+    if (!loadIdeas || !currentProject?.id) return
     await loadIdeas(currentProject.id, true) // skipClear=true prevents clearing ideas before fetch
-    console.log('🔄 loadIdeas completed')
   }, [loadIdeas, currentProject?.id])
 
-  // Debug: Log when handleRefreshIdeas is created/recreated
-  React.useEffect(() => {
-    console.log('🔧 MatrixPage: handleRefreshIdeas callback created', {
-      hasLoadIdeas: !!loadIdeas,
-      hasProjectId: !!currentProject?.id,
-      callbackExists: !!handleRefreshIdeas
-    })
-  }, [handleRefreshIdeas, loadIdeas, currentProject?.id])
-
-  // Performance-optimized logging - only log significant changes
-  React.useEffect(() => {
-    const ideaCount = ideas?.length || 0
-    const projectName = currentProject?.name || 'none'
-
-    // DIAGNOSTIC: Log ideas received in MatrixPage
-    console.log('📊 MatrixPage IDEAS RECEIVED:', {
-      ideaCount,
-      projectName,
-      projectId: currentProject?.id,
-      firstIdeaId: ideas?.[0]?.id?.substring(0, 8)
-    })
-
-    // Only log when there's a meaningful change (new project or significant idea count change)
-    if (currentProject?.id) {
-      logger.performance(`MatrixPage: ${ideaCount} ideas loaded for project: ${projectName}`)
-    }
-  }, [currentProject?.id, ideas?.length]) // Include ideas.length to track changes
 
   return (
     <>
