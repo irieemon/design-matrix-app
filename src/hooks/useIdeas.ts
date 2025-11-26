@@ -249,13 +249,16 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
   }, [setEditingIdea, updateIdeaOptimistic])
 
   const deleteIdea = useCallback(async (ideaId: string) => {
+    console.log('🗑️ useIdeas.deleteIdea CALLED:', { ideaId })
     logger.debug('🗑️ Deleting idea with optimistic update:', { ideaId })
-    
+
     // Use optimistic update for instant UI feedback
-    deleteIdeaOptimistic(
+    const updateId = deleteIdeaOptimistic(
       ideaId,
       async () => {
+        console.log('🗑️ useIdeas: Calling DatabaseService.deleteIdea...', { ideaId })
         const success = await DatabaseService.deleteIdea(ideaId, supabase)
+        console.log('🗑️ useIdeas: DatabaseService.deleteIdea returned:', { ideaId, success })
         if (success) {
           logger.debug('✅ Idea deleted successfully from database:', { ideaId })
           return success
@@ -264,7 +267,8 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
         }
       }
     )
-    
+
+    console.log('🗑️ useIdeas: deleteIdeaOptimistic returned updateId:', updateId)
     setEditingIdea?.(null)
   }, [setEditingIdea, deleteIdeaOptimistic])
 

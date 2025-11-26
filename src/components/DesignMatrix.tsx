@@ -194,7 +194,7 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
       } else {
         await componentState.executeAction(operation)
       }
-    } catch (_err) {
+    } catch (err) {
       logger.error('Matrix operation failed:', err)
       componentState.setError(err instanceof Error ? err.message : 'Operation failed')
     }
@@ -226,9 +226,13 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   }
 
   const handleDeleteIdea = async (ideaId: string) => {
+    console.log('🗑️ DesignMatrix.handleDeleteIdea CALLED:', { ideaId })
     await handleAsyncOperation(async () => {
-      onDeleteIdea(ideaId)
+      console.log('🗑️ DesignMatrix: Calling onDeleteIdea...', { ideaId })
+      await onDeleteIdea(ideaId)
+      console.log('🗑️ DesignMatrix: onDeleteIdea completed', { ideaId })
     })
+    console.log('🗑️ DesignMatrix.handleDeleteIdea finished:', { ideaId })
   }
 
   const handleToggleCollapse = async (ideaId: string, collapsed?: boolean) => {

@@ -56,8 +56,8 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
 
       // Call parent close handler
       onClose()
-    } catch (_error) {
-      handleError(error, 'close modal')
+    } catch (err) {
+      handleError(err, 'close modal')
       // Still try to close even if unlock fails
       onClose()
     }
@@ -153,8 +153,8 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
       // Close modal after successful update
       await safeClose()
 
-    } catch (_error) {
-      handleError(error, 'update idea')
+    } catch (err) {
+      handleError(err, 'update idea')
     } finally {
       setIsSubmitting(false)
     }
@@ -163,8 +163,8 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
   const handleCancel = async () => {
     try {
       await safeClose()
-    } catch (_error) {
-      handleError(error, 'cancel edit')
+    } catch (err) {
+      handleError(err, 'cancel edit')
     }
   }
 
@@ -176,15 +176,19 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
 
     try {
       setIsSubmitting(true)
+      console.log('🗑️ EditIdeaModal.handleDelete: Starting delete', { ideaId: idea.id })
       logger.info('EditIdeaModal: Deleting idea', { ideaId: idea.id })
 
+      console.log('🗑️ EditIdeaModal.handleDelete: Calling onDelete...')
       await onDelete(idea.id)
+      console.log('🗑️ EditIdeaModal.handleDelete: onDelete completed')
       showSuccess('Idea deleted successfully')
 
       // Close modal after successful deletion
       await safeClose()
-    } catch (_error) {
-      handleError(error, 'delete idea')
+    } catch (err) {
+      console.log('🗑️ EditIdeaModal.handleDelete: ERROR', err)
+      handleError(err, 'delete idea')
     } finally {
       setIsSubmitting(false)
     }
