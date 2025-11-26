@@ -191,8 +191,8 @@ export abstract class BaseService {
         })
 
         return this.createSuccessResult(result)
-      } catch (_error) {
-        lastError = error
+      } catch (err) {
+        lastError = err
         retryCount++
 
         // Log error metrics
@@ -200,13 +200,13 @@ export abstract class BaseService {
           operation: context.operation,
           duration: Date.now() - Date.parse(context.timestamp),
           success: false,
-          errorCode: this.mapErrorCode(error),
+          errorCode: this.mapErrorCode(err),
           retryCount,
           timestamp: new Date().toISOString()
         })
 
         // Check if error is retryable and we have retries left
-        if (!this.isRetryableError(error) || retryCount > maxRetries) {
+        if (!this.isRetryableError(err) || retryCount > maxRetries) {
           break
         }
 
@@ -265,8 +265,8 @@ export abstract class BaseService {
       // For now, return true for authenticated users
       // In production, implement proper RBAC/ABAC
       return true
-    } catch (_error) {
-      logger.error('Permission check failed:', error)
+    } catch (err) {
+      logger.error('Permission check failed:', err)
       return false
     }
   }
