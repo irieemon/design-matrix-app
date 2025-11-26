@@ -198,8 +198,10 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
     boxShadow: isDragging || isDragOverlay
       ? 'var(--shadow-lg)'
       : 'var(--shadow-card)',
-    // Optimized transition - only animate transform for performance
-    transition: isDragging ? 'none' : `transform var(--duration-200) var(--ease-out)`,
+    // FLICKER FIX: Only animate specific properties, NOT width/height
+    // This prevents screen-wide flicker when collapse changes card dimensions
+    // and collision detection recalculates positions for all cards
+    transition: isDragging ? 'none' : `transform var(--duration-200) var(--ease-out), box-shadow var(--duration-200) var(--ease-out), opacity var(--duration-200) var(--ease-out)`,
     borderRadius: 'var(--radius-card)',
     // REDESIGN: Colored borders based on quadrant (2.5px for visual emphasis)
     border: lockStatus.isLockedBySelf
@@ -350,7 +352,6 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
         ${isCollapsed && (isDragging || isDragOverlay) ? '!w-[100px] !h-[50px] !max-w-[100px] !max-h-[50px]' : ''}
         ${lockStatus.isLockedByOther ? 'opacity-60 cursor-not-allowed grayscale' : ''}
         ${isNewIdea ? 'animate-scale-in' : ''}
-        transition-all duration-200 ease-out
       `}
     >
       {/* Phase Four: Blue pulse indicator for mobile-submitted ideas */}

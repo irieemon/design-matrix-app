@@ -59,7 +59,9 @@ export const MatrixCards: React.FC<MatrixCardsProps> = ({
               left: `${idea.pixelPosition.x}px`,
               top: `${idea.pixelPosition.y}px`,
               transform: 'translate(-50%, -50%)', // Center the card on the position
-              transition: 'all 200ms ease-out',
+              // FIX: Remove transition from wrapper to prevent screen-wide flicker
+              // when collision detection adjusts positions during collapse/expand.
+              // Position changes should be instant; only the card content animates.
               zIndex: 100, // Ensure cards are above background
               opacity: 1,
               visibility: 'visible'
