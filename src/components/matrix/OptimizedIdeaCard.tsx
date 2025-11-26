@@ -22,6 +22,7 @@ import type { IdeaCard, User as UserType } from '../../types'
 import { useLogger } from '../../lib/logging'
 import { getCardZIndex } from '../../lib/matrix/zIndex'
 import { areIdeasEqual } from '../../lib/matrix/performance'
+import { ConfirmModal } from '../shared/Modal'
 
 interface OptimizedIdeaCardProps {
   idea: IdeaCard
@@ -127,6 +128,10 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
 
   // Local hover state for z-index management
   const [isHovered, setIsHovered] = useState(false)
+
+  // Delete confirmation modal state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Calculate collapsed state early for use in memoized calculations
   const isCollapsed = idea.is_collapsed || false
@@ -292,13 +297,31 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
     }
   }, [lockStatus.isLockedByOther, isDragOverlay, onEdit])
 
-  const handleDelete = useCallback((e: React.MouseEvent) => {
+  // Opens delete confirmation modal
+  const handleDeleteClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (!isDragOverlay) {
-      onDelete()
+      setShowDeleteConfirm(true)
     }
-  }, [isDragOverlay, onDelete])
+  }, [isDragOverlay])
+
+  // Confirms and executes deletion
+  const handleConfirmDelete = useCallback(() => {
+    setIsDeleting(true)
+    onDelete()
+    // Note: The modal will close when the component unmounts after deletion
+    // or we close it after a brief delay for visual feedback
+    setTimeout(() => {
+      setShowDeleteConfirm(false)
+      setIsDeleting(false)
+    }, 300)
+  }, [onDelete])
+
+  // Cancels delete operation
+  const handleCancelDelete = useCallback(() => {
+    setShowDeleteConfirm(false)
+  }, [])
 
   const handleToggleCollapse = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -366,7 +389,7 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
       {/* Delete Button - S-tier design with semantic colors */}
       {!isDragging && !isDragOverlay && (
         <button
-          onClick={handleDelete}
+          onClick={handleDeleteClick}
           aria-label="Delete idea"
           className={`
             absolute w-6 h-6
@@ -706,6 +729,18 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Idea"
+        message={`Are you sure you want to delete "${idea.content.length > 50 ? idea.content.substring(0, 50) + '...' : idea.content}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        loading={isDeleting}
+      />
     </div>
   )
 }

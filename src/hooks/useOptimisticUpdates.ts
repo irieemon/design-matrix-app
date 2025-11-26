@@ -188,25 +188,39 @@ export const useOptimisticUpdates = (
       switch (update.type) {
         case 'create':
           return prevData.filter(item => item.id !== update.optimisticData.id)
-        
+
         case 'update':
         case 'move':
-          return prevData.map(item => 
-            item.id === update.optimisticData.id ? 
-            update.originalData : 
+          return prevData.map(item =>
+            item.id === update.optimisticData.id ?
+            update.originalData :
             item
           )
-        
+
         case 'delete':
           return [...prevData, update.originalData]
-        
+
         default:
           return prevData
       }
     })
 
+    // CRITICAL FIX: For delete operations, ALSO restore to baseData
+    // applyOptimisticUpdate removes from BOTH optimisticData AND baseData,
+    // so revert must restore to BOTH. Without this, effectiveData (which
+    // returns baseData when no pending updates) would still be missing the item.
+    if (update.type === 'delete') {
+      setBaseData((prevData: IdeaCard[]): IdeaCard[] => {
+        // Only add back if not already present (prevent duplicates)
+        if (prevData.some(item => item.id === update.originalData.id)) {
+          return prevData
+        }
+        return [...prevData, update.originalData]
+      })
+    }
+
     onRevert?.(updateId, update.originalData)
-  }, [pendingUpdates, onRevert])
+  }, [pendingUpdates, onRevert, setBaseData])
 
   // Handle update failure
   const handleUpdateFailure = useCallback((updateId: string, error: any) => {
