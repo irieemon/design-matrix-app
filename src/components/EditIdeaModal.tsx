@@ -353,9 +353,9 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
                 onClick={() => setShowDeleteConfirm(true)}
                 variant="danger"
                 size="sm"
+                icon={<Trash2 className="w-4 h-4" />}
               >
-                <Trash2 className="w-4 h-4" />
-                <span>Delete</span>
+                Delete
               </Button>
 
               {/* Save/Cancel Buttons */}
