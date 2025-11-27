@@ -36,10 +36,15 @@
    MODAL & OVERLAY SYSTEM
    ============================================ */
 
-/* Modal backdrop */
+/* Modal backdrop - serves as both backdrop AND centering container */
 .lux-modal-backdrop {
   position: fixed;
   inset: 0;
+  /* CRITICAL: Add flexbox centering for child modal */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
   background: var(--canvas-overlay);
   backdrop-filter: var(--backdrop-blur-lux);
   z-index: var(--z-modal-backdrop);

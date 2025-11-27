@@ -96,18 +96,21 @@
   height: 100% !important;
 }
 
-/* Explicitly exclude modal containers from any positioning overrides */
-.modal-overlay-container,
-.modal-overlay-container *,
-[data-portal="modal"],
-[data-portal="modal"] *,
-.modal-content,
-.modal-content * {
-  /* Preserve modal positioning and transforms */
-  position: revert !important;
-  transform: revert !important;
-  left: revert !important;
-  top: revert !important;
+/* CRITICAL FIX: Modal containers need their own explicit positioning
+   DO NOT use `revert` as it breaks flexbox centering.
+   Instead, let the modal component control its own styles. */
+.modal-overlay-container {
+  /* Modal overlay needs fixed positioning to cover viewport */
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Modal content should be relatively positioned within the flex container */
+.modal-overlay-container > div:not([class*="absolute"]):not([class*="backdrop"]) {
+  position: relative !important;
 }
 
 /* Override any JavaScript-applied styles that might cause sliding - ONLY within matrix containers */
