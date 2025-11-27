@@ -346,27 +346,13 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
             </div>
           ) : (
             /* Actions - Clean layout with delete on left, save/cancel on right */
-            <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--hairline-default)' }}>
-              {/* Delete Button - Subtle but visible */}
+            <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--hairline-default)' }}>
+              {/* Delete Button - Solid red to match other delete buttons */}
               <Button
                 type="button"
                 onClick={() => setShowDeleteConfirm(true)}
-                variant="secondary"
+                variant="danger"
                 size="sm"
-                className="!px-3"
-                style={{
-                  color: 'var(--garnet-600)',
-                  borderColor: 'var(--garnet-200)',
-                  backgroundColor: 'var(--garnet-50)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--garnet-100)'
-                  e.currentTarget.style.borderColor = 'var(--garnet-300)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--garnet-50)'
-                  e.currentTarget.style.borderColor = 'var(--garnet-200)'
-                }}
               >
                 <Trash2 className="w-4 h-4" />
                 <span>Delete</span>
