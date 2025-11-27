@@ -5,7 +5,7 @@ import { DatabaseService } from '../lib/database'
 import { useOptimisticUpdates } from './useOptimisticUpdates'
 import { useLogger } from '../lib/logging'
 import { useCurrentUser } from '../contexts/UserContext'
-import { supabase } from '../lib/supabase'
+import { supabase, createAuthenticatedClientFromLocalStorage } from '../lib/supabase'
 import { getCachedAuthToken } from '../utils/authTokenCache'
 
 interface UseIdeasReturn {
@@ -233,7 +233,10 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
       ideaId,
       async () => {
         console.log('🗑️ useIdeas: Calling DatabaseService.deleteIdea...', { ideaId })
-        const success = await DatabaseService.deleteIdea(ideaId, supabase)
+        // CRITICAL FIX: Use authenticated client from localStorage for RLS enforcement
+        // The global supabase client may not have auth session loaded on page refresh
+        const authClient = createAuthenticatedClientFromLocalStorage() || supabase
+        const success = await DatabaseService.deleteIdea(ideaId, authClient)
         console.log('🗑️ useIdeas: DatabaseService.deleteIdea returned:', { ideaId, success })
         if (success) {
           logger.debug('✅ Idea deleted successfully from database:', { ideaId })
