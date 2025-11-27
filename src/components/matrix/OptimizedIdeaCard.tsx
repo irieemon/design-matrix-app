@@ -219,6 +219,8 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
     // Performance optimizations
     contain: 'layout style',
     willChange: isDragging ? 'transform' : 'auto',
+    // CRITICAL: Allow delete button to extend beyond card bounds
+    overflow: 'visible',
 
     // PHASE 2 FIX: Robust inline styles during drag to override any CSS conflicts
     ...(isDragging || isDragOverlay ? {
