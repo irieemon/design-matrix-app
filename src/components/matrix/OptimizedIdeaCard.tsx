@@ -301,27 +301,22 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
   const handleDeleteClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log('🗑️ DELETE CLICK:', { ideaId: idea.id, isDragOverlay })
     if (!isDragOverlay) {
-      console.log('🗑️ Opening delete confirmation modal')
       setShowDeleteConfirm(true)
     }
-  }, [isDragOverlay, idea.id])
+  }, [isDragOverlay])
 
   // Confirms and executes deletion
   const handleConfirmDelete = useCallback(() => {
-    console.log('🗑️ DELETE CONFIRMED:', { ideaId: idea.id })
     setIsDeleting(true)
-    console.log('🗑️ Calling onDelete...')
     onDelete()
-    console.log('🗑️ onDelete called, waiting for cleanup...')
     // Note: The modal will close when the component unmounts after deletion
     // or we close it after a brief delay for visual feedback
     setTimeout(() => {
       setShowDeleteConfirm(false)
       setIsDeleting(false)
     }, 300)
-  }, [onDelete, idea.id])
+  }, [onDelete])
 
   // Cancels delete operation
   const handleCancelDelete = useCallback(() => {

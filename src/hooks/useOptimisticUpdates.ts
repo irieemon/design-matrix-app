@@ -294,14 +294,10 @@ export const useOptimisticUpdates = (
     ideaId: string,
     actualDeleteFunction: () => Promise<boolean>
   ) => {
-    console.log('🗑️ deleteIdeaOptimistic CALLED:', { ideaId, baseDataLength: baseData.length })
     const originalIdea = baseData.find(idea => idea.id === ideaId)
     if (!originalIdea) {
-      console.log('🗑️ deleteIdeaOptimistic: Idea NOT FOUND in baseData:', { ideaId })
       return null
     }
-
-    console.log('🗑️ deleteIdeaOptimistic: Found idea to delete:', { ideaId, content: originalIdea.content?.substring(0, 30) })
 
     const updateId = `delete_${ideaId}_${Date.now()}`
     const update: OptimisticUpdate = {
@@ -313,14 +309,11 @@ export const useOptimisticUpdates = (
     }
 
     // Apply optimistic update immediately
-    console.log('🗑️ deleteIdeaOptimistic: Applying optimistic update...')
     applyOptimisticUpdate(update)
 
     // Execute actual deletion in background
-    console.log('🗑️ deleteIdeaOptimistic: Starting actual delete function...')
     actualDeleteFunction()
       .then(success => {
-        console.log('🗑️ deleteIdeaOptimistic: Delete function returned:', { success, updateId })
         if (success) {
           confirmUpdate(updateId)
         } else {
@@ -328,7 +321,6 @@ export const useOptimisticUpdates = (
         }
       })
       .catch(error => {
-        console.log('🗑️ deleteIdeaOptimistic: Delete function ERROR:', error)
         handleUpdateFailure(updateId, error)
       })
 

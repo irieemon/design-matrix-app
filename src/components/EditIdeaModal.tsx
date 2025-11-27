@@ -176,18 +176,14 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
 
     try {
       setIsSubmitting(true)
-      console.log('🗑️ EditIdeaModal.handleDelete: Starting delete', { ideaId: idea.id })
       logger.info('EditIdeaModal: Deleting idea', { ideaId: idea.id })
 
-      console.log('🗑️ EditIdeaModal.handleDelete: Calling onDelete...')
       await onDelete(idea.id)
-      console.log('🗑️ EditIdeaModal.handleDelete: onDelete completed')
       showSuccess('Idea deleted successfully')
 
       // Close modal after successful deletion
       await safeClose()
     } catch (err) {
-      console.log('🗑️ EditIdeaModal.handleDelete: ERROR', err)
       handleError(err, 'delete idea')
     } finally {
       setIsSubmitting(false)

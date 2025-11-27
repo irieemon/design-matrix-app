@@ -281,28 +281,18 @@ export class IdeaService extends BaseService {
         }
       }
 
-      console.log('🗑️ IdeaService.deleteIdea: Starting delete for:', { id })
-      logger.debug('🗑️ IdeaService: Deleting idea:', { id })
-
-      // FIX: Remove .select('id') which was causing the Supabase call to hang
-      // The .select() after .delete() requires specific RLS configuration that may not be present
-      // Instead, we just delete and trust the operation succeeded if no error is thrown
-      console.log('🗑️ IdeaService.deleteIdea: Calling Supabase delete (without .select)...')
+      logger.debug('Deleting idea:', { id })
 
       const { error } = await supabase
         .from('ideas')
         .delete()
         .eq('id', id)
 
-      console.log('🗑️ IdeaService.deleteIdea: Supabase response:', { error })
-
       if (error) {
-        console.log('🗑️ IdeaService.deleteIdea: ERROR from Supabase:', error)
         throw error
       }
 
-      console.log('🗑️ IdeaService.deleteIdea: SUCCESS - delete completed')
-      logger.debug('✅ IdeaService: Idea deleted successfully:', { id })
+      logger.debug('Idea deleted successfully:', { id })
       return true
     }, context)
   }

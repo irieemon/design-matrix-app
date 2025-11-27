@@ -225,21 +225,17 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
   }, [setEditingIdea, updateIdeaOptimistic])
 
   const deleteIdea = useCallback(async (ideaId: string) => {
-    console.log('🗑️ useIdeas.deleteIdea CALLED:', { ideaId })
-    logger.debug('🗑️ Deleting idea with optimistic update:', { ideaId })
+    logger.debug('Deleting idea with optimistic update:', { ideaId })
 
     // Use optimistic update for instant UI feedback
-    const updateId = deleteIdeaOptimistic(
+    deleteIdeaOptimistic(
       ideaId,
       async () => {
-        console.log('🗑️ useIdeas: Calling DatabaseService.deleteIdea...', { ideaId })
-        // CRITICAL FIX: Use authenticated client from localStorage for RLS enforcement
-        // The global supabase client may not have auth session loaded on page refresh
+        // Use authenticated client from localStorage for RLS enforcement
         const authClient = createAuthenticatedClientFromLocalStorage() || supabase
         const success = await DatabaseService.deleteIdea(ideaId, authClient)
-        console.log('🗑️ useIdeas: DatabaseService.deleteIdea returned:', { ideaId, success })
         if (success) {
-          logger.debug('✅ Idea deleted successfully from database:', { ideaId })
+          logger.debug('Idea deleted successfully from database:', { ideaId })
           return success
         } else {
           throw new Error('Failed to delete idea')
@@ -247,7 +243,6 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
       }
     )
 
-    console.log('🗑️ useIdeas: deleteIdeaOptimistic returned updateId:', updateId)
     setEditingIdea?.(null)
   }, [setEditingIdea, deleteIdeaOptimistic])
 
