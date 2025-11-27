@@ -412,9 +412,11 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
                 transform: 'translate(-50%, -50%)',
                 opacity: activeId === idea.id ? 0.3 : 1,  // Fade original during drag
                 visibility: activeId === idea.id ? 'hidden' : 'visible',  // Hide completely during drag
-                // FIX: Prevent flicker during deletion by isolating repaints
-                contain: 'layout style',
-                willChange: 'transform, opacity'
+                // FIX: Prevent flicker during deletion by containing layout recalculations
+                // Use 'content' containment to fully isolate this element's subtree
+                contain: 'content',
+                // Only use willChange during active drag to avoid GPU layer thrashing
+                willChange: activeId === idea.id ? 'transform, opacity' : 'auto'
               }}
               data-testid={`idea-card-${idea.id}`}
               // Performance monitoring completely disabled for optimal experience

@@ -203,10 +203,10 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
     boxShadow: isDragging || isDragOverlay
       ? 'var(--shadow-lg)'
       : 'var(--shadow-card)',
-    // FLICKER FIX: Only animate specific properties, NOT width/height
-    // This prevents screen-wide flicker when collapse changes card dimensions
-    // and collision detection recalculates positions for all cards
-    transition: isDragging ? 'none' : `transform var(--duration-200) var(--ease-out), box-shadow var(--duration-200) var(--ease-out), opacity var(--duration-200) var(--ease-out)`,
+    // FLICKER FIX: Only animate transform and box-shadow, NOT opacity
+    // Opacity transitions during list re-renders can cause "every other" flicker
+    // when React reconciles the list after a delete operation
+    transition: isDragging ? 'none' : `transform var(--duration-200) var(--ease-out), box-shadow var(--duration-200) var(--ease-out)`,
     borderRadius: 'var(--radius-card)',
     // REDESIGN: Colored borders based on quadrant (2.5px for visual emphasis)
     border: lockStatus.isLockedBySelf
