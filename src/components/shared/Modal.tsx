@@ -116,13 +116,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
           max-h-[90vh] overflow-hidden
           ${className}
         `}
-        style={{
-          position: 'relative',
-          transform: 'none',
-          left: 'auto',
-          top: 'auto',
-          pointerEvents: 'auto'
-        }}
+        style={{ pointerEvents: 'auto' }}
         {...getAccessibleModalProps(title ? titleId : undefined, contentId, true)}
       >
         {/* Loading overlay */}

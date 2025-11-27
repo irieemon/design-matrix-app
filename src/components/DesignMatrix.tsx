@@ -284,7 +284,9 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
           transition: 'transform 200ms ease-out',
           ...(isFullscreen ? { flex: 1, minHeight: 0 } : {}),
           // CRITICAL FIX: Disable pointer events when modals are open to prevent blocking
-          pointerEvents: hasOpenModal ? 'none' : 'auto'
+          pointerEvents: hasOpenModal ? 'none' : 'auto',
+          // FIX: Prevent grid flicker during card deletion by containing repaints
+          contain: 'layout paint'
         }}
       >
         {/* Matrix Grid Background */}
@@ -409,7 +411,10 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
                 top: `${yPercent}%`,
                 transform: 'translate(-50%, -50%)',
                 opacity: activeId === idea.id ? 0.3 : 1,  // Fade original during drag
-                visibility: activeId === idea.id ? 'hidden' : 'visible'  // Hide completely during drag
+                visibility: activeId === idea.id ? 'hidden' : 'visible',  // Hide completely during drag
+                // FIX: Prevent flicker during deletion by isolating repaints
+                contain: 'layout style',
+                willChange: 'transform, opacity'
               }}
               data-testid={`idea-card-${idea.id}`}
               // Performance monitoring completely disabled for optimal experience

@@ -345,49 +345,59 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between">
+            /* Actions - Clean layout with delete on left, save/cancel on right */
+            <div className="flex items-center justify-between pt-2 border-t" style={{ borderColor: 'var(--hairline-default)' }}>
+              {/* Delete Button - Subtle but visible */}
               <Button
                 type="button"
                 onClick={() => setShowDeleteConfirm(true)}
-                variant="ghost"
-                style={{ color: 'var(--garnet-600)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--garnet-700)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--garnet-600)'}
+                variant="secondary"
+                size="sm"
+                className="!px-3"
+                style={{
+                  color: 'var(--garnet-600)',
+                  borderColor: 'var(--garnet-200)',
+                  backgroundColor: 'var(--garnet-50)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--garnet-100)'
+                  e.currentTarget.style.borderColor = 'var(--garnet-300)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--garnet-50)'
+                  e.currentTarget.style.borderColor = 'var(--garnet-200)'
+                }}
               >
                 <Trash2 className="w-4 h-4" />
-                <span className="text-sm">Delete Idea</span>
+                <span>Delete</span>
               </Button>
-            </div>
-          )}
 
-          {/* Actions */}
-          {!showDeleteConfirm && (
-            <div className="flex space-x-3">
-              <Button
-                type="button"
-                onClick={handleCancel}
-                variant="secondary"
-                className="flex-1"
-                data-testid="edit-idea-cancel-button"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={!content.trim() || isSubmitting}
-                variant="sapphire"
-                className="flex-1"
-                data-testid="edit-idea-save-button"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <span>Save Changes</span>
-                )}
-              </Button>
+              {/* Save/Cancel Buttons */}
+              <div className="flex space-x-3">
+                <Button
+                  type="button"
+                  onClick={handleCancel}
+                  variant="secondary"
+                  data-testid="edit-idea-cancel-button"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!content.trim() || isSubmitting}
+                  variant="sapphire"
+                  data-testid="edit-idea-save-button"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Changes</span>
+                  )}
+                </Button>
+              </div>
             </div>
           )}
         </form>
