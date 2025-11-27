@@ -412,9 +412,12 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
                 transform: 'translate(-50%, -50%)',
                 opacity: activeId === idea.id ? 0.3 : 1,  // Fade original during drag
                 visibility: activeId === idea.id ? 'hidden' : 'visible',  // Hide completely during drag
-                // FIX: Prevent flicker during deletion by containing layout recalculations
-                // Use 'content' containment to fully isolate this element's subtree
-                contain: 'content',
+                // FIX: Use 'layout style' containment instead of 'content'
+                // 'content' includes paint containment which clips overflow (cuts off delete button)
+                // 'layout style' still isolates layout recalculations without clipping
+                contain: 'layout style',
+                // CRITICAL: Allow delete button to overflow card bounds
+                overflow: 'visible',
                 // Only use willChange during active drag to avoid GPU layer thrashing
                 willChange: activeId === idea.id ? 'transform, opacity' : 'auto'
               }}
