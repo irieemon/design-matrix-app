@@ -97,37 +97,58 @@ export const BaseModal: React.FC<BaseModalProps> = ({
 
   if (!isOpen) return null
 
+  // Size mappings in pixels for inline styles
+  const sizeWidths = {
+    sm: '28rem',
+    md: '32rem',
+    lg: '42rem',
+    xl: '56rem',
+    full: '80rem'
+  }
+
   const modalContent = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 modal-overlay-container"
       onClick={handleBackdropClick}
-      style={{ zIndex: 9999 }}
+      style={{
+        // CRITICAL: Use pure inline styles to prevent CSS override
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem',
+        zIndex: 99999,
+      }}
     >
       {/* Backdrop - absolute positioned behind modal */}
       <div
-        className="absolute inset-0"
         style={{
-          background: 'var(--canvas-overlay)',
-          backdropFilter: 'var(--backdrop-blur-lux)',
-          animation: 'lux-backdrop-enter var(--duration-modal-enter) var(--easing-glide)'
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(4px)',
         }}
       />
 
       {/* Modal - centered by parent flexbox */}
       <div
         ref={combinedRef}
-        className={`
-          relative
-          ${sizeClasses[size]}
-          w-full
-          max-h-[90vh] overflow-hidden
-          ${className}
-        `}
+        className={className}
         style={{
-          background: 'var(--surface-primary)',
-          borderRadius: 'var(--radius-xl)',
-          boxShadow: 'var(--shadow-modal-lux)',
-          animation: 'lux-modal-enter var(--duration-modal-enter) var(--easing-glide)'
+          position: 'relative',
+          width: '100%',
+          maxWidth: sizeWidths[size],
+          maxHeight: '90vh',
+          overflow: 'hidden',
+          background: 'var(--surface-primary, white)',
+          borderRadius: '1rem',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         }}
         {...getAccessibleModalProps(title ? titleId : undefined, contentId, true)}
       >

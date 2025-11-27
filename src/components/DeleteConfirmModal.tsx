@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { AlertTriangle, X, Trash2 } from 'lucide-react'
 
 interface DeleteConfirmModalProps {
@@ -27,9 +28,36 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
     onClose()
   }
 
-  return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-50 lux-modal-backdrop">
-      <div className="rounded-2xl shadow-xl w-full max-w-md lux-modal">
+  // Use portal to render outside matrix DOM + inline styles to prevent CSS override
+  const modalContent = (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem',
+        zIndex: 99999,
+        background: 'rgba(0, 0, 0, 0.5)',
+        backdropFilter: 'blur(4px)',
+      }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        style={{
+          position: 'relative',
+          background: 'white',
+          borderRadius: '1rem',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          width: '100%',
+          maxWidth: '28rem',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--hairline-default)' }}>
           <div className="flex items-center space-x-3">
@@ -108,6 +136,9 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
       </div>
     </div>
   )
+
+  // Render via portal to document.body to escape any parent CSS overrides
+  return createPortal(modalContent, document.body)
 }
 
 export default DeleteConfirmModal
