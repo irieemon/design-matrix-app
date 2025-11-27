@@ -101,22 +101,34 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 modal-overlay-container"
       onClick={handleBackdropClick}
-      style={{ zIndex: 9999, pointerEvents: 'none' }}
+      style={{ zIndex: 9999 }}
     >
-      {/* Backdrop */}
-      <div className="lux-modal-backdrop" style={{ pointerEvents: 'auto' }} />
+      {/* Backdrop - absolute positioned behind modal */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'var(--canvas-overlay)',
+          backdropFilter: 'var(--backdrop-blur-lux)',
+          animation: 'lux-backdrop-enter var(--duration-modal-enter) var(--easing-glide)'
+        }}
+      />
 
-      {/* Modal */}
+      {/* Modal - centered by parent flexbox */}
       <div
         ref={combinedRef}
         className={`
-          lux-modal
+          relative
           ${sizeClasses[size]}
           w-full
           max-h-[90vh] overflow-hidden
           ${className}
         `}
-        style={{ pointerEvents: 'auto' }}
+        style={{
+          background: 'var(--surface-primary)',
+          borderRadius: 'var(--radius-xl)',
+          boxShadow: 'var(--shadow-modal-lux)',
+          animation: 'lux-modal-enter var(--duration-modal-enter) var(--easing-glide)'
+        }}
         {...getAccessibleModalProps(title ? titleId : undefined, contentId, true)}
       >
         {/* Loading overlay */}
