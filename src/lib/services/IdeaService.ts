@@ -288,11 +288,23 @@ export class IdeaService extends BaseService {
       // RLS may silently block DELETE operations (returning error: null but 0 rows affected)
       // Without this check, optimistic updates would confirm even when the database wasn't modified
       console.log('🗑️ IdeaService.deleteIdea: Calling Supabase delete...')
-      const { data, error } = await supabase
+
+      // DIAGNOSTIC: Add timeout to detect hanging Supabase calls
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          console.log('🗑️ IdeaService.deleteIdea: TIMEOUT after 10s - Supabase call hung!')
+          reject(new Error('Supabase delete timeout after 10s'))
+        }, 10000)
+      })
+
+      const deletePromise = supabase
         .from('ideas')
         .delete()
         .eq('id', id)
         .select('id')
+
+      console.log('🗑️ IdeaService.deleteIdea: Awaiting with timeout...')
+      const { data, error } = await Promise.race([deletePromise, timeoutPromise])
 
       console.log('🗑️ IdeaService.deleteIdea: Supabase response:', { data, error, dataLength: data?.length })
 
