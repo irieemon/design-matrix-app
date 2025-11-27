@@ -41,8 +41,12 @@
 }
 
 /* Override any absolute positioning that might be applied */
-.enterprise-matrix-workspace * {
-  /* Reset any absolute positioning in children */
+/* CRITICAL: Do NOT use wildcard * here as it breaks modals! */
+/* Instead, target specific matrix elements that need static positioning */
+.enterprise-matrix-workspace > .matrix-content,
+.enterprise-matrix-workspace > .matrix-grid,
+.enterprise-matrix-workspace .matrix-quadrant {
+  /* Reset any absolute positioning in direct matrix children only */
   position: static !important;
   left: auto !important;
   transform: none !important;
@@ -62,7 +66,8 @@
 }
 
 /* Reset any margins or positioning that could interfere with grid layout */
-.app-layout-grid > * {
+/* EXCLUDE modals from this rule - they need fixed positioning */
+.app-layout-grid > *:not(.lux-modal-backdrop):not(.modal-overlay-container):not([class*="fixed"]) {
   margin: 0 !important;
   position: static !important;
 }
@@ -135,4 +140,54 @@
   position: static !important;
   left: auto !important;
   transform: none !important;
+}
+
+/* ============================================
+   MODAL CENTERING - HIGHEST PRIORITY OVERRIDES
+   These rules MUST come last to override everything above
+   ============================================ */
+
+/* Force ALL modal backdrops to use fixed centering - regardless of ancestors */
+.lux-modal-backdrop,
+div.lux-modal-backdrop,
+.fixed.lux-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 9999 !important;
+}
+
+/* Force modal content to be relatively positioned for flexbox centering */
+.lux-modal-backdrop > .lux-modal,
+.lux-modal-backdrop > div:first-child:not(.absolute) {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  transform: none !important;
+  margin: auto !important;
+}
+
+/* Ensure modal-overlay-container also centers properly */
+div.modal-overlay-container,
+.modal-overlay-container {
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 9999 !important;
+}
+
+/* Any element with fixed + inset-0 + flex should center its children */
+.fixed.inset-0.flex {
+  position: fixed !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
