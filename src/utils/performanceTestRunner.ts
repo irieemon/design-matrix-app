@@ -235,7 +235,7 @@ export class PerformanceTestRunner {
       logger.error(`❌ Scenario failed: ${scenario.name}`, error as Error)
 
       if (scenario.cleanup) {
-        try { await scenario.cleanup() } catch {}
+        try { await scenario.cleanup() } catch { /* Cleanup errors are non-critical */ }
       }
 
       const memoryAfter = this.getMemoryUsage()

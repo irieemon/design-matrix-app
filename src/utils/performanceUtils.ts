@@ -9,7 +9,13 @@
  * - Throttle: Limit scroll/resize handlers (max frequency)
  * - RAF: Smooth animations with requestAnimationFrame
  * - Batch: Combine multiple operations into single execution
+ *
+ * NOTE: Generic function types use `any` in constraints to preserve type inference.
+ * This is the standard TypeScript pattern for higher-order functions.
+ * See: https://www.typescriptlang.org/docs/handbook/2/generics.html
  */
+
+/* eslint-disable @typescript-eslint/no-explicit-any -- Generic function constraints require `any` to preserve type inference in higher-order functions */
 
 /**
  * Debounce function - delays execution until after wait time has elapsed
@@ -31,7 +37,8 @@ export function debounce<T extends (...args: any[]) => any>(
 ): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null
 
-  return function(this: any, ...args: Parameters<T>) {
+  return function(this: unknown, ...args: Parameters<T>) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- Required to forward caller's context in utility function
     const context = this
 
     if (timeout) {
@@ -66,7 +73,8 @@ export function throttle<T extends (...args: any[]) => any>(
   let inThrottle: boolean = false
   let lastResult: ReturnType<T>
 
-  return function(this: any, ...args: Parameters<T>) {
+  return function(this: unknown, ...args: Parameters<T>) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- Required to forward caller's context in utility function
     const context = this
 
     if (!inThrottle) {
@@ -100,7 +108,8 @@ export function rafThrottle<T extends (...args: any[]) => any>(
 ): (...args: Parameters<T>) => void {
   let rafId: number | null = null
 
-  return function(this: any, ...args: Parameters<T>) {
+  return function(this: unknown, ...args: Parameters<T>) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- Required to forward caller's context in utility function
     const context = this
 
     if (rafId !== null) {
@@ -331,7 +340,8 @@ export function leadingDebounce<T extends (...args: any[]) => any>(
 ): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null
 
-  return function(this: any, ...args: Parameters<T>) {
+  return function(this: unknown, ...args: Parameters<T>) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- Required to forward caller's context in utility function
     const context = this
     const callNow = !timeout
 

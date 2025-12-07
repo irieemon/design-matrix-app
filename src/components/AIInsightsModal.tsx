@@ -227,7 +227,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
           projectName: currentProject?.name
         })
       }
-    } catch (_error) {
+    } catch (error) {
       logger.warn('Could not load project files from backend:', { error })
     }
   }
@@ -301,7 +301,7 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
     if (insights) {
       try {
         await exportGraphicalInsightsToPDF(insights, currentProject?.name)
-      } catch (_error) {
+      } catch (error) {
         logger.error('PDF export failed', error, {
           ideaCount: (ideas || []).length,
           fileCount: filesWithContent.length,

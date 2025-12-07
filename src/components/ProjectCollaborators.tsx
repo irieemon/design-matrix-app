@@ -51,34 +51,34 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null)
   const [updating, setUpdating] = useState<string | null>(null)
-  const [removeConfirm, setRemoveConfirm] = useState<{ collaborator: Collaborator; show: boolean }>({ collaborator: null as any, show: false })
+  const [removeConfirm, setRemoveConfirm] = useState<{ collaborator: Collaborator | null; show: boolean }>({ collaborator: null, show: false })
 
   const canManageCollaborators = ['owner', 'admin'].includes(currentUserRole)
   const canInvite = canManageCollaborators
 
   useEffect(() => {
+    const loadCollaborators = async () => {
+      setLoading(true)
+      try {
+        logger.debug('🔄 ProjectCollaborators: Loading collaborators for project:', projectId)
+        const data = await DatabaseService.getProjectCollaborators(projectId)
+        logger.debug('📋 ProjectCollaborators: Received collaborator data:', data)
+        setCollaborators(data as unknown as Collaborator[])
+        logger.debug('✅ ProjectCollaborators: Updated collaborators state with', data.length, 'items')
+      } catch (err) {
+        logger.error('❌ ProjectCollaborators: Error loading collaborators:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     loadCollaborators()
-    
+
     // Subscribe to real-time collaborator updates
     const unsubscribe = DatabaseService.subscribeToProjectCollaborators(projectId, setCollaborators)
-    
+
     return unsubscribe
   }, [projectId])
-
-  const loadCollaborators = async () => {
-    setLoading(true)
-    try {
-      logger.debug('🔄 ProjectCollaborators: Loading collaborators for project:', projectId)
-      const data = await DatabaseService.getProjectCollaborators(projectId)
-      logger.debug('📋 ProjectCollaborators: Received collaborator data:', data)
-      setCollaborators(data as unknown as Collaborator[])
-      logger.debug('✅ ProjectCollaborators: Updated collaborators state with', data.length, 'items')
-    } catch (_error) {
-      logger.error('❌ ProjectCollaborators: Error loading collaborators:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleInvite = async (email: string, role: string) => {
     logger.debug('📧 ProjectCollaborators: handleInvite called with:', { email, role, projectId, currentUserId: currentUser?.id })
@@ -108,8 +108,8 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
       }
       logger.error('❌ ProjectCollaborators: Invitation failed')
       return false
-    } catch (_error) {
-      logger.error('💥 ProjectCollaborators: Error inviting collaborator:', error)
+    } catch (inviteError) {
+      logger.error('💥 ProjectCollaborators: Error inviting collaborator:', inviteError)
       return false
     }
   }
@@ -121,8 +121,8 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
       if (success) {
         await loadCollaborators()
       }
-    } catch (_error) {
-      logger.error('Error updating role:', error)
+    } catch (roleError) {
+      logger.error('Error updating role:', roleError)
     } finally {
       setUpdating(null)
       setActionMenuOpen(null)
@@ -144,11 +144,11 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
       if (success) {
         await loadCollaborators()
       }
-    } catch (_error) {
-      logger.error('Error removing collaborator:', error)
+    } catch (removeError) {
+      logger.error('Error removing collaborator:', removeError)
     } finally {
       setUpdating(null)
-      setRemoveConfirm({ collaborator: null as any, show: false })
+      setRemoveConfirm({ collaborator: null, show: false })
     }
   }
 
@@ -364,13 +364,13 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
               </div>
               
               <p className="text-gray-700 mb-6">
-                Are you sure you want to remove <strong>{getUserDisplayName(removeConfirm.collaborator)}</strong> from this project? 
+                Are you sure you want to remove <strong>{removeConfirm.collaborator ? getUserDisplayName(removeConfirm.collaborator) : 'this user'}</strong> from this project?
                 They will lose access to all project data and be notified of this change.
               </p>
               
               <div className="flex space-x-3">
                 <Button
-                  onClick={() => setRemoveConfirm({ collaborator: null as any, show: false })}
+                  onClick={() => setRemoveConfirm({ collaborator: null, show: false })}
                   variant="secondary"
                   className="flex-1"
                 >

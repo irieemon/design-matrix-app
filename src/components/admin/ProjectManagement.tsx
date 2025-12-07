@@ -44,7 +44,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = () => {
       } else {
         throw new Error(data.error || 'Failed to load projects')
       }
-    } catch (_error) {
+    } catch (error) {
       logger.error('Error loading projects:', error)
     } finally {
       setIsLoading(false)
@@ -57,7 +57,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = () => {
       await ProjectService.deleteProject(projectId)
       setProjects(prev => prev.filter(p => p.id !== projectId))
       setShowDeleteConfirm(null)
-    } catch (_error) {
+    } catch (error) {
       logger.error('Error deleting project:', error)
     }
   }

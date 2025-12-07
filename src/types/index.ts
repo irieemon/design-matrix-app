@@ -518,8 +518,8 @@ export interface RealtimePayload<T = Record<string, unknown>> {
   commit_timestamp: string
 }
 
-export interface IdeaRealtimePayload extends RealtimePayload<IdeaCard> {}
-export interface ProjectRealtimePayload extends RealtimePayload<Project> {}
+export type IdeaRealtimePayload = RealtimePayload<IdeaCard>
+export type ProjectRealtimePayload = RealtimePayload<Project>
 
 // =============================================================================
 // Form Types

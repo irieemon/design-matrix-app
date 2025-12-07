@@ -79,7 +79,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
 
       // Reset save status after 2 seconds
       setTimeout(() => setSaveStatus('idle'), 2000)
-    } catch (_error) {
+    } catch (error) {
       setSaveStatus('error')
       setTimeout(() => setSaveStatus('idle'), 3000)
     }
@@ -116,7 +116,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
 
       const { url } = await response.json()
       window.location.href = url
-    } catch (_error) {
+    } catch (error) {
       console.error('Error creating portal session:', error)
       alert('Failed to open subscription management. Please try again.')
       setManagingSubscription(false)

@@ -21,7 +21,7 @@ export class AdminService {
   static async verifyAdminStatus(userId: string): Promise<boolean> {
     try {
       return await checkIsAdmin(userId)
-    } catch (_error) {
+    } catch (error) {
       logger.error('AdminService: Failed to verify admin status:', error)
       return false
     }

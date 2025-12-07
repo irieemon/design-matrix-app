@@ -230,7 +230,7 @@ export class ContentModerationService {
     sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
 
     // Remove potentially harmful characters
-    sanitized = sanitized.replace(/[<>\"'&]/g, '')
+    sanitized = sanitized.replace(/[<>"'&]/g, '')
 
     return sanitized.trim()
   }

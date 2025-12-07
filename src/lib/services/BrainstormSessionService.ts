@@ -10,6 +10,7 @@ import { BrainstormSessionRepository } from '../repositories/brainstormSessionRe
 import { SessionParticipantRepository } from '../repositories/sessionParticipantRepository'
 import { SessionActivityRepository } from '../repositories/sessionActivityRepository'
 import { getRateLimitService } from './RateLimitService'
+import { logger } from '../../utils/logger'
 import {
   generateAccessToken,
   generateJoinCode,
@@ -468,17 +469,17 @@ export class BrainstormSessionService {
           const host = window.location.host
           baseUrl = `${protocol}//${host}`
         }
-      } catch (urlError) {
+      } catch (_urlError) {
         // Last resort: Use environment variable or hardcoded production URL
         baseUrl = 'https://design-matrix-app.vercel.app'
-        console.warn('[BrainstormSessionService] URL construction failed, using fallback:', baseUrl)
+        logger.warn('[BrainstormSessionService] URL construction failed, using fallback:', baseUrl)
       }
 
       const apiUrl = `${baseUrl}/api/brainstorm/submit-idea`
 
       // Log for debugging mobile issues
-      console.debug('[BrainstormSessionService] submitIdea URL:', apiUrl)
-      console.debug('[BrainstormSessionService] Input:', JSON.stringify({
+      logger.debug('[BrainstormSessionService] submitIdea URL:', apiUrl)
+      logger.debug('[BrainstormSessionService] Input:', JSON.stringify({
         sessionId: input.sessionId,
         participantId: input.participantId,
         contentLength: input.content?.length,
@@ -495,16 +496,16 @@ export class BrainstormSessionService {
 
       // Get response text first to handle non-JSON error responses
       const responseText = await response.text()
-      console.debug('[BrainstormSessionService] Response status:', response.status)
-      console.debug('[BrainstormSessionService] Response text (first 500 chars):', responseText.substring(0, 500))
+      logger.debug('[BrainstormSessionService] Response status:', response.status)
+      logger.debug('[BrainstormSessionService] Response text (first 500 chars):', responseText.substring(0, 500))
 
       // Try to parse as JSON
-      let responseData: any
+      let responseData: { success?: boolean; error?: string; code?: string; idea?: { id: string } }
       try {
         responseData = JSON.parse(responseText)
-      } catch (parseError) {
+      } catch (_parseError) {
         // Response is not valid JSON (e.g., HTML error page from Vercel)
-        console.error('[BrainstormSessionService] Failed to parse response as JSON:', {
+        logger.error('[BrainstormSessionService] Failed to parse response as JSON:', {
           status: response.status,
           contentType: response.headers.get('content-type'),
           textPreview: responseText.substring(0, 200)
@@ -517,7 +518,7 @@ export class BrainstormSessionService {
       }
 
       if (!response.ok) {
-        console.error('[BrainstormSessionService] API error response:', responseData)
+        logger.error('[BrainstormSessionService] API error response:', responseData)
         return {
           success: false,
           error: responseData.error || 'Failed to submit idea',
@@ -525,7 +526,7 @@ export class BrainstormSessionService {
         }
       }
 
-      console.debug('[BrainstormSessionService] submitIdea success:', responseData.idea?.id)
+      logger.debug('[BrainstormSessionService] submitIdea success:', responseData.idea?.id)
       return responseData
     } catch (error) {
       // Enhanced error logging to help diagnose mobile issues

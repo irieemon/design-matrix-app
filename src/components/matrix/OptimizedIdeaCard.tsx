@@ -389,18 +389,19 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
       )}
 
       {/* Delete Button - S-tier design with semantic colors */}
+      {/* Always positioned on the left for both collapsed and expanded states */}
       {!isDragging && !isDragOverlay && (
         <button
           onClick={handleDeleteClick}
           aria-label="Delete idea"
-          className={`
+          className="
             absolute w-6 h-6
             rounded-full
             flex items-center justify-center
             z-20
             focus:opacity-100 focus:outline-none
-            ${isCollapsed ? '-top-2 -left-2' : '-top-2 -right-2'}
-          `}
+            -top-2 -left-2
+          "
           style={{
             background: 'var(--semantic-error)',
             color: 'white',

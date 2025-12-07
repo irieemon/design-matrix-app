@@ -42,7 +42,7 @@ export default function SubscriptionSuccessPage() {
         }
 
         setLoading(false)
-      } catch (_err) {
+      } catch (err) {
         console.error('Error verifying subscription:', err)
         setError('Failed to verify subscription. Please contact support if you were charged.')
         setLoading(false)

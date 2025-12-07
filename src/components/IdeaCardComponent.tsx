@@ -82,7 +82,8 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = memo(({
     }
     
     return { isLockedByOther, isLockedBySelf }
-  }, [idea.editing_by, currentUser?.id]) // Deliberately exclude editing_at to prevent flashing
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Deliberately exclude editing_at to prevent UI flashing during lock refresh
+  }, [idea.editing_by, currentUser?.id])
   
   const { isLockedByOther, isLockedBySelf } = lockStatus
   

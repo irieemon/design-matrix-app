@@ -61,9 +61,9 @@ export class EmailService {
       logger.debug('✅ EmailService: Email sent successfully via EmailJS:', response)
       return true
 
-    } catch (_error) {
+    } catch (error) {
       logger.error('❌ EmailService: Failed to send via EmailJS:', error)
-      
+
       // Fallback to alternative method
       logger.debug('🔄 EmailService: Trying fallback email method...')
       return this.sendEmailFallback(data)
@@ -114,7 +114,7 @@ If you didn't expect this invitation, you can safely ignore this email.`
       logger.debug('✅ EmailService: Fallback email prepared and opened')
       return true
 
-    } catch (_error) {
+    } catch (error) {
       logger.error('❌ EmailService: Fallback method failed:', error)
       return false
     }

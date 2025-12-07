@@ -3,10 +3,72 @@
  * Handles AI-powered insights generation and transformation
  */
 
-import { IdeaCard } from '../../../types'
+import { IdeaCard, Project } from '../../../types'
 import { logger } from '../../../utils/logger'
 import { BaseAiService, SecureAIServiceConfig } from './BaseAiService'
 import { getQuadrantFromPosition } from '../utils'
+
+/**
+ * Document context from project files
+ */
+interface DocumentContext {
+  name: string
+  type: string
+  mimeType: string
+  content: string
+  storagePath?: string
+  fileSize?: number
+}
+
+/**
+ * Project context for insight generation
+ */
+interface ProjectContext {
+  name: string
+  description?: string
+  type?: string
+  startDate?: string
+  targetDate?: string
+  budget?: number
+  teamSize?: number
+  priorityLevel?: string
+  tags?: string[]
+  aiAnalysis?: unknown
+}
+
+/**
+ * Request payload for insights API
+ */
+interface InsightsRequestPayload {
+  ideas: { title: string; description: string; quadrant: string }[]
+  projectName: string
+  projectType: string
+  roadmapContext: unknown
+  documentContext: DocumentContext[] | null
+  projectContext: ProjectContext | null
+}
+
+/**
+ * Insights report structure
+ */
+interface InsightsReport {
+  executiveSummary?: string
+  keyInsights?: { insight: string; impact: string }[]
+  priorityRecommendations?: {
+    immediate?: string[]
+    shortTerm?: string[]
+    longTerm?: string[]
+  }
+  riskAssessment?: {
+    highRisk?: string[]
+    opportunities?: string[]
+  }
+  suggestedRoadmap?: { phase: string; duration: string; focus: string; ideas: string[] }[]
+  resourceAllocation?: { quickWins: string; strategic: string }
+  futureEnhancements?: { title: string; description: string; impact: string; timeframe: string }[]
+  nextSteps?: string[]
+  matrixAnalysis?: { quickWins?: string[]; majorProjects?: string[] }
+}
 
 /**
  * Service for generating strategic insights from ideas
@@ -30,8 +92,8 @@ export class InsightsService extends BaseAiService {
     projectName?: string,
     projectType?: string,
     projectId?: string,
-    currentProject?: any
-  ): Promise<any> {
+    currentProject?: Project | null
+  ): Promise<InsightsReport> {
     logger.debug('🔍 Generating insights for', (ideas || []).length, 'ideas')
 
     // Create a simplified cache key from core parameters (excluding timestamps and large data)
@@ -53,9 +115,9 @@ export class InsightsService extends BaseAiService {
       cacheKey,
       async () => {
         // Get additional context if project ID is provided
-        let roadmapContext = null
-        let documentContext = null
-        let projectContext = null
+        let roadmapContext: unknown = null
+        let documentContext: DocumentContext[] | null = null
+        let projectContext: ProjectContext | null = null
 
         // Extract project context for intent analysis
         if (currentProject) {
@@ -125,7 +187,7 @@ export class InsightsService extends BaseAiService {
                   }
                 })
 
-                const allFileTypes = documentContext.map((doc: any) => doc.type).join(', ')
+                const allFileTypes = documentContext.map((doc) => doc.type).join(', ')
                 const imageFiles = documentContext.filter((doc) => doc.mimeType?.startsWith('image/'))
                 const audioFiles = documentContext.filter(
                   (doc) => doc.mimeType?.startsWith('audio/') || doc.mimeType?.startsWith('video/')
@@ -160,13 +222,13 @@ export class InsightsService extends BaseAiService {
                 // Log detailed file analysis information
                 if (documentContext.length > 0) {
                   const totalContentLength = documentContext.reduce(
-                    (sum: number, doc: any) => sum + (doc.content?.length || 0),
+                    (sum: number, doc) => sum + (doc.content?.length || 0),
                     0
                   )
                   logger.debug('📊 Total document content length:', totalContentLength, 'characters')
 
                   // Log each file being processed
-                  documentContext.forEach((doc: any, index: number) => {
+                  documentContext.forEach((doc, index: number) => {
                     const content = doc.content || ''
                     const preview = content.substring(0, 100).replace(/\n/g, ' ')
                     logger.debug(`📄 File ${index + 1}: ${doc.name} (${doc.type}) - ${content.length} chars`)
@@ -176,11 +238,11 @@ export class InsightsService extends BaseAiService {
                   logger.debug('📭 No document context found - no files with extractable content')
                 }
               }
-            } catch (_error) {
-              logger.warn('Could not load project files from backend:', error)
+            } catch (fileError) {
+              logger.warn('Could not load project files from backend:', fileError)
             }
-          } catch (_error) {
-            logger.warn('Could not fetch additional project context:', error)
+          } catch (contextError) {
+            logger.warn('Could not fetch additional project context:', contextError)
           }
         }
 
@@ -223,13 +285,13 @@ export class InsightsService extends BaseAiService {
           if (documentContext && documentContext.length > 0) {
             logger.debug('📄 Document context being sent to AI:', {
               fileCount: documentContext.length,
-              fileNames: documentContext.map((doc: any) => doc.name),
-              totalContentLength: documentContext.reduce((sum: number, doc: any) => sum + (doc.content?.length || 0), 0)
+              fileNames: documentContext.map((doc) => doc.name),
+              totalContentLength: documentContext.reduce((sum: number, doc) => sum + (doc.content?.length || 0), 0)
             })
           }
 
-          const data = await this.fetchWithErrorHandling<any>('/api/ai?action=generate-insights', requestPayload)
-          const insights = data.insights || {}
+          const data = await this.fetchWithErrorHandling<{ insights?: InsightsReport }>('/api/ai?action=generate-insights', requestPayload)
+          const insights: InsightsReport = data.insights || {}
 
           // Log what we received from the AI API
           logger.debug('📥 Received AI insights response:', {
@@ -272,8 +334,8 @@ export class InsightsService extends BaseAiService {
             logger.error('❌ AI service returned invalid insights format:', insights)
             throw new Error('AI service returned invalid insights format. Please check your API configuration.')
           }
-        } catch (_error) {
-          logger.error('🚫 AI insights generation failed:', error)
+        } catch (apiError) {
+          logger.error('🚫 AI insights generation failed:', apiError)
 
           // In development, if the API is not available, provide mock data with file context
           if (this.isLocalhost()) {
@@ -285,7 +347,7 @@ export class InsightsService extends BaseAiService {
           // Don't fall back to mock data in production - let the error propagate
           throw new Error(
             `Failed to generate insights: ${
-              error instanceof Error ? error.message : 'Unknown error'
+              apiError instanceof Error ? apiError.message : 'Unknown error'
             }. Please check your API configuration and try again.`
           )
         }
@@ -300,7 +362,7 @@ export class InsightsService extends BaseAiService {
    * @param requestPayload - Original request payload
    * @returns True if inappropriate content detected
    */
-  private checkForTemplateContent(insights: any, requestPayload: any): boolean {
+  private checkForTemplateContent(insights: InsightsReport, requestPayload: InsightsRequestPayload): boolean {
     const insightsText = JSON.stringify(insights).toLowerCase()
     const projectText = `${requestPayload.projectName} ${requestPayload.projectType}`.toLowerCase()
 
@@ -364,7 +426,7 @@ export class InsightsService extends BaseAiService {
    * @param ideas - Original ideas array
    * @returns Transformed insights
    */
-  public transformLegacyInsights(legacyInsights: any, ideas: IdeaCard[]): any {
+  public transformLegacyInsights(legacyInsights: InsightsReport, ideas: IdeaCard[]): InsightsReport {
     const quickWins = legacyInsights.matrixAnalysis?.quickWins || []
     const majorProjects = legacyInsights.matrixAnalysis?.majorProjects || []
 

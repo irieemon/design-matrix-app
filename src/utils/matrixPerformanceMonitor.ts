@@ -72,7 +72,6 @@ class MatrixPerformanceMonitor {
   /**
    * Monitor hover interaction performance - DISABLED
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public monitorHover(_element: HTMLElement): () => void {
     // NO-OP: Return empty cleanup function
     return () => {};
@@ -81,7 +80,6 @@ class MatrixPerformanceMonitor {
   /**
    * Monitor animation performance - DISABLED
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public monitorAnimation(_element: HTMLElement, _animationType: string, _duration: number): void {
     // NO-OP: All animation monitoring disabled
   }

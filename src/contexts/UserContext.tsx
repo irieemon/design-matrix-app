@@ -6,17 +6,18 @@
  */
 
 import { createContext, useContext, ReactNode } from 'react'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { User, AuthUser } from '../types'
 
 interface UserContextType {
   currentUser: User | null
   authUser: AuthUser | null
   isLoading: boolean
-  handleAuthSuccess: (authUser: any) => Promise<void>
+  handleAuthSuccess: (authUser: AuthUser) => Promise<void>
   handleLogout: () => Promise<void>
   setCurrentUser: (user: User | null) => void
   setIsLoading: (loading: boolean) => void
-  authenticatedClient?: any | null  // CRITICAL FIX: Authenticated client for database queries
+  authenticatedClient?: SupabaseClient | null  // CRITICAL FIX: Authenticated client for database queries
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -69,7 +70,7 @@ export function useUserDisplay(): { displayName: string; email: string; isLoadin
  * CRITICAL FIX: Get authenticated Supabase client for database queries
  * Used when getSession()/setSession() hang on refresh
  */
-export function useAuthenticatedClient(): any | null {
+export function useAuthenticatedClient(): SupabaseClient | null {
   const { authenticatedClient } = useUser()
   return authenticatedClient || null
 }

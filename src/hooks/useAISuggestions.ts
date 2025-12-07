@@ -272,7 +272,7 @@ export const useAISuggestions = (options: UseAISuggestionsOptions = {}) => {
           suggestions: suggestions.length,
           completions: autoCompletions.length
         })
-      } catch (_error) {
+      } catch (error) {
         logger.error('Error generating AI suggestions:', error)
         setSuggestions([])
         setAutoCompletions([])

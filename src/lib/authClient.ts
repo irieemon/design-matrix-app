@@ -98,7 +98,7 @@ export function createClientFromRequest(req: any): SupabaseClient | null {
     }
 
     return createAuthenticatedClient(accessToken)
-  } catch (_error) {
+  } catch (error) {
     logger.error('❌ Failed to create client from request:', error)
     return null
   }
@@ -167,7 +167,7 @@ export async function isClientAuthenticated(client: SupabaseClient): Promise<boo
 
     logger.debug('✅ Client is authenticated:', user.id)
     return true
-  } catch (_error) {
+  } catch (error) {
     logger.error('❌ Error checking client authentication:', error)
     return false
   }
@@ -188,7 +188,7 @@ export async function getUserIdFromClient(client: SupabaseClient): Promise<strin
     }
 
     return user.id
-  } catch (_error) {
+  } catch (error) {
     logger.error('❌ Error getting user ID from client:', error)
     return null
   }

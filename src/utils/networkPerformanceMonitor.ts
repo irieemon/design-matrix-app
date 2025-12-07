@@ -61,6 +61,7 @@ class NetworkPerformanceMonitor {
   }
 
   private interceptFetch() {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- Required to capture class context for fetch replacement
     const self = this
     window.fetch = async function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
       const startTime = performance.now()

@@ -89,7 +89,7 @@ export const useProjectCreation = (): UseProjectCreationReturn => {
         } else {
           logger.error('Failed to create idea:', ideaData.content, newIdea.error)
         }
-      } catch (_error) {
+      } catch (error) {
         logger.error('Error creating idea:', ideaData.content, error)
       }
     }
@@ -126,7 +126,7 @@ export const useProjectCreation = (): UseProjectCreationReturn => {
 
       // Call success callback
       onSuccess(project, createdIdeas)
-    } catch (_error) {
+    } catch (error) {
       logger.error('Error creating project and ideas:', error)
       throw error
     }

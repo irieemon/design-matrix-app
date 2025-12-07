@@ -6,9 +6,10 @@ import { ToastProvider } from './contexts/ToastContext'
 import './index.css'
 
 // Build version marker for cache invalidation - UPDATE THIS ON EVERY DEPLOY
-const BUILD_VERSION = '2025-11-26T08:45:00Z'
+const BUILD_VERSION = '2025-11-26T09:05:00Z'
 // Always log build version (not just DEV) to help with debugging cache issues
-console.log('🚀 Prioritas Build:', BUILD_VERSION)
+// eslint-disable-next-line no-console -- Intentional: Build version needed in production for cache debugging
+console.info('🚀 Prioritas Build:', BUILD_VERSION)
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

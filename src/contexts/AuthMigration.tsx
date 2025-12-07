@@ -93,7 +93,7 @@ function NewAuthAdapter({ children }: { children: ReactNode }) {
     } as AuthUser : null,
 
     // Backward compatibility: no-ops for methods not needed with httpOnly cookies
-    handleAuthSuccess: async (_authUser: any) => {
+    handleAuthSuccess: async (_authUser: AuthUser) => {
       // New auth doesn't need this - user is already authenticated via cookies
       // This was called after old-style Supabase auth, but cookies handle it automatically
       logger.debug('handleAuthSuccess called (no-op with httpOnly cookies)')

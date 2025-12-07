@@ -3,6 +3,81 @@
 
 import { IdeaCard, Project } from '../types'
 
+// Types for analysis results
+interface IdeaPatterns {
+  totalIdeas: number
+  averagePriority: number
+  distributionByQuadrant: {
+    highPriorityHighEffort: number
+    highPriorityLowEffort: number
+    lowPriorityHighEffort: number
+    lowPriorityLowEffort: number
+  }
+}
+
+interface PriorityDistribution {
+  high: number
+  medium: number
+  low: number
+}
+
+interface StrategicTheme {
+  theme: string
+  frequency: number
+}
+
+interface KeyInsight {
+  insight: string
+  impact: string
+}
+
+interface Recommendations {
+  immediate: string[]
+  shortTerm: string[]
+  longTerm: string[]
+}
+
+interface RoadmapPhase {
+  phase: string
+  duration: string
+  focus: string
+  ideas: string[]
+}
+
+interface FutureEnhancement {
+  title: string
+  description: string
+  impact: 'high' | 'medium' | 'low'
+  timeframe: string
+}
+
+interface InsightsReport {
+  executiveSummary: string
+  keyInsights: KeyInsight[]
+  priorityRecommendations: Recommendations
+  riskAssessment: {
+    highRisk: string[]
+    opportunities: string[]
+  }
+  suggestedRoadmap: RoadmapPhase[]
+  resourceAllocation: {
+    quickWins: string
+    strategic: string
+  }
+  futureEnhancements: FutureEnhancement[]
+  nextSteps: string[]
+}
+
+interface ProgressPayload {
+  progress: number
+  stage: string
+  message: string
+}
+
+interface ErrorPayload {
+  error: string
+}
+
 // Types for worker communication
 interface AIWorkerMessage {
   type: 'GENERATE_INSIGHTS' | 'ANALYZE_PATTERNS' | 'OPTIMIZE_RECOMMENDATIONS'
@@ -19,7 +94,7 @@ interface AIWorkerMessage {
 interface AIWorkerResponse {
   type: 'PROGRESS' | 'COMPLETE' | 'ERROR'
   requestId: string
-  payload: any
+  payload: InsightsReport | ProgressPayload | ErrorPayload
 }
 
 // Worker implementation
@@ -40,7 +115,7 @@ self.onmessage = async (event: MessageEvent<AIWorkerMessage>) => {
       default:
         throw new Error(`Unknown worker message type: ${type}`)
     }
-  } catch (_error) {
+  } catch (error) {
     postMessage({
       type: 'ERROR',
       requestId,
@@ -176,8 +251,8 @@ function identifyStrategicThemes(ideas: IdeaCard[]) {
     .map(([theme, count]) => ({ theme, frequency: count }))
 }
 
-function synthesizeKeyInsights(patterns: any, distribution: any, themes: any[]) {
-  const insights = []
+function synthesizeKeyInsights(patterns: IdeaPatterns, distribution: PriorityDistribution, themes: StrategicTheme[]): KeyInsight[] {
+  const insights: KeyInsight[] = []
   
   // Priority distribution insight
   if (distribution.high > distribution.low) {
@@ -206,10 +281,10 @@ function synthesizeKeyInsights(patterns: any, distribution: any, themes: any[]) 
   return insights
 }
 
-function generateRecommendations(ideas: IdeaCard[], themes: any[]) {
-  const immediate = []
-  const shortTerm = []
-  const longTerm = []
+function generateRecommendations(ideas: IdeaCard[], themes: StrategicTheme[]): Recommendations {
+  const immediate: string[] = []
+  const shortTerm: string[] = []
+  const longTerm: string[] = []
   
   // Quick wins (high priority, low effort)
   const quickWins = ideas.filter(i => 
@@ -240,9 +315,9 @@ function generateRecommendations(ideas: IdeaCard[], themes: any[]) {
   return { immediate, shortTerm, longTerm }
 }
 
-function assessRisksAndOpportunities(ideas: IdeaCard[], themes: any[]) {
-  const highRisk = []
-  const opportunities = []
+function assessRisksAndOpportunities(ideas: IdeaCard[], themes: StrategicTheme[]): { highRisk: string[]; opportunities: string[] } {
+  const highRisk: string[] = []
+  const opportunities: string[] = []
   
   // Risk assessment
   const highEffortIdeas = ideas.filter(i => (i.y || 300) < 200).length
@@ -271,8 +346,8 @@ function assessRisksAndOpportunities(ideas: IdeaCard[], themes: any[]) {
   return { highRisk, opportunities }
 }
 
-function createImplementationRoadmap(ideas: IdeaCard[], _recommendations: any) {
-  const phases = []
+function createImplementationRoadmap(ideas: IdeaCard[], _recommendations: Recommendations): RoadmapPhase[] {
+  const phases: RoadmapPhase[] = []
   
   // Phase 1: Quick Wins (30 days)
   const quickWins = ideas.filter(i => 
@@ -313,7 +388,7 @@ function createImplementationRoadmap(ideas: IdeaCard[], _recommendations: any) {
   return phases
 }
 
-function optimizeResourceAllocation(ideas: IdeaCard[], _themes: any[]) {
+function optimizeResourceAllocation(ideas: IdeaCard[], _themes: StrategicTheme[]): { quickWins: string; strategic: string } {
   const quickWinsCount = ideas.filter(i => 
     (Number(i.priority) || 3) >= 4 && (i.y || 300) >= 400
   ).length
@@ -328,8 +403,8 @@ function optimizeResourceAllocation(ideas: IdeaCard[], _themes: any[]) {
   }
 }
 
-function identifyFutureEnhancements(_ideas: IdeaCard[], themes: any[]) {
-  const enhancements = []
+function identifyFutureEnhancements(_ideas: IdeaCard[], themes: StrategicTheme[]): FutureEnhancement[] {
+  const enhancements: FutureEnhancement[] = []
   
   // Based on themes
   themes.slice(0, 3).forEach((theme, index) => {
@@ -352,8 +427,8 @@ function identifyFutureEnhancements(_ideas: IdeaCard[], themes: any[]) {
   return enhancements
 }
 
-function generateNextSteps(recommendations: any) {
-  const steps = []
+function generateNextSteps(recommendations: Recommendations): string[] {
+  const steps: string[] = []
   
   if (recommendations.immediate.length > 0) {
     steps.push("Identify and mobilize team for immediate quick win initiatives")
@@ -367,7 +442,7 @@ function generateNextSteps(recommendations: any) {
   return steps
 }
 
-function generateExecutiveSummary(insights: any[], recommendations: any) {
+function generateExecutiveSummary(insights: KeyInsight[], recommendations: Recommendations): string {
   const totalRecommendations = 
     (recommendations.immediate?.length || 0) + 
     (recommendations.shortTerm?.length || 0) + 

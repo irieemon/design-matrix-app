@@ -54,7 +54,7 @@ const DataManagement: React.FC<DataManagementProps> = ({ ideas, currentUser, onD
           setImportStatus('success')
           setImportMessage(`Successfully imported ${importedIdeas.length} ideas!`)
           onDataUpdated()
-        } catch (_error) {
+        } catch (error) {
           logger.error('Import error:', error)
           setImportStatus('error')
           setImportMessage('Error importing CSV file. Please check the format.')
@@ -77,7 +77,7 @@ const DataManagement: React.FC<DataManagementProps> = ({ ideas, currentUser, onD
       }
       setShowDeleteConfirm(false)
       onDataUpdated()
-    } catch (_error) {
+    } catch (error) {
       logger.error('Error deleting all ideas:', error)
     }
   }

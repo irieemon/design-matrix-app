@@ -9,10 +9,11 @@
  * - Cost optimization recommendations
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Zap, DollarSign, TrendingUp, TrendingDown, AlertTriangle, RefreshCw, Calendar, Download } from 'lucide-react'
 import type { User } from '../../types'
 import { getAuthHeadersSync } from '../../lib/authHeaders'
+import { logger } from '../../utils/logger'
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -123,7 +124,7 @@ export default function TokenSpendAnalytics({ currentUser: _currentUser }: Token
   // DATA FETCHING
   // ============================================================================
 
-  const loadTokenSpend = async (refresh = false) => {
+  const loadTokenSpend = useCallback(async (refresh = false) => {
     try {
       if (refresh) {
         setIsRefreshing(true)
@@ -148,18 +149,18 @@ export default function TokenSpendAnalytics({ currentUser: _currentUser }: Token
 
       const result = await response.json()
       setData(result.data)
-    } catch (_err) {
-      console.error('Failed to load token spend:', err)
+    } catch (err) {
+      logger.error('Failed to load token spend:', err)
       setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
     }
-  }
+  }, [timeRange])
 
   useEffect(() => {
     loadTokenSpend()
-  }, [timeRange])
+  }, [loadTokenSpend])
 
   // ============================================================================
   // EVENT HANDLERS

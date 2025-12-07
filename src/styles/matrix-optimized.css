@@ -24,8 +24,11 @@
   box-shadow: var(--shadow-lg);
 
   /* Performance */
-  contain: layout style paint;
-  overflow: hidden;
+  /* FIX: Removed 'paint' from containment - paint containment clips overflow
+     which cuts off delete buttons positioned outside card bounds (-top-2) */
+  contain: layout style;
+  /* FIX: Allow overflow for delete buttons that extend beyond card bounds */
+  overflow: visible;
 
   /* Smooth transitions */
   transition: box-shadow var(--duration-normal) var(--ease-out);

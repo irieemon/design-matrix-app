@@ -17,6 +17,20 @@ import type {
   ServiceMetrics
 } from '../../types/service'
 
+/**
+ * Database error shape from Supabase/PostgreSQL
+ */
+interface DatabaseError {
+  code?: string
+  message?: string
+  hint?: string
+}
+
+/**
+ * Validator function type for input validation
+ */
+type ValidatorFn = (value: unknown) => boolean
+
 export abstract class BaseService {
   // Service configuration with sensible defaults
   protected static readonly config: ServiceConfig = {
@@ -36,7 +50,7 @@ export abstract class BaseService {
   protected static throttledLog(
     key: string,
     message: string,
-    data?: any,
+    data?: unknown,
     throttleMs: number = 1000
   ): void {
     if (!this.config.enableLogging) return
@@ -71,11 +85,13 @@ export abstract class BaseService {
    * Standardized database error handling
    */
   protected static handleDatabaseError(
-    error: any,
+    error: DatabaseError | Error | unknown,
     operation: string,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): ServiceError {
     logger.error(`Service error in ${operation}:`, error)
+
+    const dbError = error as DatabaseError
 
     // Map common Supabase/PostgreSQL errors to service error codes
     const errorCode = this.mapErrorCode(error)
@@ -83,13 +99,13 @@ export abstract class BaseService {
 
     return {
       code: errorCode,
-      message: this.sanitizeErrorMessage(error.message || 'Unknown error'),
+      message: this.sanitizeErrorMessage(dbError?.message || 'Unknown error'),
       operation,
       retryable,
       details: {
-        originalError: error.message,
-        code: error.code,
-        hint: error.hint
+        originalError: dbError?.message,
+        code: dbError?.code,
+        hint: dbError?.hint
       },
       timestamp: new Date().toISOString(),
       context
@@ -99,17 +115,18 @@ export abstract class BaseService {
   /**
    * Map database error codes to service error codes
    */
-  private static mapErrorCode(error: any): ServiceErrorCode {
-    if (error?.code === 'PGRST116') return 'NOT_FOUND'
-    if (error?.code === '23505') return 'DUPLICATE_KEY'
-    if (error?.code === '23503') return 'FOREIGN_KEY_VIOLATION'
-    if (error?.code === '42501') return 'PERMISSION_DENIED'
-    if (error?.code === '08003') return 'NETWORK_ERROR'
-    if (error?.code === '08006') return 'NETWORK_ERROR'
-    if (error?.code === '57014') return 'OPERATION_TIMEOUT'
-    if (error?.message?.includes('timeout')) return 'OPERATION_TIMEOUT'
-    if (error?.message?.includes('lock')) return 'RESOURCE_LOCKED'
-    if (error?.message?.includes('conflict')) return 'CONCURRENT_MODIFICATION'
+  private static mapErrorCode(error: unknown): ServiceErrorCode {
+    const dbError = error as DatabaseError
+    if (dbError?.code === 'PGRST116') return 'NOT_FOUND'
+    if (dbError?.code === '23505') return 'DUPLICATE_KEY'
+    if (dbError?.code === '23503') return 'FOREIGN_KEY_VIOLATION'
+    if (dbError?.code === '42501') return 'PERMISSION_DENIED'
+    if (dbError?.code === '08003') return 'NETWORK_ERROR'
+    if (dbError?.code === '08006') return 'NETWORK_ERROR'
+    if (dbError?.code === '57014') return 'OPERATION_TIMEOUT'
+    if (dbError?.message?.includes('timeout')) return 'OPERATION_TIMEOUT'
+    if (dbError?.message?.includes('lock')) return 'RESOURCE_LOCKED'
+    if (dbError?.message?.includes('conflict')) return 'CONCURRENT_MODIFICATION'
 
     return 'SERVICE_ERROR'
   }
@@ -117,7 +134,8 @@ export abstract class BaseService {
   /**
    * Determine if an error is retryable
    */
-  private static isRetryableError(error: any): boolean {
+  private static isRetryableError(error: unknown): boolean {
+    const dbError = error as DatabaseError
     const retryableCodes = [
       'CONNECTION_ERROR',
       'OPERATION_TIMEOUT',
@@ -127,10 +145,10 @@ export abstract class BaseService {
       '57014'  // Query timeout
     ]
 
-    return retryableCodes.includes(error?.code) ||
+    return (dbError?.code !== undefined && retryableCodes.includes(dbError.code)) ||
            retryableCodes.includes(this.mapErrorCode(error)) ||
-           error?.message?.includes('network') ||
-           error?.message?.includes('timeout')
+           dbError?.message?.includes('network') === true ||
+           dbError?.message?.includes('timeout') === true
   }
 
   /**
@@ -173,7 +191,7 @@ export abstract class BaseService {
     context: OperationContext,
     maxRetries: number = this.config.retryAttempts
   ): Promise<ServiceResult<T>> {
-    let lastError: any
+    let lastError: unknown
     let retryCount = 0
 
     while (retryCount <= maxRetries) {
@@ -230,8 +248,8 @@ export abstract class BaseService {
    * Input validation helper
    */
   protected static validateInput(
-    data: any,
-    schema: Record<string, (value: any) => boolean>
+    data: Record<string, unknown>,
+    schema: Record<string, ValidatorFn>
   ): ValidationResult {
     const errors: string[] = []
 

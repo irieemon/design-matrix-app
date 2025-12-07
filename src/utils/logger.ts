@@ -1,4 +1,6 @@
 // Legacy logger - deprecated in favor of LoggingService
+/* eslint-disable no-console -- This is a logging utility that intentionally wraps console methods */
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 interface ThrottleState {
@@ -181,32 +183,32 @@ class Logger {
     return message.substring(0, 100).replace(/\d+/g, '#') // Replace numbers with # to group similar messages
   }
 
-  debug(message: string, ...args: any[]): void {
+  debug(message: string, ...args: unknown[]): void {
     if (this.shouldLog('debug', message)) {
       console.debug(`[DEBUG] ${message}`, ...args)
     }
   }
 
-  info(message: string, ...args: any[]): void {
+  info(message: string, ...args: unknown[]): void {
     if (this.shouldLog('info', message)) {
       console.debug(`[INFO] ${message}`, ...args)
     }
   }
 
-  warn(message: string, ...args: any[]): void {
+  warn(message: string, ...args: unknown[]): void {
     if (this.shouldLog('warn', message)) {
       console.warn(`[WARN] ${message}`, ...args)
     }
   }
 
-  error(message: string, ...args: any[]): void {
+  error(message: string, ...args: unknown[]): void {
     if (this.shouldLog('error', message)) {
       console.error(`[ERROR] ${message}`, ...args)
     }
   }
 
   // Special method for performance logs with more aggressive throttling
-  performance(message: string, ...args: any[]): void {
+  performance(message: string, ...args: unknown[]): void {
     const key = `perf_${this.getMessageKey(message)}`
     const now = Date.now()
     const state = this.throttleState.get(key)
@@ -241,23 +243,23 @@ class Logger {
   }
 
   // Create a context-aware logger that prepends context to all messages
-  withContext(context: Record<string, any>): Logger {
+  withContext(context: Record<string, unknown>): Logger {
     const contextStr = Object.entries(context)
       .map(([k, v]) => `${k}:${v}`)
       .join(' ')
 
     const contextLogger = {
-      debug: (message: string, ...args: any[]) =>
+      debug: (message: string, ...args: unknown[]) =>
         this.debug(`[${contextStr}] ${message}`, ...args),
-      info: (message: string, ...args: any[]) =>
+      info: (message: string, ...args: unknown[]) =>
         this.info(`[${contextStr}] ${message}`, ...args),
-      warn: (message: string, ...args: any[]) =>
+      warn: (message: string, ...args: unknown[]) =>
         this.warn(`[${contextStr}] ${message}`, ...args),
-      error: (message: string, ...args: any[]) =>
+      error: (message: string, ...args: unknown[]) =>
         this.error(`[${contextStr}] ${message}`, ...args),
-      performance: (message: string, ...args: any[]) =>
+      performance: (message: string, ...args: unknown[]) =>
         this.performance(`[${contextStr}] ${message}`, ...args),
-      withContext: (newContext: Record<string, any>) =>
+      withContext: (newContext: Record<string, unknown>) =>
         this.withContext({ ...context, ...newContext }),
       setDebugMode: (enabled: boolean) => this.setDebugMode(enabled),
       isDebugEnabled: () => this.isDebugEnabled(),

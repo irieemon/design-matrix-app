@@ -12,13 +12,14 @@
  * Performance: <200ms (cached), <2s (fresh)
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { RefreshCw, Calendar, Download } from 'lucide-react'
 import type { User } from '../../types'
 import QuickStatsGrid from './QuickStatsGrid'
 import ChartsSection from './ChartsSection'
 import DetailedAnalytics from './DetailedAnalytics'
 import { getAuthHeadersSync } from '../../lib/authHeaders'
+import { logger } from '../../utils/logger'
 
 // ============================================================================
 // TYPE DEFINITIONS (matching API response)
@@ -118,7 +119,7 @@ export default function AdminAnalytics({ currentUser: _currentUser }: AdminAnaly
   // DATA FETCHING
   // ============================================================================
 
-  const loadAnalytics = async (refresh = false) => {
+  const loadAnalytics = useCallback(async (refresh = false) => {
     try {
       if (refresh) {
         setIsRefreshing(true)
@@ -151,19 +152,19 @@ export default function AdminAnalytics({ currentUser: _currentUser }: AdminAnaly
       setData(result.analytics)
       setLastUpdated(new Date(result.generatedAt))
       setCacheStatus(result.cacheStatus)
-    } catch (_err) {
-      console.error('Failed to load analytics:', err)
+    } catch (err) {
+      logger.error('Failed to load analytics:', err)
       setError(err instanceof Error ? err.message : 'Failed to load analytics')
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
     }
-  }
+  }, [dateRange])
 
   // Load analytics on mount and when date range changes
   useEffect(() => {
     loadAnalytics()
-  }, [dateRange])
+  }, [loadAnalytics])
 
   // ============================================================================
   // EVENT HANDLERS

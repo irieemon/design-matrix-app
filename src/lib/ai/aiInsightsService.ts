@@ -1,8 +1,8 @@
-import { IdeaCard } from '../../types'
+import { IdeaCard, Project } from '../../types'
 import { logger as newLogger } from '../logging'
 import { aiCache, AICache } from '../aiCache'
 import { FileService } from '../fileService'
-import { OpenAIModelRouter, TaskContext, AITaskType, OpenAIModel } from './openaiModelRouter'
+import { OpenAIModelRouter, TaskContext, AITaskType, OpenAIModel, ModelSelection } from './openaiModelRouter'
 import { IntelligentMockDataService } from './intelligentMockData'
 
 // Create scoped logger for AI insights service
@@ -18,7 +18,7 @@ interface ProjectContext {
   teamSize?: number
   priorityLevel?: string
   tags?: string[]
-  aiAnalysis?: any
+  aiAnalysis?: unknown
 }
 
 interface DocumentContext {
@@ -38,11 +38,11 @@ interface InsightsRequest {
   }>
   projectName: string
   projectType: string
-  roadmapContext?: any
+  roadmapContext?: unknown
   documentContext?: DocumentContext[]
   projectContext?: ProjectContext
   // Smart model routing fields
-  modelSelection?: any
+  modelSelection?: ModelSelection
   taskContext?: TaskContext
 }
 
@@ -65,6 +65,23 @@ interface InsightsReport {
     risks: string[]
     mitigations: string[]
   }
+  // Development context for testing
+  _developmentContext?: {
+    originalProjectName: string
+    originalProjectType: string
+    selectedScenario: string
+    scenarioName: string
+    modelSelection: ModelSelection
+    taskContext: TaskContext
+  }
+}
+
+interface LegacyInsightsFormat {
+  matrixAnalysis?: {
+    quickWins?: string[]
+    majorProjects?: string[]
+  }
+  priorityRecommendations?: PriorityRecommendations
 }
 
 interface SecureAIServiceConfig {
@@ -116,14 +133,14 @@ export class AIInsightsService {
           } else {
             logger.warn('⚠️ AIInsightsService: No access token found in localStorage session')
           }
-        } catch (_parseError) {
+        } catch (parseError) {
           logger.error('❌ AIInsightsService: Error parsing localStorage session:', parseError)
         }
       } else {
         logger.warn('⚠️ AIInsightsService: No session found in localStorage')
       }
-    } catch (_error) {
-      logger.warn('Failed to get auth headers:', { error: error instanceof Error ? error.message : String(error) })
+    } catch (authError) {
+      logger.warn('Failed to get auth headers:', { error: authError instanceof Error ? authError.message : String(authError) })
     }
 
     return headers
@@ -137,7 +154,7 @@ export class AIInsightsService {
     projectName?: string,
     projectType?: string,
     projectId?: string,
-    currentProject?: any,
+    currentProject?: Project | null,
     preferredModel?: OpenAIModel
   ): Promise<InsightsReport> {
     logger.debug('🔍 Generating insights', { ideaCount: (ideas || []).length })
@@ -259,8 +276,8 @@ export class AIInsightsService {
           throw new Error('AI service returned invalid insights format. Please check your API configuration.')
         }
 
-      } catch (_error) {
-        logger.error('🚫 AI insights generation failed:', error)
+      } catch (generateError) {
+        logger.error('🚫 AI insights generation failed:', generateError)
 
         // In development, provide intelligent mock data for testing AI optimizations
         if (this.baseUrl.includes('localhost')) {
@@ -275,7 +292,7 @@ export class AIInsightsService {
           )
         }
 
-        throw new Error(`Failed to generate insights: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your API configuration and try again.`)
+        throw new Error(`Failed to generate insights: ${generateError instanceof Error ? generateError.message : 'Unknown error'}. Please check your API configuration and try again.`)
       }
     }, 20 * 60 * 1000) // 20 minute cache
   }
@@ -283,7 +300,7 @@ export class AIInsightsService {
   /**
    * Build comprehensive context for insights generation
    */
-  private async buildInsightsContext(projectId?: string, currentProject?: any) {
+  private async buildInsightsContext(projectId?: string, currentProject?: Project | null) {
     let roadmapContext = undefined
     let documentContext: DocumentContext[] | undefined = undefined
     let projectContext: ProjectContext | undefined = undefined
@@ -321,8 +338,8 @@ export class AIInsightsService {
         // Get document context
         documentContext = await this.buildDocumentContext(projectId)
 
-      } catch (_error) {
-        logger.warn('Could not fetch additional project context:', { error: error instanceof Error ? error.message : String(error) })
+      } catch (contextError) {
+        logger.warn('Could not fetch additional project context:', { error: contextError instanceof Error ? contextError.message : String(contextError) })
       }
     }
 
@@ -367,8 +384,8 @@ export class AIInsightsService {
       this.logDocumentContext(documentContext)
       return documentContext
 
-    } catch (_error) {
-      logger.warn('Could not load project files from backend:', { error: error instanceof Error ? error.message : String(error) })
+    } catch (fileError) {
+      logger.warn('Could not load project files from backend:', { error: fileError instanceof Error ? fileError.message : String(fileError) })
       return []
     }
   }
@@ -376,7 +393,7 @@ export class AIInsightsService {
   /**
    * Check if AI response contains inappropriate template content
    */
-  private hasInappropriateContent(insights: any, requestPayload: InsightsRequest): boolean {
+  private hasInappropriateContent(insights: InsightsReport, requestPayload: InsightsRequest): boolean {
     const insightsText = JSON.stringify(insights).toLowerCase()
     const projectText = `${requestPayload.projectName} ${requestPayload.projectType}`.toLowerCase()
 
@@ -561,7 +578,7 @@ export class AIInsightsService {
   /**
    * Transform legacy insights format to new structure
    */
-  private transformLegacyInsights(legacyInsights: any, ideas: IdeaCard[]): InsightsReport {
+  private transformLegacyInsights(legacyInsights: LegacyInsightsFormat, ideas: IdeaCard[]): InsightsReport {
     const quickWins = legacyInsights.matrixAnalysis?.quickWins || []
     const majorProjects = legacyInsights.matrixAnalysis?.majorProjects || []
 
@@ -611,7 +628,7 @@ export class AIInsightsService {
   /**
    * Log insights response for debugging
    */
-  private logInsightsResponse(insights: any) {
+  private logInsightsResponse(insights: InsightsReport) {
     logger.debug('📥 Received AI insights response:', {
       hasExecutiveSummary: !!insights.executiveSummary,
       hasKeyInsights: !!insights.keyInsights,
@@ -660,7 +677,7 @@ export class AIInsightsService {
     projectType: string,
     documentContext: DocumentContext[] = [],
     taskContext: TaskContext,
-    modelSelection: any
+    modelSelection: ModelSelection
   ): InsightsReport {
     logger.debug('🧠 Generating intelligent development insights:', {
       projectName,
@@ -694,7 +711,7 @@ export class AIInsightsService {
     projectType: string,
     documentContext: DocumentContext[],
     taskContext: TaskContext,
-    modelSelection: any
+    modelSelection: ModelSelection
   ): InsightsReport {
     const hasFiles = documentContext && documentContext.length > 0
     const ideaCount = ideas.length
@@ -766,7 +783,7 @@ export class AIInsightsService {
     projectName: string,
     projectType: string,
     taskContext: TaskContext,
-    modelSelection: any
+    modelSelection: ModelSelection
   ): InsightsReport {
     // Select appropriate scenario based on task context
     let scenario = IntelligentMockDataService.getScenarioByComplexity(taskContext.complexity)
@@ -881,7 +898,7 @@ export class AIInsightsService {
     projectName?: string,
     projectType?: string,
     projectId?: string,
-    currentProject?: any
+    currentProject?: Project | null
   ): Promise<{ risks: string[], mitigations: string[] }> {
     logger.debug('🛡️ Generating comprehensive risk assessment', { ideaCount: (ideas || []).length })
 
@@ -964,9 +981,9 @@ export class AIInsightsService {
         risks: insights.riskAssessment?.risks || [],
         mitigations: insights.riskAssessment?.mitigations || []
       }
-    } catch (_error) {
-      logger.error('❌ Comprehensive risk assessment failed:', error)
-      throw error
+    } catch (riskError) {
+      logger.error('❌ Comprehensive risk assessment failed:', riskError)
+      throw riskError
     }
   }
 

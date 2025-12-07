@@ -12,7 +12,7 @@ interface AuthContextType {
   currentUser: User | null
   authUser: AuthUser | null
   isLoading: boolean
-  handleAuthSuccess: (authUser: any) => Promise<void>
+  handleAuthSuccess: (authUser: AuthUser) => Promise<void>
   handleLogout: () => Promise<void>
   setCurrentUser: (user: User | null) => void
   setIsLoading: (loading: boolean) => void

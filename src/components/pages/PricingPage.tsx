@@ -150,7 +150,7 @@ export default function PricingPage() {
       let session: any
       try {
         session = JSON.parse(stored)
-      } catch (_parseError) {
+      } catch (parseError) {
         console.error('🔴 Failed to parse session:', parseError)
         setError('Invalid session data. Please sign in again.')
         setLoading(null)
@@ -198,7 +198,7 @@ export default function PricingPage() {
 
       // Redirect to Stripe Checkout
       window.location.href = url
-    } catch (_err) {
+    } catch (err) {
       console.error('🔴 Upgrade error:', err)
       setError(`Failed to start upgrade process: ${err instanceof Error ? err.message : 'Unknown error'}`)
       setLoading(null)

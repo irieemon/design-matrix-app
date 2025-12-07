@@ -28,7 +28,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
     try {
       const fetchedUsers = await AdminRepository.getAllUserStats()
       setUsers(fetchedUsers)
-    } catch (_error) {
+    } catch (error) {
       logger.error('Error loading users:', error)
     } finally {
       setIsLoading(false)
@@ -40,7 +40,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
     try {
       const { recentTokenUsage } = await AdminRepository.getUserDetails(userId)
       setTokenUsage(recentTokenUsage)
-    } catch (_error) {
+    } catch (error) {
       logger.error('Error loading token usage:', error)
       setTokenUsage([])
     } finally {
@@ -64,7 +64,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
       setUsers(prev => prev.map(user =>
         user.id === userId ? { ...user, is_active: !currentStatus } : user
       ))
-    } catch (_error) {
+    } catch (error) {
       logger.error('Error updating user status:', error)
     }
   }
@@ -79,7 +79,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ currentUser }) => {
       setUsers(prev => prev.map(user =>
         user.id === userId ? { ...user, role: newRole } : user
       ))
-    } catch (_error) {
+    } catch (error) {
       logger.error('Error updating user role:', error)
     }
   }

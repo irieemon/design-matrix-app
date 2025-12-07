@@ -80,7 +80,7 @@ async function refreshToken(): Promise<boolean> {
 
       logger.debug('Token refresh successful')
       return true
-    } catch (_error) {
+    } catch (error) {
       logger.error('Token refresh error:', error)
       return false
     } finally {
@@ -145,7 +145,7 @@ class SecureApiClient {
     let data: any
     try {
       data = isJson ? await response.json() : await response.text()
-    } catch (_error) {
+    } catch (error) {
       logger.error('Failed to parse response:', error)
       throw new ApiError('Failed to parse response', response.status)
     }
@@ -212,7 +212,7 @@ class SecureApiClient {
       }
 
       return await this.handleResponse<T>(response)
-    } catch (_error) {
+    } catch (error) {
       if (error instanceof ApiError) {
         throw error
       }

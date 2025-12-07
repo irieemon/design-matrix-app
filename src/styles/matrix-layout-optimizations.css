@@ -11,7 +11,9 @@
 
 .matrix-container-optimized {
   /* GPU acceleration and containment */
-  contain: layout style paint;
+  /* FIX: Removed 'paint' from containment - paint containment clips overflow
+     which cuts off delete buttons positioned outside card bounds (-top-2) */
+  contain: layout style;
   transform: translateZ(0);
   backface-visibility: hidden;
   will-change: width, height;
@@ -19,8 +21,8 @@
   /* Optimize for layout transitions */
   isolation: isolate;
 
-  /* Prevent layout thrashing during transitions */
-  overflow: hidden;
+  /* FIX: Allow overflow for delete buttons that extend beyond card bounds */
+  overflow: visible;
 
   /* Smooth transitions for dimension changes */
   transition:
@@ -438,7 +440,8 @@
 
   /* Performance optimizations */
   contain: layout style;
-  overflow: hidden;
+  /* FIX: Allow overflow for delete buttons that extend beyond card bounds */
+  overflow: visible;
 }
 
 /* DndContext container within grid */

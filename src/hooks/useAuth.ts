@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase, getProfileService } from '../lib/supabase'
 import { DatabaseService } from '../lib/database'
-import { User, AuthUser, Project } from '../types'
+import { User, AuthUser, Project, IdeaCard } from '../types'
 import { logger } from '../utils/logger'
 import { authPerformanceMonitor } from '../utils/authPerformanceMonitor'
 import { ensureUUID, isDemoUUID } from '../utils/uuid'
@@ -9,31 +9,37 @@ import { SUPABASE_STORAGE_KEY, TIMEOUTS, CACHE_DURATIONS } from '../lib/config'
 import { withTimeout } from '../utils/promiseUtils'
 import { CacheManager } from '../services/CacheManager'
 
+/**
+ * Extended AuthUser type that includes optional demo user flag
+ * Used internally by useAuth for handling demo users
+ */
+type AuthUserWithDemo = AuthUser & { isDemoUser?: boolean }
+
 interface UseAuthReturn {
   currentUser: User | null
   authUser: AuthUser | null
   isLoading: boolean
-  handleAuthSuccess: (authUser: any) => Promise<void>
+  handleAuthSuccess: (authUser: AuthUserWithDemo) => Promise<void>
   handleLogout: () => Promise<void>
   setCurrentUser: (user: User | null) => void
   setIsLoading: (loading: boolean) => void
-  authenticatedClient: any | null  // Always null now - main supabase client used for all operations
+  authenticatedClient: null  // Always null now - main supabase client used for all operations
 }
 
 interface UseAuthOptions {
   onProjectsCheck?: (userId: string, isDemoUser?: boolean) => Promise<void>
   setCurrentProject?: (project: Project | null) => void
-  setIdeas?: (ideas: any[]) => void
+  setIdeas?: (ideas: IdeaCard[]) => void
   setCurrentPage?: (page: string) => void
 }
 
 // PERFORMANCE OPTIMIZED: Lazy-initialized singleton to prevent multiple GoTrueClient instances
 // ProfileService singleton is now in supabase.ts and imported via getProfileService()
-let sessionCacheInstance: CacheManager<any> | null = null
+let sessionCacheInstance: CacheManager<unknown> | null = null
 
-function getSessionCache(): CacheManager<any> {
+function getSessionCache(): CacheManager<unknown> {
   if (!sessionCacheInstance) {
-    sessionCacheInstance = new CacheManager<any>(CACHE_DURATIONS.SESSION)
+    sessionCacheInstance = new CacheManager<unknown>(CACHE_DURATIONS.SESSION)
   }
   return sessionCacheInstance
 }
@@ -45,7 +51,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   const abortControllerRef = useRef<AbortController | null>(null)
 
   // CRITICAL FIX: Store latest handleAuthSuccess ref so listener always calls current version
-  const handleAuthSuccessRef = useRef<((authUser: any) => Promise<void>) | null>(null)
+  const handleAuthSuccessRef = useRef<((authUser: AuthUserWithDemo) => Promise<void>) | null>(null)
 
   const { onProjectsCheck, setCurrentProject, setIdeas } = options
 
@@ -150,7 +156,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   // Direct state management without batching to restore auth functionality
 
   // Handle authenticated user with batched state updates to prevent flickering
-  const handleAuthUser = useCallback(async (authUser: any) => {
+  const handleAuthUser = useCallback(async (authUser: AuthUserWithDemo) => {
     const authStart = performance.now()
     try {
       logger.debug('🔐 handleAuthUser called with:', authUser.email, authUser.id)
@@ -278,7 +284,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     }
   }, [isRefreshScenario, checkUserProjectsAndRedirect, getCachedUserProfile])
 
-  const handleAuthSuccess = useCallback(async (authUser: any) => {
+  const handleAuthSuccess = useCallback(async (authUser: AuthUserWithDemo) => {
     logger.debug('🎉 Authentication successful:', authUser.email, 'ID:', authUser.id)
 
     // CRITICAL FIX: Clear all caches (frontend + server) on authentication success to prevent stale data

@@ -90,7 +90,7 @@ export function useAsyncOperation<T, P extends unknown[]>(
       }
 
       return result
-    } catch (_error) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
 
       setState({
