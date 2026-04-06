@@ -89,6 +89,7 @@
     "@types/qrcode.react": "^1.0.5",
     "@types/validator": "^13.15.3",
     "@vercel/analytics": "^1.5.0",
+    "ai": "^6.0.149",
     "dompurify": "^3.2.7",
     "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",
