@@ -109,13 +109,13 @@ export function setAuthCookies(
     path: '/',
   })
 
-  // Refresh token - long lived (7 days), restricted to /api/auth
+  // Refresh token - long lived (7 days), accessible to all API endpoints
   setSecureCookie(res, COOKIE_NAMES.REFRESH_TOKEN, tokens.refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',  // More restrictive for refresh token
     maxAge: 60 * 60 * 24 * 7,  // 7 days
-    path: '/api/auth',  // Only accessible to auth endpoints
+    path: '/api',  // Accessible to all API endpoints for token refresh
   })
 
   // CSRF token - readable by JavaScript (not httpOnly)
@@ -142,7 +142,7 @@ export function clearAuthCookies(res: VercelResponse): void {
   cookieNames.forEach(name => {
     setSecureCookie(res, name, '', {
       maxAge: 0,
-      path: name === COOKIE_NAMES.REFRESH_TOKEN ? '/api/auth' : '/',
+      path: name === COOKIE_NAMES.REFRESH_TOKEN ? '/api' : '/',
     })
   })
 }

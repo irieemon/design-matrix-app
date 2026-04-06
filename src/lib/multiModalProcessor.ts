@@ -110,7 +110,7 @@ export class MultiModalProcessor {
           content: file.content_preview || `Document: ${file.name} (${file.file_type})`
         }
       }
-    } catch (_error) {
+    } catch (error) {
       logger.warn(`⚠️ Failed to process file ${file.name}:`, error)
       return {
         ...baseContent,

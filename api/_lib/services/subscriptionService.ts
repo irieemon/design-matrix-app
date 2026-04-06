@@ -24,13 +24,13 @@ export async function checkLimit(userId: string, limitType: 'ai_ideas' | 'ai_roa
   try {
     if (!supabaseAdmin) {
       console.error('❌ Supabase admin client not initialized')
-      // Allow operation to proceed but log error
+      // Fail closed: deny access when infrastructure is unavailable
       return {
-        canUse: true,
+        canUse: false,
         current: 0,
-        limit: 999999,
-        percentageUsed: 0,
-        isUnlimited: true
+        limit: 0,
+        percentageUsed: 100,
+        isUnlimited: false
       }
     }
 
@@ -68,13 +68,13 @@ export async function checkLimit(userId: string, limitType: 'ai_ideas' | 'ai_roa
 
     if (countError) {
       console.error('❌ Error checking usage count:', countError)
-      // Allow operation but log error
+      // Fail closed: deny access when usage count cannot be verified
       return {
-        canUse: true,
+        canUse: false,
         current: 0,
-        limit: 999999,
-        percentageUsed: 0,
-        isUnlimited: true
+        limit: 0,
+        percentageUsed: 100,
+        isUnlimited: false
       }
     }
 
@@ -112,13 +112,13 @@ export async function checkLimit(userId: string, limitType: 'ai_ideas' | 'ai_roa
     }
   } catch (error) {
     console.error('❌ Error in checkLimit:', error)
-    // On error, allow operation but log
+    // Fail closed: deny access on unexpected errors
     return {
-      canUse: true,
+      canUse: false,
       current: 0,
-      limit: 999999,
-      percentageUsed: 0,
-      isUnlimited: true
+      limit: 0,
+      percentageUsed: 100,
+      isUnlimited: false
     }
   }
 }
