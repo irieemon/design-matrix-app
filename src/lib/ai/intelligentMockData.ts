@@ -367,7 +367,7 @@ export class IntelligentMockDataService {
       hasFiles: false,
       hasImages: false,
       hasAudio: false,
-      userTier: 'pro'
+      userTier: 'free' // Mock data — uses free tier by default
     }
 
     const modelSelection = OpenAIModelRouter.selectModel(taskContext)
@@ -521,7 +521,7 @@ export class IntelligentMockDataService {
         hasFiles: false,
         hasImages: false,
         hasAudio: false,
-        userTier: 'pro'
+        userTier: 'free' // Mock data — uses free tier by default
       }
 
       const modelSelection = OpenAIModelRouter.selectModel(taskContext)

@@ -179,7 +179,7 @@ export class AIInsightsService {
       hasFiles: (context.documentContext?.length || 0) > 0,
       hasImages: context.documentContext?.some(doc => doc.mimeType?.startsWith('image/')) || false,
       hasAudio: context.documentContext?.some(doc => doc.mimeType?.startsWith('audio/') || doc.mimeType?.startsWith('video/')) || false,
-      userTier: 'pro' // TODO: Get from user context
+      userTier: 'free'
     }
 
     let modelSelection = OpenAIModelRouter.selectModel(taskContext)
@@ -922,7 +922,7 @@ export class AIInsightsService {
       hasFiles: (context.documentContext?.length || 0) > 0,
       hasImages: context.documentContext?.some(doc => doc.mimeType?.startsWith('image/')) || false,
       hasAudio: context.documentContext?.some(doc => doc.mimeType?.startsWith('audio/') || doc.mimeType?.startsWith('video/')) || false,
-      userTier: 'pro'
+      userTier: 'free'
     }
 
     const modelSelection = OpenAIModelRouter.selectModel(taskContext)

@@ -142,12 +142,8 @@ export class MultiModalProcessor {
         // TODO: Integrate OCR service to extract text from images
         // extractedText = await this.extractTextFromImage(imageUrl)
         
-        // For demonstration, simulate OCR detection
-        if (file.name.toLowerCase().includes('screenshot') || 
-            file.name.toLowerCase().includes('document') ||
-            file.name.toLowerCase().includes('text')) {
-          extractedText = '[OCR Placeholder] This image likely contains text content that could be extracted via OCR'
-        }
+        // OCR not yet available — requires AI SDK integration
+        extractedText = ''
       }
     } catch (error) {
       logger.warn('Failed to analyze image:', error)
@@ -183,8 +179,8 @@ export class MultiModalProcessor {
       // For now, generate metadata-based description
       visualDescription = this.generateVideoDescription(file)
       
-      // Simulate audio transcription detection
-      audioTranscript = '[Transcription Placeholder] Audio content from this video could be transcribed using Whisper API'
+      // Video transcription not yet available — requires Whisper API integration
+      audioTranscript = ''
 
     } catch (error) {
       logger.warn('Failed to analyze video:', error)
@@ -217,8 +213,8 @@ export class MultiModalProcessor {
       // const audioUrl = await FileService.getFileUrl(file.storage_path)
       // audioTranscript = await this.transcribeAudio(audioUrl)
       
-      // For now, simulate transcription
-      audioTranscript = '[Transcription Placeholder] This audio file could be transcribed using OpenAI Whisper API to extract spoken content'
+      // Audio transcription not yet available — requires Whisper API integration
+      audioTranscript = ''
 
     } catch (error) {
       logger.warn('Failed to transcribe audio:', error)

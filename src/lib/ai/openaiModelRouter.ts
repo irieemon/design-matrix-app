@@ -59,7 +59,7 @@ export class OpenAIModelRouter {
    * Select the optimal model and parameters for a given task
    */
   static selectModel(context: TaskContext): ModelSelection {
-    const { type, complexity, ideaCount = 0, hasFiles = false, hasImages = false, hasAudio = false, userTier = 'pro' } = context
+    const { type, complexity, ideaCount = 0, hasFiles = false, hasImages = false, hasAudio = false, userTier = 'free' } = context
 
     // Strategic insights require deep reasoning - use GPT-5 for best results
     if (type === 'strategic-insights') {
