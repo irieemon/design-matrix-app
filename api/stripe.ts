@@ -7,7 +7,7 @@
  */
 
 import type { VercelResponse } from '@vercel/node'
-import { withAuth, type AuthenticatedRequest } from './_lib/middleware/withAuth'
+import { withAuth, withRateLimit, compose, type AuthenticatedRequest } from './_lib/middleware/index.js'
 import { stripeService } from '../src/lib/services/stripeService'
 import { subscriptionService } from '../src/lib/services/subscriptionService'
 
@@ -130,5 +130,11 @@ async function stripeRouter(req: AuthenticatedRequest, res: VercelResponse) {
   }
 }
 
-// Apply authentication middleware
-export default withAuth(stripeRouter)
+// Apply rate limiting and authentication middleware (no CSRF — Stripe webhooks use their own signature)
+export default compose(
+  withRateLimit({
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 100
+  }),
+  withAuth
+)(stripeRouter)

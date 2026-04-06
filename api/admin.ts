@@ -13,6 +13,14 @@ import { createClient } from '@supabase/supabase-js'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { readFileSync } from 'fs'
 import { join } from 'path'
+import {
+  withRateLimit,
+  withCSRF,
+  withAuth,
+  withAdmin,
+  compose,
+  type AuthenticatedRequest,
+} from './_lib/middleware/index.js'
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -292,7 +300,7 @@ async function handleEnableRealtimeSql(_req: VercelRequest, res: VercelResponse)
 // MAIN ROUTER
 // ============================================================================
 
-export default async function adminRouter(req: VercelRequest, res: VercelResponse) {
+async function adminRouter(req: AuthenticatedRequest, res: VercelResponse) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -331,3 +339,12 @@ export default async function adminRouter(req: VercelRequest, res: VercelRespons
       })
   }
 }
+
+export default compose(
+  withRateLimit({
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 50
+  }),
+  withCSRF(),
+  withAdmin
+)(adminRouter)

@@ -21,6 +21,13 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import {
+  withUserRateLimit,
+  withCSRF,
+  withAuth,
+  compose,
+  type AuthenticatedRequest,
+} from './_lib/middleware/index.js'
 
 /**
  * Extract access token from request cookies OR Authorization header
@@ -172,7 +179,7 @@ async function validateProjectAccess(
   throw new Error('Access denied - not owner, collaborator, or admin')
 }
 
-export default async function handler(
+async function ideasHandler(
   req: VercelRequest,
   res: VercelResponse
 ) {
@@ -239,3 +246,10 @@ export default async function handler(
     })
   }
 }
+
+// ✅ SECURITY: Rate limit per user, CSRF protection (skipped for GET), and authentication
+export default compose(
+  withUserRateLimit(),
+  withCSRF(),
+  withAuth
+)(ideasHandler)

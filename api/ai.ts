@@ -13,8 +13,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import { InputValidator, commonRules } from './_lib/utils/validation.js'
-import { withAuth } from './_lib/middleware/withAuth.js'
-import type { AuthenticatedRequest } from './_lib/middleware/types.js'
+import {
+  withUserRateLimit,
+  withCSRF,
+  withAuth,
+  compose,
+  type AuthenticatedRequest,
+} from './_lib/middleware/index.js'
 
 // Import SERVER-SIDE subscription services for limit enforcement
 // CRITICAL: Must use backend services, NOT frontend code!
@@ -2533,6 +2538,13 @@ async function aiRouter(req: AuthenticatedRequest, res: VercelResponse) {
   }
 }
 
-// ✅ AUTHENTICATION: Wrap router with authentication middleware
-// All AI endpoints now require authentication for usage tracking and limit enforcement
-export default withAuth(aiRouter)
+// ✅ SECURITY: Rate limit (20 req/hour per user), CSRF protection, and authentication
+// All AI endpoints require authentication for usage tracking and limit enforcement
+export default compose(
+  withUserRateLimit({
+    windowMs: 60 * 60 * 1000,  // 1 hour
+    maxRequests: 20,            // 20 per user per hour (per D-05)
+  }),
+  withCSRF(),
+  withAuth
+)(aiRouter)
