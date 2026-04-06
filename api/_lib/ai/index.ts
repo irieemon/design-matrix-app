@@ -23,3 +23,8 @@ export { getProjectTypePersona, type PersonaContext } from './utils/prompts.js';
 export { handleGenerateIdeas } from './generateIdeas.js';
 export { handleGenerateInsights } from './generateInsights.js';
 export { handleGenerateRoadmap } from './generateRoadmap.js';
+
+// Multi-modal handlers (Plan 03)
+export { handleAnalyzeFile } from './analyzeFile.js';
+export { handleAnalyzeImage } from './analyzeImage.js';
+export { handleTranscribeAudio } from './transcribeAudio.js';
