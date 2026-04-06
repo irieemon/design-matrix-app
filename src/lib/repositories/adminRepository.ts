@@ -108,6 +108,36 @@ export class AdminRepository {
         throw error
       }
 
+      // Get project counts per user
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('user_id')
+
+      const projectCounts = (projects || []).reduce((acc, p) => {
+        acc[p.user_id] = (acc[p.user_id] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+
+      // Get idea counts per user
+      const { data: ideas } = await supabase
+        .from('ideas')
+        .select('user_id')
+
+      const ideaCounts = (ideas || []).reduce((acc, i) => {
+        acc[i.user_id] = (acc[i.user_id] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+
+      // Get subscription tiers per user
+      const { data: subscriptions } = await supabase
+        .from('subscriptions')
+        .select('user_id, tier, status')
+
+      const subMap = (subscriptions || []).reduce((acc, s) => {
+        acc[s.user_id] = { tier: s.tier, status: s.status }
+        return acc
+      }, {} as Record<string, { tier: string; status: string }>)
+
       // Transform user_profiles data to AdminUserStats format
       return (data || []).map(user => ({
         id: user.id,
@@ -115,17 +145,17 @@ export class AdminRepository {
         full_name: user.full_name || null,
         role: user.role || 'user',
         join_date: user.created_at,
-        last_login: null, // TODO: Add last_login tracking
-        subscription_tier: 'free', // TODO: Join with subscriptions table
-        subscription_status: 'active', // TODO: Join with subscriptions table
-        project_count: 0, // TODO: Compute from projects table
-        idea_count: 0, // TODO: Compute from ideas table
-        monthly_ai_usage: 0, // TODO: Compute from usage_tracking
-        monthly_export_usage: 0, // TODO: Compute from usage_tracking
-        total_tokens_used: 0, // TODO: Compute from ai_token_usage
-        total_cost_usd: 0, // TODO: Compute from ai_token_usage
-        monthly_tokens: 0, // TODO: Compute from ai_token_usage
-        monthly_cost_usd: 0 // TODO: Compute from ai_token_usage
+        last_login: null,
+        subscription_tier: subMap[user.id]?.tier || 'free',
+        subscription_status: subMap[user.id]?.status || 'active',
+        project_count: projectCounts[user.id] || 0,
+        idea_count: ideaCounts[user.id] || 0,
+        monthly_ai_usage: 0,
+        monthly_export_usage: 0,
+        total_tokens_used: 0,
+        total_cost_usd: 0,
+        monthly_tokens: 0,
+        monthly_cost_usd: 0
       }))
     } catch (error) {
       logger.error('Failed to get all user stats:', error)

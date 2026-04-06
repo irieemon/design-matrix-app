@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Users, FolderOpen, Lightbulb, Activity, TrendingUp, DollarSign, AlertCircle, RefreshCw } from 'lucide-react'
 import { User } from '../../types'
-import { AdminRepository, AdminDashboardStats } from '../../lib/repositories'
+import { AdminRepository, AdminDashboardStats, AdminUserStats } from '../../lib/repositories'
 import { AdminService } from '../../lib/adminService'
 import { logger } from '../../utils/logger'
 
@@ -11,6 +11,7 @@ interface AdminDashboardProps {
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) => {
   const [stats, setStats] = useState<AdminDashboardStats | null>(null)
+  const [userStats, setUserStats] = useState<AdminUserStats[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -21,8 +22,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) => {
   const loadStats = async () => {
     setIsLoading(true)
     try {
-      const dashboardStats = await AdminRepository.getDashboardStats()
+      const [dashboardStats, users] = await Promise.all([
+        AdminRepository.getDashboardStats(),
+        AdminRepository.getAllUserStats()
+      ])
       setStats(dashboardStats)
+      setUserStats(users)
     } catch (error) {
       logger.error('Error loading dashboard stats:', error)
     } finally {
@@ -158,6 +163,47 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) => {
             </div>
           ))}
         </div>
+
+        {/* Per-User Table */}
+        {userStats.length > 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-8">
+            <h2 className="text-xl font-semibold text-slate-900 mb-4">User Breakdown</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200">
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Email</th>
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Name</th>
+                    <th className="text-right py-3 px-4 font-medium text-slate-600">Projects</th>
+                    <th className="text-right py-3 px-4 font-medium text-slate-600">Ideas</th>
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Tier</th>
+                    <th className="text-left py-3 px-4 font-medium text-slate-600">Role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {userStats.map((user) => (
+                    <tr key={user.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3 px-4 text-slate-900">{user.email}</td>
+                      <td className="py-3 px-4 text-slate-600">{user.full_name || '—'}</td>
+                      <td className="py-3 px-4 text-right text-slate-900">{user.project_count}</td>
+                      <td className="py-3 px-4 text-right text-slate-900">{user.idea_count}</td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex px-2 py-1 rounded-lg text-xs font-medium ${
+                          user.subscription_tier === 'enterprise' ? 'bg-purple-100 text-purple-700' :
+                          user.subscription_tier === 'team' ? 'bg-blue-100 text-blue-700' :
+                          'bg-slate-100 text-slate-700'
+                        }`}>
+                          {user.subscription_tier}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-slate-600">{user.role}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Subscription Tiers & Quick Links */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
