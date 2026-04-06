@@ -32,12 +32,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Auth, AI, admin, and webhook endpoints return 429 when rate limits are exceeded
   4. No API endpoint returns placeholder or fake data (multi-modal stubs removed, admin shows real stats)
   5. Subscription service denies access on errors instead of granting unlimited access
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md -- Apply CSRF and rate limiting middleware to all API endpoints
+- [ ] 01-02-PLAN.md -- Fix five production bugs (crash, cookie path, fail-open, hardcoded tier, placeholders)
+- [ ] 01-03-PLAN.md -- Complete password reset flow and build admin dashboard with real stats
 
 ### Phase 2: AI SDK Foundation
 **Goal**: All AI features run through AI SDK v6 with multi-provider routing and no regressions in existing functionality
