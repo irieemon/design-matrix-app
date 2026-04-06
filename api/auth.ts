@@ -22,7 +22,6 @@ import {
   COOKIE_NAMES,
   compose,
   withStrictRateLimit,
-  withCSRF,
   type AuthenticatedRequest,
 } from './_lib/middleware/index.js'
 
@@ -944,9 +943,9 @@ async function authRouter(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-// ✅ SECURITY: Apply strict rate limiting (5 req/15min in prod) and CSRF protection
-// Auth endpoints handle their own authentication internally (no withAuth needed)
+// ✅ SECURITY: Apply strict rate limiting (5 req/15min in prod)
+// Auth endpoints do NOT use withCSRF — pre-authentication requests (login, signup,
+// password reset) don't have CSRF tokens. Rate limiting prevents brute-force instead.
 export default compose(
-  withStrictRateLimit(),
-  withCSRF()
+  withStrictRateLimit()
 )(authRouter)
