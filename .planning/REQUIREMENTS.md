@@ -123,55 +123,55 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEC-01 | Pending | Pending |
-| SEC-02 | Pending | Pending |
-| SEC-03 | Pending | Pending |
-| SEC-04 | Pending | Pending |
-| SEC-05 | Pending | Pending |
-| SEC-06 | Pending | Pending |
-| SEC-07 | Pending | Pending |
-| SEC-08 | Pending | Pending |
-| SEC-09 | Pending | Pending |
-| SEC-10 | Pending | Pending |
-| AI-01 | Pending | Pending |
-| AI-02 | Pending | Pending |
-| AI-03 | Pending | Pending |
-| AI-04 | Pending | Pending |
-| AI-05 | Pending | Pending |
-| MM-01 | Pending | Pending |
-| MM-02 | Pending | Pending |
-| MM-03 | Pending | Pending |
-| MM-04 | Pending | Pending |
-| MM-05 | Pending | Pending |
-| MM-06 | Pending | Pending |
-| MM-07 | Pending | Pending |
-| MM-08 | Pending | Pending |
-| COLLAB-01 | Pending | Pending |
-| COLLAB-02 | Pending | Pending |
-| COLLAB-03 | Pending | Pending |
-| COLLAB-04 | Pending | Pending |
-| COLLAB-05 | Pending | Pending |
-| COLLAB-06 | Pending | Pending |
-| COLLAB-07 | Pending | Pending |
-| BILL-01 | Pending | Pending |
-| BILL-02 | Pending | Pending |
-| BILL-03 | Pending | Pending |
-| BILL-04 | Pending | Pending |
-| BILL-05 | Pending | Pending |
-| BILL-06 | Pending | Pending |
-| MOB-01 | Pending | Pending |
-| MOB-02 | Pending | Pending |
-| MOB-03 | Pending | Pending |
-| MOB-04 | Pending | Pending |
-| MOB-05 | Pending | Pending |
-| ADMIN-01 | Pending | Pending |
-| ADMIN-02 | Pending | Pending |
+| SEC-01 | Phase 1 | Pending |
+| SEC-02 | Phase 1 | Pending |
+| SEC-03 | Phase 1 | Pending |
+| SEC-04 | Phase 1 | Pending |
+| SEC-05 | Phase 1 | Pending |
+| SEC-06 | Phase 1 | Pending |
+| SEC-07 | Phase 1 | Pending |
+| SEC-08 | Phase 1 | Pending |
+| SEC-09 | Phase 1 | Pending |
+| SEC-10 | Phase 1 | Pending |
+| AI-01 | Phase 2 | Pending |
+| AI-02 | Phase 2 | Pending |
+| AI-03 | Phase 2 | Pending |
+| AI-04 | Phase 2 | Pending |
+| AI-05 | Phase 2 | Pending |
+| MM-01 | Phase 3 | Pending |
+| MM-02 | Phase 3 | Pending |
+| MM-03 | Phase 4 | Pending |
+| MM-04 | Phase 4 | Pending |
+| MM-05 | Phase 7 | Pending |
+| MM-06 | Phase 4 | Pending |
+| MM-07 | Phase 3 | Pending |
+| MM-08 | Phase 3 | Pending |
+| COLLAB-01 | Phase 5 | Pending |
+| COLLAB-02 | Phase 5 | Pending |
+| COLLAB-03 | Phase 5 | Pending |
+| COLLAB-04 | Phase 5 | Pending |
+| COLLAB-05 | Phase 5 | Pending |
+| COLLAB-06 | Phase 5 | Pending |
+| COLLAB-07 | Phase 5 | Pending |
+| BILL-01 | Phase 6 | Pending |
+| BILL-02 | Phase 6 | Pending |
+| BILL-03 | Phase 6 | Pending |
+| BILL-04 | Phase 6 | Pending |
+| BILL-05 | Phase 6 | Pending |
+| BILL-06 | Phase 6 | Pending |
+| MOB-01 | Phase 7 | Pending |
+| MOB-02 | Phase 4 | Pending |
+| MOB-03 | Phase 7 | Pending |
+| MOB-04 | Phase 7 | Pending |
+| MOB-05 | Phase 7 | Pending |
+| ADMIN-01 | Phase 1 | Pending |
+| ADMIN-02 | Phase 1 | Pending |
 
 **Coverage:**
-- v1 requirements: 42 total
-- Mapped to phases: 0
-- Unmapped: 42 ⚠️
+- v1 requirements: 43 total
+- Mapped to phases: 43
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-06*
-*Last updated: 2026-04-06 after initial definition*
+*Last updated: 2026-04-06 after roadmap creation*
