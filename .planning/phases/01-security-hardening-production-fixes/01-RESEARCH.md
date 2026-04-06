@@ -314,7 +314,7 @@ async function handleGetStats(req: AuthenticatedRequest, res: VercelResponse) {
 | A3 | Supabase appends recovery tokens as URL hash fragments (not query params) | Pitfall 5 | Hash-based detection logic would miss the token |
 | A4 | Admin and webhook rate limits of ~50 req/15min for admin, ~100 req/15min for Stripe are reasonable defaults | Claude's Discretion | Too restrictive could block legitimate admin operations; too lax provides no protection |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Supabase recovery redirect format**
    - What we know: `resetPasswordForEmail()` is called with `redirectTo: ${origin}/reset-password`
