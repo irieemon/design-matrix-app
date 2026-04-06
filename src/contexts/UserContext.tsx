@@ -13,10 +13,12 @@ interface UserContextType {
   currentUser: User | null
   authUser: AuthUser | null
   isLoading: boolean
+  isPasswordRecovery?: boolean
   handleAuthSuccess: (authUser: AuthUser) => Promise<void>
   handleLogout: () => Promise<void>
   setCurrentUser: (user: User | null) => void
   setIsLoading: (loading: boolean) => void
+  clearPasswordRecovery?: () => void
   authenticatedClient?: SupabaseClient | null  // CRITICAL FIX: Authenticated client for database queries
 }
 

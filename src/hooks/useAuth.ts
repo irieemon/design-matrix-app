@@ -19,10 +19,12 @@ interface UseAuthReturn {
   currentUser: User | null
   authUser: AuthUser | null
   isLoading: boolean
+  isPasswordRecovery: boolean
   handleAuthSuccess: (authUser: AuthUserWithDemo) => Promise<void>
   handleLogout: () => Promise<void>
   setCurrentUser: (user: User | null) => void
   setIsLoading: (loading: boolean) => void
+  clearPasswordRecovery: () => void
   authenticatedClient: null  // Always null now - main supabase client used for all operations
 }
 
@@ -48,6 +50,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
 
   // CRITICAL FIX: Store latest handleAuthSuccess ref so listener always calls current version
@@ -588,6 +591,10 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         setIdeas?.([])
         localStorage.removeItem('prioritasUser')
         setIsLoading(false)
+      } else if (event === 'PASSWORD_RECOVERY') {
+        logger.debug('🔑 PASSWORD_RECOVERY event — showing reset form')
+        setIsPasswordRecovery(true)
+        setIsLoading(false)
       } else if (event === 'TOKEN_REFRESHED' && session?.user) {
         logger.debug('🔄 TOKEN_REFRESHED event')
         // Session is already updated in client, just ensure React state is current
@@ -618,10 +625,12 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     currentUser,
     authUser,
     isLoading,
+    isPasswordRecovery,
     handleAuthSuccess,
     handleLogout,
     setCurrentUser,
     setIsLoading,
+    clearPasswordRecovery: () => setIsPasswordRecovery(false),
     authenticatedClient: null  // No longer creating second client - main supabase client handles everything
   }
 }

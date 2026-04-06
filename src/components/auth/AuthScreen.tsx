@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Target, Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles, AlertCircle, CheckCircle } from 'lucide-react'
 import PrioritasLogo from '../PrioritasLogo'
 import { supabase } from '../../lib/supabase'
 import { useLogger } from '../../lib/logging'
 import { Button, Input } from '../ui'
 import { useSecureAuthContext } from '../../contexts/SecureAuthContext'
+import { useUser } from '../../contexts/UserContext'
 // EMERGENCY FIX: Removed useComponentState to eliminate state conflicts
 
 // ✅ HOOKS FIX: Custom hook to safely access optional context
@@ -22,7 +23,7 @@ interface AuthScreenProps {
   onAuthSuccess: (user: any) => void
 }
 
-type AuthMode = 'login' | 'signup' | 'forgot-password'
+type AuthMode = 'login' | 'signup' | 'forgot-password' | 'reset-password'
 
 const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const logger = useLogger('AuthScreen')
@@ -37,9 +38,14 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     logger.debug('SecureAuthContext not available, using old auth')
   }
 
+  // Access password recovery state from auth context
+  const { isPasswordRecovery, clearPasswordRecovery } = useUser()
+
   const [mode, setMode] = useState<AuthMode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -47,6 +53,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+
+  // Detect PASSWORD_RECOVERY event and switch to reset-password mode
+  useEffect(() => {
+    if (isPasswordRecovery) {
+      setMode('reset-password')
+    }
+  }, [isPasswordRecovery])
 
   // Enhanced component refs
   const emailRef = useRef<any>(null)
@@ -95,6 +108,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     // Enhanced form validation using component refs
     const validateForm = () => {
       let isValid = true
+
+      // Skip standard field validation for reset-password mode (has its own fields)
+      if (mode === 'reset-password') {
+        return true
+      }
 
       // Validate email
       if (!emailRef.current?.validate()) {
@@ -210,11 +228,27 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
         } else if (mode === 'forgot-password') {
           const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${getRedirectUrl()}/reset-password`
+            redirectTo: window.location.origin
           })
 
           if (error) throw error
           setSuccess('Password reset email sent! Check your inbox.')
+          setMode('login')
+        } else if (mode === 'reset-password') {
+          if (newPassword.length < 8) {
+            setError('Password must be at least 8 characters')
+            return
+          }
+          if (newPassword !== confirmNewPassword) {
+            setError('Passwords do not match')
+            return
+          }
+          const { error } = await supabase.auth.updateUser({ password: newPassword })
+          if (error) throw error
+          setSuccess('Password updated successfully! Please sign in with your new password.')
+          clearPasswordRecovery?.()
+          setNewPassword('')
+          setConfirmNewPassword('')
           setMode('login')
         }
     } catch (err: any) {
@@ -248,6 +282,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     switch (mode) {
       case 'signup': return 'Create Your Account'
       case 'forgot-password': return 'Reset Password'
+      case 'reset-password': return 'Set New Password'
       default: return 'Welcome Back'
     }
   }
@@ -256,12 +291,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     switch (mode) {
       case 'signup': return 'Join thousands of teams organizing their priorities'
       case 'forgot-password': return 'Enter your email to receive a password reset link'
+      case 'reset-password': return 'Enter your new password below'
       default: return 'Sign in to your priority matrix workspace'
     }
   }
 
   return (
-    <div className="auth-screen min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--canvas-primary)' }}>
+    <div className="auth-screen min-h-screen flex items-center justify-center p-4 bg-canvas-primary">
       <main className="max-w-md w-full" role="main">
         {/* Header */}
         <header className="text-center mb-8">
@@ -328,8 +364,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
               />
             )}
 
-            {/* Email */}
-            <Input
+            {/* Email - hidden during reset-password (user already authenticated via recovery token) */}
+            {mode !== 'reset-password' && <Input
               ref={emailRef}
               label="Email Address"
               type="email"
@@ -352,10 +388,72 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                 }
                 return { isValid: true }
               }}
-            />
+            />}
 
-            {/* Password - Not for forgot password */}
-            {mode !== 'forgot-password' && (
+            {/* New Password fields - Only for reset-password mode */}
+            {mode === 'reset-password' && (
+              <>
+                <Input
+                  label="New Password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min 8 characters)"
+                  icon={<Lock />}
+                  variant="primary"
+                  size="lg"
+                  animated={true}
+                  required
+                  data-testid="auth-new-password-input"
+                  iconAfter={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-slate-400 hover:text-slate-600 transition-colors"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  }
+                  onValidate={(value) => {
+                    if (!value) return { isValid: false, error: 'Password is required' }
+                    if (value.length < 8) return { isValid: false, error: 'Password must be at least 8 characters' }
+                    return { isValid: true }
+                  }}
+                />
+                <Input
+                  label="Confirm New Password"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="Confirm your new password"
+                  icon={<Lock />}
+                  variant="primary"
+                  size="lg"
+                  animated={true}
+                  required
+                  data-testid="auth-confirm-new-password-input"
+                  iconAfter={
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="text-slate-400 hover:text-slate-600 transition-colors"
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  }
+                  onValidate={(value) => {
+                    if (!value) return { isValid: false, error: 'Please confirm your password' }
+                    if (value !== newPassword) return { isValid: false, error: 'Passwords do not match' }
+                    return { isValid: true }
+                  }}
+                />
+              </>
+            )}
+
+            {/* Password - Not for forgot password or reset-password */}
+            {mode !== 'forgot-password' && mode !== 'reset-password' && (
               <Input
                 ref={passwordRef}
                 label="Password"
@@ -441,7 +539,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
               iconAfter={mode !== 'forgot-password' ? <ArrowRight /> : undefined}
             >
               {mode === 'signup' ? 'Create Account' :
-               mode === 'forgot-password' ? 'Send Reset Link' : 'Sign In'}
+               mode === 'forgot-password' ? 'Send Reset Link' :
+               mode === 'reset-password' ? 'Set New Password' : 'Sign In'}
             </Button>
           </form>
 
@@ -489,6 +588,18 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                 <button
                   type="button"
                   onClick={() => setMode('login')}
+                  className="text-info-600 hover:text-info-700 font-medium hover:underline"
+                >
+                  Back to sign in
+                </button>
+              </div>
+            )}
+
+            {mode === 'reset-password' && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => { clearPasswordRecovery?.(); setMode('login') }}
                   className="text-info-600 hover:text-info-700 font-medium hover:underline"
                 >
                   Back to sign in
