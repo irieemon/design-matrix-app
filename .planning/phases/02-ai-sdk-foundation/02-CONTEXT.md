@@ -14,7 +14,7 @@ Rebuild the AI calling layer on AI SDK v6 with multi-provider routing (OpenAI, A
 ## Implementation Decisions
 
 ### AI SDK Package Integration
-- **D-01:** Install `ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, and a MiniMax provider package (first-party or community — confirm package name before planning) as new `dependencies`.
+- **D-01 (UPDATED 2026-04-06):** Install only the `ai` package and use the built-in `gateway()` provider to route to OpenAI, Anthropic, and MiniMax via `ai-gateway.vercel.sh`. No separate `@ai-sdk/openai`, `@ai-sdk/anthropic`, or community MiniMax packages needed. Requires `AI_GATEWAY_API_KEY` and `MINIMAX_API_KEY` set as env vars on Vercel. User confirmed this approach after research revealed the community MiniMax package (v0.0.2) is immature and the gateway supports all three providers.
 - **D-02:** Replace all raw `fetch('https://api.openai.com/v1/chat/completions')` and `fetch('https://api.anthropic.com/v1/messages')` calls in `api/ai.ts` with AI SDK `generateText()` calls using provider instances.
 - **D-03:** Existing middleware chain (`withCSRF`, `withAuth`, `withUserRateLimit`, `compose`) is untouched — this migration is entirely within the AI calling layer.
 
