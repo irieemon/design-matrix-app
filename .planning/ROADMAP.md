@@ -35,8 +35,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Apply CSRF and rate limiting middleware to all API endpoints
-- [ ] 01-02-PLAN.md -- Fix five production bugs (crash, cookie path, fail-open, hardcoded tier, placeholders)
+- [x] 01-01-PLAN.md -- Apply CSRF and rate limiting middleware to all API endpoints
+- [x] 01-02-PLAN.md -- Fix five production bugs (crash, cookie path, fail-open, hardcoded tier, placeholders)
 - [ ] 01-03-PLAN.md -- Complete password reset flow and build admin dashboard with real stats
 
 ### Phase 2: AI SDK Foundation
@@ -48,12 +48,12 @@ Plans:
   2. Model router selects the appropriate provider (OpenAI, Anthropic, MiniMax) based on task capability requirements
   3. Vision-capable tasks route only to vision-capable models; text tasks can route to any provider
   4. The monolithic api/ai.ts is replaced by modular handlers under api/_lib/ai/ with no functional regression
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
-- [ ] 02-03: TBD
+- [ ] 02-01-PLAN.md -- Install AI SDK, create provider factory, model router, shared utilities, and Wave 0 test stubs
+- [ ] 02-02-PLAN.md -- Extract and migrate three core text handlers (ideas, insights, roadmap) to AI SDK generateText
+- [ ] 02-03-PLAN.md -- Extract multi-modal handlers (file, image, audio), replace monolith with thin router
 
 ### Phase 3: Image Analysis
 **Goal**: Users can upload images and receive AI-powered visual analysis and text extraction
