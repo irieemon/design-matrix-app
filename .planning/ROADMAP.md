@@ -51,9 +51,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- Install AI SDK, create provider factory, model router, shared utilities, and Wave 0 test stubs
-- [ ] 02-02-PLAN.md -- Extract and migrate three core text handlers (ideas, insights, roadmap) to AI SDK generateText
-- [ ] 02-03-PLAN.md -- Extract multi-modal handlers (file, image, audio), replace monolith with thin router
+- [x] 02-01-PLAN.md -- Install AI SDK, create provider factory, model router, shared utilities, and Wave 0 test stubs
+- [x] 02-02-PLAN.md -- Extract and migrate three core text handlers (ideas, insights, roadmap) to AI SDK generateText
+- [x] 02-03-PLAN.md -- Extract multi-modal handlers (file, image, audio), replace monolith with thin router
 
 ### Phase 3: Image Analysis
 **Goal**: Users can upload images and receive AI-powered visual analysis and text extraction
