@@ -12,13 +12,13 @@ This phase replaces all raw `fetch()` calls to OpenAI and Anthropic APIs in the 
 
 The existing codebase has 11 raw `fetch()` calls across 6 handlers, all returning JSON (no streaming). The frontend calls `response.json()` via `BaseAiService.fetchWithErrorHandling()` and must not change. The Whisper transcription handler uses FormData/multipart upload, which AI SDK v6 supports via `experimental_transcribe`. MiniMax models do NOT support image input, so vision tasks must route exclusively to OpenAI or Anthropic.
 
-**Primary recommendation:** Install `ai@6.0.148` as the sole new dependency. Use the built-in `gateway()` provider for all three providers (OpenAI, Anthropic, MiniMax) via the Vercel AI Gateway. This satisfies D-01 (AI SDK + multi-provider) with fewer packages and eliminates the MiniMax community package risk. If the gateway approach is rejected, fall back to installing `@ai-sdk/openai`, `@ai-sdk/anthropic`, and `vercel-minimax-ai-provider` as separate packages per the original D-01.
+**Primary recommendation (CONFIRMED by user):** Install `ai@6.0.148` as the sole new dependency. Use the built-in `gateway()` provider for all three providers (OpenAI, Anthropic, MiniMax) via the Vercel AI Gateway. This satisfies D-01 (AI SDK + multi-provider) with a single package and eliminates the MiniMax community package risk. No fallback to separate packages -- gateway is the committed approach.
 
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions
-- **D-01:** Install `ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, and a MiniMax provider package as new `dependencies`.
+- **D-01 (UPDATED):** Install only the `ai` package and use the built-in `gateway()` provider to route to OpenAI, Anthropic, and MiniMax via `ai-gateway.vercel.sh`. No separate provider packages needed. Requires `AI_GATEWAY_API_KEY` and `MINIMAX_API_KEY` env vars on Vercel.
 - **D-02:** Replace all raw `fetch('https://api.openai.com/v1/chat/completions')` and `fetch('https://api.anthropic.com/v1/messages')` calls in `api/ai.ts` with AI SDK `generateText()` calls using provider instances.
 - **D-03:** Existing middleware chain (`withCSRF`, `withAuth`, `withUserRateLimit`, `compose`) is untouched.
 - **D-04:** Extract the 6 handlers into individual files under `api/_lib/ai/`: `generateIdeas.ts`, `generateInsights.ts`, `generateRoadmap.ts`, `analyzeFile.ts`, `analyzeImage.ts`, `transcribeAudio.ts`.
@@ -576,32 +576,24 @@ For the separate packages approach, these model IDs are confirmed working in the
 | A5 | MiniMax text quality is adequate for idea generation and insights | Model ID Reference | Low -- MiniMax is lowest priority provider, fallback always available |
 | A6 | AI Gateway BYOK works with existing OPENAI_API_KEY and ANTHROPIC_API_KEY | Summary | Medium -- may need separate AI_GATEWAY_API_KEY setup in Vercel |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **AI Gateway vs Separate Provider Packages**
-   - What we know: Gateway is built into `ai` package, supports all three providers, zero markup pricing
-   - What's unclear: Whether the team has gateway access enabled on their Vercel account, and whether BYOK is configured
-   - Recommendation: Try gateway approach first (fewer packages, no community MiniMax risk). Fall back to separate packages if gateway auth is problematic.
+1. **AI Gateway vs Separate Provider Packages** -- RESOLVED
+   - **Decision:** Gateway approach chosen by user (D-01 updated 2026-04-06). Install only `ai` package, use `gateway()` for all three providers.
+   - No fallback to separate packages -- commit to gateway only.
 
-2. **AI_GATEWAY_API_KEY provisioning**
-   - What we know: Gateway needs either API key or Vercel OIDC; `vercel env pull` downloads OIDC tokens for local dev
-   - What's unclear: Whether the team has provisioned gateway credentials
-   - Recommendation: Run `vercel env pull` to check if OIDC is available. If not, create an AI Gateway API key in Vercel dashboard.
+2. **AI_GATEWAY_API_KEY provisioning** -- RESOLVED
+   - **Decision:** User must provision `AI_GATEWAY_API_KEY` on Vercel dashboard. Documented as `user_setup` in Plan 02-01.
+   - For local dev: run `vercel env pull` for OIDC tokens, or set `AI_GATEWAY_API_KEY` in `.env.local`.
 
-3. **Token usage tracking format**
-   - What we know: AI SDK returns `{ promptTokens, completionTokens, totalTokens }` (camelCase); existing `trackTokenUsage()` may expect snake_case
-   - What's unclear: Exact schema of `trackTokenUsage()` parameter
-   - Recommendation: Map AI SDK usage to existing format in a small utility function
+3. **Token usage tracking format** -- RESOLVED
+   - **Decision:** Create a `mapUsage()` utility in `api/_lib/ai/utils/tokenTracking.ts` that converts AI SDK camelCase (`promptTokens`, `completionTokens`, `totalTokens`) to snake_case (`prompt_tokens`, `completion_tokens`, `total_tokens`) for existing `trackTokenUsage()`.
 
-4. **Error response format for provider unavailability**
-   - What we know: CONTEXT.md leaves this to Claude's discretion
-   - What's unclear: Whether to fail-fast (return 503) or fallback (try next provider)
-   - Recommendation: Implement fallback chain (OpenAI -> Anthropic -> error) for text tasks. For vision/audio tasks where only one provider works, fail-fast with clear error message.
+4. **Error response format for provider unavailability** -- RESOLVED
+   - **Decision:** Fail-fast. Return 503 with provider error message. No fallback chain between providers -- the model router selects one provider and if it fails, the handler returns a 503 error with the provider's error details (debug only in development).
 
-5. **MINIMAX_API_KEY environment variable (separate packages approach only)**
-   - What we know: The community MiniMax provider reads `MINIMAX_API_KEY` from env
-   - What's unclear: Whether the project has a MiniMax API key. Not relevant if using gateway approach.
-   - Recommendation: If using gateway, MiniMax routing uses the gateway API key. If using separate packages, add `MINIMAX_API_KEY` to env vars.
+5. **MINIMAX_API_KEY environment variable** -- RESOLVED
+   - **Decision:** User has MiniMax 2.7 API key. When using gateway, MiniMax is accessed via `AI_GATEWAY_API_KEY` (gateway BYOK routes to MiniMax automatically). `MINIMAX_API_KEY` documented as required env var in `user_setup` for gateway BYOK configuration.
 
 ## Environment Availability
 
