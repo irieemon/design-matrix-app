@@ -28,6 +28,25 @@ import {
   type NormalizedTranscription,
   type TranscribeAudioResponse,
 } from '../lib/audioTranscription'
+import { SUPABASE_STORAGE_KEY } from '../lib/config'
+
+/**
+ * Read the Supabase access token directly from localStorage WITHOUT
+ * touching the supabase-js client. Calling `supabase.auth.getSession()`
+ * from this modal deadlocks on the supabase-js internal auth lock
+ * (same anti-pattern fixed in fileService — commit c8c8815). The session
+ * JSON shape stored by supabase-js v2 is `{ access_token, refresh_token, ... }`.
+ */
+function getAccessTokenFromLocalStorage(): string {
+  try {
+    const raw = localStorage.getItem(SUPABASE_STORAGE_KEY)
+    if (!raw) return ''
+    const parsed = JSON.parse(raw)
+    return parsed?.access_token || ''
+  } catch {
+    return ''
+  }
+}
 
 interface AIIdeaModalProps {
   onClose: () => void
@@ -155,11 +174,13 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
         (uploaded.file as any).public_url ||
         (uploaded.file as any).storage_path
       setAudioStage({ kind: 'transcribing' })
-      // CRITICAL: Supabase-js v2 stores the session as JSON under SUPABASE_STORAGE_KEY
-      // (sb-<project-ref>-auth-token), NOT under a flat 'sb-access-token' key.
-      // Use getSession() — the canonical async-safe accessor.
-      const { data: { session } } = await supabase.auth.getSession()
-      const accessToken = session?.access_token || ''
+      // CRITICAL: Do NOT call `await supabase.auth.getSession()` here. The
+      // singleton supabase-js client holds an internal auth lock that
+      // deadlocks when called from this code path (same anti-pattern fixed
+      // in fileService — see commit c8c8815). Read the access token
+      // synchronously from localStorage instead. Symptom of regression:
+      // UI stuck on "Transcribing" forever, no fetch in network panel.
+      const accessToken = getAccessTokenFromLocalStorage()
       const res = await fetch('/api/ai?action=transcribe-audio', {
         method: 'POST',
         headers: {
@@ -392,9 +413,8 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
       setUploadProgress(100)
 
       setImageStage('analyzing')
-      // Use getSession() — 'sb-access-token' is not a real localStorage key in supabase-js v2.
-      const { data: { session: imgSession } } = await supabase.auth.getSession()
-      const accessToken = imgSession?.access_token || ''
+      // Lock-free token read — see uploadAndTranscribeAudio for rationale.
+      const accessToken = getAccessTokenFromLocalStorage()
       const response = await fetch('/api/ai?action=analyze-image', {
         method: 'POST',
         headers: {
