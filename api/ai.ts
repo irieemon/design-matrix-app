@@ -29,7 +29,7 @@ import {
   handleAnalyzeFile,
   handleAnalyzeImage,
   handleTranscribeAudio,
-} from './_lib/ai/index';
+} from './_lib/ai/index.js';
 
 async function aiRouter(req: AuthenticatedRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
