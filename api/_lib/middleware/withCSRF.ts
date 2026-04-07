@@ -166,6 +166,7 @@ export function withOriginValidation(
         'http://localhost:5173',  // Vite dev server (alternative port)
         'http://localhost:3003',  // Vite dev server (configured port)
         'http://localhost:3000',  // Alternative dev port
+        process.env.DEV_TUNNEL_URL || '',  // ngrok / tunnel for mobile testing
       ].filter(Boolean)
 
       // Check if origin is allowed

@@ -184,6 +184,7 @@ export default defineConfig(({ mode }) => {
   server: {
     port: 3003,
     open: false,
+    allowedHosts: ['indistinctly-blackish-tien.ngrok-free.dev'],
     watch: {
       ignored: [
         '**/node_modules/**',

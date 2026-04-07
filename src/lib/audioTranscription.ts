@@ -23,7 +23,8 @@ export function validateAudioFile(
   if (file.size > MAX_AUDIO_BYTES) {
     return { ok: false, error: 'File too large (max 25MB)' }
   }
-  if (!ACCEPTED_AUDIO_MIME_TYPES.includes(file.type as AcceptedAudioMimeType)) {
+  const baseType = file.type.split(';')[0].trim()
+  if (!ACCEPTED_AUDIO_MIME_TYPES.includes(baseType as AcceptedAudioMimeType)) {
     return { ok: false, error: 'Unsupported audio format' }
   }
   return { ok: true }
