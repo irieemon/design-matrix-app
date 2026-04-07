@@ -209,10 +209,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           if (useNewAuth && secureAuth) {
             // NEW AUTH SYSTEM: httpOnly cookies via API endpoint
             logger.info('Using new httpOnly cookie authentication')
-            await secureAuth.login(email, password)
-            // Success! secureAuth automatically updates user state via cookies
-            // No need to call onAuthSuccess - the SecureAuthProvider handles it
+            const loggedInUser = await secureAuth.login(email, password)
+            // secureAuth.login now returns the user — call onAuthSuccess so the
+            // main AuthenticationFlow transitions away from the login screen.
             logger.info('Login successful with httpOnly cookies')
+            if (loggedInUser) onAuthSuccess(loggedInUser)
           } else {
             // OLD AUTH SYSTEM: route through api/auth to ensure csrf-token cookie is set
             logger.info('Using old localStorage authentication')

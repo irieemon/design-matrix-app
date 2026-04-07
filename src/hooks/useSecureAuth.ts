@@ -106,11 +106,11 @@ export function useSecureAuth(): UseSecureAuthReturn {
   /**
    * Login with email and password
    */
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string): Promise<User> => {
     // Prevent concurrent login attempts
     if (loginInProgress.current) {
       logger.warn('Login already in progress')
-      return
+      throw new Error('Login already in progress')
     }
 
     try {
@@ -127,10 +127,12 @@ export function useSecureAuth(): UseSecureAuthReturn {
 
       setUser(response.user)
       logger.debug('Login successful', { userId: response.user.id })
-    } catch (_err) {
+      return response.user
+    } catch (err) {
       logger.error('Login failed:', err)
-      setError(err instanceof Error ? err : new Error('Login failed'))
-      throw err
+      const error = err instanceof Error ? err : new Error('Login failed')
+      setError(error)
+      throw error
     } finally {
       setIsLoading(false)
       loginInProgress.current = false
