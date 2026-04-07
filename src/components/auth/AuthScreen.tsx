@@ -226,6 +226,20 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
               throw new Error(body?.error?.message || 'Login failed')
             }
             const data = await res.json()
+            // Hydrate supabase-js localStorage session so the rest of the app
+            // (ProjectRepository, useAuth, etc.) sees the authenticated user.
+            // Without this, RLS reads run as anon and projects appear empty.
+            if (data.session?.access_token && data.session?.refresh_token) {
+              try {
+                logger.info('Hydrating supabase-js session from login response')
+                await supabase.auth.setSession({
+                  access_token: data.session.access_token,
+                  refresh_token: data.session.refresh_token,
+                })
+              } catch (setSessionErr) {
+                logger.error('Failed to hydrate supabase-js session', setSessionErr)
+              }
+            }
             if (data.user) {
               onAuthSuccess(data.user)
             }

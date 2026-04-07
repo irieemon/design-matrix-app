@@ -195,6 +195,13 @@ async function handleLogin(req: VercelRequest, res: VercelResponse) {
         updated_at: data.user.updated_at,
       },
       expiresAt: data.session.expires_at,
+      session: {
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+        expires_in: data.session.expires_in,
+        expires_at: data.session.expires_at,
+        token_type: data.session.token_type,
+      },
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
