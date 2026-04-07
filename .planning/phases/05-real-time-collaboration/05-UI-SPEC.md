@@ -25,6 +25,8 @@ created: 2026-04-07
 
 **Detected source of truth:** `design-matrix-app/tailwind.config.js` — Animated Lux palette (graphite text scale, canvas surfaces, brand black). Existing reusable components: `PresenceIndicators.tsx`, `InviteCollaboratorModal.tsx`, `Modal.tsx`. Phase 5 wires these up and adds new overlays.
 
+**Focal point (matrix view):** Primary visual anchor is the idea card grid; overlays (cursors, lock badges, presence stack, reconnecting badge) are secondary and must not occlude card content.
+
 ---
 
 ## Spacing Scale
@@ -54,11 +56,11 @@ Use existing Tailwind defaults — no new sizes introduced.
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
 | Body | 16px (`text-base`) | 400 (`font-normal`) | 1.5 | Modal body, invitation form |
-| Label | 14px (`text-sm`) | 500 (`font-medium`) | 1.4 | Vote count, role selector, cursor name labels |
+| Label | 14px (`text-sm`) | 600 (`font-semibold`) | 1.4 | Vote count, role selector, cursor name labels |
 | Heading | 20px (`text-xl`) | 600 (`font-semibold`) | 1.2 | Modal titles ("Invite collaborator") |
 | Display | 28px (`text-3xl`) | 600 (`font-semibold`) | 1.2 | (unused this phase) |
 
-**Constraint:** No new font sizes. No more than 2 weights (400, 600) plus the existing 500 used for labels.
+**Constraint:** No new font sizes. No more than 2 weights (400, 600).
 
 ---
 
