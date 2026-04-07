@@ -152,7 +152,15 @@ Return as JSON: { "summary": "...", "keyPoints": ["point1", "point2", ...] }`;
     let keyPoints: string[] = [];
 
     try {
-      const parsed = JSON.parse(summaryText.trim()) as { summary?: string; keyPoints?: string[] };
+      // gpt-4o-mini frequently wraps JSON output in a ```json ... ``` fence
+      // even when the prompt doesn't ask for one. Strip any fenced block
+      // before parsing.
+      const stripped = summaryText
+        .trim()
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
+      const parsed = JSON.parse(stripped) as { summary?: string; keyPoints?: string[] };
       summary = parsed.summary || summaryText;
       keyPoints = parsed.keyPoints || [];
     } catch (_parseError) {
