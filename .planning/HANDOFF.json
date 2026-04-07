@@ -1,0 +1,62 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-04-07T17:53:59.887Z",
+  "phase": "04",
+  "phase_name": "audio-voice-to-idea",
+  "phase_dir": ".planning/phases/04-audio-voice-to-idea",
+  "context": "debug-session",
+  "debug_session": ".planning/debug/transcribe-audio-500.md",
+  "status": "paused-context-exhausted",
+  "session_summary": "Original transcribe-audio 500 resolved. Five real fixes shipped this session, two environmental sub-issues remain (one user action, one separate debug session).",
+  "completed_fixes": [
+    {"id": 1, "name": "signed URL resolution for private storage paths", "commit": "08b03f5", "file": "api/_lib/ai/transcribeAudio.ts"},
+    {"id": 2, "name": "OPENAI_API_KEY rotation in Vercel prod", "commit": null, "type": "manual env action"},
+    {"id": 3, "name": "FileService upload deadlock (anti-pattern #2 / supabase-js #873)", "commit": "c8c8815", "file": "src/lib/fileService.ts"},
+    {"id": 4, "name": "MediaRecorder timeslice for chunk capture", "commit": "4226a62", "file": "src/hooks/useAudioRecorder.ts"},
+    {"id": 5, "name": "AI Gateway bypass for summarization step", "commit": "5e41531", "file": "api/_lib/ai/transcribeAudio.ts"}
+  ],
+  "remaining_work": [
+    {"id": "a", "name": "Verify iPhone end-to-end after 5e41531 deploys", "type": "human-verify"},
+    {"id": "b", "name": "Strip temporary debug field from transcribeAudio.ts catch block (lines ~129-137) once verified", "type": "code-cleanup", "agent_id": "a5526f419a24e13d9"},
+    {"id": "c", "name": "Mac silent-mic issue — check mictests.com, Chrome site permission, macOS Sound input", "type": "human-action-system-level"},
+    {"id": "d", "name": "analyze-file 403 CSRF race — separate /gsd-debug session, fix direction in src/hooks/useCsrfToken.ts", "type": "separate-debug-session"},
+    {"id": "e", "name": "Other handlers (analyzeFile.ts etc.) still call providers.ts/getModel which requires AI_GATEWAY_API_KEY — will break under same condition; decide gateway vs direct project-wide", "type": "scope-decision"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [
+    {"action": "Hard refresh iPhone Safari, retry audio recording, confirm transcription works end-to-end", "blocking": false},
+    {"action": "Run mic diagnostic on Mac (mictests.com etc.) before opening separate debug session", "blocking": false}
+  ],
+  "decisions": [
+    {"decision": "Bypass Vercel AI Gateway for transcribe-audio summarization, call OpenAI directly via @ai-sdk/openai", "rationale": "User explicit cost preference; reuses existing OPENAI_API_KEY env var; same provider already in use for Whisper in this file"},
+    {"decision": "Do NOT touch other gateway-using handlers in this session", "rationale": "Scope creep; user has not committed to project-wide gateway removal; leaves decision open"}
+  ],
+  "uncommitted_files": [
+    "src/components/AIInsightsModal.tsx",
+    "src/components/AIStarterModal.tsx",
+    "src/components/AddIdeaModal.tsx",
+    "src/components/DeleteConfirmModal.tsx",
+    "src/components/EditIdeaModal.tsx",
+    "src/components/FeatureDetailModal.tsx",
+    "src/components/InviteCollaboratorModal.tsx",
+    "src/components/PDFViewer.tsx",
+    "src/components/ProjectHeader.tsx",
+    "src/components/RoadmapExportModal.tsx",
+    "src/components/Sidebar.tsx",
+    "src/components/admin/FAQAdmin.tsx",
+    "src/components/aiStarter/AIStarterHeader.tsx",
+    "src/components/app/AuthenticationFlow.tsx",
+    "src/components/app/MainApp.tsx",
+    "src/components/layout/PageRouter.tsx",
+    "src/components/pages/FAQPage.tsx",
+    "src/components/pages/PricingPage.tsx",
+    "src/components/pages/ProjectCollaboration.tsx",
+    "src/components/pages/ReportsAnalytics.tsx",
+    "src/components/pages/SubscriptionSuccessPage.tsx",
+    "src/components/shared/Modal.tsx",
+    "tailwind.config.js"
+  ],
+  "uncommitted_files_note": "Pre-existing dirty working tree from another task. NOT touched this session. Do not commit blindly.",
+  "next_action": "Wait for iPhone verification of 5e41531 deploy. If success: continue agent a5526f419a24e13d9 to strip debug field. If failure: parse new HAR for response body.",
+  "context_notes": "Three stacked root causes were hidden behind each other (signed URL → OpenAI key → upload deadlock). Whisper hallucinates 'you' on silent audio — that's a tell, not a bug. AI Gateway requirement is project-wide tech debt that surfaced via this issue."
+}
