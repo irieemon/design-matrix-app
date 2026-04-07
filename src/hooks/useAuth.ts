@@ -62,59 +62,47 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   // Called by the onAuthStateChange listener (SIGNED_IN) and getSession() on mount.
   const handleAuthUser = useCallback(async (authUser: AuthUserWithDemo) => {
     logger.debug('🔐 handleAuthUser:', authUser.email)
+
+    // Build a user immediately from JWT data so the UI transitions without
+    // waiting for the user_profiles network round-trip.
+    const jwtUser: User = {
+      id: ensureUUID(authUser.id),
+      email: authUser.email,
+      full_name: authUser.user_metadata?.full_name || authUser.email,
+      role: 'user' as UserRole,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+
+    // Demo users: synthesise profile client-side, no DB query needed.
+    if (authUser.isDemoUser || isDemoUUID(authUser.id)) {
+      if (authUser.email === 'admin@prioritas.com') jwtUser.role = 'super_admin'
+      else if (authUser.email === 'manager@company.com') jwtUser.role = 'admin'
+      setCurrentUser(jwtUser)
+      setAuthUser(authUser)
+      setIsLoading(false)
+      return
+    }
+
+    // Transition the UI immediately using JWT data, then update in background
+    // with the full profile (which may carry a non-default role or avatar_url).
+    setCurrentUser(jwtUser)
+    setAuthUser(authUser)
+    setIsLoading(false)
+
     try {
-      // Demo users get a client-side synthesised profile
-      if (authUser.isDemoUser || isDemoUUID(authUser.id)) {
-        let role: UserRole = 'user'
-        if (authUser.email === 'admin@prioritas.com') role = 'super_admin'
-        else if (authUser.email === 'manager@company.com') role = 'admin'
-
-        setCurrentUser({
-          id: ensureUUID(authUser.id),
-          email: authUser.email,
-          full_name: authUser.user_metadata?.full_name || authUser.email,
-          role,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        setAuthUser(authUser)
-        return
-      }
-
-      // After signInWithPassword() the Supabase client is authenticated; after
-      // getSession() on mount the session is already restored. Either way this
-      // query runs with the correct JWT and is subject to RLS.
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('id, email, full_name, avatar_url, role, created_at, updated_at')
         .eq('id', authUser.id)
         .single()
 
-      const user: User = (profile as User | null) ?? {
-        id: ensureUUID(authUser.id),
-        email: authUser.email,
-        full_name: authUser.user_metadata?.full_name || authUser.email,
-        role: 'user' as UserRole,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+      if (profile) {
+        logger.debug('👤 Profile fetched, updating user:', { id: profile.id, role: (profile as User).role })
+        setCurrentUser(profile as User)
       }
-
-      logger.debug('👤 User resolved:', { id: user.id, role: user.role })
-      setCurrentUser(user)
-      setAuthUser(authUser)
     } catch (err) {
-      logger.error('💥 handleAuthUser error, using JWT fallback:', err)
-      setCurrentUser({
-        id: ensureUUID(authUser?.id || null),
-        email: authUser?.email || '',
-        full_name: authUser?.user_metadata?.full_name || authUser?.email || '',
-        role: 'user' as UserRole,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      setAuthUser(authUser)
-    } finally {
-      setIsLoading(false)
+      logger.warn('⚠️ Could not fetch user_profiles (JWT user already set):', err)
     }
   }, [])
 
