@@ -336,13 +336,20 @@ async function handleGetUser(req: AuthenticatedRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Server configuration error' })
     }
 
-    // Extract token from Authorization header
+    // Extract token from Authorization header (OLD auth) or httpOnly cookie (NEW auth)
     const authHeader = req.headers.authorization
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No authentication token provided' })
+    let accessToken: string | undefined
+
+    if (authHeader?.startsWith('Bearer ')) {
+      accessToken = authHeader.substring(7)
+    } else {
+      // NEW auth path: token is in httpOnly cookie, not accessible to JS on the client
+      accessToken = getCookie(req, COOKIE_NAMES.ACCESS_TOKEN) || undefined
     }
 
-    const accessToken = authHeader.substring(7)
+    if (!accessToken) {
+      return res.status(401).json({ error: 'No authentication token provided' })
+    }
 
     // Verify user
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {

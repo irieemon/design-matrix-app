@@ -111,7 +111,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       try {
         result = await projectExistsPromise
         clearTimeout(timeoutId)
-      } catch (_error) {
+      } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
           logger.debug('⏰ Project check timeout, assuming no projects')
           result = { count: 0 }
@@ -142,7 +142,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         // Don't set page to matrix - this interferes with URL sharing
         // The user should stay on whatever page they're trying to access
       }
-    } catch (_error) {
+    } catch (error) {
       const checkTime = performance.now() - checkStart
       logger.error('❌ Error checking user projects:', error, `(${checkTime.toFixed(1)}ms)`)
       // Don't override page even on error - preserve URL sharing
@@ -255,7 +255,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         }
       }
       
-    } catch (_error) {
+    } catch (error) {
       logger.error('💥 Error in handleAuthUser:', error)
       // EMERGENCY FIX: Direct state updates even for error fallback
       const errorFallbackUser = {
@@ -307,7 +307,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         try {
           const parsed = JSON.parse(stored)
           token = parsed.access_token
-        } catch (_error) {
+        } catch (error) {
           logger.error('Error parsing localStorage for cache clearing:', error)
         }
       }
@@ -331,7 +331,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       } else {
         logger.warn('⚠️ No auth token available for server cache clearing')
       }
-    } catch (_error) {
+    } catch (error) {
       logger.warn('⚠️ Error clearing server-side caches (continuing anyway):', error)
     }
 
@@ -340,7 +340,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       localStorage.removeItem('prioritasUser')
       localStorage.removeItem('prioritasUserJoinDate')
       logger.debug('🧹 Cleared legacy localStorage entries')
-    } catch (_error) {
+    } catch (error) {
       logger.debug('Could not clear legacy localStorage:', error)
     }
 
@@ -348,7 +348,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     try {
       await handleAuthUser(authUser)
       logger.debug('✅ User processed successfully through onAuthSuccess callback')
-    } catch (_error) {
+    } catch (error) {
       logger.error('❌ Error processing user in onAuthSuccess callback:', error)
     }
   }, [handleAuthUser])
@@ -378,7 +378,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
           try {
             const parsed = JSON.parse(stored)
             token = parsed.access_token
-          } catch (_error) {
+          } catch (error) {
             logger.error('Error parsing localStorage for logout cache clearing:', error)
           }
         }
@@ -402,7 +402,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         } else {
           logger.debug('⚠️ No auth token available for server cache clearing on logout')
         }
-      } catch (_error) {
+      } catch (error) {
         logger.warn('⚠️ Error clearing server-side caches on logout (continuing anyway):', error)
       }
 
@@ -412,7 +412,7 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
       await supabase.auth.signOut()
       // The auth state change listener will handle the rest
-    } catch (_error) {
+    } catch (error) {
       logger.error('Error logging out:', error)
       // Fallback: clear state manually
       setCurrentUser(null)
