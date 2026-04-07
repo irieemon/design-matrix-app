@@ -20,6 +20,9 @@ const MonochromeLuxAnimated = lazy(() => import('./components/demo/MonochromeLux
 // Lazy load brainstorm mobile join page (Phase One)
 const MobileJoinPage = lazy(() => import('./pages/MobileJoinPage'))
 
+// Lazy load invitation accept landing page (Phase 5)
+const InvitationAcceptPage = lazy(() => import('./pages/InvitationAcceptPage'))
+
 function App() {
   const [currentHash, setCurrentHash] = useState(window.location.hash)
 
@@ -56,6 +59,19 @@ function App() {
     return (
       <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading demo...</div>}>
         <MonochromeLuxAnimated />
+      </Suspense>
+    )
+  }
+
+  // Invitation accept landing page (Phase 5)
+  // Pattern: /invite#token=... OR any page with #token=...
+  if (
+    window.location.pathname === '/invite' ||
+    currentHash.startsWith('#token=')
+  ) {
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading invitation…</div>}>
+        <InvitationAcceptPage />
       </Suspense>
     )
   }

@@ -344,7 +344,8 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
       <InviteCollaboratorModal
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
-        onInvite={handleInvite}
+        onInvite={async (email, role) => { await handleInvite(email, role) }}
+        projectId={projectId}
         projectName={projectName}
       />
 
