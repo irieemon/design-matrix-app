@@ -34,6 +34,10 @@ vi.mock('../../lib/supabase', () => ({
   createAuthenticatedClientFromLocalStorage: () => ({}),
 }))
 
+vi.mock('../../lib/imageResize', () => ({
+  resizeImageToFile: vi.fn(async (file: File) => file),
+}))
+
 vi.mock('../../hooks/useCsrfToken', () => ({
   useCsrfToken: () => ({
     csrfToken: 'test-csrf',
