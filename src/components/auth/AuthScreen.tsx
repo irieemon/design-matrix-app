@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Target, Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles, AlertCircle, CheckCircle } from 'lucide-react'
 import PrioritasLogo from '../PrioritasLogo'
 import { supabase } from '../../lib/supabase'
+import { SUPABASE_STORAGE_KEY } from '../../lib/config'
 import { useLogger } from '../../lib/logging'
 import { Button, Input } from '../ui'
 import { useSecureAuthContext } from '../../contexts/SecureAuthContext'
@@ -226,23 +227,34 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
               throw new Error(body?.error?.message || 'Login failed')
             }
             const data = await res.json()
-            // Transition the UI FIRST, then hydrate supabase-js in the background.
-            // We do not await setSession because it can deadlock under React 18 +
-            // this app's auth context layout (supabase-js issue #873). The session
-            // will install whenever supabase-js gets around to it; ProjectRepository
-            // already has a localStorage fallback for the brief window before it lands.
-            if (data.user) {
-              onAuthSuccess(data.user)
-            }
-            if (data.session?.access_token && data.session?.refresh_token) {
-              logger.info('Hydrating supabase-js session in background')
-              supabase.auth
-                .setSession({
+            // Write the supabase-js session to localStorage SYNCHRONOUSLY in the
+            // exact shape supabase-js + createAuthenticatedClientFromLocalStorage
+            // expect ({ access_token, refresh_token, user, expires_at, ... }).
+            //
+            // We do NOT call supabase.auth.setSession() — it deadlocks under
+            // React 18 + this app's nested auth contexts (supabase-js #873).
+            // useAuth.handleAuthSuccess reads localStorage directly on the very
+            // next tick to fetch the user profile, so the entry MUST be present
+            // before onAuthSuccess fires. Doing it sync also fixes the race
+            // where ProjectRepository ran as anon and returned empty.
+            if (data.session?.access_token && data.session?.refresh_token && data.user) {
+              try {
+                const sessionPayload = {
                   access_token: data.session.access_token,
                   refresh_token: data.session.refresh_token,
-                })
-                .then(() => logger.info('supabase-js session hydrated'))
-                .catch((err) => logger.error('Failed to hydrate supabase-js session', err))
+                  expires_at: data.session.expires_at,
+                  expires_in: data.session.expires_in,
+                  token_type: data.session.token_type || 'bearer',
+                  user: data.user,
+                }
+                localStorage.setItem(SUPABASE_STORAGE_KEY, JSON.stringify(sessionPayload))
+                logger.info('supabase-js session written to localStorage')
+              } catch (storageErr) {
+                logger.error('Failed to write supabase-js session to localStorage', storageErr)
+              }
+            }
+            if (data.user) {
+              onAuthSuccess(data.user)
             }
           }
 
