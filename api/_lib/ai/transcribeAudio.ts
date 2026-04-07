@@ -12,10 +12,50 @@
 
 import { generateText, experimental_transcribe } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
+import { createClient } from '@supabase/supabase-js';
 import type { VercelResponse } from '@vercel/node';
 import type { AuthenticatedRequest } from '../middleware/index.js';
 import { getModel } from './providers.js';
 import { mapUsageToTracking } from './utils/tokenTracking.js';
+
+/**
+ * Resolves an audioUrl input into an absolute URL that fetch() can consume.
+ *
+ * The client (AIIdeaModal) may pass either:
+ *   - an absolute http(s) URL (publicUrl/public_url), or
+ *   - a Supabase Storage object path (storage_path, e.g. `projects/<id>/files/<name>.webm`)
+ *     when the bucket is private and no public URL exists.
+ *
+ * For storage paths, we mint a short-lived signed URL via the service-role client.
+ * The bucket is `project-files` to match analyzeFile.ts conventions.
+ */
+async function resolveAudioUrl(audioUrl: string): Promise<string> {
+  if (/^https?:\/\//i.test(audioUrl)) {
+    return audioUrl;
+  }
+
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    || process.env.VITE_SUPABASE_ANON_KEY
+    || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    || process.env.SUPABASE_ANON_KEY
+    || process.env.SUPABASE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase credentials not configured for storage path resolution');
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  const { data, error } = await supabase.storage
+    .from('project-files')
+    .createSignedUrl(audioUrl, 3600);
+
+  if (error || !data?.signedUrl) {
+    throw new Error(`Failed to create signed URL for storage path: ${error?.message || 'unknown error'}`);
+  }
+
+  return data.signedUrl;
+}
 
 /**
  * Handles the transcribe-audio action.
@@ -40,8 +80,11 @@ export async function handleTranscribeAudio(req: AuthenticatedRequest, res: Verc
 
     console.log('Transcribing audio:', audioUrl.substring(0, 100) + '...');
 
+    // Resolve storage paths to signed URLs; pass absolute URLs through unchanged.
+    const resolvedAudioUrl = await resolveAudioUrl(audioUrl);
+
     // Download audio file
-    const audioResponse = await fetch(audioUrl);
+    const audioResponse = await fetch(resolvedAudioUrl);
     if (!audioResponse.ok) {
       return res.status(400).json({ error: `Failed to download audio: ${audioResponse.status}` });
     }
@@ -129,10 +172,10 @@ Return as JSON: { "summary": "...", "keyPoints": ["point1", "point2", ...] }`;
   } catch (error) {
     console.error('Audio transcription error:', error);
     const message = error instanceof Error ? error.message : String(error);
-    const stack = error instanceof Error ? error.stack : undefined;
+    const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
     return res.status(500).json({
       error: 'Failed to transcribe audio',
-      debug: { message, stack, name: (error as any)?.name }
+      ...(isProd ? {} : { detail: message }),
     });
   }
 }
