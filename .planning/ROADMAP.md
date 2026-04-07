@@ -83,7 +83,7 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 04-01-PLAN.md — useAudioRecorder hook + audioTranscription lib + MediaRecorder mock fixture
+- [x] 04-01-PLAN.md — useAudioRecorder hook + audioTranscription lib + MediaRecorder mock fixture
 - [ ] 04-02-PLAN.md — Add Audio tab to AIIdeaModal (record + upload + review-then-create)
 
 ### Phase 5: Real-Time Collaboration
