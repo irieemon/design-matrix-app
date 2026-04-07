@@ -88,7 +88,7 @@ export function useSecureAuth(): UseSecureAuthReturn {
 
       setUser(response.user)
       logger.debug('Session verified', { userId: response.user.id })
-    } catch (_err) {
+    } catch (err) {
       logger.warn('Session verification failed', {
         error: err instanceof Error ? err.message : 'Unknown error'
       })
@@ -154,7 +154,7 @@ export function useSecureAuth(): UseSecureAuthReturn {
 
       setUser(null)
       logger.debug('Logout successful')
-    } catch (_err) {
+    } catch (err) {
       logger.error('Logout error:', err)
       // Even if logout fails, clear local state
       setUser(null)
@@ -176,7 +176,7 @@ export function useSecureAuth(): UseSecureAuthReturn {
 
       setUser(response.user)
       logger.debug('Session refresh successful', { userId: response.user.id })
-    } catch (_err) {
+    } catch (err) {
       logger.error('Session refresh failed:', err)
       setUser(null)
       setError(err instanceof Error ? err : new Error('Refresh failed'))
@@ -192,9 +192,7 @@ export function useSecureAuth(): UseSecureAuthReturn {
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
-      // TEMPORARY BYPASS: Skip session verification
-      // verifySession()
-      setIsLoading(false) // Ensure loading state is cleared
+      verifySession()
     }
   }, [verifySession])
 
