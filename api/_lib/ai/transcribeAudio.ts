@@ -128,7 +128,12 @@ Return as JSON: { "summary": "...", "keyPoints": ["point1", "point2", ...] }`;
 
   } catch (error) {
     console.error('Audio transcription error:', error);
-    return res.status(500).json({ error: 'Failed to transcribe audio' });
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    return res.status(500).json({
+      error: 'Failed to transcribe audio',
+      debug: { message, stack, name: (error as any)?.name }
+    });
   }
 }
 
