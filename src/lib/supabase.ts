@@ -490,9 +490,15 @@ export const createAuthenticatedClientFromLocalStorage = () => {
       const timeUntilExpiry = expiresAt - Date.now()
 
       if (timeUntilExpiry < 0) {
-        logger.warn('⚠️ Token expired - user may need to re-authenticate', {
+        logger.warn('⚠️ Token expired - falling back to main client for auto-refresh', {
           expiredFor: Math.abs(Math.round(timeUntilExpiry / 1000)) + 's'
         })
+        // Return null so getAuthenticatedClient() falls back to the main supabase client,
+        // which has autoRefreshToken: true and will refresh the session automatically.
+        // Using an expired Bearer token here would always produce a 401.
+        cachedAuthenticatedClient = null
+        cachedTokenHash = null
+        return null
       } else if (timeUntilExpiry < 300000) { // < 5 minutes
         logger.debug('Token expiring soon', {
           timeUntilExpiry: Math.round(timeUntilExpiry / 1000) + 's'
