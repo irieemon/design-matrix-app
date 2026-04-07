@@ -25,7 +25,7 @@ export interface UseSecureAuthReturn {
   error: Error | null
 
   /** Login with email and password */
-  login: (email: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<User>
 
   /** Logout */
   logout: () => Promise<void>

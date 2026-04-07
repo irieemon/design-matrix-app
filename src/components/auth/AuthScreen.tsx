@@ -213,7 +213,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             // secureAuth.login now returns the user — call onAuthSuccess so the
             // main AuthenticationFlow transitions away from the login screen.
             logger.info('Login successful with httpOnly cookies')
-            if (loggedInUser) onAuthSuccess(loggedInUser)
+            onAuthSuccess(loggedInUser)
           } else {
             // OLD AUTH SYSTEM: route through api/auth to ensure csrf-token cookie is set
             logger.info('Using old localStorage authentication')
