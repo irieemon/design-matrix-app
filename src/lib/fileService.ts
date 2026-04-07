@@ -53,8 +53,20 @@ export class FileService {
 
       logger.debug('📁 Upload path:', storagePath)
 
+      // CRITICAL: Use lock-free authenticated client to avoid supabase-js #873 deadlock.
+      // The singleton `supabase` client triggers an internal getSession() on storage/db calls,
+      // which deadlocks on the auth lock when called from the upload hot path (anti-pattern #2).
+      // See: src/lib/supabase.ts createAuthenticatedClientFromLocalStorage docs.
+      const authedClient = createAuthenticatedClientFromLocalStorage()
+      if (!authedClient) {
+        return {
+          success: false,
+          error: 'Not authenticated. Please sign in again.'
+        }
+      }
+
       // Upload file to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await authedClient.storage
         .from(this.BUCKET_NAME)
         .upload(storagePath, file, {
           cacheControl: '3600',
@@ -93,7 +105,7 @@ export class FileService {
         analysis_status: 'pending' // Initialize with pending status for AI analysis
       }
 
-      const { data: dbData, error: dbError } = await supabase
+      const { data: dbData, error: dbError } = await authedClient
         .from('project_files')
         .insert([fileRecord])
         .select()
@@ -101,9 +113,9 @@ export class FileService {
 
       if (dbError) {
         logger.error('❌ Database insert failed:', dbError)
-        
-        // Cleanup: delete uploaded file if database insert fails
-        await this.cleanupFailedUpload(uploadData.path)
+
+        // Cleanup: delete uploaded file if database insert fails (use same lock-free client)
+        await this.cleanupFailedUpload(uploadData.path, authedClient)
         
         return {
           success: false,
@@ -346,9 +358,11 @@ export class FileService {
   /**
    * Clean up failed upload by deleting file from storage
    */
-  private static async cleanupFailedUpload(storagePath: string): Promise<void> {
+  private static async cleanupFailedUpload(storagePath: string, client?: any): Promise<void> {
     try {
-      await supabase.storage
+      // Use lock-free client when provided (avoids supabase-js #873 deadlock on hot path)
+      const c = client || createAuthenticatedClientFromLocalStorage() || supabase
+      await c.storage
         .from(this.BUCKET_NAME)
         .remove([storagePath])
       logger.debug('🧹 Cleaned up failed upload:', storagePath)
