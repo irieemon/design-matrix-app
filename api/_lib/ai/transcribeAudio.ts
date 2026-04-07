@@ -172,10 +172,11 @@ Return as JSON: { "summary": "...", "keyPoints": ["point1", "point2", ...] }`;
   } catch (error) {
     console.error('Audio transcription error:', error);
     const message = error instanceof Error ? error.message : String(error);
-    const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+    const stack = error instanceof Error ? error.stack : undefined;
+    // TEMP: surface debug in prod for diagnosis — strip after fix verified.
     return res.status(500).json({
       error: 'Failed to transcribe audio',
-      ...(isProd ? {} : { detail: message }),
+      debug: { message, stack, name: (error as any)?.name },
     });
   }
 }
