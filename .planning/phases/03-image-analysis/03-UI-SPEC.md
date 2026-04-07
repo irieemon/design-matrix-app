@@ -5,6 +5,7 @@ status: draft
 shadcn_initialized: false
 preset: none
 created: 2026-04-06
+revised: 2026-04-06
 ---
 
 # Phase 3 — UI Design Contract
@@ -50,11 +51,14 @@ Exceptions:
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px | 400 | 20px (1.43) |
-| Label | 14px | 500 | 20px (1.43) |
+| Label | 14px | 400 | 20px (1.43) |
 | Heading | 18px | 600 | 28px (1.56) |
-| Display | 20px | 600 | 30px (1.5) |
 
-Source: Existing tailwind.config.js `fontSize` scale (sm, lg, xl). These 4 roles map directly to the existing `text-sm`, `text-lg`, `text-xl` Tailwind classes used throughout the app.
+Weights declared: 2 (400 regular, 600 semibold).
+
+Labels are differentiated from body text via color (`text-graphite-700` for labels vs `text-graphite-900` for values), not weight. This matches the existing pattern in the analysis result card specs.
+
+Source: Existing tailwind.config.js `fontSize` scale (sm, lg). These 3 roles map directly to the existing `text-sm` and `text-lg` Tailwind classes used throughout the app.
 
 ---
 
@@ -150,12 +154,12 @@ Mirrors the existing "Generated Idea Preview" card in the AI Generate tab:
 | Container | `border border-hairline-default rounded-lg p-4 bg-canvas-secondary` |
 | Header | "Image Analysis" heading with `Eye` icon (lucide), `text-lg font-semibold text-graphite-900` |
 | Image thumbnail | 80x80px rounded preview of the uploaded image, float left or inline-start |
-| Subject | Label "Subject:" in `text-sm font-medium text-graphite-700`, value in `text-graphite-900` |
+| Subject | Label "Subject:" in `text-sm text-graphite-700`, value in `text-graphite-900` |
 | Visual elements | Label "Visual Elements:", comma-separated list in `text-sm text-graphite-700` |
 | Extracted text | Label "Extracted Text:" (only if `textContent` is non-empty), value in `text-sm text-graphite-700`, max 3 lines with "Show more" toggle |
 | Insights | Label "Insights:", bulleted list in `text-sm text-graphite-700` |
 | Relevance score | Inline badge showing relevance score (0-100), color: `lux-badge-primary` if >= 70, `lux-badge-warning` if 40-69, `lux-badge-secondary` if < 40 |
-| Re-analyze button | "Re-analyze" with RefreshCw icon, variant `ghost`, size `sm` -- triggers new analysis call with same image |
+| Re-analyze button | "Re-analyze Image" with RefreshCw icon, variant `ghost`, size `sm` -- triggers new analysis call with same image |
 
 ### Action Buttons (Bottom)
 
@@ -163,8 +167,10 @@ Same layout as existing AI Generate tab:
 
 | Button | Variant | Position | Condition |
 |--------|---------|----------|-----------|
-| Cancel | `secondary` | Left (flex, full width) | Always enabled |
+| Close | `secondary` | Left (flex, full width) | Always enabled |
 | Create Idea from Analysis | `sapphire` | Right (flex, full width) | Enabled only when analysis result exists |
+
+Note: The existing AI Generate tab currently uses "Cancel" for this button. Phase 3 updates BOTH tabs to use "Close" for consistency, since dismissing the modal discards no persisted data and "Close" accurately describes the non-destructive action.
 
 ---
 
@@ -174,6 +180,7 @@ Same layout as existing AI Generate tab:
 |---------|------|
 | Primary CTA | "Analyze Image" (triggers upload + analysis pipeline) |
 | Secondary CTA | "Create Idea from Analysis" (adds idea to matrix from analysis result) |
+| Dismiss button | "Close" (non-destructive modal dismiss, replaces generic "Cancel") |
 | Tab label (new) | "Image" |
 | Tab label (existing) | "AI Generate" |
 | Drop zone heading | "Upload an image" |
@@ -189,7 +196,7 @@ Same layout as existing AI Generate tab:
 | Error: analysis failed | "AI analysis could not be completed. Try uploading a different image or try again later." |
 | Error: file too large | "This image is too large (max 20MB). Please choose a smaller file." |
 | Error: invalid type | "This file type is not supported. Please upload a JPEG, PNG, WebP, or GIF image." |
-| Re-analyze button | "Re-analyze" |
+| Re-analyze button | "Re-analyze Image" |
 | Remove image button | aria-label: "Remove image" (icon-only button) |
 
 ### Destructive Actions
