@@ -79,12 +79,12 @@ Plans:
   1. User can upload an audio file and receive an accurate Whisper transcription
   2. User can tap a record button on mobile, speak an idea, and see it appear as a transcribed idea card
   3. Multi-modal processing shows progress feedback during analysis without blocking the UI
-**Plans**: TBD
+**Plans**: 2 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md — useAudioRecorder hook + audioTranscription lib + MediaRecorder mock fixture
+- [ ] 04-02-PLAN.md — Add Audio tab to AIIdeaModal (record + upload + review-then-create)
 
 ### Phase 5: Real-Time Collaboration
 **Goal**: Multiple users can brainstorm together with live presence, synchronized ideas, voting, and shared matrix updates
