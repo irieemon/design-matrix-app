@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase, getProfileService } from '../lib/supabase'
 import { DatabaseService } from '../lib/database'
-import { User, AuthUser, Project, IdeaCard } from '../types'
+import { User, UserRole, AuthUser, Project, IdeaCard } from '../types'
 import { logger } from '../utils/logger'
 import { authPerformanceMonitor } from '../utils/authPerformanceMonitor'
 import { ensureUUID, isDemoUUID } from '../utils/uuid'
@@ -200,59 +200,47 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         // For real users, get profile with caching and run project check in parallel
         const isDemoUser = authUser.isDemoUser || isDemoUUID(authUser.id)
 
-          // Run profile fetch and project check in parallel with coordinated timeouts
+        // Fetch profile first, then run project check in the background
         const profileController = new AbortController()
-        const projectController = new AbortController()
 
-        // PERFORMANCE OPTIMIZED: Generous timeouts to allow completion
+        // Fetch profile only — don't block login on the project check
         const profileTimeout = setTimeout(() => {
-          logger.debug(`⏰ Profile fetch timeout after ${TIMEOUTS.PROFILE_FETCH}ms (refresh: ${isRefreshScenario})`)
+          logger.debug(`⏰ Profile fetch timeout after ${TIMEOUTS.PROFILE_FETCH}ms`)
           profileController.abort()
         }, TIMEOUTS.PROFILE_FETCH)
 
-        const projectTimeout = setTimeout(() => {
-          logger.debug(`⏰ Project check timeout after ${TIMEOUTS.PROJECT_CHECK}ms (refresh: ${isRefreshScenario})`)
-          projectController.abort()
-        }, TIMEOUTS.PROJECT_CHECK)
-
-        const [userProfileResult, projectCheckResult] = await Promise.allSettled([
-          getCachedUserProfile(authUser.id, authUser.email).finally(() => clearTimeout(profileTimeout)),
-          checkUserProjectsAndRedirect(authUser.id, isDemoUser).finally(() => clearTimeout(projectTimeout))
-        ])
-
-        // Log project check performance
-        if (projectCheckResult.status === 'rejected') {
-          logger.debug('📋 Project check failed/timeout:', projectCheckResult.reason)
-        }
-
-        if (userProfileResult.status === 'fulfilled') {
-          const userProfile = userProfileResult.value
+        let userProfile: User | null = null
+        try {
+          userProfile = await getCachedUserProfile(authUser.id, authUser.email).finally(() => clearTimeout(profileTimeout))
           logger.debug('👤 Got user profile:', {
             id: userProfile.id,
             email: userProfile.email,
             role: userProfile.role
           })
-          // EMERGENCY FIX: Direct state updates
-          setCurrentUser(userProfile)
-          setAuthUser(authUser)
-          setIsLoading(false)
-        } else {
-          logger.error('❌ Error fetching user profile, using fallback:', userProfileResult.reason)
-          // Fallback to basic user
-          const fallbackUser = {
-            id: ensureUUID(authUser.id),
-            email: authUser.email,
-            full_name: authUser.user_metadata?.full_name || authUser.email,
-            avatar_url: authUser.user_metadata?.avatar_url || null,
-            role: 'user' as const,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-          // EMERGENCY FIX: Direct state updates for fallback
-          setCurrentUser(fallbackUser)
-          setAuthUser(authUser)
-          setIsLoading(false)
+        } catch (profileError) {
+          clearTimeout(profileTimeout)
+          logger.error('❌ Error fetching user profile, using fallback:', profileError)
         }
+
+        const resolvedUser: User = userProfile ?? {
+          id: ensureUUID(authUser.id),
+          email: authUser.email,
+          full_name: authUser.user_metadata?.full_name || authUser.email,
+          avatar_url: authUser.user_metadata?.avatar_url || undefined,
+          role: 'user' as UserRole,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+
+        // Set user immediately — don't wait for project check
+        setCurrentUser(resolvedUser)
+        setAuthUser(authUser)
+        setIsLoading(false)
+
+        // Fire project check in background after user state is already set
+        checkUserProjectsAndRedirect(authUser.id, isDemoUser).catch((projectError) => {
+          logger.debug('📋 Project check failed/timeout (non-blocking):', projectError)
+        })
       }
       
     } catch (error) {
