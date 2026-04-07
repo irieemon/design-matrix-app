@@ -96,13 +96,14 @@ Plans:
   3. A project owner can invite a collaborator via email who then joins with the correct permission level (viewer/editor)
   4. Users can vote on ideas during brainstorm and all participants see updated tallies in real-time
   5. When one user drags an idea on the matrix, the position change appears for all connected users
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: TBD
+- [ ] 05-01-schema-and-fixtures-PLAN.md — DB schema (idea_votes, project_collaborators, project_invitations) + RLS + repositories + Wave 0 test fixtures
+- [ ] 05-02-invitations-backend-PLAN.md — /api/invitations create/lookup/accept + wire InviteCollaboratorModal + InvitationAcceptPage
+- [ ] 05-03-scoped-realtime-and-voting-PLAN.md — ScopedRealtimeManager refactor + useDotVoting + DotVoteControls
+- [ ] 05-04-project-realtime-matrix-PLAN.md — ProjectRealtimeManager + live cursors + drag lock + matrix sync + e2e test
 
 ### Phase 6: Billing & Subscription Enforcement
 **Goal**: Subscription limits are enforced at the API layer with clear user-facing usage visibility and upgrade prompts
