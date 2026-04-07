@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Target, Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles, AlertCircle, CheckCircle } from 'lucide-react'
 import PrioritasLogo from '../PrioritasLogo'
 import { supabase } from '../../lib/supabase'
-import { SUPABASE_STORAGE_KEY } from '../../lib/config'
 import { useLogger } from '../../lib/logging'
 import { Button, Input } from '../ui'
 import { useSecureAuthContext } from '../../contexts/SecureAuthContext'
@@ -215,48 +214,14 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             logger.info('Login successful with httpOnly cookies')
             onAuthSuccess(loggedInUser)
           } else {
-            // OLD AUTH SYSTEM: route through api/auth to ensure csrf-token cookie is set
-            logger.info('Using old localStorage authentication')
-            const res = await fetch('/api/auth?action=session', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({ email, password }),
-            })
-            if (!res.ok) {
-              const body = await res.json().catch(() => ({}))
-              throw new Error(body?.error?.message || 'Login failed')
-            }
-            const data = await res.json()
-            // Write the supabase-js session to localStorage SYNCHRONOUSLY in the
-            // exact shape supabase-js + createAuthenticatedClientFromLocalStorage
-            // expect ({ access_token, refresh_token, user, expires_at, ... }).
-            //
-            // We do NOT call supabase.auth.setSession() — it deadlocks under
-            // React 18 + this app's nested auth contexts (supabase-js #873).
-            // useAuth.handleAuthSuccess reads localStorage directly on the very
-            // next tick to fetch the user profile, so the entry MUST be present
-            // before onAuthSuccess fires. Doing it sync also fixes the race
-            // where ProjectRepository ran as anon and returned empty.
-            if (data.session?.access_token && data.session?.refresh_token && data.user) {
-              try {
-                const sessionPayload = {
-                  access_token: data.session.access_token,
-                  refresh_token: data.session.refresh_token,
-                  expires_at: data.session.expires_at,
-                  expires_in: data.session.expires_in,
-                  token_type: data.session.token_type || 'bearer',
-                  user: data.user,
-                }
-                localStorage.setItem(SUPABASE_STORAGE_KEY, JSON.stringify(sessionPayload))
-                logger.info('supabase-js session written to localStorage')
-              } catch (storageErr) {
-                logger.error('Failed to write supabase-js session to localStorage', storageErr)
-              }
-            }
-            if (data.user) {
-              onAuthSuccess(data.user)
-            }
+            // STANDARD: Use Supabase SDK directly.
+            // SDK stores the session in localStorage and fires the SIGNED_IN event
+            // via onAuthStateChange. The listener in useAuth calls handleAuthUser,
+            // which fetches the DB profile and calls setCurrentUser — no manual
+            // localStorage write or onAuthSuccess callback needed.
+            logger.info('Signing in with Supabase SDK')
+            const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+            if (signInError) throw new Error(signInError.message)
           }
 
         } else if (mode === 'forgot-password') {
