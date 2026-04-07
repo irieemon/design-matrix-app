@@ -19,6 +19,7 @@ import {
   clearAuthCookies,
   getCookie,
   generateCSRFToken,
+  setSecureCookie,
   COOKIE_NAMES,
   compose,
   withStrictRateLimit,
@@ -369,6 +370,25 @@ async function handleGetUser(req: AuthenticatedRequest, res: VercelResponse) {
     const totalTime = performance.now() - startTime
     if (totalTime > 500) {
       console.log(`[API /auth/user] SLOW - ${totalTime.toFixed(1)}ms`)
+    }
+
+    // Mint csrf-token cookie if missing. Returning users whose session is
+    // restored from localStorage never hit /api/auth?action=session (login),
+    // so the CSRF cookie was never set. Any subsequent CSRF-protected call
+    // (e.g., /api/ai?action=transcribe-audio) would 403. handleGetUser is the
+    // bootstrap call during app hydration — authoritative place to establish
+    // the CSRF cookie for legacy-auth sessions since the Bearer token is
+    // already verified above.
+    const existingCsrf = getCookie(req, COOKIE_NAMES.CSRF_TOKEN)
+    if (!existingCsrf) {
+      const csrfToken = generateCSRFToken()
+      setSecureCookie(res, COOKIE_NAMES.CSRF_TOKEN, csrfToken, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60,
+        path: '/',
+      })
     }
 
     res.status(200).json({
