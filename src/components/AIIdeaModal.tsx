@@ -472,7 +472,7 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
   const modalContent = (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ pointerEvents: 'none' }}>
       <div className="lux-modal-backdrop" onClick={onClose} style={{ pointerEvents: 'auto' }} />
-      <div className="lux-modal max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{ pointerEvents: 'auto' }}>
+      <div className="lux-modal max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col" style={{ pointerEvents: 'auto' }}>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-hairline-default bg-canvas-secondary">
           <div className="flex items-center space-x-3">
@@ -534,7 +534,7 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 flex-1 min-h-0 overflow-y-auto">
           {activeTab === 'generate' && (
             <>
               {/* Title Input */}
@@ -899,15 +899,24 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
                 aria-label="Audio progress"
               >
                 {(audioStage.kind === 'recording' || audioRecorder.isRecording) && (
-                  <li data-state="active" className="text-graphite-900">Recording</li>
+                  <li data-state="active" className="data-[state=active]:text-graphite-900 data-[state=active]:font-semibold data-[state=done]:text-emerald-600 text-graphite-400">Recording</li>
                 )}
-                <li data-state={stepStateForUpload(audioStage)} className="text-graphite-700">
+                <li
+                  data-state={stepStateForUpload(audioStage)}
+                  className="data-[state=active]:text-graphite-900 data-[state=active]:font-semibold data-[state=done]:text-emerald-600 text-graphite-400"
+                >
                   Uploading
                 </li>
-                <li data-state={stepStateForTranscribing(audioStage)} className="text-graphite-700">
+                <li
+                  data-state={stepStateForTranscribing(audioStage)}
+                  className="data-[state=active]:text-graphite-900 data-[state=active]:font-semibold data-[state=done]:text-emerald-600 text-graphite-400"
+                >
                   Transcribing
                 </li>
-                <li data-state={stepStateForDone(audioStage)} className="text-graphite-700">
+                <li
+                  data-state={stepStateForDone(audioStage)}
+                  className="data-[state=active]:text-graphite-900 data-[state=active]:font-semibold data-[state=done]:text-emerald-600 text-graphite-400"
+                >
                   Done
                 </li>
               </ol>

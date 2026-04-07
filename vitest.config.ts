@@ -33,6 +33,7 @@ export default defineConfig({
         }
       }
     },
+    exclude: ['node_modules/**', '.claude/**'],
     // Increase timeout for integration tests
     testTimeout: 10000,
     hookTimeout: 10000
