@@ -213,14 +213,19 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             // No need to call onAuthSuccess - the SecureAuthProvider handles it
             logger.info('Login successful with httpOnly cookies')
           } else {
-            // OLD AUTH SYSTEM: localStorage via Supabase direct
+            // OLD AUTH SYSTEM: route through api/auth to ensure csrf-token cookie is set
             logger.info('Using old localStorage authentication')
-            const { data, error } = await supabase.auth.signInWithPassword({
-              email,
-              password,
+            const res = await fetch('/api/auth?action=session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ email, password }),
             })
-
-            if (error) throw error
+            if (!res.ok) {
+              const body = await res.json().catch(() => ({}))
+              throw new Error(body?.error?.message || 'Login failed')
+            }
+            const data = await res.json()
             if (data.user) {
               onAuthSuccess(data.user)
             }
