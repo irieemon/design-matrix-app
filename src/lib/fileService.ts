@@ -1,5 +1,6 @@
 import { supabase, createAuthenticatedClientFromLocalStorage } from './supabase'
 import { logger } from '../utils/logger'
+import { getCsrfToken } from '../utils/cookieUtils'
 import { ProjectFile } from '../types'
 
 export interface UploadFileResult {
@@ -378,11 +379,16 @@ export class FileService {
     try {
       logger.debug('🤖 Triggering AI analysis for file:', fileId)
       
+      const accessToken = localStorage.getItem('sb-access-token') || ''
+      const csrfToken = getCsrfToken()
       const response = await fetch('/api/ai?action=analyze-file', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({
           fileId,
           projectId

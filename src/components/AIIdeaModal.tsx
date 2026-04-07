@@ -155,10 +155,12 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
         (uploaded.file as any).public_url ||
         (uploaded.file as any).storage_path
       setAudioStage({ kind: 'transcribing' })
+      const accessToken = localStorage.getItem('sb-access-token') || ''
       const res = await fetch('/api/ai?action=transcribe-audio', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
           ...getCsrfHeaders(),
           ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
         },
