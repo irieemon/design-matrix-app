@@ -5,7 +5,7 @@
  *         MM-06 (stage indicators), review-then-create.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
@@ -167,7 +167,7 @@ describe('AIIdeaModal Audio tab', () => {
 
     const txt = new File(['text'], 'note.txt', { type: 'text/plain' })
     const input = screen.getByLabelText(/Upload audio file/i) as HTMLInputElement
-    await user.upload(input, txt)
+    fireEvent.change(input, { target: { files: [txt] } })
 
     expect(mockUploadFile).not.toHaveBeenCalled()
     expect(await screen.findByText(/Unsupported audio format/i)).toBeTruthy()

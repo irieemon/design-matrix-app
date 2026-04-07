@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import {
   X,
@@ -9,6 +9,7 @@ import {
   ImagePlus,
   Eye,
   AlertCircle,
+  Mic,
 } from 'lucide-react'
 import { IdeaCard, Project, User } from '../types'
 import { aiService } from '../lib/aiService'
@@ -19,6 +20,14 @@ import { FileService } from '../lib/fileService'
 import { supabase } from '../lib/supabase'
 import { useCsrfToken } from '../hooks/useCsrfToken'
 import { resizeImageToFile } from '../lib/imageResize'
+import { useAudioRecorder } from '../hooks/useAudioRecorder'
+import {
+  validateAudioFile,
+  normalizeTranscriptionResult,
+  ACCEPTED_AUDIO_MIME_TYPES,
+  type NormalizedTranscription,
+  type TranscribeAudioResponse,
+} from '../lib/audioTranscription'
 
 interface AIIdeaModalProps {
   onClose: () => void
@@ -29,8 +38,36 @@ interface AIIdeaModalProps {
   portalTarget?: HTMLElement
 }
 
-type Tab = 'generate' | 'image'
+type Tab = 'generate' | 'image' | 'audio'
 type ImageStage = 'idle' | 'resizing' | 'uploading' | 'analyzing' | 'done' | 'error'
+
+type AudioStage =
+  | { kind: 'idle' }
+  | { kind: 'recording'; startedAt: number }
+  | { kind: 'uploading' }
+  | { kind: 'transcribing' }
+  | { kind: 'reviewing'; result: NormalizedTranscription; sourceUrl: string }
+  | { kind: 'error'; message: string }
+
+function formatElapsed(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000)
+  const m = Math.floor(totalSeconds / 60)
+  const s = totalSeconds % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+function stepStateForUpload(s: AudioStage): 'pending' | 'active' | 'done' {
+  if (s.kind === 'uploading') return 'active'
+  if (s.kind === 'transcribing' || s.kind === 'reviewing') return 'done'
+  return 'pending'
+}
+function stepStateForTranscribing(s: AudioStage): 'pending' | 'active' | 'done' {
+  if (s.kind === 'transcribing') return 'active'
+  if (s.kind === 'reviewing') return 'done'
+  return 'pending'
+}
+function stepStateForDone(s: AudioStage): 'pending' | 'active' | 'done' {
+  return s.kind === 'reviewing' ? 'active' : 'pending'
+}
 
 interface NormalizedAnalysis {
   subject: string
@@ -85,7 +122,135 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
   const [analysis, setAnalysis] = useState<NormalizedAnalysis | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { getCsrfHeaders, hasToken } = useCsrfToken()
+  const { getCsrfHeaders, hasToken, csrfToken } = useCsrfToken()
+
+  // Audio tab state
+  const [audioStage, setAudioStage] = useState<AudioStage>({ kind: 'idle' })
+  const [audioTitle, setAudioTitle] = useState('')
+  const audioRecorder = useAudioRecorder()
+
+  const uploadAndTranscribeAudio = async (file: File) => {
+    const validation = validateAudioFile(file)
+    if (!validation.ok) {
+      setAudioStage({ kind: 'error', message: validation.error })
+      return
+    }
+    if (!currentProject?.id) {
+      setAudioStage({ kind: 'error', message: 'No project selected' })
+      return
+    }
+    try {
+      setAudioStage({ kind: 'uploading' })
+      const uploaded = await FileService.uploadFile(
+        file,
+        currentProject.id,
+        'Audio uploaded for transcription',
+        currentUser?.id
+      )
+      if (!uploaded?.success || !uploaded.file) {
+        throw new Error(uploaded?.error || 'Audio upload failed')
+      }
+      const audioUrl =
+        (uploaded.file as any).publicUrl ||
+        (uploaded.file as any).public_url ||
+        (uploaded.file as any).storage_path
+      setAudioStage({ kind: 'transcribing' })
+      const res = await fetch('/api/ai?action=transcribe-audio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getCsrfHeaders(),
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          audioUrl,
+          projectContext: {
+            projectName: currentProject?.name,
+            projectDescription: currentProject?.description,
+            projectType: currentProject?.project_type,
+          },
+          language: 'en',
+        }),
+      })
+      if (!res.ok) throw new Error(`Transcription failed: ${res.status}`)
+      const json: TranscribeAudioResponse = await res.json()
+      const normalized = normalizeTranscriptionResult(json)
+      setAudioTitle(normalized.subject)
+      setAudioStage({ kind: 'reviewing', result: normalized, sourceUrl: audioUrl })
+    } catch (err) {
+      logger.error('Audio transcription failed', err)
+      setAudioStage({
+        kind: 'error',
+        message: err instanceof Error ? err.message : 'Transcription failed',
+      })
+    }
+  }
+
+  const handleRecordToggle = async () => {
+    if (audioRecorder.isRecording) {
+      try {
+        const blob = await audioRecorder.stop()
+        const ext = blob.type.includes('mp4') ? 'mp4' : 'webm'
+        const file = new File([blob], `recording-${Date.now()}.${ext}`, { type: blob.type })
+        await uploadAndTranscribeAudio(file)
+      } catch (err) {
+        logger.error('Recording stop failed', err)
+      }
+    } else {
+      setAudioStage({ kind: 'recording', startedAt: Date.now() })
+      await audioRecorder.start()
+    }
+  }
+
+  const handleAudioFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) await uploadAndTranscribeAudio(file)
+    if (e.target) e.target.value = ''
+  }
+
+  const handleCreateAudioIdea = () => {
+    if (audioStage.kind !== 'reviewing') return
+    const r = audioStage.result
+    const details = [
+      r.description,
+      r.textContent ? `Transcript: ${r.textContent}` : null,
+      r.insights.length ? `Key points: ${r.insights.join(' • ')}` : null,
+    ]
+      .filter(Boolean)
+      .join('\n\n')
+    onAdd({
+      content: audioTitle || r.subject || 'Audio Idea',
+      details,
+      x: Math.round(260 + Math.random() * 100 - 50),
+      y: Math.round(260 + Math.random() * 100 - 50),
+      priority: 'moderate',
+      created_by: currentUser?.id || 'Anonymous',
+      is_collapsed: true,
+      editing_by: null,
+      editing_at: null,
+    })
+    setAudioStage({ kind: 'idle' })
+    setAudioTitle('')
+    onClose()
+  }
+
+  // Cleanup mic on close
+  const handleCloseWithCleanup = () => {
+    if (audioRecorder.isRecording) {
+      void audioRecorder.stop().catch(() => {})
+    }
+    onClose()
+  }
+
+  useEffect(() => {
+    return () => {
+      if (audioRecorder.isRecording) {
+        void audioRecorder.stop().catch(() => {})
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const generateIdea = async () => {
     if (!title.trim()) return
@@ -317,7 +482,7 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
             <h2 className="text-lg font-semibold text-graphite-900">AI Idea Assistant</h2>
           </div>
           <Button
-            onClick={onClose}
+            onClick={handleCloseWithCleanup}
             variant="ghost"
             size="sm"
             icon={<X className="w-5 h-5" />}
@@ -352,6 +517,19 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
             }`}
           >
             Image
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'audio'}
+            onClick={() => setActiveTab('audio')}
+            className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px ${
+              activeTab === 'audio'
+                ? 'border-sapphire-500 text-graphite-900'
+                : 'border-transparent text-graphite-500 hover:text-graphite-700'
+            }`}
+          >
+            Audio
           </button>
         </div>
 
@@ -712,6 +890,130 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
                 </Button>
               </div>
             </>
+          )}
+
+          {activeTab === 'audio' && (
+            <div className="audio-tab space-y-4">
+              <ol
+                className="audio-steps flex items-center space-x-3 text-xs"
+                aria-label="Audio progress"
+              >
+                {(audioStage.kind === 'recording' || audioRecorder.isRecording) && (
+                  <li data-state="active" className="text-graphite-900">Recording</li>
+                )}
+                <li data-state={stepStateForUpload(audioStage)} className="text-graphite-700">
+                  Uploading
+                </li>
+                <li data-state={stepStateForTranscribing(audioStage)} className="text-graphite-700">
+                  Transcribing
+                </li>
+                <li data-state={stepStateForDone(audioStage)} className="text-graphite-700">
+                  Done
+                </li>
+              </ol>
+
+              {(audioStage.kind === 'idle' ||
+                audioStage.kind === 'recording' ||
+                audioStage.kind === 'error') && (
+                <div className="audio-tab-grid grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <section className="audio-record border border-hairline-default rounded-lg p-4 bg-canvas-secondary">
+                    <h3 className="text-sm font-semibold text-graphite-900 mb-2">Record</h3>
+                    <Button
+                      onClick={handleRecordToggle}
+                      variant="sapphire"
+                      size="sm"
+                      icon={<Mic className="w-4 h-4" />}
+                      aria-pressed={audioRecorder.isRecording}
+                    >
+                      {audioRecorder.isRecording ? 'Stop' : 'Record'}
+                    </Button>
+                    {audioRecorder.isRecording && (
+                      <div className="rec-status mt-2 flex items-center space-x-2" aria-live="polite">
+                        <span className="rec-pulse text-error-600 font-semibold">● REC</span>
+                        <span className="rec-timer text-graphite-700">
+                          {formatElapsed(audioRecorder.elapsedMs)}
+                        </span>
+                      </div>
+                    )}
+                    {audioRecorder.error && (
+                      <p className="error-msg mt-2 text-sm text-error-700">{audioRecorder.error}</p>
+                    )}
+                  </section>
+
+                  <section className="audio-upload border border-hairline-default rounded-lg p-4 bg-canvas-secondary">
+                    <h3 className="text-sm font-semibold text-graphite-900 mb-2">Upload</h3>
+                    <input
+                      type="file"
+                      accept={ACCEPTED_AUDIO_MIME_TYPES.join(',')}
+                      onChange={handleAudioFilePick}
+                      aria-label="Upload audio file"
+                    />
+                    <p className="hint text-xs text-graphite-500 mt-2">
+                      Max 25MB. mp3, wav, webm, m4a, ogg.
+                    </p>
+                  </section>
+                </div>
+              )}
+
+              {audioStage.kind === 'error' && (
+                <p className="error-msg text-sm text-error-700" role="alert">
+                  {audioStage.message}
+                </p>
+              )}
+
+              {audioStage.kind === 'uploading' && (
+                <p className="text-sm text-graphite-700" aria-live="polite">Uploading audio…</p>
+              )}
+              {audioStage.kind === 'transcribing' && (
+                <p className="text-sm text-graphite-700" aria-live="polite">Transcribing audio…</p>
+              )}
+
+              {audioStage.kind === 'reviewing' && (
+                <div className="audio-review border border-hairline-default rounded-lg p-4 bg-canvas-secondary space-y-3">
+                  <label className="block text-sm">
+                    <span className="text-graphite-700 font-medium">Title</span>
+                    <input
+                      type="text"
+                      value={audioTitle}
+                      onChange={(e) => setAudioTitle(e.target.value)}
+                      className="mt-1 block w-full border border-hairline-default rounded px-2 py-1"
+                    />
+                  </label>
+                  <section>
+                    <h4 className="text-xs font-medium text-graphite-500 uppercase">Summary</h4>
+                    <p className="text-sm text-graphite-700">{audioStage.result.description}</p>
+                  </section>
+                  {audioStage.result.insights.length > 0 && (
+                    <section>
+                      <h4 className="text-xs font-medium text-graphite-500 uppercase">Key Points</h4>
+                      <ul className="list-disc list-inside text-sm text-graphite-700">
+                        {audioStage.result.insights.map((kp, i) => (
+                          <li key={i}>{kp}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+                  <section>
+                    <h4 className="text-xs font-medium text-graphite-500 uppercase">Full Transcript</h4>
+                    <p className="transcript text-sm text-graphite-700 whitespace-pre-wrap">
+                      {audioStage.result.textContent}
+                    </p>
+                  </section>
+                  <div className="flex space-x-3">
+                    <Button
+                      onClick={() => setAudioStage({ kind: 'idle' })}
+                      variant="secondary"
+                      fullWidth
+                    >
+                      Discard
+                    </Button>
+                    <Button onClick={handleCreateAudioIdea} variant="sapphire" fullWidth>
+                      Create Idea
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
