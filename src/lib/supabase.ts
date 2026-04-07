@@ -490,15 +490,17 @@ export const createAuthenticatedClientFromLocalStorage = () => {
       const timeUntilExpiry = expiresAt - Date.now()
 
       if (timeUntilExpiry < 0) {
-        logger.warn('⚠️ Token expired - falling back to main client for auto-refresh', {
+        logger.warn('⚠️ Token expired - returning main client for auto-refresh', {
           expiredFor: Math.abs(Math.round(timeUntilExpiry / 1000)) + 's'
         })
-        // Return null so getAuthenticatedClient() falls back to the main supabase client,
-        // which has autoRefreshToken: true and will refresh the session automatically.
-        // Using an expired Bearer token here would always produce a 401.
+        // Return the main supabase client (autoRefreshToken: true) so it can silently
+        // refresh the session. We must NOT return null — many callers (faqService,
+        // subscriptionService, BaseService) return this value directly without a null
+        // fallback, and a null client causes a TypeError that crashes the app before
+        // the login form renders.
         cachedAuthenticatedClient = null
         cachedTokenHash = null
-        return null
+        return supabase
       } else if (timeUntilExpiry < 300000) { // < 5 minutes
         logger.debug('Token expiring soon', {
           timeUntilExpiry: Math.round(timeUntilExpiry / 1000) + 's'
