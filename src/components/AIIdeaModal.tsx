@@ -155,7 +155,11 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
         (uploaded.file as any).public_url ||
         (uploaded.file as any).storage_path
       setAudioStage({ kind: 'transcribing' })
-      const accessToken = localStorage.getItem('sb-access-token') || ''
+      // CRITICAL: Supabase-js v2 stores the session as JSON under SUPABASE_STORAGE_KEY
+      // (sb-<project-ref>-auth-token), NOT under a flat 'sb-access-token' key.
+      // Use getSession() — the canonical async-safe accessor.
+      const { data: { session } } = await supabase.auth.getSession()
+      const accessToken = session?.access_token || ''
       const res = await fetch('/api/ai?action=transcribe-audio', {
         method: 'POST',
         headers: {
@@ -388,7 +392,9 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
       setUploadProgress(100)
 
       setImageStage('analyzing')
-      const accessToken = localStorage.getItem('sb-access-token') || ''
+      // Use getSession() — 'sb-access-token' is not a real localStorage key in supabase-js v2.
+      const { data: { session: imgSession } } = await supabase.auth.getSession()
+      const accessToken = imgSession?.access_token || ''
       const response = await fetch('/api/ai?action=analyze-image', {
         method: 'POST',
         headers: {
@@ -396,6 +402,7 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
           'Authorization': `Bearer ${accessToken}`,
           ...getCsrfHeaders(),
         },
+        credentials: 'include',
         body: JSON.stringify({
           imageUrl: signedData.signedUrl,
           projectContext: {

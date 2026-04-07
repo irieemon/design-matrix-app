@@ -379,7 +379,10 @@ export class FileService {
     try {
       logger.debug('🤖 Triggering AI analysis for file:', fileId)
       
-      const accessToken = localStorage.getItem('sb-access-token') || ''
+      // Supabase-js v2 stores the session JSON under SUPABASE_STORAGE_KEY, not under
+      // a flat 'sb-access-token' key. Use getSession() as the canonical accessor.
+      const { data: { session } } = await supabase.auth.getSession()
+      const accessToken = session?.access_token || ''
       const csrfToken = getCsrfToken()
       const response = await fetch('/api/ai?action=analyze-file', {
         method: 'POST',
