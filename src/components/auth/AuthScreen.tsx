@@ -216,12 +216,14 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           } else {
             // STANDARD: Use Supabase SDK directly.
             // SDK stores the session in localStorage and fires the SIGNED_IN event
-            // via onAuthStateChange. The listener in useAuth calls handleAuthUser,
-            // which fetches the DB profile and calls setCurrentUser — no manual
-            // localStorage write or onAuthSuccess callback needed.
+            // via onAuthStateChange. We also call onAuthSuccess directly so the UI
+            // transitions immediately without waiting for the async listener.
             logger.info('Signing in with Supabase SDK')
-            const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
             if (signInError) throw new Error(signInError.message)
+            if (signInData.user) {
+              onAuthSuccess(signInData.user)
+            }
           }
 
         } else if (mode === 'forgot-password') {
