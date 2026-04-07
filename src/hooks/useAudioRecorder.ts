@@ -81,7 +81,11 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     streamRef.current = stream
     startedAtRef.current = Date.now()
 
-    recorder.start()
+    // Pass a timeslice so ondataavailable fires periodically during recording.
+    // Without it, MediaRecorder only emits one dataavailable on stop(), and a
+    // known Chromium race lets onstop run before that final chunk arrives —
+    // producing a header-only blob that Whisper transcribes as "you" / silence.
+    recorder.start(250)
     setIsRecording(true)
     logger.debug('useAudioRecorder: started', { mimeType })
 
