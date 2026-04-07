@@ -100,7 +100,7 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 05-01-schema-and-fixtures-PLAN.md — DB schema (idea_votes, project_collaborators, project_invitations) + RLS + repositories + Wave 0 test fixtures
+- [x] 05-01-schema-and-fixtures-PLAN.md — DB schema (idea_votes, project_collaborators, project_invitations) + RLS + repositories + Wave 0 test fixtures
 - [ ] 05-02-invitations-backend-PLAN.md — /api/invitations create/lookup/accept + wire InviteCollaboratorModal + InvitationAcceptPage
 - [ ] 05-03-scoped-realtime-and-voting-PLAN.md — ScopedRealtimeManager refactor + useDotVoting + DotVoteControls
 - [ ] 05-04-project-realtime-matrix-PLAN.md — ProjectRealtimeManager + live cursors + drag lock + matrix sync + e2e test

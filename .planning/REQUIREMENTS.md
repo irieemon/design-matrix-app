@@ -43,9 +43,9 @@ Requirements for public launch. Each maps to roadmap phases.
 
 - [ ] **COLLAB-01**: User sees real-time presence indicators (who's online) in brainstorm sessions
 - [ ] **COLLAB-02**: Ideas created by any participant appear for all users in real-time without refresh
-- [ ] **COLLAB-03**: User can invite collaborators to a project via email
-- [ ] **COLLAB-04**: Invited collaborator can join project with appropriate permissions (viewer/editor)
-- [ ] **COLLAB-05**: User can vote on ideas (dot-voting or thumbs-up) during brainstorm
+- [x] **COLLAB-03**: User can invite collaborators to a project via email
+- [x] **COLLAB-04**: Invited collaborator can join project with appropriate permissions (viewer/editor)
+- [x] **COLLAB-05**: User can vote on ideas (dot-voting or thumbs-up) during brainstorm
 - [ ] **COLLAB-06**: Vote tallies update in real-time for all participants
 - [ ] **COLLAB-07**: Idea position changes on matrix broadcast to all connected users
 
@@ -148,9 +148,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MM-08 | Phase 3 | Pending |
 | COLLAB-01 | Phase 5 | Pending |
 | COLLAB-02 | Phase 5 | Pending |
-| COLLAB-03 | Phase 5 | Pending |
-| COLLAB-04 | Phase 5 | Pending |
-| COLLAB-05 | Phase 5 | Pending |
+| COLLAB-03 | Phase 5 | Complete |
+| COLLAB-04 | Phase 5 | Complete |
+| COLLAB-05 | Phase 5 | Complete |
 | COLLAB-06 | Phase 5 | Pending |
 | COLLAB-07 | Phase 5 | Pending |
 | BILL-01 | Phase 6 | Pending |
