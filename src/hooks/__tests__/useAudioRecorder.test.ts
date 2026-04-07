@@ -44,22 +44,26 @@ describe('useAudioRecorder', () => {
 
   it('prefers audio/webm when supported', async () => {
     mr.restore()
+    gum.restore()
     mr = createMockMediaRecorder({ isTypeSupported: (m) => m === 'audio/webm' })
+    gum = createMockGetUserMedia()
     const { result } = renderHook(() => useAudioRecorder())
     await act(async () => {
       await result.current.start()
     })
-    expect(mr.instances[0].mimeType).toBe('audio/webm')
+    expect(mr.MockClass.instances[0].mimeType).toBe('audio/webm')
   })
 
   it('falls back to audio/mp4 on iOS Safari (webm unsupported)', async () => {
     mr.restore()
+    gum.restore()
     mr = createMockMediaRecorder({ isTypeSupported: (m) => m === 'audio/mp4' })
+    gum = createMockGetUserMedia()
     const { result } = renderHook(() => useAudioRecorder())
     await act(async () => {
       await result.current.start()
     })
-    expect(mr.instances[0].mimeType).toBe('audio/mp4')
+    expect(mr.MockClass.instances[0].mimeType).toBe('audio/mp4')
   })
 
   it('stop() resolves with assembled Blob', async () => {
