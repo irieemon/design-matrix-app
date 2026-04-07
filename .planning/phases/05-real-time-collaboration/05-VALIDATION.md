@@ -3,7 +3,7 @@ phase: 5
 slug: real-time-collaboration
 status: draft
 nyquist_compliant: false
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-04-07
 ---
 
@@ -40,7 +40,17 @@ created: 2026-04-07
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD     | TBD  | TBD  | TBD         | TBD        | TBD             | TBD       | TBD               | TBD         | ⬜ pending |
+| 05-01-T1 | 05-01 | 1 | COLLAB-03/04/05 | T-05-01,02,03,04,05,06 | RLS-enforced 5-dot budget + owner-gated collaborator writes + hashed-token invites | sql/grep | `grep -q "count(\*)" supabase/migrations/20260408_phase5_collab_schema.sql` | yes | ⬜ pending |
+| 05-01-T2 | 05-01 | 1 | COLLAB-05 | T-05-01,05 | castVote surfaces RLS budget rejection without trusting client | unit | `npx vitest run src/lib/repositories/__tests__/voteRepository.test.ts` | yes | ⬜ pending |
+| 05-01-T3 | 05-01 | 1 | COLLAB-01..07 | n/a | Wave 0 stubs land so downstream plans have red→green targets | unit/e2e (skipped) | `npm run test:run` | yes | ⬜ pending |
+| 05-02-T1 | 05-02 | 2 | COLLAB-03 | T-05-03 | Email validation, hashed-token persist, EmailJS dispatch | unit | `npx vitest run api/__tests__/invitations.create.test.ts` | yes | ⬜ pending |
+| 05-02-T2 | 05-02 | 2 | COLLAB-04 | T-05-04 | accept_invitation() RPC creates collaborator atomically, expired tokens rejected | integration | `npx vitest run api/__tests__/invitations.accept.test.ts` | yes | ⬜ pending |
+| 05-03-T1 | 05-03 | 3 | COLLAB-01,02 | n/a | Scoped channel multiplexes presence + postgres_changes + broadcast | unit | `npx vitest run src/lib/realtime/__tests__/multiClient.test.ts` | yes | ⬜ pending |
+| 05-03-T2 | 05-03 | 3 | COLLAB-06 | T-05-01 | useDotVoting enforces optimistic budget + reconciles via RLS | unit | `npx vitest run src/hooks/__tests__/useDotVoting.test.ts` | yes | ⬜ pending |
+| 05-03-T3 | 05-03 | 3 | COLLAB-05,06 | T-05-06 | Vote tally subscriber merges initial fetch + realtime delta | unit | `npx vitest run src/hooks/__tests__/useDotVoting.test.ts` | yes | ⬜ pending |
+| 05-04-T1 | 05-04 | 4 | COLLAB-01,07 | n/a | useProjectRealtime presence + cursor + drag lock multiplex | unit | `npx vitest run src/hooks/__tests__/useProjectRealtime.test.ts` | yes | ⬜ pending |
+| 05-04-T2 | 05-04 | 4 | COLLAB-02 | n/a | Multi-client fan-out via mockRealtimeChannel | unit | `npx vitest run src/lib/realtime/__tests__/multiClient.test.ts` | yes | ⬜ pending |
+| 05-04-T3 | 05-04 | 4 | COLLAB-07 | T-05-07 | Two-browser drag persistence end-to-end | e2e | `npx playwright test tests/e2e/matrix-drag-sync.spec.ts` | yes | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
