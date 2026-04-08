@@ -27,4 +27,5 @@ export { handleGenerateRoadmap } from './generateRoadmap.js';
 // Multi-modal handlers (Plan 03)
 export { handleAnalyzeFile } from './analyzeFile.js';
 export { handleAnalyzeImage } from './analyzeImage.js';
+export { handleAnalyzeVideo } from './analyzeVideo.js';
 export { handleTranscribeAudio } from './transcribeAudio.js';
