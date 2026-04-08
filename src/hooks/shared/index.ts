@@ -3,6 +3,5 @@ export { useAsyncOperation, useSimpleAsyncOperation, useApiCall } from './useAsy
 export {
   useProjectIdeas,
   useProjects,
-  useIdeaLocking,
-  useProjectCollaborators
+  useIdeaLocking
 } from './useDatabase'

@@ -3,7 +3,6 @@ import { DatabaseService } from '../../lib/database'
 import { supabase } from '../../lib/supabase'
 import { useAsyncOperation } from './useAsyncOperation'
 import { IdeaCard, Project } from '../../types'
-import { logger } from '../../utils/logger'
 
 interface UseDatabaseOptions {
   onSuccess?: (data: any) => void
@@ -215,77 +214,5 @@ export function useIdeaLocking(options: UseDatabaseOptions = {}) {
   }
 }
 
-/**
- * Hook for managing project collaborators
- */
-export function useProjectCollaborators(projectId?: string, options: UseDatabaseOptions = {}) {
-  const { state, execute, reset } = useAsyncOperation(
-    async (id: string) => DatabaseService.getProjectCollaborators(id),
-    {
-      onSuccess: options.onSuccess,
-      onError: options.onError,
-      logErrors: true
-    }
-  )
-
-  const loadCollaborators = useCallback(
-    (id?: string) => {
-      const targetId = id || projectId
-      if (!targetId) {
-        logger.warn('useProjectCollaborators: No project ID provided')
-        return Promise.resolve(null)
-      }
-      return execute(targetId)
-    },
-    [execute, projectId]
-  )
-
-  const addCollaborator = useAsyncOperation(
-    async (userEmail: string, role: string = 'viewer', invitedBy: string, projectName?: string, inviterName?: string, inviterEmail?: string) => {
-      if (!projectId) {
-        throw new Error('No project ID provided')
-      }
-      const success = await DatabaseService.addProjectCollaborator(projectId, userEmail, role, invitedBy, projectName, inviterName, inviterEmail)
-      if (success) {
-        // Auto-refresh collaborators after addition if enabled
-        if (options.autoRefresh) {
-          await loadCollaborators()
-        }
-        return success
-      }
-      throw new Error('Failed to add collaborator')
-    },
-    { onSuccess: options.onSuccess, onError: options.onError }
-  )
-
-  const removeCollaborator = useAsyncOperation(
-    async (userId: string) => {
-      if (!projectId) {
-        throw new Error('No project ID provided')
-      }
-      const success = await DatabaseService.removeProjectCollaborator(projectId, userId)
-      if (success) {
-        // Auto-refresh collaborators after removal if enabled
-        if (options.autoRefresh) {
-          await loadCollaborators()
-        }
-        return success
-      }
-      throw new Error('Failed to remove collaborator')
-    },
-    { onSuccess: options.onSuccess, onError: options.onError }
-  )
-
-  return {
-    collaborators: state.data || [],
-    loading: state.loading,
-    error: state.error,
-    success: state.success,
-    loadCollaborators,
-    addCollaborator: addCollaborator.execute,
-    removeCollaborator: removeCollaborator.execute,
-    reset,
-    addState: addCollaborator.state,
-    removeState: removeCollaborator.state
-  }
-}
+// Phase 05.1: useProjectCollaborators hook removed (D-03 — no dead code).
+// Components use CollaborationService and /api/invitations/create directly.
