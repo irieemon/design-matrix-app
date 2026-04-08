@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Users, UserPlus, Crown, Shield, Edit3, Trash2, MoreHorizontal, Mail } from 'lucide-react'
-import { DatabaseService } from '../lib/database'
+import { CollaborationService } from '../lib/services/CollaborationService'
 import InviteCollaboratorModal from './InviteCollaboratorModal'
 import { logger } from '../utils/logger'
 import { Button } from './ui/Button'
+import { getCsrfToken } from '../utils/cookieUtils'
+import { getAuthHeadersSync } from '../lib/authHeaders'
 
 interface Collaborator {
   id: string
@@ -56,28 +58,32 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
   const canManageCollaborators = ['owner', 'admin'].includes(currentUserRole)
   const canInvite = canManageCollaborators
 
-  useEffect(() => {
-    const loadCollaborators = async () => {
-      setLoading(true)
-      try {
-        logger.debug('🔄 ProjectCollaborators: Loading collaborators for project:', projectId)
-        const data = await DatabaseService.getProjectCollaborators(projectId)
-        logger.debug('📋 ProjectCollaborators: Received collaborator data:', data)
-        setCollaborators(data as unknown as Collaborator[])
-        logger.debug('✅ ProjectCollaborators: Updated collaborators state with', data.length, 'items')
-      } catch (err) {
-        logger.error('❌ ProjectCollaborators: Error loading collaborators:', err)
-      } finally {
-        setLoading(false)
-      }
+  const loadCollaborators = async () => {
+    setLoading(true)
+    try {
+      logger.debug('🔄 ProjectCollaborators: Loading collaborators for project:', projectId)
+      const result = await CollaborationService.getProjectCollaborators(projectId, { userId: currentUser?.id })
+      const data = result.success ? result.data : []
+      setCollaborators(data as unknown as Collaborator[])
+      logger.debug('✅ ProjectCollaborators: Updated collaborators state with', data.length, 'items')
+    } catch (err) {
+      logger.error('❌ ProjectCollaborators: Error loading collaborators:', err)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     loadCollaborators()
 
     // Subscribe to real-time collaborator updates
-    const unsubscribe = DatabaseService.subscribeToProjectCollaborators(projectId, setCollaborators)
+    const unsubscribe = CollaborationService.subscribeToProjectCollaborators(
+      projectId,
+      (next) => setCollaborators(next as unknown as Collaborator[])
+    )
 
     return unsubscribe
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
 
   const handleInvite = async (email: string, role: string) => {
@@ -89,24 +95,23 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
     }
 
     try {
-      logger.debug('🔄 ProjectCollaborators: Calling DatabaseService.addProjectCollaborator...')
-      const success = await DatabaseService.addProjectCollaborator(
-        projectId, 
-        email, 
-        role, 
-        currentUser.id,
-        projectName,
-        currentUser.email?.split('@')[0] || 'Project Owner',
-        currentUser.email
-      )
-      logger.debug('📊 ProjectCollaborators: addProjectCollaborator returned:', success)
-      
-      if (success) {
-        logger.debug('✅ ProjectCollaborators: Invitation successful, reloading collaborators...')
+      const csrfToken = getCsrfToken()
+      const authHeaders = getAuthHeadersSync()
+      const response = await fetch('/api/invitations/create', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          ...authHeaders,
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+        },
+        body: JSON.stringify({ projectId, email, role }),
+      })
+
+      if (response.ok) {
         await loadCollaborators()
         return true
       }
-      logger.error('❌ ProjectCollaborators: Invitation failed')
+      logger.error('❌ ProjectCollaborators: Invitation failed', response.status)
       return false
     } catch (inviteError) {
       logger.error('💥 ProjectCollaborators: Error inviting collaborator:', inviteError)
@@ -117,8 +122,13 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
   const handleRoleChange = async (collaboratorId: string, userId: string, newRole: string) => {
     setUpdating(collaboratorId)
     try {
-      const success = await DatabaseService.updateCollaboratorRole(projectId, userId, newRole)
-      if (success) {
+      const result = await CollaborationService.updateCollaboratorRole(
+        projectId,
+        userId,
+        newRole as any,
+        { userId: currentUser.id }
+      )
+      if (result.success) {
         await loadCollaborators()
       }
     } catch (roleError) {
@@ -140,8 +150,12 @@ const ProjectCollaborators: React.FC<ProjectCollaboratorsProps> = ({
 
     setUpdating(collaborator.id)
     try {
-      const success = await DatabaseService.removeProjectCollaborator(projectId, collaborator.user_id)
-      if (success) {
+      const result = await CollaborationService.removeProjectCollaborator(
+        projectId,
+        collaborator.user_id,
+        { userId: currentUser.id }
+      )
+      if (result.success) {
         await loadCollaborators()
       }
     } catch (removeError) {
