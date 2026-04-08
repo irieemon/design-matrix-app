@@ -81,6 +81,8 @@ export default defineConfig(({ mode }) => {
                 STRIPE_WEBHOOK_SECRET: env.STRIPE_WEBHOOK_SECRET, // Stripe webhook signature verification
                 VITE_STRIPE_PRICE_ID_TEAM: env.VITE_STRIPE_PRICE_ID_TEAM, // Team plan price ID
                 VITE_STRIPE_PRICE_ID_ENTERPRISE: env.VITE_STRIPE_PRICE_ID_ENTERPRISE, // Enterprise plan price ID
+                RESEND_API_KEY: env.RESEND_API_KEY, // Resend transactional email (Phase 05.2)
+                RESEND_FROM_EMAIL: env.RESEND_FROM_EMAIL, // Resend sender identity (Phase 05.2)
                 NODE_ENV: env.NODE_ENV || 'development'
               }
 
