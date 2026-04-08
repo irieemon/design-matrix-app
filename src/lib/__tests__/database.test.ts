@@ -445,43 +445,7 @@ describe('DatabaseService', () => {
     })
   })
 
-  describe('Collaboration Features', () => {
-    describe('addProjectCollaborator', () => {
-      it('should add a collaborator to a project', async () => {
-        // Mock successful insertion
-        mockSupabaseClient.insert.mockResolvedValue({ error: null })
-
-        const result = await DatabaseService.addProjectCollaborator(
-          'test-project-id',
-          'collaborator@example.com',
-          'viewer',
-          'test-user-id',
-          'Test Project',
-          'Test User',
-          'test@example.com'
-        )
-
-        expect(result).toBe(true)
-        expect(mockSupabaseClient.from).toHaveBeenCalledWith('project_collaborators')
-        expect(mockSupabaseClient.insert).toHaveBeenCalledWith([
-          expect.objectContaining({
-            project_id: 'test-project-id',
-            role: 'viewer',
-            invited_by: 'test-user-id',
-            status: 'pending'
-          })
-        ])
-      })
-    })
-
-    describe('getProjectCollaborators', () => {
-      it('should fetch project collaborators', async () => {
-        const result = await DatabaseService.getProjectCollaborators('test-project-id')
-
-        expect(result).toEqual(expect.any(Array))
-        expect(mockSupabaseClient.from).toHaveBeenCalledWith('project_collaborators')
-        expect(mockSupabaseClient.eq).toHaveBeenCalledWith('project_id', 'test-project-id')
-      })
-    })
-  })
+  // Collaboration Features tests removed in Phase 05.1-03.
+  // The underlying DatabaseService collaboration wrappers were deleted in
+  // 05.1-02; coverage now lives in CollaborationService.test.ts.
 })
