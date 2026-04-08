@@ -119,6 +119,25 @@ export default async function handler(
             role: collabRow.role || invRow.role,
           })
         }
+        // Self-heal: invitation row exists and the user is authenticated, but
+        // there's no matching project_collaborators row. Can happen if the
+        // collaborator row was manually deleted while the invitation stayed
+        // marked accepted. Insert the missing membership under service role.
+        const { error: insertErr } = await admin
+          .from('project_collaborators')
+          .insert({
+            project_id: invRow.project_id,
+            user_id: userData.user.id,
+            role: invRow.role,
+            joined_at: new Date().toISOString(),
+          })
+        if (!insertErr) {
+          return res.status(200).json({
+            projectId: invRow.project_id,
+            role: invRow.role,
+          })
+        }
+        console.error('[invitations/accept] self-heal insert failed:', insertErr.message)
       }
     }
     return res.status(400).json({ error: 'invalid_or_expired' })
