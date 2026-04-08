@@ -20,7 +20,9 @@ import {
   withCSRF,
   withAuth,
   compose,
+  withQuotaCheck,
   type AuthenticatedRequest,
+  type QuotaRequest,
 } from './_lib/middleware/index.js';
 import {
   handleGenerateIdeas,
@@ -40,7 +42,9 @@ async function aiRouter(req: AuthenticatedRequest, res: VercelResponse) {
 
   switch (action) {
     case 'generate-ideas':
-      return handleGenerateIdeas(req, res);
+      return withQuotaCheck('ai_ideas', (qreq: QuotaRequest, qres) =>
+        handleGenerateIdeas(qreq as unknown as AuthenticatedRequest, qres)
+      )(req, res);
     case 'generate-insights':
       return handleGenerateInsights(req, res);
     case 'generate-roadmap':

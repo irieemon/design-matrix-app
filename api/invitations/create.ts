@@ -15,6 +15,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import validator from 'validator'
 import { generateToken, hashToken } from '../_lib/invitationTokens'
 import { sendInviteEmail } from '../_lib/sendInviteEmail'
+import { withQuotaCheck, type QuotaRequest } from '../_lib/middleware/withQuotaCheck'
 
 interface InviterUser {
   id: string
@@ -39,41 +40,6 @@ function getSupabaseAdmin(): SupabaseClient {
   })
 }
 
-function getAccessToken(req: VercelRequest): string | null {
-  // httpOnly cookie first (new auth path)
-  const cookieHeader = req.headers.cookie
-  if (cookieHeader && typeof cookieHeader === 'string') {
-    const match = cookieHeader.match(/(?:^|;\s*)sb-access-token=([^;]+)/)
-    if (match) return decodeURIComponent(match[1])
-  }
-  // Authorization header fallback (legacy)
-  const authHeader = req.headers.authorization || req.headers.Authorization
-  if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
-    return authHeader.substring(7)
-  }
-  return null
-}
-
-async function getAuthenticatedUser(
-  req: VercelRequest,
-  supabase: SupabaseClient
-): Promise<InviterUser | null> {
-  const token = getAccessToken(req)
-  if (!token) return null
-  const { data, error } = await supabase.auth.getUser(token)
-  if (error || !data.user) return null
-  const meta = (data.user.user_metadata || {}) as Record<string, unknown>
-  const name =
-    (typeof meta.full_name === 'string' && meta.full_name) ||
-    (typeof meta.name === 'string' && meta.name) ||
-    null
-  return {
-    id: data.user.id,
-    email: data.user.email || '',
-    name,
-  }
-}
-
 function appBaseUrl(req: VercelRequest): string {
   // Explicit env var wins (set in Vercel for prod/preview).
   const fromEnv = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL
@@ -91,14 +57,10 @@ function appBaseUrl(req: VercelRequest): string {
   return 'https://www.prioritas.ai'
 }
 
-export default async function handler(
-  req: VercelRequest,
+async function createInviteHandler(
+  req: QuotaRequest,
   res: VercelResponse
 ): Promise<VercelResponse> {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: { message: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' } })
-  }
-
   let supabase: SupabaseClient
   try {
     supabase = getSupabaseAdmin()
@@ -108,14 +70,23 @@ export default async function handler(
     })
   }
 
-  // Auth check
-  const inviter = await getAuthenticatedUser(req, supabase)
-  if (!inviter) {
+  // Middleware already authenticated the user; resolve inviter profile for email send.
+  const userId = req.quota.userId
+  const { data: userData, error: userErr } = await supabase.auth.admin.getUserById(userId)
+  if (userErr || !userData.user) {
     return res
       .status(401)
       .json({ error: { message: 'Authentication required', code: 'UNAUTHORIZED' } })
   }
-  const userId = inviter.id
+  const meta = (userData.user.user_metadata || {}) as Record<string, unknown>
+  const inviter: InviterUser = {
+    id: userId,
+    email: userData.user.email || '',
+    name:
+      (typeof meta.full_name === 'string' && meta.full_name) ||
+      (typeof meta.name === 'string' && meta.name) ||
+      null,
+  }
 
   // Body validation
   const body = (req.body || {}) as CreateBody
@@ -239,4 +210,16 @@ export default async function handler(
     expiresAt,
     projectName: project.name,
   })
+}
+
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+): Promise<VercelResponse> {
+  if (req.method !== 'POST') {
+    return res
+      .status(405)
+      .json({ error: { message: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' } })
+  }
+  return withQuotaCheck('users', createInviteHandler)(req, res) as Promise<VercelResponse>
 }
