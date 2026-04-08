@@ -102,7 +102,10 @@ export default async function webhook(req: VercelRequest, res: VercelResponse) {
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session)
         break
 
+      case 'customer.subscription.created':
       case 'customer.subscription.updated':
+        // Both events use the same upsert path — subscription row is
+        // keyed by user_id, not by event semantics.
         await handleSubscriptionUpdated(event.data.object as Stripe.Subscription)
         break
 
@@ -238,9 +241,22 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     const subscriptionId = invoice.subscription as string
     if (!subscriptionId) return
 
-    const subscription = await stripeService.getSubscription(subscriptionId)
-    const userId = subscription.metadata?.user_id
+    let subscription: Stripe.Subscription
+    try {
+      subscription = await stripeService.getSubscription(subscriptionId)
+    } catch (err: any) {
+      // `stripe trigger` fires fixture events whose sub ids don't exist in
+      // the real Stripe API — just no-op instead of 500ing the webhook.
+      if (err?.code === 'resource_missing' || err?.statusCode === 404) {
+        console.warn(
+          `[webhook] payment_succeeded: subscription ${subscriptionId} not found in Stripe (likely a fixture event); skipping renewal update`
+        )
+        return
+      }
+      throw err
+    }
 
+    const userId = subscription.metadata?.user_id
     if (!userId) {
       console.error('Missing user_id in subscription metadata:', subscriptionId)
       return
