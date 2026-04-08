@@ -14,6 +14,7 @@ import { useSubscription } from '../../hooks/useSubscription'
 import { TIER_NAMES, TIER_PRICING } from '../../lib/config/tierLimits'
 import type { LimitCheckResult } from '../../types/subscription'
 import { logger } from '../../utils/logger'
+import { getAuthHeadersSync } from '../../lib/authHeaders'
 
 const CHECKOUT_ENDPOINT = '/api/stripe?action=checkout'
 const PORTAL_ENDPOINT = '/api/stripe?action=portal'
@@ -71,7 +72,7 @@ export const SubscriptionPanel: React.FC = () => {
       const priceId = import.meta.env.VITE_STRIPE_PRICE_ID_TEAM
       const res = await fetch(CHECKOUT_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeadersSync(),
         credentials: 'include',
         body: JSON.stringify({ priceId, tier: 'team' }),
       })
@@ -94,7 +95,7 @@ export const SubscriptionPanel: React.FC = () => {
     try {
       const res = await fetch(PORTAL_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeadersSync(),
         credentials: 'include',
       })
       if (!res.ok) {

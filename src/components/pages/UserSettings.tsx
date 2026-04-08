@@ -103,7 +103,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
         return
       }
 
-      const response = await fetch('/api/stripe/create-portal-session', {
+      const response = await fetch('/api/stripe?action=portal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
