@@ -41,7 +41,13 @@ export interface UseCsrfTokenReturn {
  */
 export function useCsrfToken(): UseCsrfTokenReturn {
   const logger = useLogger('useCsrfToken')
-  const [csrfToken, setCsrfToken] = useState<string | null>(null)
+  // FIX: lazy initial read so the first render already reflects the cookie
+  // state. Without this, hasToken starts false and stays false until the
+  // watcher polling loop or a separate effect runs — and because the effect
+  // below depends on `logger` (a fresh object per render from useLogger),
+  // the watcher is continually torn down and re-armed, racing with the
+  // cookie read and leaving hasToken stuck at false.
+  const [csrfToken, setCsrfToken] = useState<string | null>(() => getCsrfToken())
 
   /**
    * Read CSRF token from cookie

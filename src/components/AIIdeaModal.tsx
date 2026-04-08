@@ -17,7 +17,7 @@ import { logger } from '../utils/logger'
 import { Button } from './ui/Button'
 import { Input } from './ui/Input'
 import { FileService } from '../lib/fileService'
-import { supabase } from '../lib/supabase'
+import { supabase, createAuthenticatedClientFromLocalStorage } from '../lib/supabase'
 import { useCsrfToken } from '../hooks/useCsrfToken'
 import { resizeImageToFile } from '../lib/imageResize'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
@@ -404,7 +404,10 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
       }
       setUploadProgress(70)
 
-      const { data: signedData, error: signedError } = await supabase.storage
+      // Use lock-free client — singleton supabase.storage.createSignedUrl
+      // deadlocks on the GoTrueClient navigator.locks lock.
+      const storageClient = createAuthenticatedClientFromLocalStorage() || supabase
+      const { data: signedData, error: signedError } = await storageClient.storage
         .from('project-files')
         .createSignedUrl(uploadResult.file.storage_path, 3600)
       if (signedError || !signedData?.signedUrl) {
