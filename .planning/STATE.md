@@ -58,6 +58,7 @@ Progress: [██████████] 100%
 ### Roadmap Evolution
 
 - Phase 05.1 inserted after Phase 5: Legacy CollaborationService migration to Phase-5 schema (URGENT) — uncovered during Plan 05-02 UAT when InviteCollaboratorModal succeeded but the collaborator-list UI 400'd on missing `status` column. Blocks Plan 05-02 UAT signoff and likely Plan 05-03 voting UI.
+- Phase 05.2 inserted after Phase 5: Transactional email via Resend for invitations (URGENT) — uncovered during Plan 05-02 UAT when invite POST succeeded but no email was delivered. New `/api/invitations/create` only returns `inviteUrl`; legacy EmailJS path was on the now-removed `onInvite` callback. Picked Resend over Vercel/Supabase (Vercel has no first-party email; Supabase email is auth-only). Blocks Plan 05-02 UAT signoff.
 
 ### Decisions
 

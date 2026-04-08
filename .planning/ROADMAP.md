@@ -105,6 +105,16 @@ Plans:
 - [ ] 05-03-scoped-realtime-and-voting-PLAN.md — ScopedRealtimeManager refactor + useDotVoting + DotVoteControls
 - [ ] 05-04-project-realtime-matrix-PLAN.md — ProjectRealtimeManager + live cursors + drag lock + matrix sync + e2e test
 
+### Phase 05.2: Transactional email via Resend for invitations (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 5
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.2 to break down)
+
 ### Phase 05.1: Legacy CollaborationService migration to Phase-5 schema (INSERTED)
 
 **Goal:** [Urgent work - to be planned]
