@@ -116,9 +116,11 @@ const InvitationAcceptPage: React.FC = () => {
       }
       const data = (await res.json()) as { projectId: string; role: string }
       setStatus('accepted')
-      // Step 5: navigate into the project (clear the token from URL first)
+      // Step 5: navigate into the project using the app's URL convention
+      // (query param `?project=<id>`, root path, no hash). useBrowserHistory
+      // in MainApp picks this up and restores the project automatically.
       setTimeout(() => {
-        window.location.replace(`/projects/${data.projectId}`)
+        window.location.replace(`/?project=${data.projectId}`)
       }, 600)
     } catch {
       setStatus('accept-failed')
