@@ -65,14 +65,17 @@ function App() {
 
   // Invitation accept landing page (Phase 5)
   // Pattern: /invite#token=... OR any page with #token=...
+  // Wrapped in AppProviders so AuthScreen's useUser() hook resolves.
   if (
     window.location.pathname === '/invite' ||
     currentHash.startsWith('#token=')
   ) {
     return (
-      <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading invitation…</div>}>
-        <InvitationAcceptPage />
-      </Suspense>
+      <AppProviders>
+        <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading invitation…</div>}>
+          <InvitationAcceptPage />
+        </Suspense>
+      </AppProviders>
     )
   }
 
