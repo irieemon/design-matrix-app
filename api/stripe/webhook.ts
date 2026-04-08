@@ -6,9 +6,18 @@ import { subscriptionService } from '../../src/lib/services/subscriptionService'
 import type { SubscriptionTier, SubscriptionUpdateParams } from '../../src/types/subscription'
 
 /**
- * Read raw body from Vercel request
+ * Read raw body from Vercel request.
+ *
+ * In production (Vercel), bodyParser is disabled and the request stream
+ * is intact — read it via async iteration.
+ * In dev (vite.config.ts middleware), the stream has already been drained
+ * to parse `req.body`, but the middleware stashes the original bytes on
+ * `req.rawBody` — prefer that when present.
  */
 async function getRawBody(req: any): Promise<Buffer> {
+  if (req.rawBody && Buffer.isBuffer(req.rawBody)) {
+    return req.rawBody
+  }
   const chunks: Buffer[] = []
   for await (const chunk of req) {
     chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)

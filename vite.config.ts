@@ -33,18 +33,24 @@ export default defineConfig(({ mode }) => {
             console.log(`[API] Request: ${req.method} ${req.url}`)
             console.log(`[API] Loading module: ${apiFile}`)
 
-            // Parse request body for POST/PUT requests
+            // Parse request body for POST/PUT requests.
+            // Stripe webhook needs the RAW buffer for signature verification,
+            // so we also stash it on req.rawBody for handlers that opt in.
             let body = undefined
+            let rawBodyBuffer: Buffer | undefined
             if (['POST', 'PUT', 'PATCH'].includes(req.method || '')) {
               const chunks = []
               req.on('data', (chunk) => chunks.push(chunk))
               await new Promise((resolve) => req.on('end', resolve))
-              const rawBody = Buffer.concat(chunks).toString()
+              rawBodyBuffer = Buffer.concat(chunks)
+              const rawBody = rawBodyBuffer.toString()
               try {
                 body = rawBody ? JSON.parse(rawBody) : undefined
               } catch (e) {
                 body = rawBody
               }
+              // Expose the raw bytes for handlers that need signature verification
+              ;(req as any).rawBody = rawBodyBuffer
             }
 
             // Use Vite's SSR loader to properly handle TypeScript with all its dependencies
