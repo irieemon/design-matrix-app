@@ -33,24 +33,18 @@ export default defineConfig(({ mode }) => {
             console.log(`[API] Request: ${req.method} ${req.url}`)
             console.log(`[API] Loading module: ${apiFile}`)
 
-            // Parse request body for POST/PUT requests.
-            // Stripe webhook needs the RAW buffer for signature verification,
-            // so we also stash it on req.rawBody for handlers that opt in.
+            // Parse request body for POST/PUT requests
             let body = undefined
-            let rawBodyBuffer: Buffer | undefined
             if (['POST', 'PUT', 'PATCH'].includes(req.method || '')) {
               const chunks = []
               req.on('data', (chunk) => chunks.push(chunk))
               await new Promise((resolve) => req.on('end', resolve))
-              rawBodyBuffer = Buffer.concat(chunks)
-              const rawBody = rawBodyBuffer.toString()
+              const rawBody = Buffer.concat(chunks).toString()
               try {
                 body = rawBody ? JSON.parse(rawBody) : undefined
               } catch (e) {
                 body = rawBody
               }
-              // Expose the raw bytes for handlers that need signature verification
-              ;(req as any).rawBody = rawBodyBuffer
             }
 
             // Use Vite's SSR loader to properly handle TypeScript with all its dependencies
@@ -87,8 +81,11 @@ export default defineConfig(({ mode }) => {
                 STRIPE_WEBHOOK_SECRET: env.STRIPE_WEBHOOK_SECRET, // Stripe webhook signature verification
                 VITE_STRIPE_PRICE_ID_TEAM: env.VITE_STRIPE_PRICE_ID_TEAM, // Team plan price ID
                 VITE_STRIPE_PRICE_ID_ENTERPRISE: env.VITE_STRIPE_PRICE_ID_ENTERPRISE, // Enterprise plan price ID
-                RESEND_API_KEY: env.RESEND_API_KEY, // Resend transactional email (Phase 05.2)
-                RESEND_FROM_EMAIL: env.RESEND_FROM_EMAIL, // Resend sender identity (Phase 05.2)
+                // Mobile brainstorm rollout flags (Phase 07)
+                VITE_MOBILE_BRAINSTORM_PHASE2: env.VITE_MOBILE_BRAINSTORM_PHASE2,
+                VITE_MOBILE_BRAINSTORM_PHASE3: env.VITE_MOBILE_BRAINSTORM_PHASE3,
+                VITE_MOBILE_BRAINSTORM_PHASE4: env.VITE_MOBILE_BRAINSTORM_PHASE4,
+                VITE_MOBILE_BRAINSTORM_PHASE5: env.VITE_MOBILE_BRAINSTORM_PHASE5,
                 NODE_ENV: env.NODE_ENV || 'development'
               }
 
