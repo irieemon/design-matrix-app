@@ -96,12 +96,15 @@ export default async function handler(
   // look the invitation up by hash, and if the caller is already a
   // collaborator on that project, treat the request as success.
   if (error || !data) {
+    if (error) {
+      console.error('[invitations/accept] rpc error:', error)
+    }
     const admin = getAdminClient()
     if (admin) {
       const tokenHash = hashToken(token)
       const { data: invRow } = await admin
         .from('project_invitations')
-        .select('project_id, role, accepted_at')
+        .select('project_id, role')
         .eq('token_hash', tokenHash)
         .maybeSingle()
 
