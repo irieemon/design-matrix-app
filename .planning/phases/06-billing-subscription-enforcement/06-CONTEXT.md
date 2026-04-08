@@ -11,8 +11,8 @@ Wire the existing Stripe scaffolding into a working subscription lifecycle (chec
 **In scope:**
 - Stripe checkout session endpoint that creates real subscriptions
 - Stripe webhook handling for `customer.subscription.{created,updated,deleted}` and `invoice.payment_failed`
-- `user_subscriptions` table (or equivalent) linking Supabase users → Stripe customer/subscription → tier + status
-- `user_usage` table (or equivalent) tracking monthly quota-relevant counts (AI idea generations) that resets per billing period
+- `subscriptions` table (or equivalent) linking Supabase users → Stripe customer/subscription → tier + status
+- `usage_tracking` table (or equivalent) tracking monthly quota-relevant counts (AI idea generations) that resets per billing period
 - API middleware that runs on quota-consuming endpoints (create project, AI generate) and 402/429s when over limit
 - Settings-panel subscription dashboard (current tier, usage/limits, upgrade CTA)
 - Inline upgrade prompts at the point of limit (create-project modal, AI button)
@@ -34,7 +34,7 @@ Wire the existing Stripe scaffolding into a working subscription lifecycle (chec
 ### Current State (Scouted)
 - **S-01:** `src/lib/config/tierLimits.ts` already defines `TIER_LIMITS` for `free | team | enterprise` with projects, `ai_ideas_per_month`, users, exports, and features. **Reuse this as-is** — do not redefine limits elsewhere.
 - **S-02:** `api/stripe/webhook.ts` exists as a scaffold. Will be extended, not replaced.
-- **S-03:** `ai_token_usage` table tracks raw OpenAI token consumption for cost/admin observability. **Different purpose from quota tracking** — quota counts "AI idea generations" as user-observable events, not tokens. A separate `user_usage` table is added alongside (decision D-04).
+- **S-03:** `ai_token_usage` table tracks raw OpenAI token consumption for cost/admin observability. **Different purpose from quota tracking** — quota counts "AI idea generations" as user-observable events, not tokens. A separate `usage_tracking` table is added alongside (decision D-04).
 - **S-04:** Env vars already set: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `VITE_STRIPE_PRICE_ID_TEAM`, `VITE_STRIPE_PRICE_ID_ENTERPRISE`. Also remember to add these to vite.config.ts dev API allowlist (same pattern as RESEND_API_KEY fix in 05.2).
 
 ### Stripe Integration
@@ -43,19 +43,19 @@ Wire the existing Stripe scaffolding into a working subscription lifecycle (chec
 - **D-03:** Webhook events handled: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`. Signature verification via `STRIPE_WEBHOOK_SECRET` is mandatory.
 
 ### Usage Tracking
-- **D-04:** **New `user_usage` table.** Schema: `(user_id uuid PK, period_start date, ai_generations_used int, updated_at timestamptz)`. Single row per user. `period_start` is the start of the current billing period (or calendar month for free tier). Increments atomically via a Postgres function `increment_ai_usage(user_id)` called from the AI generation endpoint.
+- **D-04:** **New `usage_tracking` table.** Schema: `(user_id uuid PK, period_start date, ai_generations_used int, updated_at timestamptz)`. Single row per user. `period_start` is the start of the current billing period (or calendar month for free tier). Increments atomically via a Postgres function `increment_ai_usage(user_id)` called from the AI generation endpoint.
 - **D-05:** Period reset happens **on-read**: when checking quota, if `period_start` is older than current period, reset counter to 0 and update `period_start` atomically. No cron job needed.
-- **D-06:** Project count is **computed on-the-fly** from `projects.owner_id`, not stored in `user_usage`. Projects are durable, AI generations are ephemeral counters — different shape, different strategy.
+- **D-06:** Project count is **computed on-the-fly** from `projects.owner_id`, not stored in `usage_tracking`. Projects are durable, AI generations are ephemeral counters — different shape, different strategy.
 - **D-07:** Collaborator-count limit is enforced via the same pattern: count `project_collaborators` rows where the project's owner is the user, compare to tier limit.
 
 ### Subscription State
-- **D-08:** **New `user_subscriptions` table.** Schema: `(user_id uuid PK, stripe_customer_id text, stripe_subscription_id text, tier text check in (free,team,enterprise), status text check in (active,canceled,past_due,incomplete,trialing), current_period_end timestamptz, updated_at timestamptz)`. Every Supabase auth user gets a row on first sign-in defaulting to `{tier: 'free', status: 'active'}` (via trigger or on-demand insert — planner decides).
+- **D-08:** **New `subscriptions` table.** Schema: `(user_id uuid PK, stripe_customer_id text, stripe_subscription_id text, tier text check in (free,team,enterprise), status text check in (active,canceled,past_due,incomplete,trialing), current_period_end timestamptz, updated_at timestamptz)`. Every Supabase auth user gets a row on first sign-in defaulting to `{tier: 'free', status: 'active'}` (via trigger or on-demand insert — planner decides).
 - **D-09:** **Fail closed on errors (BILL-03):** any error resolving a user's subscription/usage must deny the action, never grant unlimited access. The middleware explicitly returns a 500 with a generic error rather than falling through to "allowed".
 
 ### Enforcement Model
 - **D-10:** **API middleware per endpoint.** A helper `withQuotaCheck(resource, handler)` wraps mutation endpoints that consume quota. The middleware:
   1. Resolves caller's user_id from bearer token
-  2. Looks up their tier from `user_subscriptions`
+  2. Looks up their tier from `subscriptions`
   3. Looks up current usage for the resource
   4. Returns 402 `{ error: 'quota_exceeded', resource, limit, used }` if over, otherwise calls the handler
   5. On handler success, increments the usage counter
@@ -70,7 +70,7 @@ Wire the existing Stripe scaffolding into a working subscription lifecycle (chec
 - **D-15:** "Manage Subscription" links to Stripe's billing portal (hosted) — zero custom UI for payment method / invoice management. Created via `stripe.billingPortal.sessions.create`.
 
 ### Payment Failure Notification
-- **D-16:** When `invoice.payment_failed` webhook fires, set `user_subscriptions.status = 'past_due'` AND insert a row into a new `user_notifications` table (`(id, user_id, type, message, read_at, created_at)`). A small toast/banner in the app header polls or subscribes to this table and shows the unread notification.
+- **D-16:** When `invoice.payment_failed` webhook fires, set `subscriptions.status = 'past_due'` AND insert a row into a new `user_notifications` table (`(id, user_id, type, message, read_at, created_at)`). A small toast/banner in the app header polls or subscribes to this table and shows the unread notification.
 - **D-17:** Past-due users retain access for a 7-day grace period (matching Stripe's default `past_due` duration) — they still pass quota checks but see the warning banner. After 7 days Stripe auto-cancels and the `customer.subscription.deleted` webhook downgrades them to `free`.
 
 ### Claude's Discretion
@@ -123,7 +123,7 @@ Wire the existing Stripe scaffolding into a working subscription lifecycle (chec
 - **Prior art in this codebase:** Phase 05.2's best-effort email pattern is directly applicable to billing writes — do the mutation first, then update derived state (usage counter), never the other way around. Quota check BEFORE the mutation, counter increment AFTER.
 - **Stripe customer portal** is a free feature that removes a huge amount of work — payment method edits, invoice history, plan cancellation, all handled outside our codebase. Use it.
 - **Webhook endpoint must use raw body** for signature verification. The existing `webhook.ts` scaffold should already handle this — verify and preserve.
-- **user_subscriptions row creation**: easier to create on-demand (first quota check that finds no row inserts a default `free/active` row) than to trigger on auth.users insert. Fewer moving parts.
+- **subscriptions row creation**: easier to create on-demand (first quota check that finds no row inserts a default `free/active` row) than to trigger on auth.users insert. Fewer moving parts.
 - **Period boundary for free tier**: simplest is calendar month (1st to last day). When user upgrades, `period_start` rolls to the Stripe billing anchor date. Planner can pick the cleanest implementation.
 
 </specifics>
