@@ -7,7 +7,6 @@ import { supabase } from '../../lib/supabase'
 import type { Subscription } from '../../types/subscription'
 import { useNavigation } from '../../contexts/NavigationContext'
 import FAQAdmin from '../admin/FAQAdmin'
-import SubscriptionPanel from '../settings/SubscriptionPanel'
 
 interface UserSettingsProps {
   currentUser: User | null
@@ -103,7 +102,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
         return
       }
 
-      const response = await fetch('/api/stripe?action=portal', {
+      const response = await fetch('/api/stripe/create-portal-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -171,14 +170,14 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
                     setIsEditing(false)
                     setSaveStatus('idle')
                   }}
-                  className="px-3 py-1.5 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                  className="min-h-11 min-w-11 px-3 py-1.5 text-base text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveProfile}
                   disabled={saveStatus === 'saving' || displayName.trim() === ''}
-                  className="flex items-center space-x-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="min-h-11 min-w-11 flex items-center space-x-2 px-3 py-1.5 text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saveStatus === 'saving' ? (
                     <>
@@ -220,7 +219,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full text-base min-h-11 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter your display name"
                 />
               ) : (
@@ -240,7 +239,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={!isEditing}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-500"
+                className="w-full text-base min-h-11 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-500"
                 placeholder="email@example.com (optional)"
               />
             </div>
@@ -307,11 +306,8 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
         )}
       </div>
 
-      {/* Subscription & Usage (BILL-04) — live data via useSubscription */}
-      <SubscriptionPanel />
-
       {/* Subscription Section */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm" style={{ display: 'none' }}>
+      <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-slate-900">Subscription & Billing</h3>
           <button

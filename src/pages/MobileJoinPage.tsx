@@ -52,7 +52,11 @@ export default function MobileJoinPage() {
 
         setSession(validationResult.session)
 
-        // Generate device fingerprint
+        // Generate device fingerprint.
+        // NOTE (07-02, research finding #3): Safari ITP may purge the fingerprint
+        // cache. We re-generate on every mount and never rely on persisted values,
+        // so ITP purges degrade gracefully. text-base min-h-11 are applied to
+        // downstream MobileIdeaSubmitForm inputs to prevent iOS zoom-on-focus.
         const fingerprint = await generateDeviceFingerprint()
 
         // Join session as participant
@@ -167,7 +171,7 @@ export default function MobileJoinPage() {
               <p className="text-neutral-600 mb-6">{errorMessage}</p>
               <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-2 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition-colors"
+                className="min-h-11 min-w-11 px-6 py-2 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition-colors text-base"
               >
                 Try Again
               </button>

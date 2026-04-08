@@ -182,7 +182,7 @@ export default function MobileIdeaSubmitForm({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Enter your idea (10-200 characters)"
-              className={`w-full px-4 py-3 border rounded-lg resize-none focus:outline-none focus:ring-2 transition-colors ${
+              className={`w-full px-4 py-3 text-base min-h-11 border rounded-lg resize-none focus:outline-none focus:ring-2 transition-colors ${
                 isContentTooShort
                   ? 'border-amber-300 focus:ring-amber-500'
                   : isContentTooLong
@@ -222,7 +222,7 @@ export default function MobileIdeaSubmitForm({
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               placeholder="Add more context or details (up to 500 characters)"
-              className={`w-full px-4 py-3 border rounded-lg resize-none focus:outline-none focus:ring-2 transition-colors ${
+              className={`w-full px-4 py-3 text-base min-h-11 border rounded-lg resize-none focus:outline-none focus:ring-2 transition-colors ${
                 isDetailsTooLong
                   ? 'border-red-300 focus:ring-red-500'
                   : 'border-neutral-300 focus:ring-blue-500'
@@ -250,7 +250,7 @@ export default function MobileIdeaSubmitForm({
                 type="button"
                 onClick={() => setPriority('low')}
                 disabled={isSubmitting || session.status !== 'active'}
-                className={`px-4 py-3 rounded-lg border-2 font-medium transition-all ${
+                className={`min-h-11 min-w-11 px-4 py-3 rounded-lg border-2 font-medium text-base transition-all ${
                   priority === 'low'
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
                     : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
@@ -262,7 +262,7 @@ export default function MobileIdeaSubmitForm({
                 type="button"
                 onClick={() => setPriority('moderate')}
                 disabled={isSubmitting || session.status !== 'active'}
-                className={`px-4 py-3 rounded-lg border-2 font-medium transition-all ${
+                className={`min-h-11 min-w-11 px-4 py-3 rounded-lg border-2 font-medium text-base transition-all ${
                   priority === 'moderate'
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
                     : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
@@ -274,7 +274,7 @@ export default function MobileIdeaSubmitForm({
                 type="button"
                 onClick={() => setPriority('high')}
                 disabled={isSubmitting || session.status !== 'active'}
-                className={`px-4 py-3 rounded-lg border-2 font-medium transition-all ${
+                className={`min-h-11 min-w-11 px-4 py-3 rounded-lg border-2 font-medium text-base transition-all ${
                   priority === 'high'
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
                     : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
@@ -309,7 +309,7 @@ export default function MobileIdeaSubmitForm({
           <button
             type="submit"
             disabled={!canSubmit}
-            className={`w-full px-6 py-4 rounded-lg font-semibold text-white transition-all ${
+            className={`w-full min-h-11 px-6 py-4 rounded-lg font-semibold text-base text-white transition-all ${
               canSubmit
                 ? 'bg-blue-600 hover:bg-blue-700 active:scale-[0.98]'
                 : 'bg-neutral-300 cursor-not-allowed'
