@@ -13,13 +13,20 @@
 
 create extension if not exists pgcrypto;
 
+-- Drop any partially-created Phase 5 tables from prior failed migration runs.
+-- These tables have never carried real data (Phase 5 has not shipped), so a
+-- clean recreate is safe and necessary to escape stale column types.
+drop table if exists public.idea_votes cascade;
+drop table if exists public.project_invitations cascade;
+drop table if exists public.project_collaborators cascade;
+
 -- ----------------------------------------------------------------------------
 -- idea_votes — dot voting (5-dot budget per user per session)
 -- ----------------------------------------------------------------------------
 create table if not exists public.idea_votes (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid not null references auth.users(id) on delete cascade,
-  idea_id    uuid not null references public.ideas(id) on delete cascade,
+  idea_id    text not null references public.ideas(id) on delete cascade,
   session_id uuid not null references public.brainstorm_sessions(id) on delete cascade,
   created_at timestamptz not null default now(),
   unique (user_id, idea_id, session_id)
@@ -77,7 +84,7 @@ for select using (
   or exists (
     select 1 from public.projects p
     where p.id = project_collaborators.project_id
-      and p.user_id = auth.uid()
+      and p.owner_id = auth.uid()
   )
 );
 
@@ -87,7 +94,7 @@ for insert with check (
   exists (
     select 1 from public.projects p
     where p.id = project_collaborators.project_id
-      and p.user_id = auth.uid()
+      and p.owner_id = auth.uid()
   )
 );
 
@@ -97,13 +104,13 @@ for update using (
   exists (
     select 1 from public.projects p
     where p.id = project_collaborators.project_id
-      and p.user_id = auth.uid()
+      and p.owner_id = auth.uid()
   )
 ) with check (
   exists (
     select 1 from public.projects p
     where p.id = project_collaborators.project_id
-      and p.user_id = auth.uid()
+      and p.owner_id = auth.uid()
   )
 );
 
@@ -113,7 +120,7 @@ for delete using (
   exists (
     select 1 from public.projects p
     where p.id = project_collaborators.project_id
-      and p.user_id = auth.uid()
+      and p.owner_id = auth.uid()
   )
 );
 
@@ -144,7 +151,7 @@ for select using (
   or exists (
     select 1 from public.projects p
     where p.id = project_invitations.project_id
-      and p.user_id = auth.uid()
+      and p.owner_id = auth.uid()
   )
 );
 
@@ -154,7 +161,7 @@ for insert with check (
   exists (
     select 1 from public.projects p
     where p.id = project_invitations.project_id
-      and p.user_id = auth.uid()
+      and p.owner_id = auth.uid()
   )
 );
 
@@ -165,7 +172,7 @@ for delete using (
   exists (
     select 1 from public.projects p
     where p.id = project_invitations.project_id
-      and p.user_id = auth.uid()
+      and p.owner_id = auth.uid()
   )
 );
 
