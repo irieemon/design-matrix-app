@@ -192,13 +192,13 @@ Plans:
   2. All pages are responsive and usable on mobile viewports with touch-optimized interactions
   3. Brainstorm join via QR code works reliably on mobile browsers (iOS Safari + Android Chrome)
   4. User can upload a video and receive frame-by-frame analysis via client-side extraction and vision API
-**Plans**: TBD
+**Plans**: 3 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 07-01: TBD
-- [ ] 07-02: TBD
-- [ ] 07-03: TBD
+- [ ] 07-01-PLAN.md — Enable mobile brainstorm flags, add useBreakpoint hook, produce MOBILE-AUDIT.md
+- [ ] 07-02-PLAN.md — Critical-path mobile responsive/touch polish + BottomSheet + DesktopOnlyHint + Playwright mobile suite
+- [ ] 07-03-PLAN.md — Video analysis end-to-end: client frame extraction, analyzeVideo handler, AIStarterModal upload UI
 
 ## Progress
 
