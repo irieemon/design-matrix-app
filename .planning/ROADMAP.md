@@ -125,6 +125,14 @@ Plans:
 Plans:
 - [ ] TBD (run /gsd-plan-phase 05.1 to break down)
 
+### Phase 05.3: Phase 5 hardening — bugs surfaced by 05.1 caller migration (INSERTED, RETRO)
+
+**Goal:** Document and verify the Phase 5 latent bugs that became reachable once Phase 05.1 deleted the legacy compatibility shim. All fixes were applied during 05.1's human-verify checkpoint and committed inline; this phase exists to record the boundary, the bugs found, and the verification, so the Phase 5 narrative is complete.
+**Requirements**: COLLAB-01..COLLAB-07 (Phase 5) — same set, this phase makes them actually pass end-to-end
+**Depends on:** Phase 5, Phase 05.1
+**Plans:** retroactive — see SUMMARY.md
+**Status:** Complete (verified end-to-end via owner→invite→accept→collaborator-sees-project)
+
 ### Phase 6: Billing & Subscription Enforcement
 **Goal**: Subscription limits are enforced at the API layer with clear user-facing usage visibility and upgrade prompts
 **Depends on**: Phase 1, Phase 2, Phase 3, Phase 4
