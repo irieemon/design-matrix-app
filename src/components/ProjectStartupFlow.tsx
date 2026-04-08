@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase'
 import { aiService } from '../lib/aiService'
 import { logger } from '../utils/logger'
 import { Button } from './ui/Button'
+import { useSubscription } from '../hooks/useSubscription'
+import UpgradePrompt from './billing/UpgradePrompt'
 
 interface ProjectStartupFlowProps {
   currentUser: User
@@ -66,6 +68,10 @@ const PROJECT_TYPES = [
 ]
 
 const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, onClose, onProjectCreated }) => {
+  const { limits } = useSubscription()
+  const projectsLimit = limits?.projects
+  const isProjectQuotaExceeded = !!projectsLimit && !projectsLimit.isUnlimited && !projectsLimit.canUse
+  const [quotaError, setQuotaError] = useState<{ limit: number; used: number } | null>(null)
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     name: '',
@@ -142,6 +148,12 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
       const project = await DatabaseService.createProject(projectData)
 
       if (!project) {
+        // Surface 402 quota_exceeded (if DatabaseService propagates it) as an
+        // inline upgrade prompt rather than a generic error toast.
+        if (projectsLimit && !projectsLimit.isUnlimited && !projectsLimit.canUse) {
+          setQuotaError({ limit: projectsLimit.limit, used: projectsLimit.current })
+          return
+        }
         throw new Error('Failed to create project in database. Please ensure you are logged in and have the necessary permissions.')
       }
 
@@ -513,6 +525,16 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
             </div>
           )}
 
+          {(isProjectQuotaExceeded || quotaError) && projectsLimit && (
+            <div className="mb-4">
+              <UpgradePrompt
+                resource="projects"
+                limit={quotaError?.limit ?? projectsLimit.limit}
+                used={quotaError?.used ?? projectsLimit.current}
+              />
+            </div>
+          )}
+
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}
@@ -540,7 +562,7 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
           ) : (
             <Button
               onClick={handleCreateProject}
-              disabled={isLoading}
+              disabled={isLoading || isProjectQuotaExceeded}
               variant="primary"
               state={isLoading ? 'loading' : 'idle'}
               icon={<CheckCircle className="w-4 h-4" />}

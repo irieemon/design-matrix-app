@@ -5,6 +5,7 @@ import { subscriptionService } from '../../lib/services/subscriptionService'
 // supabase import removed - not used in this file
 import { SUPABASE_STORAGE_KEY } from '../../lib/config'
 import type { SubscriptionTier } from '../../types/subscription'
+import { logger } from '../../utils/logger'
 
 interface PricingTier {
   name: string
@@ -173,7 +174,7 @@ export default function PricingPage() {
       })
 
       logger.debug('🔵 Making API request to create checkout session...')
-      const response = await fetch('/api/stripe/create-checkout-session', {
+      const response = await fetch('/api/stripe?action=checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -206,14 +207,14 @@ export default function PricingPage() {
   }
 
   return (
-    <div className="min-h-screen py-12 px-4" style={{ backgroundColor: 'var(--canvas-primary)' }}>
+    <div className="min-h-screen py-12 px-4 bg-canvas-primary">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold mb-4" style={{ color: 'var(--graphite-900)' }}>
+          <h1 className="text-4xl font-bold mb-4 text-graphite-900">
             Simple, Transparent Pricing
           </h1>
-          <p className="text-xl" style={{ color: 'var(--graphite-600)' }}>
+          <p className="text-xl text-graphite-600">
             Choose the plan that fits your needs. Upgrade or downgrade anytime.
           </p>
         </div>
@@ -221,12 +222,7 @@ export default function PricingPage() {
         {/* Error Message */}
         {error && (
           <div
-            className="max-w-2xl mx-auto mb-8 p-4 rounded-lg border"
-            style={{
-              backgroundColor: 'var(--ruby-50)',
-              borderColor: 'var(--ruby-300)',
-              color: 'var(--ruby-900)',
-            }}
+            className="max-w-2xl mx-auto mb-8 p-4 rounded-lg border bg-error-50 border-error-300 text-error-900"
           >
             {error}
           </div>
@@ -242,19 +238,15 @@ export default function PricingPage() {
               <div
                 key={tier.tier}
                 className={`rounded-xl border-2 p-8 transition-all ${
-                  isHighlighted ? 'transform scale-105' : ''
+                  isHighlighted ? 'transform scale-105 bg-info-50 border-info-500' : 'bg-canvas-secondary border-graphite-200'
                 }`}
-                style={{
-                  backgroundColor: isHighlighted ? 'var(--sapphire-50)' : 'var(--canvas-secondary)',
-                  borderColor: isHighlighted ? 'var(--sapphire-500)' : 'var(--graphite-200)',
-                }}
               >
                 {/* Tier Name */}
                 <div className="mb-4">
-                  <h3 className="text-2xl font-bold" style={{ color: 'var(--graphite-900)' }}>
+                  <h3 className="text-2xl font-bold text-graphite-900">
                     {tier.name}
                   </h3>
-                  <p className="text-sm mt-2" style={{ color: 'var(--graphite-600)' }}>
+                  <p className="text-sm mt-2 text-graphite-600">
                     {tier.description}
                   </p>
                 </div>
@@ -262,10 +254,10 @@ export default function PricingPage() {
                 {/* Price */}
                 <div className="mb-6">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold" style={{ color: 'var(--graphite-900)' }}>
+                    <span className="text-4xl font-bold text-graphite-900">
                       {tier.price}
                     </span>
-                    <span className="text-lg" style={{ color: 'var(--graphite-600)' }}>
+                    <span className="text-lg text-graphite-600">
                       {tier.period}
                     </span>
                   </div>
@@ -275,15 +267,13 @@ export default function PricingPage() {
                 <button
                   onClick={() => handleUpgrade(tier)}
                   disabled={isCurrentPlan || loading === tier.tier}
-                  className="w-full py-3 px-6 rounded-lg font-semibold transition-all mb-8 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{
-                    backgroundColor: isHighlighted
-                      ? 'var(--sapphire-600)'
+                  className={`w-full py-3 px-6 rounded-lg font-semibold transition-all mb-8 disabled:opacity-50 disabled:cursor-not-allowed text-white ${
+                    isHighlighted
+                      ? 'bg-info-600'
                       : isCurrentPlan
-                      ? 'var(--graphite-300)'
-                      : 'var(--graphite-800)',
-                    color: 'white',
-                  }}
+                      ? 'bg-graphite-300'
+                      : 'bg-graphite-800'
+                  }`}
                 >
                   {loading === tier.tier
                     ? 'Processing...'
@@ -297,20 +287,18 @@ export default function PricingPage() {
                   {tier.features.map((feature, idx) => (
                     <div key={idx} className="flex items-start gap-3">
                       <Check
-                        className="w-5 h-5 flex-shrink-0 mt-0.5"
-                        style={{ color: 'var(--emerald-600)' }}
+                        className="w-5 h-5 flex-shrink-0 mt-0.5 text-success-600"
                       />
-                      <span style={{ color: 'var(--graphite-700)' }}>{feature}</span>
+                      <span className="text-graphite-700">{feature}</span>
                     </div>
                   ))}
 
                   {tier.notIncluded?.map((feature, idx) => (
                     <div key={`not-${idx}`} className="flex items-start gap-3 opacity-60">
                       <X
-                        className="w-5 h-5 flex-shrink-0 mt-0.5"
-                        style={{ color: 'var(--graphite-400)' }}
+                        className="w-5 h-5 flex-shrink-0 mt-0.5 text-graphite-400"
                       />
-                      <span style={{ color: 'var(--graphite-600)' }}>{feature}</span>
+                      <span className="text-graphite-600">{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -321,47 +309,47 @@ export default function PricingPage() {
 
         {/* FAQ Section */}
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-8" style={{ color: 'var(--graphite-900)' }}>
+          <h2 className="text-3xl font-bold text-center mb-8 text-graphite-900">
             Frequently Asked Questions
           </h2>
 
           <div className="space-y-6">
-            <div className="p-6 rounded-lg" style={{ backgroundColor: 'var(--canvas-secondary)' }}>
-              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--graphite-900)' }}>
+            <div className="p-6 rounded-lg bg-canvas-secondary">
+              <h3 className="text-lg font-semibold mb-2 text-graphite-900">
                 Can I upgrade or downgrade anytime?
               </h3>
-              <p style={{ color: 'var(--graphite-600)' }}>
+              <p className="text-graphite-600">
                 Yes! You can upgrade or downgrade your plan at any time. Upgrades take effect immediately,
                 and downgrades take effect at the end of your current billing period.
               </p>
             </div>
 
-            <div className="p-6 rounded-lg" style={{ backgroundColor: 'var(--canvas-secondary)' }}>
-              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--graphite-900)' }}>
+            <div className="p-6 rounded-lg bg-canvas-secondary">
+              <h3 className="text-lg font-semibold mb-2 text-graphite-900">
                 What happens if I hit my project or AI limit?
               </h3>
-              <p style={{ color: 'var(--graphite-600)' }}>
+              <p className="text-graphite-600">
                 You'll see a friendly prompt to upgrade your plan. Your existing projects and ideas remain
                 fully accessible - you just won't be able to create new ones until you upgrade or your
                 monthly limit resets.
               </p>
             </div>
 
-            <div className="p-6 rounded-lg" style={{ backgroundColor: 'var(--canvas-secondary)' }}>
-              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--graphite-900)' }}>
+            <div className="p-6 rounded-lg bg-canvas-secondary">
+              <h3 className="text-lg font-semibold mb-2 text-graphite-900">
                 Is my payment information secure?
               </h3>
-              <p style={{ color: 'var(--graphite-600)' }}>
+              <p className="text-graphite-600">
                 Absolutely. All payments are processed through Stripe, a PCI-compliant payment processor
                 trusted by millions of businesses. We never store your credit card information on our servers.
               </p>
             </div>
 
-            <div className="p-6 rounded-lg" style={{ backgroundColor: 'var(--canvas-secondary)' }}>
-              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--graphite-900)' }}>
+            <div className="p-6 rounded-lg bg-canvas-secondary">
+              <h3 className="text-lg font-semibold mb-2 text-graphite-900">
                 Can I cancel my subscription?
               </h3>
-              <p style={{ color: 'var(--graphite-600)' }}>
+              <p className="text-graphite-600">
                 Yes, you can cancel anytime from your account settings. You'll retain access to paid features
                 until the end of your current billing period, then automatically downgrade to the free plan.
               </p>
@@ -371,16 +359,12 @@ export default function PricingPage() {
 
         {/* Bottom CTA */}
         <div className="text-center mt-16">
-          <p className="text-lg mb-4" style={{ color: 'var(--graphite-600)' }}>
+          <p className="text-lg mb-4 text-graphite-600">
             Need help choosing the right plan?
           </p>
           <a
             href="mailto:support@prioritas.app"
-            className="inline-block py-3 px-8 rounded-lg font-semibold transition-all"
-            style={{
-              backgroundColor: 'var(--graphite-800)',
-              color: 'white',
-            }}
+            className="inline-block py-3 px-8 rounded-lg font-semibold transition-all bg-graphite-800 text-white"
           >
             Contact Support
           </a>

@@ -23,6 +23,8 @@ import type {
   AIStarterStep,
   ProjectAnalysis
 } from './aiStarter/config/aiStarterTypes'
+import { useSubscription } from '../hooks/useSubscription'
+import UpgradePrompt from './billing/UpgradePrompt'
 
 interface AIStarterModalProps {
   currentUser: User
@@ -32,6 +34,9 @@ interface AIStarterModalProps {
 
 
 const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, onProjectCreated }) => {
+  const { limits } = useSubscription()
+  const aiLimit = limits?.ai_ideas
+  const isAiQuotaExceeded = !!aiLimit && !aiLimit.isUnlimited && !aiLimit.canUse
   const [step, setStep] = useState<AIStarterStep>('initial')
   const [projectName, setProjectName] = useState('')
   const [projectDescription, setProjectDescription] = useState('')
@@ -50,6 +55,11 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
 
     setIsLoading(true)
     setError(null)
+
+    if (isAiQuotaExceeded) {
+      setError(null)
+      return
+    }
 
     try {
       logger.debug('🎯 Starting AI project analysis...')
@@ -240,18 +250,21 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
 
         {/* Content */}
         <div className="p-6">
+          {isAiQuotaExceeded && aiLimit && (
+            <div className="mb-4">
+              <UpgradePrompt
+                resource="ai_ideas"
+                limit={aiLimit.limit}
+                used={aiLimit.current}
+              />
+            </div>
+          )}
           {error && (
-            <div className="mb-6 rounded-lg p-4 border" style={{
-              backgroundColor: 'var(--garnet-50)',
-              borderColor: 'var(--garnet-200)'
-            }}>
-              <p className="text-sm" style={{ color: 'var(--garnet-700)' }}>{error}</p>
+            <div className="mb-6 rounded-lg p-4 border bg-garnet-50 border-garnet-200">
+              <p className="text-sm text-garnet-700">{error}</p>
               <button
                 onClick={() => setError(null)}
-                className="text-sm underline mt-1"
-                style={{ color: 'var(--garnet-600)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--garnet-800)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--garnet-600)'}
+                className="text-sm underline mt-1 text-garnet-600 hover:text-garnet-800"
               >
                 Dismiss
               </button>

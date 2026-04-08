@@ -10,6 +10,7 @@ import { Analytics } from '@vercel/analytics/react'
 import AdminPortal from '../admin/AdminPortal'
 import AppLayout from '../layout/AppLayout'
 import PageRouter from '../layout/PageRouter'
+import PaymentFailedBanner from '../billing/PaymentFailedBanner'
 // import PerformanceOverlay from '../dev/PerformanceOverlay'
 // import TestDataInjector from '../test/TestDataInjector'
 import { User } from '../../types'
@@ -151,15 +152,10 @@ export default function MainApp({
   // Show loading screen while determining initial route
   if (currentPage === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--canvas-primary)' }}>
+      <div className="min-h-screen flex items-center justify-center bg-canvas-primary">
         <div className="text-center">
-          <div className="w-8 h-8 rounded-full animate-spin mx-auto mb-4" style={{
-            borderWidth: '2px',
-            borderStyle: 'solid',
-            borderColor: 'var(--sapphire-500)',
-            borderTopColor: 'transparent'
-          }}></div>
-          <p style={{ color: 'var(--graphite-600)' }}>Loading your workspace...</p>
+          <div className="w-8 h-8 rounded-full animate-spin mx-auto mb-4 border-2 border-solid border-sapphire-500 border-t-transparent"></div>
+          <p className="text-graphite-600">Loading your workspace...</p>
         </div>
       </div>
     )
@@ -167,6 +163,7 @@ export default function MainApp({
 
   return (
     <>
+      <PaymentFailedBanner />
       <AppLayout
         currentUser={effectiveUser}
         currentProject={currentProject}

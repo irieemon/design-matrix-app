@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase'
 import type { Subscription } from '../../types/subscription'
 import { useNavigation } from '../../contexts/NavigationContext'
 import FAQAdmin from '../admin/FAQAdmin'
+import SubscriptionPanel from '../settings/SubscriptionPanel'
 
 interface UserSettingsProps {
   currentUser: User | null
@@ -306,8 +307,11 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
         )}
       </div>
 
+      {/* Subscription & Usage (BILL-04) — live data via useSubscription */}
+      <SubscriptionPanel />
+
       {/* Subscription Section */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm">
+      <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm" style={{ display: 'none' }}>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-slate-900">Subscription & Billing</h3>
           <button
