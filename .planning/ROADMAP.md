@@ -105,33 +105,38 @@ Plans:
 - [ ] 05-03-scoped-realtime-and-voting-PLAN.md — ScopedRealtimeManager refactor + useDotVoting + DotVoteControls
 - [ ] 05-04-project-realtime-matrix-PLAN.md — ProjectRealtimeManager + live cursors + drag lock + matrix sync + e2e test
 
-### Phase 05.2: Transactional email via Resend for invitations (INSERTED)
-
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
-**Depends on:** Phase 5
-**Plans:** 2/2 plans complete
-
-Plans:
-- [x] TBD (run /gsd-plan-phase 05.2 to break down) (completed 2026-04-08)
-
 ### Phase 05.1: Legacy CollaborationService migration to Phase-5 schema (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
+**Goal:** Delete all `legacy*` methods from `CollaborationService` and the corresponding `DatabaseService` compatibility wrappers, migrate every UI/hook/test caller in the repo to the Phase-5 entry points (new `CollaborationService` methods, repositories, or `/api/invitations/*`), and rewrite the `CollaborationService` test suite against the Phase-5 schema. Exit state: zero `legacy*` references in `src/` (excluding unrelated `ProjectService` namespace), typecheck clean, tests green.
+**Requirements**: Structural cleanup — no new REQ IDs. See `.planning/phases/05.1-.../05.1-CONTEXT.md` D-01..D-10 for locked decisions.
 **Depends on:** Phase 5
-**Plans:** 0 plans
+**Plans:** 3/3 plans complete
+**Status:** ✅ Complete (2026-04-08) — verified via human-verify checkpoint after Phase 05.3 hardening closed the E2E flow
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 05.1 to break down)
+- [x] 05.1-01 Migrate UI + hook callers to Phase-5 entry points
+- [x] 05.1-02 Delete legacy* methods + prune database.ts wrappers
+- [x] 05.1-03 Rewrite test suite + DoD verification + E2E checkpoint
+
+### Phase 05.2: Transactional email via Resend for invitations (INSERTED)
+
+**Goal:** Wire Resend into `POST /api/invitations/create` so collaborator invitations arrive in the invitee's inbox instead of requiring the owner to copy `inviteUrl` from the API response body. Dev and prod use the same send path; email failures are logged but never block invitation creation (best-effort after the DB insert succeeds).
+**Requirements**: Satisfies the user-facing delivery portion of Phase 5's COLLAB-04 (project invitations). See `05.2-CONTEXT.md` D-01..D-15 for locked decisions.
+**Depends on:** Phase 5, Phase 05.1, Phase 05.3
+**Plans:** 2/2 plans complete
+**Status:** ✅ Complete (2026-04-08) — verified: real email delivered from `noreply@prioritas.ai`, click-through lands invitee directly in the shared project
+
+Plans:
+- [x] 05.2-01 Install resend SDK, document env vars, pure `inviteEmailTemplate` module
+- [x] 05.2-02 `sendInviteEmail` best-effort wrapper + wire into `create.ts` handler with mocked tests
 
 ### Phase 05.3: Phase 5 hardening — bugs surfaced by 05.1 caller migration (INSERTED, RETRO)
 
-**Goal:** Document and verify the Phase 5 latent bugs that became reachable once Phase 05.1 deleted the legacy compatibility shim. All fixes were applied during 05.1's human-verify checkpoint and committed inline; this phase exists to record the boundary, the bugs found, and the verification, so the Phase 5 narrative is complete.
+**Goal:** Record and verify 12 latent Phase 5 bugs that became reachable once Phase 05.1 deleted the legacy compatibility shim. Fixes were applied during 05.1's human-verify checkpoint and are committed in the same series; this retroactive phase exists so the Phase 5 narrative is honest — the schema and plumbing landed in Phase 5, but the user-visible "owner invites → collaborator sees project" flow only actually worked after this hardening pass.
 **Requirements**: COLLAB-01..COLLAB-07 (Phase 5) — same set, this phase makes them actually pass end-to-end
 **Depends on:** Phase 5, Phase 05.1
-**Plans:** retroactive — see SUMMARY.md
-**Status:** Complete (verified end-to-end via owner→invite→accept→collaborator-sees-project)
+**Plans:** retroactive — see `05.3-SUMMARY.md` for the 12-bug inventory, root causes, and fixes
+**Status:** ✅ Complete (2026-04-08) — verified end-to-end via owner → invite → accept → collaborator-sees-project
 
 ### Phase 6: Billing & Subscription Enforcement
 **Goal**: Subscription limits are enforced at the API layer with clear user-facing usage visibility and upgrade prompts
