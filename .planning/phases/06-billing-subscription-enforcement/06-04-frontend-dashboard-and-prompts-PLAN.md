@@ -115,6 +115,7 @@ Env vars (frontend): `VITE_STRIPE_PRICE_ID_TEAM`, `VITE_STRIPE_PRICE_ID_ENTERPRI
     - src/lib/services/subscriptionService.ts (getSubscriptionWithLimits signature)
     - src/lib/config/tierLimits.ts (TIER_NAMES, TIER_PRICING, SubscriptionTier)
     - src/hooks/useAuth.ts (see auth user shape)
+    - src/lib/supabase.ts (confirm export `createAuthenticatedClientFromLocalStorage`)
     - Any existing Settings page to match styling
   </read_first>
   <behavior>
@@ -175,9 +176,25 @@ export function useSubscription() {
 - Used/Limit readout
 - "Upgrade to {next tier}" CTA linking to `/pricing`
 
-**PaymentFailedBanner.tsx:** Uses the browser supabase client to SELECT from `user_notifications` where `user_id = currentUser.id AND type='payment_failed' AND read_at IS NULL ORDER BY created_at DESC LIMIT 1`. Polls every 60 seconds (setInterval + cleanup). When a notification exists, renders a sticky banner at the top of the app with the message and a dismiss (X) button. Dismiss does `UPDATE user_notifications SET read_at = now() WHERE id = ?` (RLS policy from Plan 01 allows this).
+**PaymentFailedBanner.tsx:** Import `createAuthenticatedClientFromLocalStorage` from `src/lib/supabase` — **NOT** the default supabase singleton. Per MEMORY.md the standard `getSession()` hangs in browser context after storage ops; this client avoids the deadlock by reading the session directly from localStorage. Use it to SELECT from `user_notifications` where `user_id = currentUser.id AND type='payment_failed' AND read_at IS NULL ORDER BY created_at DESC LIMIT 1`. Polls every 60 seconds (setInterval + cleanup). When a notification exists, renders a sticky banner at the top of the app with the message and a dismiss (X) button. Dismiss does `UPDATE user_notifications SET read_at = now() WHERE id = ?` using the same authenticated client (RLS policy from Plan 01 allows this).
 
-Write vitest tests covering all 8 behaviors. Mock subscriptionService, fetch, supabase client.
+Example:
+```ts
+import { createAuthenticatedClientFromLocalStorage } from '../../lib/supabase'
+// ...
+const client = createAuthenticatedClientFromLocalStorage()
+if (!client) return
+const { data } = await client
+  .from('user_notifications')
+  .select('*')
+  .eq('type', 'payment_failed')
+  .is('read_at', null)
+  .order('created_at', { ascending: false })
+  .limit(1)
+  .maybeSingle()
+```
+
+Write vitest tests covering all 8 behaviors. Mock subscriptionService, fetch, and `createAuthenticatedClientFromLocalStorage`.
   </action>
   <verify>
     <automated>npx vitest run src/hooks/__tests__/useSubscription.test.tsx src/components/settings/__tests__ src/components/billing/__tests__ 2>/dev/null || npx vitest run src/hooks/__tests__/useSubscription.test.tsx</automated>
@@ -187,8 +204,9 @@ Write vitest tests covering all 8 behaviors. Mock subscriptionService, fetch, su
     - Four new component/hook files exist
     - SubscriptionPanel contains grep-visible strings: 'Subscription', 'Upgrade', 'Manage Subscription'
     - PaymentFailedBanner queries user_notifications
+    - PaymentFailedBanner imports createAuthenticatedClientFromLocalStorage (grep check)
   </acceptance_criteria>
-  <done>Hook + three components built and tested.</done>
+  <done>Hook + three components built and tested; payment banner uses the lock-free auth client.</done>
 </task>
 
 <task type="auto" tdd="false">

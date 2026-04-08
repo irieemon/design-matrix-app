@@ -16,31 +16,32 @@ must_haves:
   truths:
     - "withQuotaCheck returns 402 quota_exceeded when over limit"
     - "withQuotaCheck returns 500 deny (fail-closed) on any resolution error"
+    - "subscriptionService methods used by middleware accept an optional SupabaseClient parameter so callers can inject a service-role client (no more silent anon-key fail-open)"
     - "subscriptionService.checkLimit no longer leaks bare throws to callers that could misinterpret"
     - "subscriptionService.incrementAiUsage exists and calls increment_ai_usage RPC"
     - "getTeamMemberCount counts project_collaborators rows (no more stub of 1)"
   artifacts:
     - path: "api/_lib/middleware/withQuotaCheck.ts"
-      provides: "withQuotaCheck(resource, handler) factory returning wrapped handler"
+      provides: "withQuotaCheck(resource, handler) factory returning wrapped handler; constructs admin client and injects it into subscriptionService calls"
       exports: ["withQuotaCheck", "QuotaRequest", "QuotaResource"]
     - path: "src/lib/services/subscriptionService.ts"
-      provides: "incrementAiUsage + fixed getTeamMemberCount + deterministic checkLimit error shape"
+      provides: "incrementAiUsage + fixed getTeamMemberCount + deterministic checkLimit error shape + optional client injection"
   key_links:
     - from: "withQuotaCheck"
       to: "subscriptionService.checkLimit"
-      via: "try/catch → 500 on throw"
-      pattern: "subscriptionService\\.checkLimit"
+      via: "passes admin client as third arg; try/catch → 500 on throw"
+      pattern: "subscriptionService\\.checkLimit\\([^)]*adminClient"
     - from: "subscriptionService.incrementAiUsage"
       to: "increment_ai_usage RPC"
-      via: "supabase.rpc('increment_ai_usage', { p_user_id })"
+      via: "client.rpc('increment_ai_usage', { p_user_id })"
       pattern: "increment_ai_usage"
 ---
 
 <objective>
-Build the quota enforcement middleware (`withQuotaCheck`) and fix the three service-level gaps: BILL-03 fail-closed semantics, stub `getTeamMemberCount`, and the missing `incrementAiUsage` method. This plan delivers the enforcement primitive Wave 3 will wire into endpoints.
+Build the quota enforcement middleware (`withQuotaCheck`) and fix the service-level gaps: BILL-03 fail-closed semantics, stub `getTeamMemberCount`, missing `incrementAiUsage` method, and the silent anon-key fail-open caused by the module-level `supabase` singleton when called from server-side middleware. This plan delivers the enforcement primitive Wave 3 will wire into endpoints.
 
-Purpose: Research §1 identifies these as the backend gaps blocking BILL-01/03. This plan closes them without touching any HTTP handlers (that's Wave 3).
-Output: Tested middleware + tested service patches. No endpoint wiring yet.
+Purpose: Research §1 and verifier Blocker 4 identify these as the backend gaps blocking BILL-01/03. This plan closes them without touching any HTTP handlers (that's Wave 3).
+Output: Tested middleware + tested service patches with client-injection support. No endpoint wiring yet.
 </objective>
 
 <execution_context>
@@ -59,12 +60,15 @@ Output: Tested middleware + tested service patches. No endpoint wiring yet.
 From `src/lib/services/subscriptionService.ts`:
 ```ts
 class SubscriptionService {
+  // BEFORE this plan — no client param; uses module-level anon supabase singleton on server side:
   getSubscription(userId: string): Promise<Subscription | null>
   checkLimit(userId, resource: 'projects' | 'ai_ideas' | 'users'): Promise<LimitCheckResult>
   // LimitCheckResult = { canUse, current, limit, isUnlimited, percentageUsed }
   // currently: getTeamMemberCount returns 1 (stub); checkLimit throws on error
 }
 ```
+
+**Critical context (verifier Blocker 4):** `subscriptionService` imports `supabase` (the anon-key browser singleton) from `src/lib/supabase`. On server side it uses that singleton — the anon key has no authenticated user, so RLS on `subscriptions`/`usage_tracking` returns empty rows. `getSubscription` then auto-creates a new 'free' sub on every call, and `checkLimit` always returns `canUse=true` until the counter somehow reaches the limit (which it never will because the increment path has the same issue). **The middleware is silently non-functional without client injection.**
 
 From `api/invitations/create.ts` (bearer auth pattern to reuse):
 ```ts
@@ -79,7 +83,7 @@ Tier limits come from `getLimit(tier, resource)` in `src/lib/config/tierLimits.t
 <tasks>
 
 <task type="auto" tdd="true">
-  <name>Task 1: Patch subscriptionService — incrementAiUsage, real getTeamMemberCount, BILL-03 checkLimit contract</name>
+  <name>Task 1: Patch subscriptionService — client injection, incrementAiUsage, real getTeamMemberCount, BILL-03 checkLimit contract</name>
   <files>
     src/lib/services/subscriptionService.ts
     src/lib/services/__tests__/subscriptionService.test.ts
@@ -90,14 +94,23 @@ Tier limits come from `getLimit(tier, resource)` in `src/lib/config/tierLimits.t
   </read_first>
   <behavior>
     - Test 1: incrementAiUsage('u1') calls supabase.rpc('increment_ai_usage', { p_user_id: 'u1' }) and returns the numeric result
-    - Test 2: incrementAiUsage propagates RPC errors as thrown errors (caller decides best-effort)
+    - Test 2: incrementAiUsage propagates RPC errors as thrown SubscriptionCheckError
     - Test 3: getTeamMemberCount returns count from project_collaborators joined via projects.owner_id
     - Test 4: checkLimit('u1', 'users') wraps getTeamMemberCount and includes the real count (not 1)
     - Test 5: checkLimit on DB error throws a SubscriptionCheckError (a named class) not a bare Error — enables middleware to detect-and-deny deterministically
     - Test 6: checkLimit uses get_current_ai_usage RPC for ai_ideas (read-path reset per D-05)
+    - Test 7 (CLIENT INJECTION): When getSubscription(userId, injectedClient) is called with an explicit client, all supabase queries in that call use injectedClient — NOT the module-level singleton. Test by passing a mock client with a spy on .from() and asserting the spy was called, and the module singleton's .from() was NOT called.
+    - Test 8 (CLIENT INJECTION): checkLimit(userId, resource, injectedClient) likewise propagates the injected client to internal helpers (getMonthlyAIUsage, getTeamMemberCount, getProjectCount, getSubscription).
+    - Test 9 (CLIENT INJECTION): incrementAiUsage(userId, injectedClient) uses the injected client for the .rpc() call.
+    - Test 10 (DEFAULT PRESERVED): When no client is passed, behavior is unchanged — uses this.getClient() (browser vs server singleton picker).
   </behavior>
   <action>
-1. Export a named error class at the top of subscriptionService.ts:
+**Step 1 — Import SupabaseClient type** at the top of subscriptionService.ts:
+```ts
+import type { SupabaseClient } from '@supabase/supabase-js';
+```
+
+**Step 2 — Export a named error class** at the top of subscriptionService.ts:
 ```ts
 export class SubscriptionCheckError extends Error {
   constructor(public readonly reason: string, cause?: unknown) {
@@ -108,78 +121,107 @@ export class SubscriptionCheckError extends Error {
 }
 ```
 
-2. Add `incrementAiUsage(userId: string): Promise<number>`:
+**Step 3 — Add optional `client` parameter to every method used by the middleware.** The pattern: when `client` is provided use it, otherwise fall back to `this.getClient()`. This preserves existing browser behavior (no caller passes a client) while enabling server-side injection.
+
+Method signatures to update:
 ```ts
-async incrementAiUsage(userId: string): Promise<number> {
-  const client = this.getClient()
-  if (!client) throw new SubscriptionCheckError('no_client')
-  const { data, error } = await client.rpc('increment_ai_usage', { p_user_id: userId })
-  if (error) throw new SubscriptionCheckError('rpc_failed', error)
-  return (data as number) ?? 0
+async getSubscription(userId: string, client?: SupabaseClient): Promise<Subscription | null>
+async checkLimit(userId: string, resource: 'projects' | 'ai_ideas' | 'users', client?: SupabaseClient): Promise<LimitCheckResult>
+async incrementAiUsage(userId: string, client?: SupabaseClient): Promise<number>
+private async getMonthlyAIUsage(userId: string, client?: SupabaseClient): Promise<number>
+private async getProjectCount(userId: string, client?: SupabaseClient): Promise<number>
+private async getTeamMemberCount(userId: string, client?: SupabaseClient): Promise<number>
+async recordUsage(userId: string, resourceType: string, client?: SupabaseClient): Promise<void>   // if used by middleware
+```
+
+In each method body, replace `const client = this.getClient();` with:
+```ts
+const db = client ?? this.getClient();
+if (!db) throw new SubscriptionCheckError('no_client');
+```
+and use `db` for all supabase queries.
+
+In `checkLimit`, when calling the internal helpers pass `db` through:
+```ts
+const current = await this.getMonthlyAIUsage(userId, db);
+// etc.
+```
+
+Also in `getSubscription`, when the PGRST116 branch triggers `createSubscription`, pass `db` through (add `client?: SupabaseClient` to createSubscription as well and use `db`).
+
+**Step 4 — Add `incrementAiUsage`:**
+```ts
+async incrementAiUsage(userId: string, client?: SupabaseClient): Promise<number> {
+  const db = client ?? this.getClient();
+  if (!db) throw new SubscriptionCheckError('no_client');
+  const { data, error } = await db.rpc('increment_ai_usage', { p_user_id: userId });
+  if (error) throw new SubscriptionCheckError('rpc_failed', error);
+  return (data as number) ?? 0;
 }
 ```
 
-3. Replace `getMonthlyAIUsage` to call `get_current_ai_usage` RPC (D-05 reset on-read):
+**Step 5 — Replace `getMonthlyAIUsage`** to call `get_current_ai_usage` RPC (D-05 reset on-read):
 ```ts
-private async getMonthlyAIUsage(userId: string): Promise<number> {
-  const client = this.getClient()
-  if (!client) throw new SubscriptionCheckError('no_client')
-  const { data, error } = await client.rpc('get_current_ai_usage', { p_user_id: userId })
-  if (error) throw new SubscriptionCheckError('rpc_failed', error)
-  return (data as number) ?? 0
+private async getMonthlyAIUsage(userId: string, client?: SupabaseClient): Promise<number> {
+  const db = client ?? this.getClient();
+  if (!db) throw new SubscriptionCheckError('no_client');
+  const { data, error } = await db.rpc('get_current_ai_usage', { p_user_id: userId });
+  if (error) throw new SubscriptionCheckError('rpc_failed', error);
+  return (data as number) ?? 0;
 }
 ```
 
-4. Replace `getTeamMemberCount` stub (D-07). It must count distinct collaborators across all projects owned by the user:
+**Step 6 — Replace `getTeamMemberCount` stub (D-07):**
 ```ts
-private async getTeamMemberCount(userId: string): Promise<number> {
-  const client = this.getClient()
-  if (!client) throw new SubscriptionCheckError('no_client')
-  // Two-step: fetch user's project ids, then count collaborators.
-  const { data: projects, error: projErr } = await client
+private async getTeamMemberCount(userId: string, client?: SupabaseClient): Promise<number> {
+  const db = client ?? this.getClient();
+  if (!db) throw new SubscriptionCheckError('no_client');
+  const { data: projects, error: projErr } = await db
     .from('projects')
     .select('id')
-    .eq('owner_id', userId)
-  if (projErr) throw new SubscriptionCheckError('projects_query', projErr)
-  const projectIds = (projects ?? []).map((p: { id: string }) => p.id)
-  if (projectIds.length === 0) return 0
-  const { count, error: collabErr } = await client
+    .eq('owner_id', userId);
+  if (projErr) throw new SubscriptionCheckError('projects_query', projErr);
+  const projectIds = (projects ?? []).map((p: { id: string }) => p.id);
+  if (projectIds.length === 0) return 0;
+  const { count, error: collabErr } = await db
     .from('project_collaborators')
     .select('user_id', { count: 'exact', head: true })
-    .in('project_id', projectIds)
-  if (collabErr) throw new SubscriptionCheckError('collab_query', collabErr)
-  return count ?? 0
+    .in('project_id', projectIds);
+  if (collabErr) throw new SubscriptionCheckError('collab_query', collabErr);
+  return count ?? 0;
 }
 ```
 
-5. In `checkLimit`, wrap every throw path to re-raise as `SubscriptionCheckError`:
+**Step 7 — Wrap `checkLimit` throws as SubscriptionCheckError:**
 ```ts
-async checkLimit(userId, resource) {
+async checkLimit(userId, resource, client?: SupabaseClient) {
   try {
-    // ... existing logic ...
+    // ... existing logic, passing client ?? this.getClient() through as `db` ...
   } catch (err) {
-    if (err instanceof SubscriptionCheckError) throw err
-    throw new SubscriptionCheckError('check_limit_failed', err)
+    if (err instanceof SubscriptionCheckError) throw err;
+    throw new SubscriptionCheckError('check_limit_failed', err);
   }
 }
 ```
 
-Write tests in `src/lib/services/__tests__/subscriptionService.test.ts` using vitest + mocked supabase client (mock `createAuthenticatedClientFromLocalStorage` and the module-level `supabase`). Cover all 6 behaviors above.
+Write tests in `src/lib/services/__tests__/subscriptionService.test.ts` using vitest. Create a mock SupabaseClient with spied `.from()`, `.rpc()`, etc., and pass it explicitly. Also mock the module-level `supabase` singleton import and assert it is NOT called when a client is injected. Cover all 10 behaviors above.
   </action>
   <verify>
-    <automated>npx vitest run src/lib/services/__tests__/subscriptionService.test.ts</automated>
+    <automated>npx vitest run src/lib/services/__tests__/subscriptionService.test.ts && grep -q "client?: SupabaseClient" src/lib/services/subscriptionService.ts && grep -q "SubscriptionCheckError" src/lib/services/subscriptionService.ts && grep -q "incrementAiUsage" src/lib/services/subscriptionService.ts</automated>
   </verify>
   <acceptance_criteria>
-    - All 6 tests pass
+    - All 10 tests pass
+    - grep `client?: SupabaseClient` appears in subscriptionService.ts method signatures
     - grep `incrementAiUsage` in subscriptionService.ts returns the new method
     - grep `SubscriptionCheckError` exported from subscriptionService.ts
     - No `return 1 // TODO` remains in getTeamMemberCount
+    - No caller in the existing codebase breaks (client param is optional)
   </acceptance_criteria>
-  <done>Service patched, tests green, BILL-03 contract is a named error class middleware can key on.</done>
+  <done>Service patched with client injection + named error class + real team count + incrementAiUsage; tests green.</done>
 </task>
 
 <task type="auto" tdd="true">
-  <name>Task 2: Build withQuotaCheck middleware with fail-closed + 402 semantics</name>
+  <name>Task 2: Build withQuotaCheck middleware with fail-closed + 402 semantics + admin client injection</name>
   <files>
     api/_lib/middleware/withQuotaCheck.ts
     api/_lib/middleware/index.ts
@@ -188,7 +230,7 @@ Write tests in `src/lib/services/__tests__/subscriptionService.test.ts` using vi
   <read_first>
     - api/_lib/middleware/index.ts (or .js — confirm extension) to see existing compose/withAuth exports
     - api/invitations/create.ts lines 42-75 (bearer auth pattern)
-    - src/lib/services/subscriptionService.ts (after Task 1 patches)
+    - src/lib/services/subscriptionService.ts (after Task 1 patches — confirm client param is in place)
   </read_first>
   <behavior>
     - Test 1: handler wrapped with withQuotaCheck('ai_ideas', h) returns 401 when no bearer token on request
@@ -198,9 +240,11 @@ Write tests in `src/lib/services/__tests__/subscriptionService.test.ts` using vi
     - Test 5: on successful ai_ideas mutation (res.statusCode < 400), calls subscriptionService.incrementAiUsage AFTER handler (D-12)
     - Test 6: does NOT call incrementAiUsage for 'projects' or 'users' resources (those are counted on read, not incremented)
     - Test 7: increment failure is swallowed (logged, not returned) — mirror Resend best-effort pattern from D-12
+    - Test 8 (CLIENT INJECTION): middleware passes an admin SupabaseClient into subscriptionService.getSubscription, checkLimit, and incrementAiUsage calls. Test by spying on subscriptionService methods and asserting the third argument is a truthy client object.
+    - Test 9 (CLIENT INJECTION): the service's singleton .from() is never invoked during a middleware request (assert via mock).
   </behavior>
   <action>
-Create `api/_lib/middleware/withQuotaCheck.ts` with the exact signature below. Use 402 (not 429) per research §3.
+Create `api/_lib/middleware/withQuotaCheck.ts` with the exact signature below. Use 402 (not 429) per research §3. The middleware constructs a service-role Supabase admin client once per request and **passes it into every subscriptionService call** (fixes verifier Blocker 4).
 
 ```ts
 import type { VercelRequest, VercelResponse } from '@vercel/node'
@@ -253,24 +297,26 @@ export function withQuotaCheck(resource: QuotaResource, handler: Handler) {
     }
     let userId: string
     let tier: SubscriptionTier = 'free'
+    let adminClient: SupabaseClient
     try {
-      const supa = getSupabaseAdmin()
-      const { data, error } = await supa.auth.getUser(token)
+      adminClient = getSupabaseAdmin()
+      const { data, error } = await adminClient.auth.getUser(token)
       if (error || !data.user) {
         return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Invalid token' } })
       }
       userId = data.user.id
-      const sub = await subscriptionService.getSubscription(userId)
+      // CRITICAL: inject adminClient — do NOT rely on subscriptionService singleton (anon key would return empty rows under RLS, causing silent fail-open).
+      const sub = await subscriptionService.getSubscription(userId, adminClient)
       tier = sub?.tier ?? 'free'
     } catch (err) {
       console.error('[quota] auth/subscription resolve failed — denying:', err)
       return res.status(500).json({ error: { code: 'QUOTA_CHECK_FAILED', message: 'Unable to verify subscription. Please try again.' } })
     }
 
-    // 2. Quota lookup — FAIL CLOSED (BILL-03)
+    // 2. Quota lookup — FAIL CLOSED (BILL-03), injected adminClient
     let check
     try {
-      check = await subscriptionService.checkLimit(userId, resource === 'ai_ideas' ? 'ai_ideas' : resource)
+      check = await subscriptionService.checkLimit(userId, resource, adminClient)
     } catch (err) {
       console.error('[quota] checkLimit threw — denying:', err)
       return res.status(500).json({ error: { code: 'QUOTA_CHECK_FAILED', message: 'Unable to verify subscription. Please try again.' } })
@@ -302,9 +348,9 @@ export function withQuotaCheck(resource: QuotaResource, handler: Handler) {
 
     const result = await handler(req as QuotaRequest, res)
 
-    // 5. Post-success increment (D-12: only for ai_ideas, after 2xx)
+    // 5. Post-success increment (D-12: only for ai_ideas, after 2xx), using injected admin client
     if (resource === 'ai_ideas' && res.statusCode < 400) {
-      subscriptionService.incrementAiUsage(userId).catch((err) => {
+      subscriptionService.incrementAiUsage(userId, adminClient).catch((err) => {
         console.error('[quota] incrementAiUsage failed (non-blocking):', err)
       })
     }
@@ -320,18 +366,22 @@ export { withQuotaCheck } from './withQuotaCheck'
 export type { QuotaRequest, QuotaResource, QuotaContext } from './withQuotaCheck'
 ```
 
-Write tests mocking subscriptionService and a minimal fake `@supabase/supabase-js` createClient for auth.getUser. Cover all 7 behaviors.
+Write tests mocking `subscriptionService` methods with spies. Assertions:
+- Tests 8 & 9 must verify `subscriptionService.getSubscription`, `checkLimit`, and `incrementAiUsage` were called with an admin client as an extra argument (truthy object), and that the underlying singleton was NOT used.
+- Mock `@supabase/supabase-js` createClient to return a stub with `auth.getUser()` resolving to a fake user.
+Cover all 9 behaviors.
   </action>
   <verify>
     <automated>npx vitest run api/_lib/middleware/__tests__/withQuotaCheck.test.ts</automated>
   </verify>
   <acceptance_criteria>
-    - All 7 middleware tests pass
+    - All 9 middleware tests pass
     - grep `withQuotaCheck` exported from api/_lib/middleware/index (.ts or .js)
     - Middleware returns 402 (not 429) on over-limit
     - Fail-closed: mockRejectedValue on checkLimit → 500 QUOTA_CHECK_FAILED
+    - Middleware passes an admin client into subscriptionService.getSubscription, checkLimit, and incrementAiUsage (verified by spy)
   </acceptance_criteria>
-  <done>Middleware built, all tests green, ready for Wave 3 wiring.</done>
+  <done>Middleware built with admin-client injection, all tests green, ready for Wave 3 wiring.</done>
 </task>
 
 </tasks>
@@ -340,12 +390,13 @@ Write tests mocking subscriptionService and a minimal fake `@supabase/supabase-j
 - Both vitest suites pass
 - `npm run type-check` passes
 - Service patches and middleware file both in place
+- Anon-key fail-open root cause (verifier Blocker 4) resolved via client injection
 </verification>
 
 <success_criteria>
-BILL-03 enforced: any error in the quota pipeline returns 500 deny. Middleware is ready to wrap endpoints. subscriptionService no longer stubs team member count.
+BILL-03 enforced: any error in the quota pipeline returns 500 deny. Middleware is ready to wrap endpoints and uses a service-role client end-to-end. subscriptionService no longer stubs team member count.
 </success_criteria>
 
 <output>
-Create `.planning/phases/06-billing-subscription-enforcement/06-02-SUMMARY.md` listing the SubscriptionCheckError class, new methods, 402 response shape.
+Create `.planning/phases/06-billing-subscription-enforcement/06-02-SUMMARY.md` listing the SubscriptionCheckError class, new methods, client-injection pattern, and 402 response shape.
 </output>

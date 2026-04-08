@@ -6,6 +6,7 @@ wave: 1
 depends_on: []
 files_modified:
   - supabase/migrations/20260408000000_billing_schema.sql
+  - src/lib/config/tierLimits.ts
   - src/lib/services/__tests__/subscriptionService.schema.test.ts
 autonomous: true
 requirements: [BILL-01, BILL-02, BILL-03, BILL-04, BILL-05, BILL-06]
@@ -15,6 +16,7 @@ must_haves:
     - "RLS policies let users read their own subscription/usage/notifications but only service role writes"
     - "Postgres function increment_ai_usage(user_id) atomically increments + resets on new period"
     - "Postgres function get_current_ai_usage(user_id) returns 0 when period_start is stale"
+    - "SubscriptionStatus TypeScript union includes 'trialing' to match DB CHECK constraint"
   artifacts:
     - path: "supabase/migrations/20260408000000_billing_schema.sql"
       provides: "All Phase 6 tables + RLS + indexes + increment_ai_usage + get_current_ai_usage functions"
@@ -61,14 +63,18 @@ Existing `usage_tracking` shape the service expects: `(user_id, resource_type, p
 <tasks>
 
 <task type="auto" tdd="false">
-  <name>Task 1: Create billing schema migration</name>
-  <files>supabase/migrations/20260408000000_billing_schema.sql</files>
+  <name>Task 1: Create billing schema migration + extend SubscriptionStatus union</name>
+  <files>
+    supabase/migrations/20260408000000_billing_schema.sql
+    src/lib/config/tierLimits.ts
+  </files>
   <read_first>
     - src/lib/services/subscriptionService.ts (lines 35-250, to confirm query column names)
+    - src/lib/config/tierLimits.ts (to locate SubscriptionStatus union)
     - supabase/migrations/ (list to confirm no existing billing migration)
   </read_first>
   <action>
-Create a new idempotent migration file with the exact SQL below. The table names `subscriptions` and `usage_tracking` match what `subscriptionService.ts` already queries (per D-04/D-08 reconciled in planning_context). Do NOT rename. `usage_tracking` shape matches existing service code: per-resource row with `(user_id, resource_type, period_start, count)`.
+**Step 1 — Create the migration file** with the exact SQL below. The table names `subscriptions` and `usage_tracking` match what `subscriptionService.ts` already queries (per D-04/D-08 reconciled in planning_context). Do NOT rename. `usage_tracking` shape matches existing service code: per-resource row with `(user_id, resource_type, period_start, count)`.
 
 ```sql
 -- ============================================================================
@@ -215,17 +221,30 @@ GRANT EXECUTE ON FUNCTION public.get_current_ai_usage(uuid) TO authenticated, se
 ```
 
 Do not change table/function names. Do not add columns beyond what's above.
+
+**Step 2 — Extend SubscriptionStatus union** in `src/lib/config/tierLimits.ts` to include `'trialing'` so the TypeScript type matches the DB CHECK constraint:
+
+```ts
+// Before:
+// export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'incomplete';
+
+// After:
+export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'incomplete' | 'trialing';
+```
+
+Do not touch any other exports in that file.
   </action>
   <verify>
-    <automated>grep -q "CREATE TABLE IF NOT EXISTS public.subscriptions" supabase/migrations/20260408000000_billing_schema.sql && grep -q "CREATE TABLE IF NOT EXISTS public.usage_tracking" supabase/migrations/20260408000000_billing_schema.sql && grep -q "CREATE TABLE IF NOT EXISTS public.user_notifications" supabase/migrations/20260408000000_billing_schema.sql && grep -q "CREATE TABLE IF NOT EXISTS public.stripe_webhook_events" supabase/migrations/20260408000000_billing_schema.sql && grep -q "FUNCTION public.increment_ai_usage" supabase/migrations/20260408000000_billing_schema.sql && grep -q "FUNCTION public.get_current_ai_usage" supabase/migrations/20260408000000_billing_schema.sql</automated>
+    <automated>grep -q "CREATE TABLE IF NOT EXISTS public.subscriptions" supabase/migrations/20260408000000_billing_schema.sql && grep -q "CREATE TABLE IF NOT EXISTS public.usage_tracking" supabase/migrations/20260408000000_billing_schema.sql && grep -q "CREATE TABLE IF NOT EXISTS public.user_notifications" supabase/migrations/20260408000000_billing_schema.sql && grep -q "CREATE TABLE IF NOT EXISTS public.stripe_webhook_events" supabase/migrations/20260408000000_billing_schema.sql && grep -q "FUNCTION public.increment_ai_usage" supabase/migrations/20260408000000_billing_schema.sql && grep -q "FUNCTION public.get_current_ai_usage" supabase/migrations/20260408000000_billing_schema.sql && grep -q "'trialing'" src/lib/config/tierLimits.ts</automated>
   </verify>
   <acceptance_criteria>
     - Migration file exists with all 4 CREATE TABLE statements
     - RLS enabled + select_own policies on subscriptions, usage_tracking, user_notifications
     - increment_ai_usage and get_current_ai_usage functions present with SECURITY DEFINER + search_path
     - `npx supabase db push` applies cleanly (dry-run or local DB)
+    - SubscriptionStatus union in tierLimits.ts includes 'trialing'
   </acceptance_criteria>
-  <done>Migration file written; grep confirms all tables and functions present.</done>
+  <done>Migration file written; SubscriptionStatus type extended; grep confirms all tables, functions, and the new status literal are present.</done>
 </task>
 
 <task type="checkpoint:human-verify" gate="blocking">
@@ -249,7 +268,7 @@ Do not change table/function names. Do not add columns beyond what's above.
 </verification>
 
 <success_criteria>
-All 4 tables exist with RLS; increment_ai_usage atomically increments and resets on period roll-over.
+All 4 tables exist with RLS; increment_ai_usage atomically increments and resets on period roll-over; SubscriptionStatus union matches DB CHECK.
 </success_criteria>
 
 <output>
