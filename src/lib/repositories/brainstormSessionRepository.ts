@@ -5,7 +5,7 @@
  * Handles CRUD operations for brainstorm sessions with RLS enforcement
  */
 
-import { supabase } from '../supabase'
+import { supabase, createAuthenticatedClientFromLocalStorage } from '../supabase'
 import type {
   BrainstormSession,
   CreateSessionInput,
@@ -28,7 +28,11 @@ export class BrainstormSessionRepository {
       const durationMs = (input.durationMinutes || 60) * 60 * 1000
       const expiresAt = new Date(Date.now() + durationMs).toISOString()
 
-      const { data, error } = await supabase
+      // FIX: Use lock-free authenticated client to bypass GoTrueClient
+      // navigator.locks deadlock that hangs supabase.from().insert() before fetch.
+      // See memory: feedback_supabase_auth_deadlock.md
+      const client = createAuthenticatedClientFromLocalStorage() || supabase
+      const { data, error } = await client
         .from('brainstorm_sessions')
         .insert([
           {

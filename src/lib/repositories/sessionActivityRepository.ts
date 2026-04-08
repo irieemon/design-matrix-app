@@ -5,7 +5,7 @@
  * Handles audit logging for brainstorm session activities with snapshot support
  */
 
-import { supabase } from '../supabase'
+import { supabase, createAuthenticatedClientFromLocalStorage } from '../supabase'
 import type { SessionActivityLog, ApiResponse } from '../../types/BrainstormSession'
 import { createSuccessResponse, createErrorResponse, handleSupabaseError } from './types'
 
@@ -33,7 +33,9 @@ export class SessionActivityRepository {
     userAgent?: string
   }): Promise<ApiResponse<SessionActivityLog>> {
     try {
-      const { data, error } = await supabase
+      // FIX: Lock-free client to bypass GoTrueClient navigator.locks deadlock
+      const client = createAuthenticatedClientFromLocalStorage() || supabase
+      const { data, error } = await client
         .from('session_activity_log')
         .insert([
           {
