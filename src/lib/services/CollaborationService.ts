@@ -178,11 +178,12 @@ export class CollaborationService extends BaseService {
 
       logger.debug('🔍 CollaborationService: Fetching collaborators for project:', projectId)
 
+      // Phase 5 schema: project_collaborators has (project_id, user_id, role,
+      // invited_by, joined_at). No status column — membership row presence ⇒ active.
       const { data, error } = await supabase
         .from('project_collaborators')
         .select('*')
         .eq('project_id', projectId)
-        .in('status', ['active', 'pending'])
 
       logger.debug('📊 CollaborationService: Raw collaborator query result:', { data, error })
 
@@ -215,7 +216,7 @@ export class CollaborationService extends BaseService {
 
         const result: CollaboratorWithUser = {
           ...collaborator,
-          invited_at: collaborator.invited_at || new Date().toISOString(),
+          invited_at: collaborator.joined_at || new Date().toISOString(),
           user: {
             id: collaborator.user_id,
             email: actualEmail,

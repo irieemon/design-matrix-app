@@ -58,12 +58,21 @@ async function getAuthenticatedUserId(
   return data.user.id
 }
 
-function appBaseUrl(): string {
-  return (
-    process.env.APP_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    'https://www.prioritas.ai'
-  )
+function appBaseUrl(req: VercelRequest): string {
+  // Explicit env var wins (set in Vercel for prod/preview).
+  const fromEnv = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL
+  if (fromEnv) return fromEnv.replace(/\/$/, '')
+
+  // Fall back to the request's own origin so dev runs against localhost.
+  const host = (req.headers['x-forwarded-host'] || req.headers.host) as string | undefined
+  if (host) {
+    const proto =
+      (req.headers['x-forwarded-proto'] as string | undefined) ||
+      (host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https')
+    return `${proto}://${host}`
+  }
+
+  return 'https://www.prioritas.ai'
 }
 
 export default async function handler(
@@ -154,7 +163,7 @@ export default async function handler(
       })
     }
     return res.status(200).json({
-      inviteUrl: `${appBaseUrl()}/invite#token=${rawToken}`,
+      inviteUrl: `${appBaseUrl(req)}/invite#token=${rawToken}`,
       expiresAt,
       projectName: project.name,
     })
@@ -184,7 +193,7 @@ export default async function handler(
   }
 
   return res.status(200).json({
-    inviteUrl: `${appBaseUrl()}/invite#token=${rawToken}`,
+    inviteUrl: `${appBaseUrl(req)}/invite#token=${rawToken}`,
     expiresAt,
     projectName: project.name,
   })

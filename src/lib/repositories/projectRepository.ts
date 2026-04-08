@@ -141,13 +141,64 @@ export class ProjectRepository {
   }
 
   /**
-   * Get all projects accessible to a user (owned + collaborator)
+   * Get all projects accessible to a user (owned + collaborator-shared).
+   *
+   * Phase 05.1 extension: queries both projects.owner_id AND project_collaborators.user_id
+   * so accepted invitees see the projects they were invited to. Relies on the
+   * widened "Users can view projects" SELECT policy from
+   * 20260408_phase5_collab_projects_select.sql.
    */
   static async getUserProjects(userId: string): Promise<Project[]> {
     try {
-      // This would typically involve a join with project_collaborators table
-      // For now, returning owned projects
-      return await ProjectRepository.getUserOwnedProjects(userId)
+      const validUserId = sanitizeUserId(userId)
+      if (!validUserId) {
+        logger.warn(`Invalid user ID format for getUserProjects: ${userId}`)
+        return []
+      }
+
+      const client = getAuthenticatedClient()
+
+      // Owned projects
+      const ownedResult = await client
+        .from('projects')
+        .select('*')
+        .eq('owner_id', validUserId)
+        .order('created_at', { ascending: false })
+
+      if (ownedResult.error) {
+        logger.error('Error fetching owned projects:', ownedResult.error)
+        throw new Error(ownedResult.error.message)
+      }
+
+      // Collaborator-shared projects (RLS now permits this select)
+      const collabResult = await client
+        .from('project_collaborators')
+        .select('projects:project_id (*)')
+        .eq('user_id', validUserId)
+
+      if (collabResult.error) {
+        logger.error('Error fetching collaborator projects:', collabResult.error)
+        throw new Error(collabResult.error.message)
+      }
+
+      const owned = ownedResult.data || []
+      const sharedRaw = (collabResult.data || []) as Array<{ projects: Project | Project[] | null }>
+      const shared: Project[] = sharedRaw
+        .map((row) => (Array.isArray(row.projects) ? row.projects[0] : row.projects))
+        .filter((p): p is Project => !!p)
+
+      // Dedupe (a user could in principle be both owner and collaborator)
+      const byId = new Map<string, Project>()
+      for (const p of [...owned, ...shared]) byId.set(p.id, p)
+
+      const merged = Array.from(byId.values()).sort((a, b) => {
+        const at = new Date(a.created_at || 0).getTime()
+        const bt = new Date(b.created_at || 0).getTime()
+        return bt - at
+      })
+
+      logger.debug(`✅ getUserProjects: ${owned.length} owned + ${shared.length} shared = ${merged.length}`)
+      return merged
     } catch (error) {
       logger.error('Failed to get user accessible projects:', error)
       throw error
@@ -416,27 +467,29 @@ export class ProjectRepository {
         userId
       })
 
+      // Phase 05.1 ext: include collaborator-shared projects in the initial fetch
+      // and on every realtime refresh.
+      const fetchProjects = async () =>
+        userId
+          ? await ProjectRepository.getUserProjects(userId)
+          : await ProjectRepository.getAllProjects()
+
       // Load initial data
       const loadInitialData = async () => {
         try {
           logger.debug('loadInitialData executing', { userId })
-          const projects = userId
-            ? await ProjectRepository.getUserOwnedProjects(userId)
-            : await ProjectRepository.getAllProjects()
+          const projects = await fetchProjects()
           logger.debug('Projects fetched', { count: projects?.length })
-          logger.debug('Calling callback with projects')
           callback(projects)
-          logger.debug('Callback executed successfully')
         } catch (error) {
           logger.error('Error in loadInitialData', error)
-          logger.error('Error loading initial projects:', error)
           callback(null)
         }
       }
-      logger.debug('About to call loadInitialData')
       loadInitialData()
 
-      // Set up real-time subscription
+      // Set up real-time subscription on projects (no owner filter — RLS gates visibility,
+      // and a strict owner_id filter would silently drop collaborator-shared rows).
       const channel = supabase
         .channel(channelName)
         .on(
@@ -444,20 +497,32 @@ export class ProjectRepository {
           {
             event: '*',
             schema: 'public',
-            table: 'projects',
-            ...(userId && { filter: `owner_id=eq.${userId}` })
+            table: 'projects'
           },
           async (payload) => {
             logger.debug('🔴 Project real-time change detected:', payload.eventType)
-
-            // Refresh projects data
             try {
-              const projects = userId
-                ? await ProjectRepository.getUserOwnedProjects(userId)
-                : await ProjectRepository.getAllProjects()
-              callback(projects)
+              callback(await fetchProjects())
             } catch (error) {
               logger.error('Error refreshing projects:', error)
+              callback(null)
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'project_collaborators',
+            ...(userId && { filter: `user_id=eq.${userId}` })
+          },
+          async (payload) => {
+            logger.debug('🔴 project_collaborators change detected:', payload.eventType)
+            try {
+              callback(await fetchProjects())
+            } catch (error) {
+              logger.error('Error refreshing projects after collaborator change:', error)
               callback(null)
             }
           }
