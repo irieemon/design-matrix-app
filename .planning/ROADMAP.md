@@ -105,6 +105,16 @@ Plans:
 - [ ] 05-03-scoped-realtime-and-voting-PLAN.md — ScopedRealtimeManager refactor + useDotVoting + DotVoteControls
 - [ ] 05-04-project-realtime-matrix-PLAN.md — ProjectRealtimeManager + live cursors + drag lock + matrix sync + e2e test
 
+### Phase 05.1: Legacy CollaborationService migration to Phase-5 schema (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 5
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.1 to break down)
+
 ### Phase 6: Billing & Subscription Enforcement
 **Goal**: Subscription limits are enforced at the API layer with clear user-facing usage visibility and upgrade prompts
 **Depends on**: Phase 1, Phase 2, Phase 3, Phase 4

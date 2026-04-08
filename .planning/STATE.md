@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 05 UI-SPEC approved
-last_updated: "2026-04-07T20:43:23.427Z"
-last_activity: 2026-04-07
+last_updated: "2026-04-08T00:02:08.152Z"
+last_activity: 2026-04-08 -- Phase 05 execution started
 progress:
   total_phases: 7
   completed_phases: 4
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-06)
 ## Current Position
 
 Phase: 05 (real-time-collaboration) — EXECUTING
-Plan: 2 of 4
-Status: Ready to execute
-Last activity: 2026-04-07
+Plan: 1 of 4
+Status: Executing Phase 05
+Last activity: 2026-04-08 -- Phase 05 execution started
 
 Progress: [██████████] 100%
 
@@ -54,6 +54,10 @@ Progress: [██████████] 100%
 *Updated after each plan completion*
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 05.1 inserted after Phase 5: Legacy CollaborationService migration to Phase-5 schema (URGENT) — uncovered during Plan 05-02 UAT when InviteCollaboratorModal succeeded but the collaborator-list UI 400'd on missing `status` column. Blocks Plan 05-02 UAT signoff and likely Plan 05-03 voting UI.
 
 ### Decisions
 
