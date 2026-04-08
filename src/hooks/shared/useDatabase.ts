@@ -103,7 +103,8 @@ export function useProjects(userId?: string, options: UseDatabaseOptions = {}) {
   const { state, execute, reset } = useAsyncOperation(
     async (id?: string) => {
       if (id) {
-        return DatabaseService.getUserOwnedProjects(id)
+        // Use the collaborator-aware path so accepted invitees see shared projects.
+        return DatabaseService.getUserProjects(id)
       }
       return DatabaseService.getAllProjects()
     },

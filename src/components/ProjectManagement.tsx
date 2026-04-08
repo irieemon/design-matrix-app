@@ -70,7 +70,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
 
     try {
       logger.debug('Loading projects for user', { userId })
-      const projects = await ProjectRepository.getUserOwnedProjects(userId)
+      const projects = await ProjectRepository.getUserProjects(userId)
       logger.debug('Direct load received', { count: projects?.length })
       setProjects(projects)
       setIsLoading(false)

@@ -218,14 +218,14 @@ export class ProjectService extends BaseService {
         .eq('owner_id', userId)
         .order('updated_at', { ascending: false })
 
-      // Get projects where user is collaborator
+      // Get projects where user is collaborator (Phase 5 schema:
+      // project_collaborators has no `status` column — row presence ⇒ active)
       const { data: collaborations, error: collabError } = await supabase
         .from('project_collaborators')
         .select(`
           project:projects(*)
         `)
         .eq('user_id', userId)
-        .eq('status', 'active')
 
       const collaboratedProjects = collaborations?.map((c: any) => c.project).filter(Boolean) || []
 

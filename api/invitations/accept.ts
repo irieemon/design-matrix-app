@@ -90,14 +90,12 @@ export default async function handler(
 
   const { data, error } = await supabase.rpc('accept_invitation', { p_token: token })
 
-  // Idempotency: if the RPC says invalid_or_expired, the user may have
-  // already accepted this same invite in a previous request (the SQL fn
-  // only matches accepted_at IS NULL). Use the service-role client to
-  // look the invitation up by hash, and if the caller is already a
-  // collaborator on that project, treat the request as success.
+  // Idempotent recovery: if the RPC says invalid_or_expired, the user may
+  // already be in project_collaborators from a prior request. Use the
+  // service-role client to check (RLS hides project_invitations from non-owners).
   if (error || !data) {
     if (error) {
-      console.error('[invitations/accept] rpc error:', error)
+      console.error('[invitations/accept] rpc error:', error.message)
     }
     const admin = getAdminClient()
     if (admin) {
