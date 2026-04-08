@@ -27,12 +27,19 @@ export interface PortalSessionParams {
 
 export class StripeService {
   /**
-   * Create a Stripe Checkout session for subscription purchase
+   * Create a Stripe Checkout session for subscription purchase.
+   *
+   * Accepts an optional Supabase `client` so API route handlers can pass
+   * a service-role admin client — the default (anon) singleton fails RLS
+   * on subscriptions.select/insert when called from a Node context.
    */
-  async createCheckoutSession(params: CheckoutSessionParams): Promise<Stripe.Checkout.Session> {
+  async createCheckoutSession(
+    params: CheckoutSessionParams,
+    client?: import('@supabase/supabase-js').SupabaseClient
+  ): Promise<Stripe.Checkout.Session> {
     try {
       // Check if user already has a Stripe customer ID
-      let customerId = await subscriptionService.getStripeCustomerId(params.userId)
+      let customerId = await subscriptionService.getStripeCustomerId(params.userId, client)
 
       // Create new customer if doesn't exist
       if (!customerId) {
@@ -45,7 +52,7 @@ export class StripeService {
         customerId = customer.id
 
         // Save customer ID to database
-        await subscriptionService.saveStripeCustomerId(params.userId, customerId)
+        await subscriptionService.saveStripeCustomerId(params.userId, customerId, client)
       }
 
       // Create checkout session
