@@ -9,7 +9,7 @@
 
 export type SubscriptionTier = 'free' | 'team' | 'enterprise';
 
-export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'incomplete';
+export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'incomplete' | 'trialing';
 
 export interface TierLimits {
   projects: number; // -1 = unlimited
