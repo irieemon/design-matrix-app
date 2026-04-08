@@ -28,8 +28,27 @@
  * See claudedocs/PLAYWRIGHT_QUICK_REFERENCE.md for common commands
  */
 
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 import { baseConfig } from './playwright.base.config';
+
+/**
+ * 07-02 Mobile critical-path projects.
+ * These projects run the tests in tests/e2e/mobile-critical-paths.spec.ts
+ * on the two reference viewports from the Phase 07 mobile audit.
+ */
+const mobileCriticalPathProjects = [
+  {
+    name: 'Mobile Safari iPhone 14 Pro',
+    use: { ...devices['iPhone 14 Pro'] },
+  },
+  {
+    name: 'Mobile Chrome Galaxy S21',
+    use: {
+      ...devices['Galaxy S9+'],
+      viewport: { width: 360, height: 800 },
+    },
+  },
+];
 
 /**
  * Export base configuration as default
@@ -40,4 +59,10 @@ import { baseConfig } from './playwright.base.config';
  * - Performance tests: More accurate with playwright.performance.config.ts
  * - Visual tests: More consistent with playwright.visual-regression.config.ts
  */
-export default defineConfig(baseConfig);
+export default defineConfig({
+  ...baseConfig,
+  projects: [
+    ...(baseConfig.projects ?? []),
+    ...mobileCriticalPathProjects,
+  ],
+});
