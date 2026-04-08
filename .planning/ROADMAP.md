@@ -147,13 +147,14 @@ Plans:
   2. Paid tier users have higher or unlimited limits that are correctly enforced at the API layer
   3. User receives an in-app notification when their payment fails
   4. User can view their current AI usage and subscription limits on an in-app dashboard
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
-- [ ] 06-03: TBD
+- [ ] 06-01-schema-migration-PLAN.md — billing schema (subscriptions, usage_tracking, user_notifications, stripe_webhook_events) + increment_ai_usage RPC
+- [ ] 06-02-quota-middleware-PLAN.md — withQuotaCheck middleware + fail-closed fix + real getTeamMemberCount + incrementAiUsage
+- [ ] 06-03-wire-endpoints-and-webhook-PLAN.md — wrap projects/ai/invitations endpoints + webhook idempotency + payment_failed notification
+- [ ] 06-04-frontend-dashboard-and-prompts-PLAN.md — Settings SubscriptionPanel + inline UpgradePrompt + PaymentFailedBanner + PricingPage checkout wiring
 
 ### Phase 7: Mobile Polish & Video Analysis
 **Goal**: The mobile brainstorm experience is fully enabled and polished, and users can analyze video content
