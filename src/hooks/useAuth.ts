@@ -46,6 +46,165 @@ function getSessionCache(): CacheManager<unknown> {
   return sessionCacheInstance
 }
 
+// Module-level guard so React StrictMode's double-mount doesn't double-fire
+// the recovery exchange (and consume the single-use code twice).
+let recoveryExchangeStarted = false
+
+// In-memory access token from a successful PKCE recovery exchange.
+// Deliberately NOT written to localStorage — if it were, the main app would
+// treat the user as signed-in and redirect to /projects, skipping the
+// set-new-password form.
+let recoveryAccessToken: string | null = null
+
+/**
+ * Apply a new password using the in-memory recovery access token.
+ * Called from AuthScreen's reset-password submit handler.
+ *
+ * Bypasses supabase.auth.updateUser() (which deadlocks on the GoTrueClient
+ * lock) by hitting PUT /auth/v1/user directly.
+ */
+export async function updateRecoveryPassword(newPassword: string): Promise<{ error?: string }> {
+  if (!recoveryAccessToken) {
+    return { error: 'No active recovery session. Request a new reset email.' }
+  }
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !anonKey) {
+    return { error: 'Supabase is not configured.' }
+  }
+  try {
+    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      method: 'PUT',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${recoveryAccessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ password: newPassword })
+    })
+    if (!response.ok) {
+      const body = await response.text()
+      logger.error('updateRecoveryPassword failed', { status: response.status, body })
+      try {
+        const parsed = JSON.parse(body)
+        return { error: parsed.msg || parsed.error_description || `HTTP ${response.status}` }
+      } catch {
+        return { error: `HTTP ${response.status}` }
+      }
+    }
+    // Success — clear the one-shot token so nothing downstream can reuse it
+    recoveryAccessToken = null
+    recoveryExchangeStarted = false
+    return {}
+  } catch (e: any) {
+    logger.error('updateRecoveryPassword exception', e)
+    return { error: e?.message || 'Network error' }
+  }
+}
+
+/**
+ * Manually exchange a Supabase PKCE recovery code for a session.
+ *
+ * Why this exists: supabase.auth.exchangeCodeForSession() (and detectSessionInUrl)
+ * deadlock on the GoTrueClient navigator.locks lock in this codebase. Multiple
+ * GoTrueClient instances contend on the same storageKey, and any auth-client
+ * call requiring the lock hangs forever with no error and no network request.
+ *
+ * Workaround: hit the Supabase REST endpoint directly, write the resulting
+ * session into localStorage in the format supabase-js expects, then flip the
+ * password-recovery flag so AuthScreen renders the set-new-password form.
+ */
+async function handleRecoveryCodeExchange(
+  setIsPasswordRecovery: (v: boolean) => void,
+  setIsLoading: (v: boolean) => void
+) {
+  if (recoveryExchangeStarted) return
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    if (!code) return
+
+    recoveryExchangeStarted = true
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+    if (!supabaseUrl || !anonKey) {
+      logger.error('Recovery exchange: missing Supabase env vars')
+      return
+    }
+
+    const projectRef = supabaseUrl.match(/https?:\/\/([^.]+)/)?.[1]
+    const verifierKey = `sb-${projectRef}-auth-token-code-verifier`
+    const storedVerifier = localStorage.getItem(verifierKey)
+    if (!storedVerifier) {
+      logger.error('Recovery code present but no code_verifier in localStorage', { verifierKey })
+      return
+    }
+
+    // gotrue-js v2 stores the verifier JSON-stringified and suffixed with the
+    // flow type, e.g. `"abc123.../PASSWORD_RECOVERY"` (outer quotes are the
+    // JSON string delimiters). We must:
+    //   1. JSON.parse to strip the wrapping quotes
+    //   2. Split on '/' and keep the part before the suffix
+    // Falls back to raw value if it isn't JSON (older format).
+    let unwrapped: string
+    try {
+      const parsed = JSON.parse(storedVerifier)
+      unwrapped = typeof parsed === 'string' ? parsed : storedVerifier
+    } catch {
+      unwrapped = storedVerifier
+    }
+    const codeVerifier = unwrapped.split('/')[0]
+
+    // Strip code from URL up front so a refresh doesn't re-attempt the exchange
+    window.history.replaceState({}, '', window.location.pathname + window.location.hash)
+
+    const response = await fetch(
+      `${supabaseUrl}/auth/v1/token?grant_type=pkce`,
+      {
+        method: 'POST',
+        headers: {
+          apikey: anonKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ auth_code: code, code_verifier: codeVerifier })
+      }
+    )
+
+    if (!response.ok) {
+      const errorBody = await response.text()
+      logger.error('Recovery PKCE exchange failed', {
+        status: response.status,
+        body: errorBody
+      })
+      return
+    }
+
+    const session = await response.json()
+
+    // CRITICAL: do NOT write the session to localStorage. If we did, the rest
+    // of the app would see a valid session on the next init pass and redirect
+    // the user to /projects, blowing past the set-new-password form. Instead
+    // keep the access token in memory and let updateRecoveryPassword() use it
+    // for the PUT /auth/v1/user call. The token is one-shot and cleared as
+    // soon as the password update completes.
+    recoveryAccessToken = session.access_token
+
+    // Verifier has been consumed
+    localStorage.removeItem(verifierKey)
+
+    // Drive the UI directly into recovery mode — we cannot rely on
+    // supabase's PASSWORD_RECOVERY event because we bypassed the auth client.
+    setIsPasswordRecovery(true)
+    setIsLoading(false)
+    logger.info('Password recovery flow ready — user can set new password', {
+      email: session.user?.email
+    })
+  } catch (e) {
+    logger.error('Recovery PKCE exchange exception', e)
+  }
+}
+
 export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
@@ -238,6 +397,8 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
 
       try {
         // STEP 1: Get current session with timeout
+        // detectSessionInUrl: true in supabase client config handles ?code= recovery
+        // codes automatically before this point.
         // CRITICAL FIX: Add timeout to getSession() as it hangs on refresh
         const { data: { session }, error } = await withTimeout(
           supabase.auth.getSession(),
@@ -331,6 +492,15 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     }
 
     initAuth()
+
+    // PKCE recovery code exchange via direct REST call.
+    // supabase.auth.exchangeCodeForSession() deadlocks on the GoTrueClient
+    // navigator.locks lock in this codebase (multiple GoTrueClient instances
+    // contend on the same storageKey). We perform the exchange manually and
+    // write the resulting session to localStorage in the format supabase-js
+    // expects, then flip isPasswordRecovery so AuthScreen renders the
+    // set-new-password form.
+    handleRecoveryCodeExchange(setIsPasswordRecovery, setIsLoading)
 
     // STEP 2: Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {

@@ -182,7 +182,12 @@ export const supabase = createClient(
       // This allows both: (1) Login to work, (2) Sessions to persist across refreshes
       autoRefreshToken: true,   // Auto-refresh tokens before expiry
       persistSession: true,      // Store and detect sessions (critical for both login and refresh)
-      detectSessionInUrl: false, // OAuth handled server-side
+      // FIX (password reset): must be true so Supabase auto-exchanges ?code= recovery
+      // codes from password-reset emails. Without this, the URL token is ignored and
+      // the user lands on the login screen instead of the PASSWORD_RECOVERY flow.
+      // OAuth flows are still routed through server-side endpoints; this only affects
+      // the recovery code path that arrives in the query string.
+      detectSessionInUrl: true,
       // CRITICAL FIX: Use undefined to let Supabase use its default localStorage adapter
       // The explicit storage adapter with typeof window checks broke session reading during initialization
       // Supabase's default adapter handles SSR and browser contexts correctly

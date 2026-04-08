@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Target, Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles, AlertCircle, CheckCircle } from 'lucide-react'
 import PrioritasLogo from '../PrioritasLogo'
 import { supabase } from '../../lib/supabase'
+import { updateRecoveryPassword } from '../../hooks/useAuth'
 import { useLogger } from '../../lib/logging'
 import { Button, Input } from '../ui'
 import { useSecureAuthContext } from '../../contexts/SecureAuthContext'
@@ -243,8 +244,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             setError('Passwords do not match')
             return
           }
-          const { error } = await supabase.auth.updateUser({ password: newPassword })
-          if (error) throw error
+          // Use in-memory recovery token via direct REST call — bypasses
+          // supabase.auth.updateUser() which deadlocks on the GoTrueClient lock.
+          const { error: recoveryError } = await updateRecoveryPassword(newPassword)
+          if (recoveryError) throw new Error(recoveryError)
           setSuccess('Password updated successfully! Please sign in with your new password.')
           clearPasswordRecovery?.()
           setNewPassword('')
