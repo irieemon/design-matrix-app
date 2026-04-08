@@ -143,18 +143,30 @@ Plans:
 **Depends on**: Phase 1, Phase 2, Phase 3, Phase 4
 **Requirements**: BILL-01, BILL-02, BILL-03, BILL-04, BILL-05, BILL-06
 **Success Criteria** (what must be TRUE):
-  1. Free tier users hit defined limits (projects, AI generations/month) and see upgrade prompts instead of unbounded access
-  2. Paid tier users have higher or unlimited limits that are correctly enforced at the API layer
-  3. User receives an in-app notification when their payment fails
-  4. User can view their current AI usage and subscription limits on an in-app dashboard
-**Plans**: 4 plans
+  1. Free tier users hit defined limits (projects, AI generations/month) and see upgrade prompts instead of unbounded access ✅
+  2. Paid tier users have higher or unlimited limits that are correctly enforced at the API layer ✅
+  3. User receives an in-app notification when their payment fails ✅
+  4. User can view their current AI usage and subscription limits on an in-app dashboard ✅
+**Plans**: 4/4 plans complete
 **UI hint**: yes
+**Status**: ✅ Complete (2026-04-08) — verified end-to-end: real Stripe checkout against Prioritas test account, real subscription (`sub_1TK0a3HOzca6IMLj1XMktDoZ`) active, DB `subscriptions` row populated with Stripe IDs/periods, signed-payload POST to webhook returns 200 and upserts correctly, Settings page shows Team tier badge with correct limits.
 
 Plans:
-- [ ] 06-01-schema-migration-PLAN.md — billing schema (subscriptions, usage_tracking, user_notifications, stripe_webhook_events) + increment_ai_usage RPC
-- [ ] 06-02-quota-middleware-PLAN.md — withQuotaCheck middleware + fail-closed fix + real getTeamMemberCount + incrementAiUsage
-- [ ] 06-03-wire-endpoints-and-webhook-PLAN.md — wrap projects/ai/invitations endpoints + webhook idempotency + payment_failed notification
-- [ ] 06-04-frontend-dashboard-and-prompts-PLAN.md — Settings SubscriptionPanel + inline UpgradePrompt + PaymentFailedBanner + PricingPage checkout wiring
+- [x] 06-01-schema-migration-PLAN.md — billing schema (subscriptions, usage_tracking, user_notifications, stripe_webhook_events) + increment_ai_usage RPC
+- [x] 06-02-quota-middleware-PLAN.md — withQuotaCheck middleware + fail-closed fix + real getTeamMemberCount + incrementAiUsage
+- [x] 06-03-wire-endpoints-and-webhook-PLAN.md — wrap projects/ai/invitations endpoints + webhook idempotency + payment_failed notification
+- [x] 06-04-frontend-dashboard-and-prompts-PLAN.md — Settings SubscriptionPanel + inline UpgradePrompt + PaymentFailedBanner + PricingPage checkout wiring
+
+**Phase 6 hotfixes applied during UAT** (all committed in the same series; documented here so the history is honest):
+- vite.config.ts raw-body forwarding so webhook signature verification works in dev
+- webhook handler unhandled `customer.subscription.created` routed to the same upsert path as `updated`
+- handlePaymentSucceeded tolerates 404 from `stripe trigger` fixture events
+- SubscriptionPanel/UserSettings fetch calls attach `Authorization: Bearer` via getAuthHeadersSync (localStorage token) — credentials:'include' alone wasn't enough
+- InvitationAcceptPage-style fix: preserve query params on URL sync when on target path (Stripe `?session_id=...` was being stripped)
+- SubscriptionSuccessPage: wait for currentUser hydration before rendering error state
+- stripe.ts checkout/portal handlers thread service-role admin client to subscriptionService (anon client failed RLS)
+- webhook.ts handlers (checkout/sub updated/deleted/payment succeeded/failed) all thread the admin client to updateSubscription (same RLS issue)
+- supabase/migrations/20260408170000 ALTER TABLE to add `past_due_since` column — Phase 06-01 CREATE TABLE IF NOT EXISTS was a no-op on a pre-existing `subscriptions` table, so the D-17 grace anchor column never landed
 
 ### Phase 7: Mobile Polish & Video Analysis
 **Goal**: The mobile brainstorm experience is fully enabled and polished, and users can analyze video content

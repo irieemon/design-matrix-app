@@ -51,12 +51,12 @@ Requirements for public launch. Each maps to roadmap phases.
 
 ### Billing & Subscription
 
-- [ ] **BILL-01**: Subscription limits enforced at API layer (projects, AI usage, team members)
-- [ ] **BILL-02**: User notified in-app when payment fails
-- [ ] **BILL-03**: Subscription service fails closed on errors (deny access, not grant unlimited)
-- [ ] **BILL-04**: User can view AI usage and subscription limits in-app dashboard
-- [ ] **BILL-05**: Free tier has defined limits (N projects, N AI generations/month)
-- [ ] **BILL-06**: Paid tier limits are higher/unlimited with clear upgrade prompts when limits hit
+- [x] **BILL-01**: Subscription limits enforced at API layer (projects, AI usage, team members)
+- [x] **BILL-02**: User notified in-app when payment fails
+- [x] **BILL-03**: Subscription service fails closed on errors (deny access, not grant unlimited)
+- [x] **BILL-04**: User can view AI usage and subscription limits in-app dashboard
+- [x] **BILL-05**: Free tier has defined limits (N projects, N AI generations/month)
+- [x] **BILL-06**: Paid tier limits are higher/unlimited with clear upgrade prompts when limits hit
 
 ### Mobile Experience
 
@@ -153,12 +153,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COLLAB-05 | Phase 5 | Complete |
 | COLLAB-06 | Phase 5 | Pending |
 | COLLAB-07 | Phase 5 | Pending |
-| BILL-01 | Phase 6 | Pending |
-| BILL-02 | Phase 6 | Pending |
-| BILL-03 | Phase 6 | Pending |
-| BILL-04 | Phase 6 | Pending |
-| BILL-05 | Phase 6 | Pending |
-| BILL-06 | Phase 6 | Pending |
+| BILL-01 | Phase 6 | Complete |
+| BILL-02 | Phase 6 | Complete |
+| BILL-03 | Phase 6 | Complete |
+| BILL-04 | Phase 6 | Complete |
+| BILL-05 | Phase 6 | Complete |
+| BILL-06 | Phase 6 | Complete |
 | MOB-01 | Phase 7 | Pending |
 | MOB-02 | Phase 4 | Pending |
 | MOB-03 | Phase 7 | Pending |
