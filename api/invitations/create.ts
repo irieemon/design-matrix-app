@@ -112,11 +112,11 @@ export default async function handler(
   // Project ownership check
   const { data: project, error: projectError } = await supabase
     .from('projects')
-    .select('id, user_id, name')
+    .select('id, owner_id, name')
     .eq('id', projectId)
     .single()
 
-  if (projectError || !project || project.user_id !== userId) {
+  if (projectError || !project || project.owner_id !== userId) {
     return res
       .status(403)
       .json({ error: { message: 'Not project owner', code: 'FORBIDDEN' } })
@@ -124,7 +124,7 @@ export default async function handler(
 
   // Idempotency: existing pending invite for same (project, email)?
   const nowIso = new Date().toISOString()
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from('project_invitations')
     .select('id, expires_at')
     .eq('project_id', projectId)
@@ -132,6 +132,12 @@ export default async function handler(
     .is('accepted_at', null)
     .gt('expires_at', nowIso)
     .maybeSingle()
+  if (existingError) {
+    console.error('[invitations/create] idempotency lookup failed:', existingError)
+    return res.status(500).json({
+      error: { message: 'Failed to check existing invitations', code: 'DB_ERROR' },
+    })
+  }
 
   if (existing) {
     // Don't leak the original token — issue a fresh one and update the row.
@@ -171,6 +177,7 @@ export default async function handler(
     })
 
   if (insertError) {
+    console.error('[invitations/create] insert failed:', insertError)
     return res.status(500).json({
       error: { message: 'Failed to create invitation', code: 'DB_ERROR' },
     })
