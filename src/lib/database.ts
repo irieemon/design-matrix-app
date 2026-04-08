@@ -28,7 +28,6 @@ import type {
 // Import modular services
 import { IdeaService } from './services/IdeaService'
 import { ProjectService } from './services/ProjectService'
-import { CollaborationService } from './services/CollaborationService'
 import { RoadmapRepository } from './database/repositories/RoadmapRepository'
 import { InsightsRepository } from './database/repositories/InsightsRepository'
 import { IdeaLockingService } from './database/services/IdeaLockingService'
@@ -251,72 +250,9 @@ export class DatabaseService {
   }
 
   // ============================================================================
-  // PROJECT COLLABORATION - Delegate to CollaborationService
+  // PROJECT COLLABORATION - wrappers removed (Phase 05.1 Plan 02)
+  // Callers now use CollaborationService directly or /api/invitations/create.
   // ============================================================================
-
-  /**
-   * Add project collaborator
-   * DELEGATES TO: CollaborationService.legacyAddProjectCollaborator
-   */
-  static async addProjectCollaborator(
-    projectId: string,
-    userEmail: string,
-    role: string = 'viewer',
-    invitedBy: string,
-    projectName?: string,
-    inviterName?: string,
-    inviterEmail?: string
-  ): Promise<boolean> {
-    return await CollaborationService.legacyAddProjectCollaborator(
-      projectId,
-      userEmail,
-      role,
-      invitedBy,
-      projectName,
-      inviterName,
-      inviterEmail
-    )
-  }
-
-  /**
-   * Get project collaborators
-   * DELEGATES TO: CollaborationService.legacyGetProjectCollaborators
-   */
-  static async getProjectCollaborators(projectId: string) {
-    return await CollaborationService.legacyGetProjectCollaborators(projectId)
-  }
-
-  /**
-   * Remove project collaborator
-   * DELEGATES TO: CollaborationService.legacyRemoveProjectCollaborator
-   */
-  static async removeProjectCollaborator(projectId: string, userId: string): Promise<boolean> {
-    return await CollaborationService.legacyRemoveProjectCollaborator(projectId, userId)
-  }
-
-  /**
-   * Update collaborator role
-   * DELEGATES TO: CollaborationService.legacyUpdateCollaboratorRole
-   */
-  static async updateCollaboratorRole(projectId: string, userId: string, newRole: string): Promise<boolean> {
-    return await CollaborationService.legacyUpdateCollaboratorRole(projectId, userId, newRole)
-  }
-
-  /**
-   * Get user's role in project
-   * DELEGATES TO: CollaborationService.legacyGetUserProjectRole
-   */
-  static async getUserProjectRole(projectId: string, userId: string): Promise<string | null> {
-    return await CollaborationService.legacyGetUserProjectRole(projectId, userId)
-  }
-
-  /**
-   * Check if user can access project
-   * DELEGATES TO: CollaborationService.legacyCanUserAccessProject
-   */
-  static async canUserAccessProject(projectId: string, userId: string): Promise<boolean> {
-    return await CollaborationService.legacyCanUserAccessProject(projectId, userId)
-  }
 
   /**
    * Get all projects accessible to user (owned + collaborated)
@@ -324,21 +260,6 @@ export class DatabaseService {
    */
   static async getUserProjects(userId: string): Promise<Project[]> {
     return await ProjectService.legacyGetUserProjects(userId)
-  }
-
-  /**
-   * Subscribe to collaborator changes
-   * DELEGATES TO: CollaborationService.subscribeToProjectCollaborators (wrapped)
-   */
-  static subscribeToProjectCollaborators(projectId: string, callback: (collaborators: any[]) => void) {
-    return CollaborationService.subscribeToProjectCollaborators(
-      projectId,
-      async (_collaborators) => {
-        // Fetch fresh collaborators
-        const freshCollaborators = await this.getProjectCollaborators(projectId)
-        callback(freshCollaborators)
-      }
-    )
   }
 
   // ============================================================================
