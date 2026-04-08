@@ -14,6 +14,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import validator from 'validator'
 import { generateToken, hashToken } from '../_lib/invitationTokens'
+import { sendInviteEmail } from '../_lib/sendInviteEmail'
+
+interface InviterUser {
+  id: string
+  email: string
+  name?: string | null
+}
 
 const INVITE_TTL_DAYS = 7
 
@@ -47,15 +54,24 @@ function getAccessToken(req: VercelRequest): string | null {
   return null
 }
 
-async function getAuthenticatedUserId(
+async function getAuthenticatedUser(
   req: VercelRequest,
   supabase: SupabaseClient
-): Promise<string | null> {
+): Promise<InviterUser | null> {
   const token = getAccessToken(req)
   if (!token) return null
   const { data, error } = await supabase.auth.getUser(token)
   if (error || !data.user) return null
-  return data.user.id
+  const meta = (data.user.user_metadata || {}) as Record<string, unknown>
+  const name =
+    (typeof meta.full_name === 'string' && meta.full_name) ||
+    (typeof meta.name === 'string' && meta.name) ||
+    null
+  return {
+    id: data.user.id,
+    email: data.user.email || '',
+    name,
+  }
 }
 
 function appBaseUrl(req: VercelRequest): string {
@@ -93,12 +109,13 @@ export default async function handler(
   }
 
   // Auth check
-  const userId = await getAuthenticatedUserId(req, supabase)
-  if (!userId) {
+  const inviter = await getAuthenticatedUser(req, supabase)
+  if (!inviter) {
     return res
       .status(401)
       .json({ error: { message: 'Authentication required', code: 'UNAUTHORIZED' } })
   }
+  const userId = inviter.id
 
   // Body validation
   const body = (req.body || {}) as CreateBody
@@ -162,8 +179,20 @@ export default async function handler(
         error: { message: 'Failed to refresh invitation', code: 'DB_ERROR' },
       })
     }
+    const inviteUrl = `${appBaseUrl(req)}/invite#token=${rawToken}`
+    const sendResult = await sendInviteEmail({
+      to: email,
+      projectName: project.name,
+      inviterName: inviter.name ?? null,
+      inviterEmail: inviter.email,
+      role,
+      inviteUrl,
+    })
+    if (!sendResult.ok) {
+      console.warn('[invitations/create] email send not delivered:', sendResult.reason)
+    }
     return res.status(200).json({
-      inviteUrl: `${appBaseUrl(req)}/invite#token=${rawToken}`,
+      inviteUrl,
       expiresAt,
       projectName: project.name,
     })
@@ -192,8 +221,21 @@ export default async function handler(
     })
   }
 
+  const inviteUrl = `${appBaseUrl(req)}/invite#token=${rawToken}`
+  const sendResult = await sendInviteEmail({
+    to: email,
+    projectName: project.name,
+    inviterName: inviter.name ?? null,
+    inviterEmail: inviter.email,
+    role,
+    inviteUrl,
+  })
+  if (!sendResult.ok) {
+    console.warn('[invitations/create] email send not delivered:', sendResult.reason)
+  }
+
   return res.status(200).json({
-    inviteUrl: `${appBaseUrl(req)}/invite#token=${rawToken}`,
+    inviteUrl,
     expiresAt,
     projectName: project.name,
   })
