@@ -56,6 +56,51 @@ let recoveryExchangeStarted = false
 // set-new-password form.
 let recoveryAccessToken: string | null = null
 
+// Module-level guard so we only attempt the CSRF bootstrap once per page load.
+let csrfBootstrapped = false
+
+/**
+ * Mint the csrf-token cookie by calling /api/auth?action=user with the
+ * localStorage access token. This endpoint is the canonical bootstrap call —
+ * handleGetUser on the backend mints csrf-token if it's missing.
+ *
+ * Why this exists: the degraded-auth fallback path in initAuth (taken when
+ * getSession() times out) skips ProfileService to avoid cascading getSession
+ * calls, so the usual ProfileService → /api/auth?action=user → csrf-token
+ * chain never runs. Without this, CSRF-protected endpoints (transcribe-audio,
+ * analyze-image, etc.) 403 for returning users.
+ */
+async function bootstrapCsrfCookie() {
+  if (csrfBootstrapped) return
+  if (typeof document === 'undefined') return
+  if (document.cookie.split(';').some(c => c.trim().startsWith('csrf-token='))) {
+    csrfBootstrapped = true
+    return
+  }
+  try {
+    const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
+    if (!stored) return
+    const parsed = JSON.parse(stored)
+    const token = parsed?.access_token
+    if (!token) return
+    csrfBootstrapped = true
+    const response = await fetch('/api/auth?action=user', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    })
+    if (!response.ok) {
+      logger.warn('CSRF bootstrap /api/auth?action=user returned non-OK', { status: response.status })
+      csrfBootstrapped = false
+    }
+  } catch (e) {
+    logger.warn('CSRF bootstrap failed', e)
+    csrfBootstrapped = false
+  }
+}
+
 /**
  * Apply a new password using the in-memory recovery access token.
  * Called from AuthScreen's reset-password submit handler.
@@ -501,6 +546,12 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     // expects, then flip isPasswordRecovery so AuthScreen renders the
     // set-new-password form.
     handleRecoveryCodeExchange(setIsPasswordRecovery, setIsLoading)
+
+    // Mint the csrf-token cookie if it's missing. The degraded auth fallback
+    // skips ProfileService (to avoid getSession cascade), so returning users
+    // never hit /api/auth?action=user and never get a CSRF cookie — which
+    // disables any CSRF-protected UI (analyze-image, transcribe-audio, etc.).
+    bootstrapCsrfCookie()
 
     // STEP 2: Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
