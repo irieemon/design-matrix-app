@@ -21,6 +21,19 @@ const MonochromaticDemo = lazy(() => import('../demo/MonochromaticDemo'))
 import { useProjectFiles } from '../../hooks/useProjectFiles'
 import { IdeaCard } from '../../types'
 import { logger } from '../../utils/logger'
+import { useBreakpoint } from '../../hooks/useBreakpoint'
+import { DesktopOnlyHint } from '../shared/DesktopOnlyHint'
+
+// Desktop-only routes per 07-MOBILE-AUDIT.md — users on mobile see a
+// non-blocking "Best on desktop" hint above these pages (D-06, D-08).
+const DESKTOP_ONLY_ROUTES: Record<string, string> = {
+  collaboration: 'Project Collaboration',
+  reports: 'Reports & Analytics',
+  data: 'Data Management',
+  'button-test': 'Button Test',
+  'form-test': 'Form Test',
+  'skeleton-test': 'Skeleton Test',
+}
 
 interface PageRouterProps {
   currentPage: string
@@ -98,6 +111,9 @@ const PageRouter: React.FC<PageRouterProps> = ({
   loadIdeas
 }) => {
   const { getCurrentProjectFiles, handleFilesUploaded, handleDeleteFile } = useProjectFiles(currentProject)
+  const { isMobile } = useBreakpoint()
+  const desktopOnlyPageName = DESKTOP_ONLY_ROUTES[currentPage]
+  const showDesktopOnlyHint = isMobile && Boolean(desktopOnlyPageName)
 
   // Handle redirects that require a project when no project is available
   useEffect(() => {
@@ -378,7 +394,12 @@ const PageRouter: React.FC<PageRouterProps> = ({
     }
   }
 
-  return <>{renderPageContent()}</>
+  return (
+    <>
+      {showDesktopOnlyHint && <DesktopOnlyHint pageName={desktopOnlyPageName} />}
+      {renderPageContent()}
+    </>
+  )
 }
 
 export default PageRouter
