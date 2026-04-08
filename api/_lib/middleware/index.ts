@@ -52,3 +52,7 @@ export {
   authenticatedEndpoint,
   adminEndpoint,
 } from './compose.js'
+
+// Quota enforcement (Phase 06-02)
+export { withQuotaCheck } from './withQuotaCheck'
+export type { QuotaRequest, QuotaResource, QuotaContext } from './withQuotaCheck'
