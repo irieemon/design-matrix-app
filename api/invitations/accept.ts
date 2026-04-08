@@ -14,6 +14,16 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { hashToken } from '../_lib/invitationTokens'
+
+function getAdminClient(): SupabaseClient | null {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  if (!url || !serviceKey) return null
+  return createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+}
 
 function getAccessToken(req: VercelRequest): string | null {
   const cookieHeader = req.headers.cookie
@@ -80,7 +90,36 @@ export default async function handler(
 
   const { data, error } = await supabase.rpc('accept_invitation', { p_token: token })
 
+  // Idempotency: if the RPC says invalid_or_expired, the user may have
+  // already accepted this same invite in a previous request (the SQL fn
+  // only matches accepted_at IS NULL). Use the service-role client to
+  // look the invitation up by hash, and if the caller is already a
+  // collaborator on that project, treat the request as success.
   if (error || !data) {
+    const admin = getAdminClient()
+    if (admin) {
+      const tokenHash = hashToken(token)
+      const { data: invRow } = await admin
+        .from('project_invitations')
+        .select('project_id, role, accepted_at')
+        .eq('token_hash', tokenHash)
+        .maybeSingle()
+
+      if (invRow?.project_id) {
+        const { data: collabRow } = await admin
+          .from('project_collaborators')
+          .select('role')
+          .eq('project_id', invRow.project_id)
+          .eq('user_id', userData.user.id)
+          .maybeSingle()
+        if (collabRow) {
+          return res.status(200).json({
+            projectId: invRow.project_id,
+            role: collabRow.role || invRow.role,
+          })
+        }
+      }
+    }
     return res.status(400).json({ error: 'invalid_or_expired' })
   }
 
