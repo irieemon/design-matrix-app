@@ -1,8 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type Stripe from 'stripe'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { stripeService } from '../../src/lib/services/stripeService'
 import { subscriptionService } from '../../src/lib/services/subscriptionService'
-import type { SubscriptionTier } from '../../src/types/subscription'
+import type { SubscriptionTier, SubscriptionUpdateParams } from '../../src/types/subscription'
 
 /**
  * Read raw body from Vercel request
@@ -15,22 +16,29 @@ async function getRawBody(req: any): Promise<Buffer> {
   return Buffer.concat(chunks)
 }
 
+function getSupabaseAdmin(): SupabaseClient {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  if (!url || !key) throw new Error('Missing Supabase service-role configuration')
+  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
+}
+
 /**
  * POST /api/stripe/webhook
  *
- * Handle Stripe webhook events for subscription lifecycle management
+ * Handle Stripe webhook events for subscription lifecycle management.
  *
- * Events handled:
- * - checkout.session.completed: New subscription created
- * - customer.subscription.updated: Subscription changed (upgrade/downgrade/renewal)
- * - customer.subscription.deleted: Subscription canceled
- * - invoice.payment_succeeded: Payment successful
- * - invoice.payment_failed: Payment failed
+ * Phase 06-03 additions:
+ *  - Idempotency via `stripe_webhook_events` (unique event_id) — duplicate
+ *    deliveries short-circuit with `{ duplicate: true }` BEFORE any handler runs
+ *  - invoice.payment_failed writes a `user_notifications` row (BILL-02)
+ *  - invoice.payment_failed sets `past_due_since` (D-17 grace anchor)
+ *  - customer.subscription.updated back to active clears `past_due_since`
  *
  * CRITICAL SECURITY:
- * - Verifies webhook signature using STRIPE_WEBHOOK_SECRET
- * - Uses raw request body (not parsed JSON)
- * - Rejects requests with invalid signatures
+ *  - Verifies webhook signature using STRIPE_WEBHOOK_SECRET
+ *  - Uses raw request body (not parsed JSON)
+ *  - Rejects requests with invalid signatures
  */
 
 // Disable Next.js body parsing to get raw body for signature verification
@@ -46,7 +54,6 @@ export default async function webhook(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Get raw body and signature
     const rawBody = await getRawBody(req)
     const signature = req.headers['stripe-signature'] as string
 
@@ -55,7 +62,6 @@ export default async function webhook(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Missing signature' })
     }
 
-    // Verify webhook signature (CRITICAL SECURITY)
     let event: Stripe.Event
     try {
       event = stripeService.constructWebhookEvent(rawBody, signature)
@@ -66,7 +72,22 @@ export default async function webhook(req: VercelRequest, res: VercelResponse) {
 
     console.log('Webhook event received:', event.type, event.id)
 
-    // Handle different event types
+    // --- Idempotency guard (Phase 06-03) ------------------------------------
+    // Dedupe before dispatching. Unique constraint on event_id makes this atomic.
+    const admin = getSupabaseAdmin()
+    const { error: dedupErr } = await admin
+      .from('stripe_webhook_events')
+      .insert({ event_id: event.id, event_type: event.type })
+
+    if (dedupErr) {
+      if ((dedupErr as { code?: string }).code === '23505') {
+        console.log('[webhook] duplicate event, skipping:', event.id)
+        return res.status(200).json({ received: true, duplicate: true })
+      }
+      console.error('[webhook] dedup insert failed:', dedupErr)
+      return res.status(500).json({ error: 'Dedup check failed' })
+    }
+
     switch (event.type) {
       case 'checkout.session.completed':
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session)
@@ -85,7 +106,7 @@ export default async function webhook(req: VercelRequest, res: VercelResponse) {
         break
 
       case 'invoice.payment_failed':
-        await handlePaymentFailed(event.data.object as Stripe.Invoice)
+        await handlePaymentFailed(event.data.object as Stripe.Invoice, admin)
         break
 
       default:
@@ -101,7 +122,6 @@ export default async function webhook(req: VercelRequest, res: VercelResponse) {
 
 /**
  * Handle successful checkout session completion
- * Creates or updates subscription with active status
  */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   try {
@@ -114,10 +134,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       return
     }
 
-    // Retrieve full subscription details from Stripe
     const subscription = await stripeService.getSubscription(subscriptionId)
 
-    // Update database with new subscription
     await subscriptionService.updateSubscription(userId, {
       tier,
       status: 'active',
@@ -137,7 +155,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
 /**
  * Handle subscription update events
- * Updates subscription tier, billing period, cancellation status
  */
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   try {
@@ -149,7 +166,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       return
     }
 
-    // Map Stripe status to our status
     let status: 'active' | 'canceled' | 'past_due' = 'active'
     if (subscription.status === 'canceled' || subscription.status === 'incomplete_expired') {
       status = 'canceled'
@@ -157,14 +173,20 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       status = 'past_due'
     }
 
-    // Update database
-    await subscriptionService.updateSubscription(userId, {
-      tier: tier || 'free', // Fallback to free if no tier in metadata
+    const updates: SubscriptionUpdateParams = {
+      tier: tier || 'free',
       status,
       current_period_start: new Date(subscription.current_period_start * 1000),
       current_period_end: new Date(subscription.current_period_end * 1000),
       cancel_at_period_end: subscription.cancel_at_period_end,
-    })
+    }
+
+    // D-17: back-to-active clears the grace anchor
+    if (status === 'active') {
+      updates.past_due_since = null
+    }
+
+    await subscriptionService.updateSubscription(userId, updates)
 
     console.log(`Subscription updated for user ${userId}: ${status}`)
   } catch (error) {
@@ -175,7 +197,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
 /**
  * Handle subscription deletion/cancellation
- * Downgrades user to free tier
  */
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   try {
@@ -186,11 +207,11 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       return
     }
 
-    // Downgrade to free tier
     await subscriptionService.updateSubscription(userId, {
       tier: 'free',
       status: 'canceled',
       cancel_at_period_end: false,
+      past_due_since: null,
     })
 
     console.log(`Subscription canceled for user ${userId}, downgraded to free`)
@@ -202,18 +223,12 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
 /**
  * Handle successful payment
- * Ensures subscription remains active after renewal
  */
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   try {
     const subscriptionId = invoice.subscription as string
+    if (!subscriptionId) return
 
-    if (!subscriptionId) {
-      // Not a subscription invoice
-      return
-    }
-
-    // Retrieve subscription to get user info
     const subscription = await stripeService.getSubscription(subscriptionId)
     const userId = subscription.metadata?.user_id
 
@@ -222,11 +237,11 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       return
     }
 
-    // Ensure subscription is active after successful payment
     await subscriptionService.updateSubscription(userId, {
       status: 'active',
       current_period_start: new Date(subscription.current_period_start * 1000),
       current_period_end: new Date(subscription.current_period_end * 1000),
+      past_due_since: null,
     })
 
     console.log(`Payment succeeded for user ${userId}, subscription renewed`)
@@ -237,19 +252,17 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
 }
 
 /**
- * Handle failed payment
- * Marks subscription as past_due
+ * Handle failed payment — sets past_due + grace anchor + notifies user (BILL-02)
+ *
+ * Stripe itself fires `customer.subscription.deleted` after the dunning /
+ * grace period expires, which downgrades the user to free via
+ * handleSubscriptionDeleted above. We just anchor the clock here.
  */
-async function handlePaymentFailed(invoice: Stripe.Invoice) {
+async function handlePaymentFailed(invoice: Stripe.Invoice, admin: SupabaseClient) {
   try {
     const subscriptionId = invoice.subscription as string
+    if (!subscriptionId) return
 
-    if (!subscriptionId) {
-      // Not a subscription invoice
-      return
-    }
-
-    // Retrieve subscription to get user info
     const subscription = await stripeService.getSubscription(subscriptionId)
     const userId = subscription.metadata?.user_id
 
@@ -258,10 +271,26 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
       return
     }
 
-    // Mark subscription as past_due
+    // Mark past_due with grace anchor (D-17)
     await subscriptionService.updateSubscription(userId, {
       status: 'past_due',
+      past_due_since: new Date(),
     })
+
+    // BILL-02: insert user_notifications row
+    const amountCents = (invoice.amount_due ?? 0) as number
+    const amount = (amountCents / 100).toFixed(2)
+    const currency = (invoice.currency ?? 'usd').toUpperCase()
+    const { error: notifErr } = await admin.from('user_notifications').insert({
+      user_id: userId,
+      type: 'payment_failed',
+      message: `Your payment of ${currency} ${amount} failed. Please update your payment method to keep your subscription active.`,
+      metadata: { invoice_id: invoice.id, amount_cents: amountCents, currency },
+    })
+    if (notifErr) {
+      // Do not throw — the subscription status update already succeeded.
+      console.error('[webhook] user_notifications insert failed:', notifErr)
+    }
 
     console.log(`Payment failed for user ${userId}, subscription marked past_due`)
   } catch (error) {
