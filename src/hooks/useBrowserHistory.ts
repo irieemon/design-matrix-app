@@ -250,25 +250,20 @@ export const useBrowserHistory = ({
       targetUrl += `?project=${encodeURIComponent(currentProject.id)}`
     }
 
-    // Preserve query params that belong to the destination page — e.g. Stripe
-    // redirects to /subscription/success?session_id=... and we must not strip
-    // that on boot. Only applies when the page is already at the target path.
-    if (location.pathname === targetPath && location.search) {
-      const preserved = new URLSearchParams(location.search)
-      preserved.delete('project') // project handled explicitly above
-      const preservedStr = preserved.toString()
-      if (preservedStr) {
-        targetUrl = targetUrl.includes('?')
-          ? `${targetUrl}&${preservedStr}`
-          : `${targetUrl}?${preservedStr}`
-      }
+    // If we're already at the target path, don't navigate — this preserves
+    // incoming query params like /subscription/success?session_id=... from
+    // Stripe redirects. The page component is responsible for reading those.
+    if (location.pathname === targetPath) {
+      lastCurrentPageRef.current = currentPage
+      lastProjectIdRef.current = currentProject?.id
+      return
     }
 
     // Only navigate if the page actually changed or project context changed
     const needsNavigation = (
       lastCurrentPageRef.current !== currentPage ||
       (currentProject?.id !== currentProjectParam)
-    ) && (location.pathname !== targetPath || location.search !== (currentProject ? `?project=${encodeURIComponent(currentProject.id)}` : ''))
+    )
 
     if (needsNavigation) {
       logger.debug('Page/project changed programmatically', {
