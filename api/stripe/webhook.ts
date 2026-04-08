@@ -99,22 +99,22 @@ export default async function webhook(req: VercelRequest, res: VercelResponse) {
 
     switch (event.type) {
       case 'checkout.session.completed':
-        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session)
+        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session, admin)
         break
 
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
         // Both events use the same upsert path — subscription row is
         // keyed by user_id, not by event semantics.
-        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription)
+        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription, admin)
         break
 
       case 'customer.subscription.deleted':
-        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription)
+        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription, admin)
         break
 
       case 'invoice.payment_succeeded':
-        await handlePaymentSucceeded(event.data.object as Stripe.Invoice)
+        await handlePaymentSucceeded(event.data.object as Stripe.Invoice, admin)
         break
 
       case 'invoice.payment_failed':
@@ -135,7 +135,7 @@ export default async function webhook(req: VercelRequest, res: VercelResponse) {
 /**
  * Handle successful checkout session completion
  */
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session, admin: SupabaseClient) {
   try {
     const userId = session.metadata?.user_id
     const tier = session.metadata?.tier as SubscriptionTier
@@ -156,7 +156,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       current_period_start: new Date(subscription.current_period_start * 1000),
       current_period_end: new Date(subscription.current_period_end * 1000),
       cancel_at_period_end: false,
-    })
+    }, admin)
 
     console.log(`Subscription activated for user ${userId}: ${tier}`)
   } catch (error) {
@@ -168,7 +168,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 /**
  * Handle subscription update events
  */
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription, admin: SupabaseClient) {
   try {
     const userId = subscription.metadata?.user_id
     const tier = subscription.metadata?.tier as SubscriptionTier
@@ -188,6 +188,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     const updates: SubscriptionUpdateParams = {
       tier: tier || 'free',
       status,
+      stripe_subscription_id: subscription.id,
+      stripe_customer_id: subscription.customer as string,
       current_period_start: new Date(subscription.current_period_start * 1000),
       current_period_end: new Date(subscription.current_period_end * 1000),
       cancel_at_period_end: subscription.cancel_at_period_end,
@@ -198,7 +200,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       updates.past_due_since = null
     }
 
-    await subscriptionService.updateSubscription(userId, updates)
+    await subscriptionService.updateSubscription(userId, updates, admin)
 
     console.log(`Subscription updated for user ${userId}: ${status}`)
   } catch (error) {
@@ -210,7 +212,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 /**
  * Handle subscription deletion/cancellation
  */
-async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription, admin: SupabaseClient) {
   try {
     const userId = subscription.metadata?.user_id
 
@@ -224,7 +226,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       status: 'canceled',
       cancel_at_period_end: false,
       past_due_since: null,
-    })
+    }, admin)
 
     console.log(`Subscription canceled for user ${userId}, downgraded to free`)
   } catch (error) {
@@ -236,7 +238,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 /**
  * Handle successful payment
  */
-async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
+async function handlePaymentSucceeded(invoice: Stripe.Invoice, admin: SupabaseClient) {
   try {
     const subscriptionId = invoice.subscription as string
     if (!subscriptionId) return
@@ -267,7 +269,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
       current_period_start: new Date(subscription.current_period_start * 1000),
       current_period_end: new Date(subscription.current_period_end * 1000),
       past_due_since: null,
-    })
+    }, admin)
 
     console.log(`Payment succeeded for user ${userId}, subscription renewed`)
   } catch (error) {
@@ -300,7 +302,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice, admin: SupabaseClien
     await subscriptionService.updateSubscription(userId, {
       status: 'past_due',
       past_due_since: new Date(),
-    })
+    }, admin)
 
     // BILL-02: insert user_notifications row
     const amountCents = (invoice.amount_due ?? 0) as number
