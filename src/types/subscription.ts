@@ -102,6 +102,8 @@ export interface SubscriptionUpdateParams {
   current_period_start?: Date;
   current_period_end?: Date;
   cancel_at_period_end?: boolean;
+  /** Anchor timestamp for the 7-day past_due grace period (D-17). Null clears it. */
+  past_due_since?: Date | null;
 }
 
 /**
