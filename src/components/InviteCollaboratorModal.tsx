@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { X, UserPlus, Mail, Check, AlertCircle, Users } from 'lucide-react'
 import RolePicker, { type CollaboratorRole } from './RolePicker'
 import { getCsrfToken } from '../utils/cookieUtils'
+import { getAuthHeadersSync } from '../lib/authHeaders'
 
 interface InviteCollaboratorModalProps {
   isOpen: boolean
@@ -41,11 +42,12 @@ const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = ({
     setIsLoading(true)
     try {
       const csrfToken = getCsrfToken()
-      const response = await fetch('/api/invitations', {
+      const authHeaders = getAuthHeadersSync()
+      const response = await fetch('/api/invitations/create', {
         method: 'POST',
         credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
+          ...authHeaders,
           ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
         },
         body: JSON.stringify({ projectId, email: trimmed, role }),
