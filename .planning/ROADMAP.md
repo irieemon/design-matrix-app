@@ -91,19 +91,20 @@ Plans:
 **Depends on**: Phase 1
 **Requirements**: COLLAB-01, COLLAB-02, COLLAB-03, COLLAB-04, COLLAB-05, COLLAB-06, COLLAB-07
 **Success Criteria** (what must be TRUE):
-  1. Users in a brainstorm session see who else is online via presence indicators
-  2. Ideas created by any participant appear for all connected users in real-time without page refresh
-  3. A project owner can invite a collaborator via email who then joins with the correct permission level (viewer/editor)
-  4. Users can vote on ideas during brainstorm and all participants see updated tallies in real-time
-  5. When one user drags an idea on the matrix, the position change appears for all connected users
-**Plans**: 4 plans
+  1. Users in a brainstorm session see who else is online via presence indicators — ⚠️ not delivered (Plan 04 deferred)
+  2. Ideas created by any participant appear for all connected users in real-time without page refresh — ✅ (existing BrainstormRealtimeManager, Plan 01)
+  3. A project owner can invite a collaborator via email who then joins with the correct permission level (viewer/editor) — ✅ (Plan 02, verified E2E after 05.1/05.2/05.3)
+  4. Users can vote on ideas during brainstorm and all participants see updated tallies in real-time — ⚠️ not delivered (Plan 03 partial — schema only, hook/UI deferred)
+  5. When one user drags an idea on the matrix, the position change appears for all connected users — ⚠️ not delivered (Plan 04 deferred)
+**Plans**: 2/4 plans complete, 2 partial/deferred → rolled into Phase 05.4
 **UI hint**: yes
+**Status**: 🟡 Partial (2026-04-08) — invitation flow shipped and verified, voting/matrix realtime deferred to Phase 05.4
 
 Plans:
 - [x] 05-01-schema-and-fixtures-PLAN.md — DB schema (idea_votes, project_collaborators, project_invitations) + RLS + repositories + Wave 0 test fixtures
-- [ ] 05-02-invitations-backend-PLAN.md — /api/invitations create/lookup/accept + wire InviteCollaboratorModal + InvitationAcceptPage
-- [ ] 05-03-scoped-realtime-and-voting-PLAN.md — ScopedRealtimeManager refactor + useDotVoting + DotVoteControls
-- [ ] 05-04-project-realtime-matrix-PLAN.md — ProjectRealtimeManager + live cursors + drag lock + matrix sync + e2e test
+- [x] 05-02-invitations-backend-PLAN.md — /api/invitations create/lookup/accept + wire InviteCollaboratorModal + InvitationAcceptPage (verified E2E via Phase 05.1/05.2/05.3)
+- [~] 05-03-scoped-realtime-and-voting-PLAN.md — voteRepository + test file shipped; useDotVoting hook, DotVoteControls UI, ScopedRealtimeManager refactor DEFERRED to 05.4
+- [ ] 05-04-project-realtime-matrix-PLAN.md — ProjectRealtimeManager, live cursors, drag lock, matrix sync DEFERRED to 05.4
 
 ### Phase 05.1: Legacy CollaborationService migration to Phase-5 schema (INSERTED)
 
@@ -137,6 +138,20 @@ Plans:
 **Depends on:** Phase 5, Phase 05.1
 **Plans:** retroactive — see `05.3-SUMMARY.md` for the 12-bug inventory, root causes, and fixes
 **Status:** ✅ Complete (2026-04-08) — verified end-to-end via owner → invite → accept → collaborator-sees-project
+
+### Phase 05.4: Finish dot voting, scoped realtime, and project matrix sync (INSERTED, DEFERRED FROM PHASE 5)
+**Goal**: Deliver the realtime + voting user experience that was deferred from Phase 5 plans 03 and 04. Implement `useDotVoting` hook and `DotVoteControls` UI against the existing `voteRepository` + test file. Refactor `BrainstormRealtimeManager` into a scope-parameterized `ScopedRealtimeManager` (or build a parallel `ProjectRealtimeManager`). Wire live cursors, soft drag lock, and matrix position sync so two browser sessions on the same project matrix stay in sync.
+**Depends on:** Phase 5, Phase 6
+**Requirements**: COLLAB-01 (presence on matrix), COLLAB-02 (live ideas on matrix), COLLAB-06 (vote tallies), COLLAB-07 (matrix position sync)
+**Success Criteria** (what must be TRUE):
+  1. Two browser sessions on the same brainstorm can see each other vote in real-time
+  2. Two browser sessions on the same project matrix see each other's cursors (Figma-style, throttled)
+  3. When user A drags a card, user B sees it visually locked until drop
+  4. When user A drops a card in a new position, user B sees the card move to the new position in real-time
+  5. Presence avatars appear for users currently viewing the same project matrix
+**Plans**: TBD (run /gsd-plan-phase 05.4)
+**UI hint**: yes
+**Status**: ⚪ Not started
 
 ### Phase 6: Billing & Subscription Enforcement
 **Goal**: Subscription limits are enforced at the API layer with clear user-facing usage visibility and upgrade prompts
