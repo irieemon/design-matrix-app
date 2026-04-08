@@ -584,9 +584,9 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
             <button
               onClick={onExit}
               className="
-                p-2 rounded-lg
+                p-3 min-h-11 min-w-11 rounded-lg
                 bg-white/10 hover:bg-white/20
-                text-white
+                text-white text-base
                 transition-colors duration-150
                 focus:outline-none focus:ring-2 focus:ring-white/50
               "
