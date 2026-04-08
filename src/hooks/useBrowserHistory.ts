@@ -250,6 +250,20 @@ export const useBrowserHistory = ({
       targetUrl += `?project=${encodeURIComponent(currentProject.id)}`
     }
 
+    // Preserve query params that belong to the destination page — e.g. Stripe
+    // redirects to /subscription/success?session_id=... and we must not strip
+    // that on boot. Only applies when the page is already at the target path.
+    if (location.pathname === targetPath && location.search) {
+      const preserved = new URLSearchParams(location.search)
+      preserved.delete('project') // project handled explicitly above
+      const preservedStr = preserved.toString()
+      if (preservedStr) {
+        targetUrl = targetUrl.includes('?')
+          ? `${targetUrl}&${preservedStr}`
+          : `${targetUrl}?${preservedStr}`
+      }
+    }
+
     // Only navigate if the page actually changed or project context changed
     const needsNavigation = (
       lastCurrentPageRef.current !== currentPage ||
