@@ -486,71 +486,7 @@ export class CollaborationService extends BaseService {
   }
 
   /**
-   * Legacy method for backward compatibility
-   */
-  static async legacyAddProjectCollaborator(
-    projectId: string,
-    userEmail: string,
-    role: string = 'viewer',
-    invitedBy: string,
-    projectName?: string,
-    inviterName?: string,
-    inviterEmail?: string
-  ): Promise<boolean> {
-    const result = await this.addProjectCollaborator({
-      projectId,
-      userEmail,
-      role: role as ProjectRole,
-      invitedBy,
-      projectName,
-      inviterName,
-      inviterEmail
-    })
-    return result.success ? result.data : false
-  }
-
-  /**
-   * Legacy method for backward compatibility
-   */
-  static async legacyGetProjectCollaborators(projectId: string): Promise<CollaboratorWithUser[]> {
-    const result = await this.getProjectCollaborators(projectId)
-    return result.success ? result.data : []
-  }
-
-  /**
-   * Legacy method for backward compatibility
-   */
-  static async legacyRemoveProjectCollaborator(projectId: string, userId: string): Promise<boolean> {
-    const result = await this.removeProjectCollaborator(projectId, userId)
-    return result.success ? result.data : false
-  }
-
-  /**
-   * Legacy method for backward compatibility
-   */
-  static async legacyUpdateCollaboratorRole(projectId: string, userId: string, newRole: string): Promise<boolean> {
-    const result = await this.updateCollaboratorRole(projectId, userId, newRole as ProjectRole)
-    return result.success ? result.data : false
-  }
-
-  /**
-   * Legacy method for backward compatibility
-   */
-  static async legacyGetUserProjectRole(projectId: string, userId: string): Promise<string | null> {
-    const result = await this.getUserProjectRole(projectId, userId)
-    return result.success ? result.data : null
-  }
-
-  /**
-   * Legacy method for backward compatibility
-   */
-  static async legacyCanUserAccessProject(projectId: string, userId: string): Promise<boolean> {
-    const result = await this.canUserAccessProject(projectId, userId)
-    return result.success ? result.data : false
-  }
-
-  /**
-   * Convert service result to legacy ApiResponse format for backward compatibility
+   * Convert service result to ApiResponse format
    */
   static serviceResultToApiResponse<T>(result: ServiceResult<T>): ApiResponse<T> {
     if (result.success) {
