@@ -1,5 +1,18 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { aiService } from '../lib/aiService'
+import { analyzeVideo } from '../lib/ai/aiService'
+import {
+  extractFrames,
+  VIDEO_FRAME_COUNT,
+  VideoTooLargeError,
+  VideoTooLongError,
+  VideoDecodeError,
+  VideoUnsupportedFormatError,
+} from '../lib/video/extractFrames'
+import VideoAnalysisProgress, {
+  type VideoAnalysisStage,
+} from './video/VideoAnalysisProgress'
+import { useCsrfToken } from '../hooks/useCsrfToken'
 import { DatabaseService } from '../lib/database'
 import { supabase } from '../lib/supabase'
 import { Project, IdeaCard, User, ProjectType } from '../types'
@@ -23,8 +36,6 @@ import type {
   AIStarterStep,
   ProjectAnalysis
 } from './aiStarter/config/aiStarterTypes'
-import { useSubscription } from '../hooks/useSubscription'
-import UpgradePrompt from './billing/UpgradePrompt'
 
 interface AIStarterModalProps {
   currentUser: User
@@ -34,9 +45,6 @@ interface AIStarterModalProps {
 
 
 const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, onProjectCreated }) => {
-  const { limits } = useSubscription()
-  const aiLimit = limits?.ai_ideas
-  const isAiQuotaExceeded = !!aiLimit && !aiLimit.isUnlimited && !aiLimit.canUse
   const [step, setStep] = useState<AIStarterStep>('initial')
   const [projectName, setProjectName] = useState('')
   const [projectDescription, setProjectDescription] = useState('')
@@ -49,17 +57,104 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
   const [ideaCount, setIdeaCount] = useState<number>(AI_STARTER_VALIDATION.DEFAULT_IDEA_COUNT)
   const [ideaTolerance, setIdeaTolerance] = useState<number>(AI_STARTER_VALIDATION.DEFAULT_IDEA_TOLERANCE)
 
+  // Video analysis (Phase 07-03)
+  const { getCsrfHeaders } = useCsrfToken()
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const [videoStage, setVideoStage] = useState<VideoAnalysisStage>('idle')
+  const [videoProgressCurrent, setVideoProgressCurrent] = useState(0)
+  const [videoProgressTotal, setVideoProgressTotal] = useState(VIDEO_FRAME_COUNT)
+  const [videoError, setVideoError] = useState<string | undefined>(undefined)
+
+  const handleVideoFileSelected = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0]
+    // Reset input so selecting the same file twice still fires change.
+    if (event.target) event.target.value = ''
+    if (!file) return
+
+    setVideoError(undefined)
+    setVideoStage('extracting')
+    setVideoProgressCurrent(0)
+    setVideoProgressTotal(VIDEO_FRAME_COUNT)
+
+    let frames: Blob[]
+    try {
+      frames = await extractFrames(file, VIDEO_FRAME_COUNT, (p) => {
+        if (p.stage === 'extracting') {
+          setVideoProgressCurrent(p.current)
+          setVideoProgressTotal(p.total)
+        }
+      })
+    } catch (err) {
+      setVideoStage('error')
+      if (err instanceof VideoTooLargeError) {
+        setVideoError('Video is larger than 100MB. Please use a smaller file.')
+      } else if (err instanceof VideoTooLongError) {
+        setVideoError('Video is longer than 5 minutes. Please trim it first.')
+      } else if (err instanceof VideoDecodeError) {
+        setVideoError(
+          'Your browser could not decode this video. Try converting to MP4 and upload again.',
+        )
+      } else if (err instanceof VideoUnsupportedFormatError) {
+        setVideoError('Unsupported format. Use MP4, WebM, or MOV.')
+      } else {
+        setVideoError('Something went wrong reading the video file.')
+      }
+      return
+    }
+
+    setVideoStage('analyzing')
+    try {
+      const result = await analyzeVideo(
+        frames,
+        {
+          projectName,
+          projectType: selectedProjectType === 'auto' ? undefined : selectedProjectType,
+          description: projectDescription,
+        },
+        { headers: getCsrfHeaders() },
+      )
+
+      // Merge suggested ideas into the existing review flow. We intentionally
+      // reuse the same state slot that generateProjectIdeas populates so the
+      // downstream ProjectReviewStep keeps working unchanged.
+      setAnalysis({
+        needsClarification: false,
+        clarifyingQuestions: [],
+        projectAnalysis: {
+          industry: 'auto',
+          scope: 'Video',
+          timeline: 'Unspecified',
+          primaryGoals: [result.summary],
+          recommendedProjectType: 'other' as ProjectType,
+          projectTypeReasoning: result.summary,
+        },
+        generatedIdeas: result.suggestedIdeas.map((idea, index) => ({
+          content: idea.content,
+          details: idea.details ?? '',
+          x: idea.x ?? 260,
+          y: idea.y ?? 260,
+          priority: idea.priority ?? 'moderate',
+          // Downstream create-idea path will assign created_by and project_id.
+          _videoSourceIndex: index,
+        })) as unknown as ProjectAnalysis['generatedIdeas'],
+      })
+      setVideoStage('done')
+      setStep('review')
+    } catch (err) {
+      logger.error('Video analysis failed:', err)
+      setVideoStage('error')
+      setVideoError('Video analysis could not be completed. Please try again.')
+    }
+  }
+
 
   const handleInitialAnalysis = async () => {
     if (!validateAIStarterForm(projectName, projectDescription)) return
 
     setIsLoading(true)
     setError(null)
-
-    if (isAiQuotaExceeded) {
-      setError(null)
-      return
-    }
 
     try {
       logger.debug('🎯 Starting AI project analysis...')
@@ -250,21 +345,18 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
 
         {/* Content */}
         <div className="p-6">
-          {isAiQuotaExceeded && aiLimit && (
-            <div className="mb-4">
-              <UpgradePrompt
-                resource="ai_ideas"
-                limit={aiLimit.limit}
-                used={aiLimit.current}
-              />
-            </div>
-          )}
           {error && (
-            <div className="mb-6 rounded-lg p-4 border bg-garnet-50 border-garnet-200">
-              <p className="text-sm text-garnet-700">{error}</p>
+            <div className="mb-6 rounded-lg p-4 border" style={{
+              backgroundColor: 'var(--garnet-50)',
+              borderColor: 'var(--garnet-200)'
+            }}>
+              <p className="text-sm" style={{ color: 'var(--garnet-700)' }}>{error}</p>
               <button
                 onClick={() => setError(null)}
-                className="text-sm underline mt-1 text-garnet-600 hover:text-garnet-800"
+                className="text-sm underline mt-1"
+                style={{ color: 'var(--garnet-600)' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--garnet-800)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--garnet-600)'}
               >
                 Dismiss
               </button>
@@ -272,7 +364,41 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
           )}
 
           {step === 'initial' && (
-            <ProjectBasicsStep
+            <>
+              <div className="mb-4 rounded-lg border p-4" style={{ borderColor: 'var(--graphite-200)' }}>
+                <p className="mb-2 text-sm font-medium" style={{ color: 'var(--graphite-800)' }}>
+                  Got a video? Let AI pull ideas straight from it.
+                </p>
+                <p className="mb-3 text-xs" style={{ color: 'var(--graphite-600)' }}>
+                  MP4, WebM, or MOV · up to 100MB · up to 5 minutes. Frames are
+                  extracted in your browser — the video file itself never leaves
+                  your device.
+                </p>
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/mp4,video/webm,video/quicktime"
+                  className="sr-only"
+                  onChange={handleVideoFileSelected}
+                  aria-label="Upload video for AI analysis"
+                />
+                <button
+                  type="button"
+                  onClick={() => videoInputRef.current?.click()}
+                  disabled={videoStage === 'extracting' || videoStage === 'analyzing'}
+                  className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+                  style={{ backgroundColor: 'var(--sapphire-500)', color: 'white' }}
+                >
+                  Upload video
+                </button>
+                <VideoAnalysisProgress
+                  stage={videoStage}
+                  current={videoProgressCurrent}
+                  total={videoProgressTotal}
+                  errorMessage={videoError}
+                />
+              </div>
+              <ProjectBasicsStep
               projectName={projectName}
               onProjectNameChange={setProjectName}
               projectDescription={projectDescription}
@@ -290,6 +416,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
               onCancel={onClose}
               onStartAnalysis={handleInitialAnalysis}
             />
+            </>
           )}
           {step === 'questions' && analysis && (
             <ClarifyingQuestionsStep

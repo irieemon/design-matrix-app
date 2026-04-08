@@ -11,6 +11,7 @@
  * - POST /api/ai?action=generate-roadmap-v2
  * - POST /api/ai?action=analyze-file
  * - POST /api/ai?action=analyze-image
+ * - POST /api/ai?action=analyze-video
  * - POST /api/ai?action=transcribe-audio
  */
 
@@ -20,9 +21,7 @@ import {
   withCSRF,
   withAuth,
   compose,
-  withQuotaCheck,
   type AuthenticatedRequest,
-  type QuotaRequest,
 } from './_lib/middleware/index.js';
 import {
   handleGenerateIdeas,
@@ -30,6 +29,7 @@ import {
   handleGenerateRoadmap,
   handleAnalyzeFile,
   handleAnalyzeImage,
+  handleAnalyzeVideo,
   handleTranscribeAudio,
 } from './_lib/ai/index.js';
 
@@ -42,9 +42,7 @@ async function aiRouter(req: AuthenticatedRequest, res: VercelResponse) {
 
   switch (action) {
     case 'generate-ideas':
-      return withQuotaCheck('ai_ideas', (qreq: QuotaRequest, qres) =>
-        handleGenerateIdeas(qreq as unknown as AuthenticatedRequest, qres)
-      )(req, res);
+      return handleGenerateIdeas(req, res);
     case 'generate-insights':
       return handleGenerateInsights(req, res);
     case 'generate-roadmap':
@@ -54,6 +52,8 @@ async function aiRouter(req: AuthenticatedRequest, res: VercelResponse) {
       return handleAnalyzeFile(req, res);
     case 'analyze-image':
       return handleAnalyzeImage(req, res);
+    case 'analyze-video':
+      return handleAnalyzeVideo(req, res);
     case 'transcribe-audio':
       return handleTranscribeAudio(req, res);
     default:
@@ -65,6 +65,7 @@ async function aiRouter(req: AuthenticatedRequest, res: VercelResponse) {
           'generate-roadmap',
           'analyze-file',
           'analyze-image',
+          'analyze-video',
           'transcribe-audio',
         ],
       });
