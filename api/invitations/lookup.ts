@@ -49,15 +49,22 @@ export default async function handler(
   const tokenHash = hashToken(token)
   const nowIso = new Date().toISOString()
 
+  // Look up by hash. We allow already-accepted rows through so the page
+  // can hand them off to the idempotent accept endpoint, which will detect
+  // existing membership and redirect into the project — important for
+  // users who retry the same invite link.
   const { data: invite, error } = await supabase
     .from('project_invitations')
-    .select('project_id, role, invited_by')
+    .select('project_id, role, invited_by, expires_at, accepted_at')
     .eq('token_hash', tokenHash)
-    .is('accepted_at', null)
-    .gt('expires_at', nowIso)
     .maybeSingle()
 
   if (error || !invite) {
+    return res.status(404).json(NOT_FOUND)
+  }
+
+  // Still reject expired UNACCEPTED invitations (no idempotent recovery there).
+  if (!invite.accepted_at && invite.expires_at < nowIso) {
     return res.status(404).json(NOT_FOUND)
   }
 
