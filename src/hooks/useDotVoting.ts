@@ -26,6 +26,7 @@ import type { ConnectionState } from '../lib/realtime/ScopedRealtimeManager'
 
 const MAX_VOTES = 5
 const ERROR_DISMISS_MS = 4000
+const POLLING_INTERVAL_MS = 5000
 
 // Error copy (UX §4 verbatim)
 const COPY_BUDGET_FULL = "You've used all 5 votes. Remove one to cast another."
@@ -189,11 +190,16 @@ export function useDotVoting(
       prevConnectionStateRef.current = state
     })
 
+    const unsubPollingTick = manager.onPollingTick(() => {
+      void reconcile()
+    }, POLLING_INTERVAL_MS)
+
     // Initial reconcile
     void reconcile().finally(() => setLoading(false))
 
     return () => {
       unsubStateChange()
+      unsubPollingTick()
       clearErrorTimer()
     }
   }, [manager, sessionId, handleVoteEvent, reconcile, clearErrorTimer])

@@ -63,11 +63,13 @@ interface ManagerStub {
   manager: ScopedRealtimeManager
   emitVoteEvent(payload: PostgresPayload): void
   fireConnectionState(state: ConnectionState): void
+  firePollingTick(): void
 }
 
 function createManagerStub(): ManagerStub {
   let postgresHandler: ((p: PostgresPayload) => void) | null = null
   const connectionStateHandlers: Set<(s: ConnectionState) => void> = new Set()
+  let pollingTickHandler: (() => void) | null = null
 
   const manager = {
     onPostgresChange: vi.fn((_table: string, _filter: unknown, handler: (p: PostgresPayload) => void) => {
@@ -79,7 +81,10 @@ function createManagerStub(): ManagerStub {
       connectionStateHandlers.add(handler)
       return () => connectionStateHandlers.delete(handler)
     }),
-    onPollingTick: vi.fn(() => () => {}),
+    onPollingTick: vi.fn((handler: () => void) => {
+      pollingTickHandler = handler
+      return () => { pollingTickHandler = null }
+    }),
     sendBroadcast: vi.fn(),
     subscribe: vi.fn().mockResolvedValue(undefined),
     unsubscribe: vi.fn().mockResolvedValue(undefined),
@@ -96,6 +101,9 @@ function createManagerStub(): ManagerStub {
     },
     fireConnectionState(state) {
       for (const h of connectionStateHandlers) h(state)
+    },
+    firePollingTick() {
+      pollingTickHandler?.()
     },
   }
 }
@@ -536,6 +544,33 @@ describe('T-054A-062: reconnect triggers reconcile', () => {
 
     await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(2))
     expect(result.current.tallies.get('a')).toBe(5)
+  })
+})
+
+// --------------------------------------------------------------------------
+// T-054A-062b: polling tick triggers reconcile when manager degrades to polling
+// --------------------------------------------------------------------------
+describe('T-054A-062b: polling tick triggers reconcile', () => {
+  it('calls reconcileTallies when onPollingTick fires after manager degrades to polling state', async () => {
+    mockReconcile
+      .mockResolvedValueOnce(new Map([['a', 1]]))
+      .mockResolvedValueOnce(new Map([['a', 7]]))
+    mockListVotes.mockResolvedValue([])
+
+    const stub = createManagerStub()
+    const { result } = renderHook(() => useDotVoting('session-1', 'u1', stub.manager))
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(mockReconcile).toHaveBeenCalledTimes(1)
+
+    // Simulate polling tick (manager has degraded to polling after 5 failed reconnects)
+    await act(async () => {
+      stub.firePollingTick()
+      await Promise.resolve()
+    })
+
+    await waitFor(() => expect(mockReconcile).toHaveBeenCalledTimes(2))
+    expect(result.current.tallies.get('a')).toBe(7)
   })
 })
 
