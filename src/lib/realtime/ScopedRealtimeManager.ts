@@ -54,7 +54,9 @@ interface PostgresFilter {
 interface PostgresListenerEntry {
   table: string
   filter: PostgresFilter
-  handler: (payload: { new: Record<string, unknown>; old: Record<string, unknown> | null }) => void
+  // Poirot Finding 1 fix: eventType is passed through from the raw payload so
+  // consumers can use `payload.eventType === 'DELETE'` instead of heuristics.
+  handler: (payload: { new: Record<string, unknown>; old: Record<string, unknown> | null; eventType: string }) => void
 }
 
 interface BroadcastListenerEntry {
@@ -107,7 +109,7 @@ export class ScopedRealtimeManager {
   onPostgresChange<T = Record<string, unknown>>(
     table: string,
     filter: PostgresFilter,
-    handler: (payload: { new: T; old: T | null }) => void
+    handler: (payload: { new: T; old: T | null; eventType: string }) => void
   ): void {
     this.postgresListeners.push({
       table,
@@ -240,7 +242,9 @@ export class ScopedRealtimeManager {
           old: Record<string, unknown> | null
           eventType: string
         }) => {
-          entry.handler({ new: payload.new ?? {}, old: payload.old ?? null })
+          // Poirot Finding 1 fix: pass eventType through so handlers can use
+          // `payload.eventType === 'DELETE'` instead of heuristics.
+          entry.handler({ new: payload.new ?? {}, old: payload.old ?? null, eventType: payload.eventType })
         }
       )
     }
@@ -350,13 +354,18 @@ export class ScopedRealtimeManager {
   private async resubscribe(): Promise<void> {
     if (this.isDestroyed) return
     if (this.channel) {
+      // Poirot Finding 4 fix: capture channel reference before the async boundary.
+      // If unsubscribe() fires mid-execution and nulls this.channel, channelToRemove
+      // still holds the original reference — null-guard prevents removeChannel(null).
+      const channelToRemove = this.channel
+      this.channel = null
       try {
-        await supabase.removeChannel(this.channel)
+        await supabase.removeChannel(channelToRemove)
       } catch {
         // best-effort cleanup
       }
-      this.channel = null
     }
+    if (this.isDestroyed) return
     await this.subscribe()
   }
 

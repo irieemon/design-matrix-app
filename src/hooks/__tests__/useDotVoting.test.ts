@@ -57,6 +57,8 @@ import type { ConnectionState } from '../../lib/realtime/ScopedRealtimeManager'
 type PostgresPayload = {
   new: Record<string, unknown>
   old: Record<string, unknown> | null
+  // Poirot Finding 1: eventType must flow through so handler can use it
+  eventType: string
 }
 
 interface ManagerStub {
@@ -389,6 +391,7 @@ describe('T-054A-057: remote INSERT by other user', () => {
       stub.emitVoteEvent({
         new: { user_id: 'u2', idea_id: 'x', session_id: 'session-1' },
         old: null,
+        eventType: 'INSERT',
       })
     })
 
@@ -425,6 +428,7 @@ describe('T-054A-058: remote INSERT by self deduped', () => {
       stub.emitVoteEvent({
         new: { user_id: 'u1', idea_id: 'a', session_id: 'session-1' },
         old: null,
+        eventType: 'INSERT',
       })
     })
 
@@ -452,6 +456,7 @@ describe('T-054A-059: remote DELETE decrements tally', () => {
       stub.emitVoteEvent({
         new: {},
         old: { user_id: 'u2', idea_id: 'a', session_id: 'session-1' },
+        eventType: 'DELETE',
       })
     })
 
@@ -615,5 +620,77 @@ describe('T-054A-063: DotVotingProvider context delivers hook state', () => {
     expect(typeof result.current.castVote).toBe('function')
     expect(typeof result.current.removeVote).toBe('function')
     void Consumer
+  })
+})
+
+// --------------------------------------------------------------------------
+// T-054A-055b: two rapid removeVote calls produce correct final state
+// Poirot Finding 3: removeVote must sync votesUsedRef immediately so the
+// second concurrent call sees the already-decremented value.
+// --------------------------------------------------------------------------
+describe('T-054A-055b: two rapid removeVotes produce correct final state', () => {
+  it('final votesUsed is 0 after two rapid removeVote calls from votesUsed=2', async () => {
+    mockReconcile.mockResolvedValue(new Map([['a', 2], ['b', 1]]))
+    mockListVotes.mockResolvedValue([
+      { user_id: 'u1', idea_id: 'a' },
+      { user_id: 'u1', idea_id: 'b' },
+    ])
+
+    let resolveA!: () => void
+    let resolveB!: () => void
+    mockRemoveVote
+      .mockReturnValueOnce(new Promise<void>((r) => { resolveA = () => r() }))
+      .mockReturnValueOnce(new Promise<void>((r) => { resolveB = () => r() }))
+
+    const stub = createManagerStub()
+    const { result } = renderHook(() => useDotVoting('session-1', 'u1', stub.manager))
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.votesUsed).toBe(2)
+
+    // Fire both concurrently in the same act — ref must track decrements
+    act(() => {
+      void result.current.removeVote('a')
+      void result.current.removeVote('b')
+    })
+
+    // Both optimistic decrements applied: 2 → 1 → 0
+    expect(result.current.votesUsed).toBe(0)
+    expect(result.current.myVotes.has('a')).toBe(false)
+    expect(result.current.myVotes.has('b')).toBe(false)
+
+    resolveA()
+    resolveB()
+  })
+})
+
+// --------------------------------------------------------------------------
+// T-054A-057b: UPDATE event does NOT decrement tally
+// Poirot Finding 1: old heuristic would misroute UPDATE events as DELETE.
+// The eventType-based classifier must ignore UPDATE entirely.
+// --------------------------------------------------------------------------
+describe('T-054A-057b: UPDATE event does NOT decrement tally', () => {
+  it('emitting an UPDATE event leaves tallies unchanged', async () => {
+    mockReconcile.mockResolvedValue(new Map([['a', 3]]))
+    mockListVotes.mockResolvedValue([])
+
+    const stub = createManagerStub()
+    const { result } = renderHook(() => useDotVoting('session-1', 'u1', stub.manager))
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.tallies.get('a')).toBe(3)
+
+    act(() => {
+      // UPDATE event — old heuristic would have treated this as DELETE
+      stub.emitVoteEvent({
+        new: { user_id: 'u2', idea_id: 'a', session_id: 'session-1' },
+        old: { user_id: 'u2', idea_id: 'a', session_id: 'session-1' },
+        eventType: 'UPDATE',
+      })
+    })
+
+    // Tally must be unchanged — UPDATE events are not insert or delete
+    expect(result.current.tallies.get('a')).toBe(3)
+    expect(result.current.votesUsed).toBe(0)
   })
 })

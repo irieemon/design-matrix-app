@@ -14,7 +14,9 @@ import { useDotVoting } from '../hooks/useDotVoting'
 import type { UseDotVotingReturn } from '../hooks/useDotVoting'
 import type { ScopedRealtimeManager } from '../lib/realtime/ScopedRealtimeManager'
 
-const DotVotingContext = createContext<UseDotVotingReturn | null>(null)
+// Exported so DotBudgetIndicator can read votesUsed via useContext without
+// requiring a separate prop (session header wire-up path per ADR contract table).
+export const DotVotingContext = createContext<UseDotVotingReturn | null>(null)
 
 export interface DotVotingProviderProps {
   sessionId: string

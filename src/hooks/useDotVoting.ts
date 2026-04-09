@@ -48,6 +48,8 @@ export interface UseDotVotingReturn {
 type VotePayload = {
   new: Record<string, unknown>
   old: Record<string, unknown> | null
+  // Poirot Finding 1 fix: eventType is now passed through from ScopedRealtimeManager
+  eventType: string
 }
 
 export function useDotVoting(
@@ -119,8 +121,11 @@ export function useDotVoting(
   // postgres_changes event handler
   // ---------------------------------------------------------------------------
   const handleVoteEvent = useCallback((payload: VotePayload) => {
-    const isInsert = payload.new && Object.keys(payload.new).length > 0 && payload.old === null
-    const isDelete = !isInsert
+    // Poirot Finding 1 fix: use eventType from ScopedRealtimeManager instead of
+    // heuristic (old === null && empty new). The heuristic misroutes UPDATE events
+    // that arrive with no old row (e.g. full-table-scan-filtered updates).
+    const isInsert = payload.eventType === 'INSERT'
+    const isDelete = payload.eventType === 'DELETE'
 
     if (isInsert) {
       const row = payload.new
@@ -268,6 +273,10 @@ export function useDotVoting(
     const prevTallies = new Map(talliesRef.current)
 
     setVotesUsed((prev) => Math.max(0, prev - 1))
+    // Poirot Finding 3 fix: mirror castVote pattern — update ref immediately so
+    // rapid concurrent removeVote calls read the correct decremented value instead
+    // of a stale pre-decrement value from the previous render cycle.
+    votesUsedRef.current = Math.max(0, prevVotesUsed - 1)
     setMyVotes((prev) => {
       const next = new Set(prev)
       next.delete(ideaId)

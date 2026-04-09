@@ -27,6 +27,12 @@ import SessionControls from '../brainstorm/SessionControls'
 import DesktopParticipantPanel from '../brainstorm/DesktopParticipantPanel'
 import { useBrainstormRealtime } from '../../hooks/useBrainstormRealtime'
 import { isFeatureEnabled } from '../../lib/config'
+// Phase 05.4a: session-scope dot voting components
+import { DotVotingProvider } from '../../contexts/DotVotingContext'
+import { DotBudgetIndicator } from '../brainstorm/DotBudgetIndicator'
+import { DotVoteControls } from '../brainstorm/DotVoteControls'
+import { SessionPresenceStack } from '../brainstorm/SessionPresenceStack'
+import { ScopedRealtimeManager } from '../../lib/realtime/ScopedRealtimeManager'
 
 // Lazy load modals for performance
 const AddIdeaModal = lazy(() => import('../AddIdeaModal'))
@@ -72,6 +78,11 @@ interface MatrixFullScreenViewProps {
   onRefreshIdeas?: () => Promise<void>
   /** Direct state setter for ideas (fallback when onRefreshIdeas is unavailable) */
   setIdeas?: React.Dispatch<React.SetStateAction<IdeaCard[]>>
+  // Phase 05.4a: session-scope voting props (optional — only used in session mode)
+  /** Active brainstorm session ID — enables voting controls when set */
+  activeSessionId?: string
+  /** Authenticated user ID for voting context */
+  sessionUserId?: string
 }
 
 /**
@@ -100,7 +111,9 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   onAddIdea,
   onUpdateIdea,
   onRefreshIdeas,
-  setIdeas
+  setIdeas,
+  activeSessionId,
+  sessionUserId,
 }) => {
   // View preferences state
   const [showGrid, setShowGrid] = useState(true)
@@ -117,6 +130,33 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   const [isCreatingSession, setIsCreatingSession] = useState(false)
   const [showSessionQR, setShowSessionQR] = useState(false)
   const [mobileIdeaIds, setMobileIdeaIds] = useState<Set<string>>(new Set())
+
+  // Phase 05.4a: ScopedRealtimeManager for voting (session mode only)
+  // Created once when activeSessionId is set and cleaned up on unmount/change.
+  const votingManagerRef = React.useRef<ScopedRealtimeManager | null>(null)
+  const [votingManager, setVotingManager] = React.useState<ScopedRealtimeManager | null>(null)
+
+  React.useEffect(() => {
+    if (!activeSessionId || !sessionUserId) {
+      return
+    }
+    const manager = new ScopedRealtimeManager({
+      scope: { type: 'session', id: activeSessionId },
+      userId: sessionUserId,
+      displayName: currentUser.full_name ?? currentUser.email ?? sessionUserId,
+    })
+    votingManagerRef.current = manager
+    setVotingManager(manager)
+    void manager.subscribe()
+
+    return () => {
+      void manager.unsubscribe()
+      votingManagerRef.current = null
+      setVotingManager(null)
+    }
+  }, [activeSessionId, sessionUserId, currentUser.name, currentUser.email])
+
+  const isVotingActive = !!(activeSessionId && sessionUserId && votingManager)
 
   // Phase Four: Real-time brainstorm data (participants, ideas, session state)
   // NOTE: Ideas are handled by the main useIdeas hook's real-time subscription (project-based).
@@ -548,7 +588,9 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   // Don't render if not active
   if (!isActive) return null
 
-  return (
+  // Phase 05.4a: hoist DotVotingProvider to wrap the full view so DotBudgetIndicator
+  // (header) and DotVoteControls (idea cards) share a single context instance (D-11).
+  const viewContent = (
     <div
       ref={handleContainerRef}
       className="fixed inset-0 z-[9999]"
@@ -607,6 +649,18 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
 
           {/* Right: Action Buttons */}
           <div className="flex items-center gap-3">
+            {/* Phase 05.4a: session presence + vote budget (session mode only) */}
+            {isVotingActive && activeSessionId && sessionUserId && (
+              <>
+                <SessionPresenceStack
+                  scope={{ type: 'session', id: activeSessionId }}
+                  currentUserId={sessionUserId}
+                  currentUserDisplayName={currentUser.full_name ?? currentUser.email ?? sessionUserId}
+                />
+                {/* Reads votesUsed from DotVotingContext (provider hoisted at view root) */}
+                <DotBudgetIndicator />
+              </>
+            )}
             {/* DEV MODE: Diagnostic Banner */}
             {import.meta.env.DEV && (
               <div className="px-3 py-1 rounded bg-yellow-500/20 border border-yellow-500/50 text-xs text-yellow-200">
@@ -821,6 +875,23 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
         )}
     </div>
   )
+
+  // Wrap with DotVotingProvider when a voting session is active (D-11).
+  // This makes votesUsed/castVote/removeVote available to DotBudgetIndicator in
+  // the header and DotVoteControls inside idea cards — one provider, one instance.
+  if (isVotingActive && activeSessionId && sessionUserId) {
+    return (
+      <DotVotingProvider
+        sessionId={activeSessionId}
+        currentUserId={sessionUserId}
+        manager={votingManager}
+      >
+        {viewContent}
+      </DotVotingProvider>
+    )
+  }
+
+  return viewContent
 }
 
 export default MatrixFullScreenView

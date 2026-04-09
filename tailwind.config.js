@@ -138,22 +138,67 @@ export default {
           900: '#111827',
         },
 
-        // Monochrome-Lux gem-tone accents
+        // Monochrome-Lux gem-tone accents (full scales for inline-style migration)
         sapphire: {
-          50: '#EFF6FF',           // Soft sapphire tint
-          700: '#1D4ED8',          // Strong sapphire foreground
+          50: '#EFF6FF',
+          100: '#DBEAFE',
+          200: '#BFDBFE',
+          300: '#93C5FD',
+          400: '#60A5FA',
+          500: '#3B82F6',
+          600: '#2563EB',
+          700: '#1D4ED8',
+          800: '#1E40AF',
+          900: '#1E3A8A',
         },
         emerald: {
-          50: '#ECFDF5',           // Soft emerald tint
-          700: '#047857',          // Strong emerald foreground
+          50: '#ECFDF5',
+          100: '#D1FAE5',
+          200: '#A7F3D0',
+          300: '#6EE7B7',
+          400: '#34D399',
+          500: '#10B981',
+          600: '#059669',
+          700: '#047857',
+          800: '#065F46',
+          900: '#064E3B',
         },
         amber: {
-          50: '#FFFBEB',           // Soft amber tint
-          700: '#B45309',          // Strong amber foreground
+          50: '#FFFBEB',
+          100: '#FEF3C7',
+          200: '#FDE68A',
+          300: '#FCD34D',
+          400: '#FBBF24',
+          500: '#F59E0B',
+          600: '#D97706',
+          700: '#B45309',
+          800: '#92400E',
+          900: '#78350F',
         },
         garnet: {
-          50: '#FEF2F2',           // Soft garnet tint
-          700: '#B91C1C',          // Strong garnet foreground
+          50: '#FEF2F2',
+          100: '#FEE2E2',
+          200: '#FECACA',
+          300: '#FCA5A5',
+          400: '#F87171',
+          500: '#EF4444',
+          600: '#DC2626',
+          700: '#B91C1C',
+          800: '#991B1B',
+          900: '#7F1D1D',
+        },
+        // Ruby alias (legacy code references var(--ruby-*), maps to garnet/error)
+        ruby: {
+          50: '#FEF2F2',
+          100: '#FEE2E2',
+          200: '#FECACA',
+          300: '#FCA5A5',
+          400: '#F87171',
+          500: '#EF4444',
+          600: '#DC2626',
+          700: '#B91C1C',
+          800: '#991B1B',
+          900: '#7F1D1D',
         },
 
         // Component state colors (ANIMATED LUX)
@@ -313,6 +358,9 @@ export default {
         'shimmer': 'shimmer 2s infinite',
         'pulse-subtle': 'pulseSubtle 2s infinite',
         'bounce-gentle': 'bounceGentle 1s infinite',
+        // Phase 05.4a: realtime tally bump — 180ms, peak at 44% (80ms/180ms = 44.4%)
+        // UX §3: "Keyframes: 0ms scale(1), 80ms scale(1.18), 180ms scale(1)"
+        'tally-bump': 'tallyBump 0.18s ease-in-out',
       },
 
       keyframes: {
@@ -351,6 +399,14 @@ export default {
         bounceGentle: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-4px)' },
+        },
+        // Phase 05.4a: realtime tally bump keyframe
+        // Peak at 44% because 80ms / 180ms = 44.4% — UX §3 is explicit.
+        // Test T-054A-090b reads this config statically to guard against '50%' drift.
+        tallyBump: {
+          '0%': { transform: 'scale(1)' },
+          '44%': { transform: 'scale(1.18)' },
+          '100%': { transform: 'scale(1)' },
         },
       },
 
