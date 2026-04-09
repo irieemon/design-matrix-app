@@ -16,11 +16,19 @@ Real-time collaborative brainstorming with AI-powered multi-modal analysis — t
 
 Prioritas is live with security hardening, AI SDK v6 + multi-provider routing, full multi-modal analysis (image/audio/voice/video), invitation-based collaboration, real Stripe billing enforcement, and mobile brainstorm polish. Real-time presence/voting/matrix-sync deferred to v1.1.
 
-## Next Milestone Goals (v1.1 proposed)
+## Current Milestone: v1.1 — Advanced Collaboration & Quality
 
-- **Advanced Collaboration** — presence indicators, realtime idea sync, dot-voting UI, realtime vote tallies, matrix drag broadcast (Phase 05.4 scope)
-- **Quality debt closure** — MOB-02 iOS device verify, Phase 07 Playwright spec drift, Phase 05.3 E2E regression, Phase 06 integration coverage
-- **Production hardening** — Resend domain verification, analyze-file CSRF race, AI Gateway project-wide migration
+**Goal:** Finish the real-time collaboration experience deferred from v1.0 and close the quality-debt backlog. Stabilization only — no brand-new features.
+
+**Target phases:**
+- **05.4a** — Session-scope voting (dot-voting UI + realtime tallies + session presence)
+- **05.4b** — Project-scope realtime matrix (presence, live cursors, drag lock, position sync)
+- **05.5** — Quality debt closure (MOB-02 iOS verify, Playwright spec drift, invite E2E regression, pgTAP for Phase 05.3 migrations)
+
+**Deferred to v1.2:**
+- Production hardening: Resend domain verification, analyze-file CSRF race, AI Gateway project-wide migration
+
+**Orchestration:** Eva + GSD hybrid (Eva routes pipeline agents, mirrors state into .planning/)
 
 <details>
 <summary>v1.0 requirements (archived)</summary>

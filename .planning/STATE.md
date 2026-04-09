@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: milestone_complete
-stopped_at: v1.0 shipped — awaiting v1.1 scope
-last_updated: "2026-04-09T19:00:00.000Z"
-last_activity: 2026-04-09 -- v1.0 milestone archived and tagged
+milestone: v1.1
+milestone_name: Advanced Collaboration & Quality
+status: ready_to_plan
+stopped_at: v1.1 milestone opened — awaiting phase planning
+last_updated: "2026-04-09T19:30:00.000Z"
+last_activity: 2026-04-09 -- /gsd-new-milestone 1.1 completed; Phase 05.4a next
 progress:
-  total_phases: 10
-  completed_phases: 10
-  total_plans: 26
-  completed_plans: 26
-  percent: 100
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 shipped_milestones:
   - v1.0 (2026-04-09)
 ---
@@ -20,71 +20,59 @@ shipped_milestones:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-06)
+See: .planning/PROJECT.md (updated 2026-04-09 for v1.1)
 
 **Core value:** Real-time collaborative brainstorming with AI-powered multi-modal analysis
-**Current focus:** Milestone v1.0 ready to complete — all 11 phases done
+**Current focus:** Milestone v1.1 — Advanced Collaboration & Quality (stabilization only; no new features)
 
 ## Current Position
 
-Phase: 07 (mobile-polish-video-analysis) — COMPLETE
-Plan: 3 of 3
-Status: Milestone v1.0 ready for /gsd-complete-milestone
-Last activity: 2026-04-09 -- Phase 07 UAT complete; VERIFICATION reverified
+Milestone: v1.1
+Phase: Not started (next: Phase 05.4a — Session-Scope Voting)
+Status: Ready to plan
+Last activity: 2026-04-09 — milestone opened
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0% (0/3 phases)
 
-## Performance Metrics
+## Orchestration Mode
 
-**Velocity:**
-
-- Total plans completed: 0
-- Average duration: --
-- Total execution time: 0 hours
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| - | - | - | - |
-
-**Recent Trend:**
-
-- Last 5 plans: --
-- Trend: --
-
-*Updated after each plan completion*
+**Eva + GSD hybrid** (per feedback_eva_plus_gsd_hybrid.md):
+- Eva is default persona; routes work through pipeline agents (Sable → Cal → Roz → Colby → Roz → Ellis)
+- Eva mirrors all work into `.planning/phases/*/` (CONTEXT, PLAN, SUMMARY, VERIFICATION)
+- `docs/pipeline/` state runs in parallel to `.planning/`
+- Milestone close-out uses `/gsd-complete-milestone`
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
-- Phase 05.1 inserted after Phase 5: Legacy CollaborationService migration to Phase-5 schema (URGENT) — uncovered during Plan 05-02 UAT when InviteCollaboratorModal succeeded but the collaborator-list UI 400'd on missing `status` column. Blocks Plan 05-02 UAT signoff and likely Plan 05-03 voting UI.
-- Phase 05.2 inserted after Phase 5: Transactional email via Resend for invitations (URGENT) — uncovered during Plan 05-02 UAT when invite POST succeeded but no email was delivered. New `/api/invitations/create` only returns `inviteUrl`; legacy EmailJS path was on the now-removed `onInvite` callback. Picked Resend over Vercel/Supabase (Vercel has no first-party email; Supabase email is auth-only). Blocks Plan 05-02 UAT signoff.
+- v1.0 shipped 2026-04-09. 5 COLLAB requirements + MOB-02 device verify + Playwright spec drift carried forward to v1.1.
+- v1.1 opened 2026-04-09. Phase 05.4 split into 05.4a (session-scope voting) and 05.4b (project-scope realtime matrix) for risk management. Phase 05.5 added to close quality debt. Phase 05.6 production hardening deferred to v1.2.
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Security hardening must complete before any new endpoints go live
-- AI SDK foundation must be in place before any multi-modal features
-- Video analysis is highest complexity and can be deferred if timeline is tight
+- Eva orchestrates everything going forward; GSD artifacts mirrored per hybrid contract
+- Phase 05.4 split into 05.4a/05.4b to manage risk — session scope ships first as warm-up
+- v1.1 is stabilization only — no brand-new features; enforced via REQUIREMENTS.md scope principle
+- v1.0 plans 05-03 and 05-04 are drafted contracts worth reusing in Cal ADR production
 
 ### Pending Todos
 
-- [ai-gateway-project-wide](todos/pending/ai-gateway-project-wide.md) — migrate all AI handlers to Vercel AI Gateway (user-confirmed direction 2026-04-07)
-- analyze-file 403 CSRF race — needs separate `/gsd-debug` session, fix likely in `src/hooks/useCsrfToken.ts`
-- Phase 07 Playwright mobile spec drift — `tests/e2e/mobile-critical-paths.spec.ts` selectors lag DesktopOnlyHint refactor (role=status→note, Tailwind→inline styles) and 2 touch-target/font-size checks; manual UAT Tests 4–8 confirm features work. Carry into next milestone.
+- [ai-gateway-project-wide](todos/pending/ai-gateway-project-wide.md) — deferred to v1.2 (OPS-03)
+- analyze-file 403 CSRF race — deferred to v1.2 (OPS-02)
+- Resend domain verification — deferred to v1.2 (OPS-01)
 
 ### Blockers/Concerns
 
-- Research flag: AI SDK migration needs careful testing to avoid regression in existing AI features
-- Research flag: ffmpeg.wasm single-thread performance should be benchmarked before committing to video phase
-- Research flag: iOS Safari MediaRecorder WebM support may need MP4 fallback
+- Multi-client Playwright E2E for Phase 05.4b is the project's biggest unknown — budget estimate contingency allocated
+- Phase 05.4b depends on 05.4a's `ScopedRealtimeManager` refactor landing cleanly
+- No automated coverage for Phase 05.3 SQL migrations means Phase 05.4/05.5 realtime work could silently regress RLS policies
 
 ## Session Continuity
 
-Last session: 2026-04-07T20:02:24.609Z
-Stopped at: Phase 05 UI-SPEC approved
-Resume file: .planning/phases/05-real-time-collaboration/05-UI-SPEC.md
+Last session: 2026-04-09T19:30:00Z
+Stopped at: v1.1 milestone opened, ready for Phase 05.4a planning
+Resume: Next step is Sable UX pass on dot-voting + session presence, then Cal ADR for Phase 05.4a
