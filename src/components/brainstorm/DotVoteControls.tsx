@@ -82,6 +82,11 @@ export function DotVoteControls({
     if (isReconnecting) return
 
     const isOwnVoteDot = dotIndex < ownVoteCount
+    // Guard: budget-full empty dot — aria-disabled is set but native disabled is
+    // intentionally absent (preserves the aria-disabled testing pattern from T-054A-082).
+    // The click handler is the correct enforcement boundary (MUST-FIX 6).
+    const isBudgetFullEmpty = votesRemaining === 0 && !isOwnVoteDot
+    if (isBudgetFullEmpty) return
 
     if (isOwnVoteDot) {
       void removeVote(ideaId)

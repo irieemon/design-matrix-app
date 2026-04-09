@@ -425,3 +425,69 @@ describe('T-054A-129: instantiates ScopedRealtimeManager with correct scope', ()
     )
   })
 })
+
+// --------------------------------------------------------------------------
+// T-054A-129b: MUST-FIX 4 — shared manager prop skips creating own instance
+// --------------------------------------------------------------------------
+describe('T-054A-129b: shared manager prop prevents second ScopedRealtimeManager', () => {
+  it('does NOT instantiate ScopedRealtimeManager when manager prop is provided', () => {
+    const sharedManager = {
+      subscribe: vi.fn().mockResolvedValue(undefined),
+      unsubscribe: vi.fn().mockResolvedValue(undefined),
+      onPresence: vi.fn(),
+      onConnectionStateChange: vi.fn(() => () => {}),
+    } as unknown as InstanceType<typeof ScopedRealtimeManager>
+
+    render(
+      <SessionPresenceStack
+        scope={{ type: 'session', id: 's1' }}
+        currentUserId="u1"
+        currentUserDisplayName="Alice"
+        manager={sharedManager}
+      />
+    )
+
+    // Constructor must NOT have been called — no second channel opened
+    expect(MockScopedRealtimeManager).not.toHaveBeenCalled()
+    // And subscribe must NOT have been called on the shared manager
+    // (parent already subscribed it)
+    expect(sharedManager.subscribe).not.toHaveBeenCalled()
+  })
+})
+
+// --------------------------------------------------------------------------
+// T-054A-129c: MUST-FIX 5 — slide-in animation triggers for new participant
+// --------------------------------------------------------------------------
+describe('T-054A-129c: slide-in animation triggers for new participant', () => {
+  it('new participant avatar has animate-slide-right class after second presence snapshot', () => {
+    mockMatchMedia(false) // motion allowed
+
+    render(
+      <SessionPresenceStack
+        scope={{ type: 'session', id: 's1' }}
+        currentUserId="u1"
+        currentUserDisplayName="Alice"
+      />
+    )
+
+    // Initial snapshot: just Alice
+    act(() => {
+      capturedPresenceHandler?.([
+        { userId: 'u1', displayName: 'Alice', joinedAt: 0, tabId: 'ta' },
+      ])
+    })
+
+    // Bob joins — second snapshot
+    act(() => {
+      capturedPresenceHandler?.([
+        { userId: 'u1', displayName: 'Alice', joinedAt: 0, tabId: 'ta' },
+        { userId: 'u2', displayName: 'Bob', joinedAt: 50, tabId: 'tb' },
+      ])
+    })
+
+    // Bob's avatar should have the slide-in class because prevParticipantIds
+    // (from the previous render) did not contain u2
+    const bobAvatar = screen.getByLabelText('Bob — in this session')
+    expect(bobAvatar.className).toContain('animate-slide-right')
+  })
+})

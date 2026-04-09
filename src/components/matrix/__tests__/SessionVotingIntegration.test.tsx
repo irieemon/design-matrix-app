@@ -172,9 +172,6 @@ describe('T-054A-150: DotVotingProvider rendered in session mode', () => {
 // --------------------------------------------------------------------------
 describe('T-054A-151: DotBudgetIndicator in session header', () => {
   it('renders vote budget chip when voting is enabled for an active session', () => {
-    // MatrixFullScreenView shows the budget indicator only when a session
-    // has been created and voting is active. We simulate this by injecting
-    // a test prop that enables the voting overlay.
     render(
       <MatrixFullScreenView
         {...baseProps}
@@ -183,16 +180,9 @@ describe('T-054A-151: DotBudgetIndicator in session header', () => {
       />
     )
 
-    // When session + voting enabled, chip appears in the action bar.
-    // The chip aria-label format is "Vote budget: N of 5 votes used"
-    const chip = screen.queryByLabelText(/Vote budget:/i)
-    if (chip) {
-      expect(chip).toBeDefined()
-    } else {
-      // If prop not yet wired (acceptable at integration boundary), verify
-      // component renders without crash.
-      expect(screen.getByTestId('design-matrix')).toBeDefined()
-    }
+    // DotBudgetIndicator aria-label format is "Vote budget: N of 5 votes used"
+    const chip = screen.getByLabelText(/Vote budget:/i)
+    expect(chip).toBeDefined()
   })
 })
 
@@ -210,13 +200,8 @@ describe('T-054A-152: SessionPresenceStack in session header', () => {
     )
 
     // Presence group has role=group with "Session participants" label
-    const presenceGroup = screen.queryByRole('group', { name: /Session participants/i })
-    if (presenceGroup) {
-      expect(presenceGroup).toBeDefined()
-    } else {
-      // Component renders without crash is the minimum bar for integration
-      expect(screen.getByTestId('design-matrix')).toBeDefined()
-    }
+    const presenceGroup = screen.getByRole('group', { name: /Session participants/i })
+    expect(presenceGroup).toBeDefined()
   })
 })
 
@@ -234,13 +219,9 @@ describe('T-054A-153: DotVoteControls per idea card in session mode', () => {
     )
 
     // DotVoteControls groups have aria-label="Votes for {ideaTitle}"
-    const voteGroups = screen.queryAllByRole('group', { name: /^Votes for/i })
-    if (voteGroups.length > 0) {
-      expect(voteGroups.length).toBe(mockIdeas.length)
-    } else {
-      // Wire-up in MatrixFullScreenView is the Unit 5 task — component renders OK
-      expect(screen.getByTestId('design-matrix')).toBeDefined()
-    }
+    // Hardened assertion: must find exactly one per idea — fails if render site removed.
+    const voteGroups = screen.getAllByRole('group', { name: /^Votes for/i })
+    expect(voteGroups.length).toBe(mockIdeas.length)
   })
 })
 

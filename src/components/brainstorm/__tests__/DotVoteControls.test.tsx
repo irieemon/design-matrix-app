@@ -245,10 +245,10 @@ describe('T-054A-086: clicking own-vote dot calls removeVote', () => {
 })
 
 // --------------------------------------------------------------------------
-// T-054A-087: component delegates to context.castVote at budget full
+// T-054A-087: budget-full empty dot click is blocked in the handler (MUST-FIX 6)
 // --------------------------------------------------------------------------
-describe('T-054A-087: component delegates castVote even at budget full', () => {
-  it('calls context.castVote when budget-full empty dot is clicked (hook enforces block)', () => {
+describe('T-054A-087: budget-full empty dot click does NOT call castVote', () => {
+  it('does NOT call context.castVote when a budget-full empty dot is clicked', () => {
     const castVote = vi.fn().mockResolvedValue(undefined)
     mockUseDotVotingContext.mockReturnValue(makeContext({
       votesUsed: 5,
@@ -262,8 +262,8 @@ describe('T-054A-087: component delegates castVote even at budget full', () => {
     const buttons = screen.getAllByRole('button')
     fireEvent.click(buttons[0])
 
-    // Component's only job is to delegate — budget enforcement is in the hook (T-054A-054)
-    expect(castVote).toHaveBeenCalledWith('idea-1')
+    // handleDotClick guards budget-full empty dots — castVote must NOT be called
+    expect(castVote).not.toHaveBeenCalled()
   })
 })
 

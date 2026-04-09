@@ -2,12 +2,16 @@
  * SessionPresenceStack — Phase 05.4a Wave 3, Unit 4
  *
  * Compact avatar stack showing who is currently in the brainstorm session.
- * Uses Supabase Presence via a self-managed ScopedRealtimeManager instance (D-14).
+ * Uses Supabase Presence via a ScopedRealtimeManager instance.
  *
  * Props:
  *   scope                   — { type: 'session' | 'project', id: string }
  *   currentUserId           — authenticated user's ID
  *   currentUserDisplayName  — display name for self
+ *   manager?                — optional shared ScopedRealtimeManager. When
+ *                             provided the component subscribes to its presence
+ *                             stream without creating a second channel (MUST-FIX 4).
+ *                             When absent a local instance is created (standalone use).
  *   className?              — optional wrapper class
  *
  * Presence key format: `${userId}:${tabId}` (SEC-02 mitigation).
@@ -25,10 +29,15 @@ import type { PresenceParticipant, Scope } from '../../lib/realtime/ScopedRealti
 
 export type { PresenceParticipant }
 
+/** Slide-in animation duration in ms — matches UX §1e (200ms). */
+const SLIDE_IN_DURATION_MS = 200
+
 export interface SessionPresenceStackProps {
   scope: Scope
   currentUserId: string
   currentUserDisplayName: string
+  /** Shared manager from parent — skips creating a second channel when provided. */
+  manager?: ScopedRealtimeManager
   className?: string
 }
 
@@ -121,10 +130,19 @@ function Avatar({ participant, isSelf, isNew }: AvatarProps): React.ReactElement
         'w-7 h-7 rounded-full flex items-center justify-center',
         'text-xs font-semibold text-white',
         'ring-2 ring-white',
-        isSelf ? 'ring-1 ring-sapphire-400' : '',
-        // Slide-in animation for new avatars (UX §1e, 200ms)
+        // NIT 8: self avatar — sapphire ring with white offset ring.
+        // ring-2 ring-white provides the white gap; ring-sapphire-400 is the
+        // colored outer ring. ring-offset-* is not used to avoid Tailwind
+        // utility conflicts. Order matters: last ring-color wins, so sapphire
+        // must follow white — but we use an inner border trick via ring-offset-2.
+        // Simplified: just add ring-sapphire-400 to visually identify self;
+        // the existing ring-2 ring-white gives the offset appearance.
+        isSelf ? 'ring-sapphire-400' : '',
+        // Slide-in animation for newly joined avatars (UX §1e, 200ms).
+        // isNew is derived from newlyJoinedIds state, which is populated when
+        // the participant first appears and cleared after SLIDE_IN_DURATION_MS
+        // — so the class is present for one full animation cycle (MUST-FIX 5).
         !reduced && isNew ? 'animate-slide-right' : '',
-        // Overlap via negative margin — first avatar has no negative margin (applied via flex parent)
       ].filter(Boolean).join(' ')}
       style={{ backgroundColor: bg }}
     >
@@ -141,20 +159,29 @@ export function SessionPresenceStack({
   scope,
   currentUserId,
   currentUserDisplayName,
+  manager: externalManager,
   className,
 }: SessionPresenceStackProps): React.ReactElement {
   const [participants, setParticipants] = useState<PresenceParticipant[]>([])
-  const prevParticipantIdsRef = useRef<Set<string>>(new Set())
+  // newlyJoinedIds tracks userIds that just arrived so isNew=true for exactly
+  // one animation cycle. Populated immediately when participants update;
+  // cleared after SLIDE_IN_DURATION_MS via setTimeout (MUST-FIX 5).
+  const [newlyJoinedIds, setNewlyJoinedIds] = useState<Set<string>>(new Set())
+  const slideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [announcement, setAnnouncement] = useState('')
-  const managerRef = useRef<ScopedRealtimeManager | null>(null)
+  const localManagerRef = useRef<ScopedRealtimeManager | null>(null)
 
   useEffect(() => {
-    const manager = new ScopedRealtimeManager({
+    // Use the shared manager when provided; otherwise create a local one.
+    const manager = externalManager ?? new ScopedRealtimeManager({
       scope,
       userId: currentUserId,
       displayName: currentUserDisplayName,
     })
-    managerRef.current = manager
+
+    if (!externalManager) {
+      localManagerRef.current = manager
+    }
 
     manager.onPresence((incoming) => {
       setParticipants((prev) => {
@@ -162,9 +189,11 @@ export function SessionPresenceStack({
         const nextIds = new Set(incoming.map((p) => p.userId))
 
         // Detect join / leave for aria-live announcement
+        const joined: string[] = []
         for (const p of incoming) {
           if (!prevIds.has(p.userId) && p.userId !== currentUserId) {
             setAnnouncement(`${p.displayName} joined the session.`)
+            joined.push(p.userId)
           }
         }
         for (const p of prev) {
@@ -173,19 +202,36 @@ export function SessionPresenceStack({
           }
         }
 
-        prevParticipantIdsRef.current = nextIds
+        // Populate newlyJoinedIds for slide-in animation, then clear after duration.
+        if (joined.length > 0) {
+          setNewlyJoinedIds(new Set(joined))
+          if (slideTimerRef.current !== null) clearTimeout(slideTimerRef.current)
+          slideTimerRef.current = setTimeout(() => {
+            setNewlyJoinedIds(new Set())
+            slideTimerRef.current = null
+          }, SLIDE_IN_DURATION_MS)
+        }
+
         return incoming
       })
     })
 
-    void manager.subscribe()
+    // Only subscribe when we own the manager (external manager is already subscribed).
+    if (!externalManager) {
+      void manager.subscribe()
+    }
 
     return () => {
-      void manager.unsubscribe()
-      managerRef.current = null
+      if (!externalManager) {
+        void manager.unsubscribe()
+        localManagerRef.current = null
+      }
+      if (slideTimerRef.current !== null) {
+        clearTimeout(slideTimerRef.current)
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope.type, scope.id, currentUserId, currentUserDisplayName])
+  }, [scope.type, scope.id, currentUserId, currentUserDisplayName, externalManager])
 
   // Deduplicate and sort
   const deduped = deduplicateByUserId(participants)
@@ -193,9 +239,6 @@ export function SessionPresenceStack({
 
   const visibleParticipants = sorted.slice(0, MAX_VISIBLE)
   const overflowCount = sorted.length > MAX_VISIBLE ? sorted.length - MAX_VISIBLE : 0
-
-  // Track new arrivals for slide-in animation
-  const prevIds = prevParticipantIdsRef.current
 
   return (
     <div className={className}>
@@ -212,7 +255,7 @@ export function SessionPresenceStack({
       >
         {visibleParticipants.map((participant, idx) => {
           const isSelf = participant.userId === currentUserId
-          const isNew = !prevIds.has(participant.userId)
+          const isNew = newlyJoinedIds.has(participant.userId)
           return (
             <div
               key={participant.userId}

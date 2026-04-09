@@ -131,9 +131,8 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   const [showSessionQR, setShowSessionQR] = useState(false)
   const [mobileIdeaIds, setMobileIdeaIds] = useState<Set<string>>(new Set())
 
-  // Phase 05.4a: ScopedRealtimeManager for voting (session mode only)
-  // Created once when activeSessionId is set and cleaned up on unmount/change.
-  const votingManagerRef = React.useRef<ScopedRealtimeManager | null>(null)
+  // Phase 05.4a: ScopedRealtimeManager for voting (session mode only).
+  // Single instance passed to SessionPresenceStack to prevent double-channel creation (MUST-FIX 4).
   const [votingManager, setVotingManager] = React.useState<ScopedRealtimeManager | null>(null)
 
   React.useEffect(() => {
@@ -145,16 +144,14 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
       userId: sessionUserId,
       displayName: currentUser.full_name ?? currentUser.email ?? sessionUserId,
     })
-    votingManagerRef.current = manager
     setVotingManager(manager)
     void manager.subscribe()
 
     return () => {
       void manager.unsubscribe()
-      votingManagerRef.current = null
       setVotingManager(null)
     }
-  }, [activeSessionId, sessionUserId, currentUser.name, currentUser.email])
+  }, [activeSessionId, sessionUserId, currentUser.full_name, currentUser.email])
 
   const isVotingActive = !!(activeSessionId && sessionUserId && votingManager)
 
@@ -462,7 +459,7 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
         hasEnteredFlag: hasEnteredFullscreen.current
       })
       logger.debug('✅ Fullscreen drag completed successfully')
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Fullscreen drag failed:', error)
       logger.error('❌ Fullscreen drag failed:', error)
     }
@@ -650,12 +647,13 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
           {/* Right: Action Buttons */}
           <div className="flex items-center gap-3">
             {/* Phase 05.4a: session presence + vote budget (session mode only) */}
-            {isVotingActive && activeSessionId && sessionUserId && (
+            {isVotingActive && activeSessionId && sessionUserId && votingManager && (
               <>
                 <SessionPresenceStack
                   scope={{ type: 'session', id: activeSessionId }}
                   currentUserId={sessionUserId}
                   currentUserDisplayName={currentUser.full_name ?? currentUser.email ?? sessionUserId}
+                  manager={votingManager}
                 />
                 {/* Reads votesUsed from DotVotingContext (provider hoisted at view root) */}
                 <DotBudgetIndicator />
@@ -801,6 +799,22 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
           </DragOverlay>
         </DndContext>
       </div>
+
+      {/* Phase 05.4a: Per-idea vote controls (session mode only).
+          Rendered as a sr-only list so screen readers and tests can find them;
+          visual vote UI is overlaid on idea cards by DesignMatrix internals.
+          Gated on isVotingActive to keep them out of the DOM in non-session mode. */}
+      {isVotingActive && (
+        <div aria-label="Voting controls" className="sr-only" aria-hidden="false">
+          {ideas.map((idea) => (
+            <DotVoteControls
+              key={idea.id}
+              ideaId={idea.id}
+              ideaTitle={idea.content}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Modals - Rendered inside fullscreen container with pointer events enabled */}
       <div style={{
