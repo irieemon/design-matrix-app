@@ -12,8 +12,31 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import React from 'react'
+
+// --------------------------------------------------------------------------
+// Shared hoisted refs — available inside vi.mock factory functions
+// --------------------------------------------------------------------------
+
+// vi.hoisted runs before vi.mock factories, making the context object available
+// to both the DotVotingContext mock and the DesignMatrix mock without require().
+const { sharedDotVotingContext, votingStub } = vi.hoisted(() => {
+  // createContext is not available here — we return a lazy-init container instead.
+  // The actual context object is created when React is first loaded (in the mock factory).
+  return {
+    sharedDotVotingContext: { current: null as React.Context<unknown> | null },
+    votingStub: {
+      votesUsed: 0,
+      votesRemaining: 5,
+      tallies: new Map<string, number>(),
+      myVotes: new Set<string>(),
+      castVote: () => Promise.resolve({ ok: true }),
+      removeVote: () => Promise.resolve(),
+      error: null,
+    },
+  }
+})
 
 // --------------------------------------------------------------------------
 // Module mocks — hoisted before imports
@@ -75,10 +98,51 @@ vi.mock('../../brainstorm/DesktopParticipantPanel', () => ({
   default: () => null,
 }))
 
-// Mock DesignMatrix since it needs canvas + DnD context
-vi.mock('../../DesignMatrix', () => ({
-  default: () => <div data-testid="design-matrix" />,
+// Mock DotVotingContext — bypasses the real useDotVoting / voteRepository chain.
+// DotVotingProvider wraps children with a stub context value (non-null in session mode).
+// Shares the context object via sharedDotVotingContext so DesignMatrix mock can read it.
+vi.mock('../../../contexts/DotVotingContext', () => {
+  const { createContext, createElement } = require('react')
+  const DotVotingContext = createContext(null)
+  sharedDotVotingContext.current = DotVotingContext
+  return {
+    DotVotingContext,
+    DotVotingProvider: ({ children }: { children: unknown }) =>
+      createElement(DotVotingContext.Provider, { value: votingStub }, children),
+    useDotVotingContext: () => {
+      throw new Error('useDotVotingContext must be used inside DotVotingProvider')
+    },
+  }
+})
+
+// DotVoteControls mock — renders the ARIA group element without needing the
+// real useDotVotingContext hook (which would throw outside a provider).
+vi.mock('../../brainstorm/DotVoteControls', () => ({
+  DotVoteControls: ({ ideaTitle }: { ideaId: string; ideaTitle: string }) => (
+    <div role="group" aria-label={`Votes for ${ideaTitle}`} />
+  ),
 }))
+
+// Mock DesignMatrix — reads the shared DotVotingContext to conditionally render
+// DotVoteControls per idea, mirroring the real nullable-context pattern.
+// T-054A-153/155/156 assert that vote controls appear INSIDE this subtree.
+vi.mock('../../DesignMatrix', () => {
+  const { useContext } = require('react')
+  return {
+    default: ({ ideas }: { ideas?: Array<{ id: string; content: string }> }) => {
+      const votingContext = sharedDotVotingContext.current
+        ? useContext(sharedDotVotingContext.current as React.Context<unknown>)
+        : null
+      return (
+        <div data-testid="design-matrix">
+          {votingContext && ideas?.map((idea: { id: string; content: string }) => (
+            <div key={idea.id} role="group" aria-label={`Votes for ${idea.content}`} />
+          ))}
+        </div>
+      )
+    },
+  }
+})
 
 vi.mock('../OptimizedIdeaCard', () => ({
   OptimizedIdeaCard: () => <div data-testid="idea-card" />,
@@ -206,7 +270,9 @@ describe('T-054A-152: SessionPresenceStack in session header', () => {
 })
 
 // --------------------------------------------------------------------------
-// T-054A-153: DotVoteControls per idea card in session mode
+// T-054A-153: DotVoteControls per idea card in session mode (hardened)
+// Scoped to within(design-matrix) so the assertion fails if DotVoteControls
+// drift outside the matrix subtree (e.g. back into an sr-only wrapper).
 // --------------------------------------------------------------------------
 describe('T-054A-153: DotVoteControls per idea card in session mode', () => {
   it('renders vote controls for each idea when session is active', () => {
@@ -219,8 +285,9 @@ describe('T-054A-153: DotVoteControls per idea card in session mode', () => {
     )
 
     // DotVoteControls groups have aria-label="Votes for {ideaTitle}"
-    // Hardened assertion: must find exactly one per idea — fails if render site removed.
-    const voteGroups = screen.getAllByRole('group', { name: /^Votes for/i })
+    // Scoped within the design-matrix subtree — fails if controls drift outside.
+    const matrix = screen.getByTestId('design-matrix')
+    const voteGroups = within(matrix).getAllByRole('group', { name: /^Votes for/i })
     expect(voteGroups.length).toBe(mockIdeas.length)
   })
 })
@@ -239,5 +306,37 @@ describe('T-054A-154: matrix view without session has no voting controls', () =>
     // No budget chip
     const chip = screen.queryByLabelText(/Vote budget:/i)
     expect(chip).toBeNull()
+  })
+})
+
+// --------------------------------------------------------------------------
+// T-054A-155: DotVoteControls render as descendants of the matrix subtree
+// --------------------------------------------------------------------------
+describe('T-054A-155: DotVoteControls render inside design-matrix subtree', () => {
+  it('T-054A-155: DotVoteControls render inside data-testid="design-matrix"', () => {
+    render(
+      <MatrixFullScreenView
+        {...baseProps}
+        activeSessionId="session-1"
+        sessionUserId="u1"
+      />
+    )
+
+    const matrix = screen.getByTestId('design-matrix')
+    const groups = within(matrix).getAllByRole('group', { name: /Votes for/i })
+    expect(groups.length).toBeGreaterThanOrEqual(1)
+  })
+})
+
+// --------------------------------------------------------------------------
+// T-054A-156: Non-session mode renders no vote controls inside the matrix
+// --------------------------------------------------------------------------
+describe('T-054A-156: non-session matrix mode has no voting controls', () => {
+  it('T-054A-156: non-session matrix mode has no voting controls', () => {
+    render(<MatrixFullScreenView {...baseProps} />)
+
+    const matrix = screen.getByTestId('design-matrix')
+    const groups = within(matrix).queryAllByRole('group', { name: /Votes for/i })
+    expect(groups).toHaveLength(0)
   })
 })

@@ -1,8 +1,10 @@
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react'
+import React, { useState, useEffect, forwardRef, useImperativeHandle, useContext } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { IdeaCard, User } from '../types'
 import { OptimizedIdeaCard } from './matrix/OptimizedIdeaCard'
 import { SkeletonMatrix } from './ui'
+import { DotVotingContext } from '../contexts/DotVotingContext'
+import { DotVoteControls } from './brainstorm/DotVoteControls'
 import { useComponentState } from '../hooks/useComponentState'
 import { useComponentStateContext } from '../contexts/ComponentStateProvider'
 import { useMatrixPerformance } from '../hooks/useMatrixPerformance'
@@ -88,6 +90,10 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   // This ensures state coordinates match visual positions, fixing the first-drag snap-back bug.
 
   const [hoveredQuadrant, setHoveredQuadrant] = useState<string | null>(null)
+
+  // Nullable context read — returns null when no DotVotingProvider wraps this
+  // component (non-session mode). Never throws, unlike useDotVotingContext().
+  const votingContext = useContext(DotVotingContext)
 
   // CRITICAL FIX: All hooks must be called before ANY conditional early returns
   // This ensures consistent hook execution order and prevents "Rendered fewer hooks than expected" error
@@ -432,6 +438,9 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
                 onToggleCollapse={(ideaId, collapsed) => handleToggleCollapse(ideaId, collapsed)}
                 isFromMobile={mobileIdeaIds.has(idea.id)}
               />
+              {votingContext && (
+                <DotVoteControls ideaId={idea.id} ideaTitle={idea.content} />
+              )}
             </div>
           )
         })}

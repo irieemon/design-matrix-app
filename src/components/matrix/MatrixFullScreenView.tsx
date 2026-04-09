@@ -30,7 +30,6 @@ import { isFeatureEnabled } from '../../lib/config'
 // Phase 05.4a: session-scope dot voting components
 import { DotVotingProvider } from '../../contexts/DotVotingContext'
 import { DotBudgetIndicator } from '../brainstorm/DotBudgetIndicator'
-import { DotVoteControls } from '../brainstorm/DotVoteControls'
 import { SessionPresenceStack } from '../brainstorm/SessionPresenceStack'
 import { ScopedRealtimeManager } from '../../lib/realtime/ScopedRealtimeManager'
 
@@ -799,22 +798,6 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
           </DragOverlay>
         </DndContext>
       </div>
-
-      {/* Phase 05.4a: Per-idea vote controls (session mode only).
-          Rendered as a sr-only list so screen readers and tests can find them;
-          visual vote UI is overlaid on idea cards by DesignMatrix internals.
-          Gated on isVotingActive to keep them out of the DOM in non-session mode. */}
-      {isVotingActive && (
-        <div aria-label="Voting controls" className="sr-only" aria-hidden="false">
-          {ideas.map((idea) => (
-            <DotVoteControls
-              key={idea.id}
-              ideaId={idea.id}
-              ideaTitle={idea.content}
-            />
-          ))}
-        </div>
-      )}
 
       {/* Modals - Rendered inside fullscreen container with pointer events enabled */}
       <div style={{
