@@ -130,9 +130,12 @@ vi.mock('../../DesignMatrix', () => {
   const { useContext } = require('react')
   return {
     default: ({ ideas }: { ideas?: Array<{ id: string; content: string }> }) => {
-      const votingContext = sharedDotVotingContext.current
-        ? useContext(sharedDotVotingContext.current as React.Context<unknown>)
-        : null
+      // NOTE: useContext must be called unconditionally (Rules of Hooks).
+      // sharedDotVotingContext.current is guaranteed non-null here because the
+      // DotVotingContext mock factory above always runs before any render and
+      // populates the ref via createContext(). The result is null when no
+      // DotVotingProvider wraps this component (non-session mode).
+      const votingContext = useContext(sharedDotVotingContext.current as React.Context<unknown>)
       return (
         <div data-testid="design-matrix">
           {votingContext && ideas?.map((idea: { id: string; content: string }) => (
