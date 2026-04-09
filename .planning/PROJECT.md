@@ -8,7 +8,22 @@ Prioritas is a collaborative prioritization tool that combines AI-powered multi-
 
 Real-time collaborative brainstorming with AI-powered multi-modal analysis — teams can submit ideas from any device, analyze them with the right AI model for the task, and visually prioritize together on a shared matrix.
 
-## Requirements
+## Current State
+
+**Shipped:** v1.0 — Launch Readiness (2026-04-09)
+**Audit:** 36/43 v1 requirements complete + 2 partial = 88%, 5 deferred to v1.1
+**Archive:** [.planning/milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) | [.planning/milestones/v1.0-REQUIREMENTS.md](milestones/v1.0-REQUIREMENTS.md) | [.planning/v1.0-MILESTONE-AUDIT.md](v1.0-MILESTONE-AUDIT.md)
+
+Prioritas is live with security hardening, AI SDK v6 + multi-provider routing, full multi-modal analysis (image/audio/voice/video), invitation-based collaboration, real Stripe billing enforcement, and mobile brainstorm polish. Real-time presence/voting/matrix-sync deferred to v1.1.
+
+## Next Milestone Goals (v1.1 proposed)
+
+- **Advanced Collaboration** — presence indicators, realtime idea sync, dot-voting UI, realtime vote tallies, matrix drag broadcast (Phase 05.4 scope)
+- **Quality debt closure** — MOB-02 iOS device verify, Phase 07 Playwright spec drift, Phase 05.3 E2E regression, Phase 06 integration coverage
+- **Production hardening** — Resend domain verification, analyze-file CSRF race, AI Gateway project-wide migration
+
+<details>
+<summary>v1.0 requirements (archived)</summary>
 
 ### Validated
 
@@ -61,6 +76,8 @@ Real-time collaborative brainstorming with AI-powered multi-modal analysis — t
 - OAuth login (Google, GitHub) — email/password sufficient for launch
 - Dunning / payment retry automation — Stripe handles basic retry, custom logic deferred
 - Video/audio file hosting — users upload for analysis only, no persistent media library
+
+</details>
 
 ## Context
 

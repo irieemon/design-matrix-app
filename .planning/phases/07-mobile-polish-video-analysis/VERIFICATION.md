@@ -1,18 +1,13 @@
 ---
 phase: 07-mobile-polish-video-analysis
 verified: 2026-04-08T19:37:58Z
-status: gaps_found
-score: 10/11 must-haves verified
+reverified: 2026-04-09T18:05:00Z
+status: verified
+score: 11/11 must-haves verified
 overrides_applied: 0
-gaps:
+gaps_resolved:
   - truth: "All 4 VITE_MOBILE_BRAINSTORM_PHASE2..5 flags read `true` at runtime after dev restart"
-    status: partial
-    reason: ".env.local contains PHASE2, PHASE3, PHASE4 set to true but is missing VITE_MOBILE_BRAINSTORM_PHASE5=true (line 17 ends at PHASE4). The vite.config.ts allowlist and src/lib/config.ts reader both exist for PHASE5, but the local override value was never appended."
-    artifacts:
-      - path: ".env.local"
-        issue: "File contains only 3 of 4 required flag assignments — VITE_MOBILE_BRAINSTORM_PHASE5=true is absent"
-    missing:
-      - "Append `VITE_MOBILE_BRAINSTORM_PHASE5=true` to .env.local on line 18"
+    resolution: "User confirmed 2026-04-09 during UAT Test 1: 'FEATURE_FLAGS console output: all 4 flags = true'. Env gap closed."
 human_verification:
   - test: "QR join flow on real mobile browsers"
     expected: "Scan QR code on iOS Safari (iPhone) and Android Chrome, arrive at MobileJoinPage, submit an idea, confirm it appears in the facilitator matrix view"
@@ -110,7 +105,7 @@ Step 7b: Most checks require a running dev server. Skipping live execution, runn
 | `analyzeVideo` makes 1 call not N calls | `grep generateObject api/_lib/ai/analyzeVideo.ts` | Single call at line 74 | PASS |
 | api/ai.ts routes analyze-video | `grep "analyze-video" api/ai.ts` | case at line 55, handleAnalyzeVideo at line 56 | PASS |
 | DesktopOnlyHint null on desktop | `grep "isMobile.*return null" src/components/shared/DesktopOnlyHint.tsx` | Line 20-22: `if (!isMobile) return null` | PASS |
-| PHASE5 flag in .env.local | `grep PHASE5 .env.local` | Not found | FAIL |
+| PHASE5 flag in .env.local | `grep PHASE5 .env.local` | `VITE_MOBILE_BRAINSTORM_PHASE5=true` found (re-verified 2026-04-09) | PASS |
 
 ---
 
@@ -118,7 +113,7 @@ Step 7b: Most checks require a running dev server. Skipping live execution, runn
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|-------------|-------------|--------|----------|
-| MOB-01 | 07-01 | Mobile brainstorm feature flags enabled | PARTIAL | PHASE2/3/4 enabled; PHASE5 missing from .env.local |
+| MOB-01 | 07-01 | Mobile brainstorm feature flags enabled | SATISFIED | PHASE2/3/4/5 all enabled in .env.local (re-verified 2026-04-09) |
 | MOB-03 | 07-02 | Responsive polish on critical-path pages | SATISFIED | Touch targets, responsive containers, iOS zoom fixes across 5 critical paths |
 | MOB-04 | 07-02 | Touch interactions + mobile enhancements | SATISFIED | min-h-11/min-w-11 on all interactive elements; BottomSheet primitive shipped |
 | MOB-05 | 07-02 | QR join reliability on iOS Safari + Android Chrome | SATISFIED (programmatic) | No getUserMedia, text-base inputs, ITP comment, E2E suite at mobile viewports; human device test pending |
