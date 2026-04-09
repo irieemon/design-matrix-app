@@ -123,6 +123,10 @@ export function ProjectPresenceStack({
   const slideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [announcement, setAnnouncement] = useState('')
   const localManagerRef = useRef<ScopedRealtimeManager | null>(null)
+  // Pending announcement text captured inside the presence updater (pure), then
+  // consumed by a useEffect to avoid calling setAnnouncement inside a state updater
+  // (which React may invoke multiple times in StrictMode/concurrent mode).
+  const pendingAnnouncementRef = useRef<string | null>(null)
 
   // D-25: read manager from context when no prop is given.
   const ctx = useContext(ProjectRealtimeContext)
@@ -152,13 +156,14 @@ export function ProjectPresenceStack({
         const joined: string[] = []
         for (const p of incoming) {
           if (!prevIds.has(p.userId) && p.userId !== currentUserId) {
-            setAnnouncement(`${p.displayName} is now viewing this matrix.`)
+            // Store last join message — consumed by participants useEffect below.
+            pendingAnnouncementRef.current = `${p.displayName} is now viewing this matrix.`
             joined.push(p.userId)
           }
         }
         for (const p of prev) {
           if (!nextIds.has(p.userId) && p.userId !== currentUserId) {
-            setAnnouncement(`${p.displayName} stopped viewing this matrix.`)
+            pendingAnnouncementRef.current = `${p.displayName} stopped viewing this matrix.`
           }
         }
 
@@ -190,6 +195,16 @@ export function ProjectPresenceStack({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope.type, scope.id, currentUserId, currentUserDisplayName, propManager, contextManager])
+
+  // Flush any announcement captured by the presence updater. Running on
+  // `participants` change (not inside the updater) keeps the updater pure and
+  // safe under React StrictMode / concurrent re-invocations.
+  useEffect(() => {
+    if (pendingAnnouncementRef.current !== null) {
+      setAnnouncement(pendingAnnouncementRef.current)
+      pendingAnnouncementRef.current = null
+    }
+  }, [participants])
 
   const deduped = deduplicateByUserId(participants)
   const sorted = sortParticipants(deduped, currentUserId)

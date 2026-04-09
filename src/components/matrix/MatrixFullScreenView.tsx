@@ -592,9 +592,9 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   // (header) and DotVoteControls (idea cards) share a single context instance (D-11).
   // Phase 05.4b: ProjectRealtimeProvider wraps the inner content (D-32). Both
   // providers coexist when a session is active (D-31).
-  const viewContent = (
+  const viewContent = currentProject?.id ? (
     <ProjectRealtimeProvider
-      projectId={currentProject?.id ?? ''}
+      projectId={currentProject.id}
       currentUserId={currentUser.id}
       currentUserDisplayName={currentUser.full_name ?? currentUser.email ?? currentUser.id}
       setIdeas={setIdeas ?? (() => undefined)}
@@ -901,7 +901,7 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
     </div>
     </div>
     </ProjectRealtimeProvider>
-  )
+  ) : null
 
   // Wrap with DotVotingProvider when a voting session is active (D-11).
   // This makes votesUsed/castVote/removeVote available to DotBudgetIndicator in

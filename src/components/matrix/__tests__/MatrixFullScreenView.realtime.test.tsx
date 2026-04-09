@@ -284,7 +284,6 @@ describe('MatrixFullScreenView — project realtime integration', () => {
     render(<MatrixFullScreenView {...baseProps} setIdeas={setIdeas} />)
 
     const updateHandler = capturedPostgresHandlers.get('ideas:UPDATE')
-    expect(updateHandler).toBeDefined()
 
     act(() => {
       updateHandler!({
@@ -317,6 +316,10 @@ describe('MatrixFullScreenView — project realtime integration', () => {
     // Both scope types must be present (one session, one project)
     expect(scopeTypes).toContain('session')
     expect(scopeTypes).toContain('project')
+    // Under StrictMode + local-fallback: 2 (provider effect × 2 StrictMode invocations)
+    // + 2 (ProjectPresenceStack local fallback × StrictMode) = 4.
+    // A double-provider regression would produce 6 or 8 — lock the baseline here.
+    expect(MockSRM.mock.calls.filter((c: any) => c[0]?.scope?.type === 'project')).toHaveLength(4)
   })
 
   it('T-054B-095: project realtime provider wraps design-matrix (ancestor check)', () => {
