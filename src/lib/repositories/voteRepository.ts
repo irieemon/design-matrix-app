@@ -10,6 +10,24 @@ import { logger } from '../../utils/logger'
  * Repository callers cannot bypass it.
  */
 
+/**
+ * Thrown by `removeVote` on any failure (auth missing, Supabase error, or
+ * unexpected exception). Callers use this to trigger optimistic rollback.
+ * D-07: castVote returns a discriminated union (expected business outcomes);
+ * removeVote only fails on infrastructure errors, so throw is cleaner.
+ */
+export class VoteRepositoryError extends Error {
+  override readonly name = 'VoteRepositoryError'
+  readonly cause: unknown
+
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message)
+    this.cause = options?.cause
+    // Restores correct prototype chain for instanceof checks after transpilation.
+    Object.setPrototypeOf(this, new.target.prototype)
+  }
+}
+
 export type CastVoteResult =
   | { ok: true }
   | { ok: false; reason: 'budget_exceeded' | 'unauthorized' | 'unknown' }
@@ -69,13 +87,14 @@ export async function castVote(
 
 /**
  * Remove the current user's vote from an idea in a session.
+ * Throws `VoteRepositoryError` on any failure so callers can roll back
+ * optimistic state (D-03, D-07).
  */
 export async function removeVote(sessionId: string, ideaId: string): Promise<void> {
   try {
     const { data: userData, error: userError } = await supabase.auth.getUser()
     if (userError || !userData?.user) {
-      logger.warn('removeVote: no authenticated user')
-      return
+      throw new VoteRepositoryError('removeVote: no authenticated user')
     }
     const { error } = await supabase
       .from('idea_votes')
@@ -85,9 +104,14 @@ export async function removeVote(sessionId: string, ideaId: string): Promise<voi
       .eq('idea_id', ideaId)
     if (error) {
       logger.error('removeVote failed', error)
+      throw new VoteRepositoryError(error.message ?? 'removeVote failed')
     }
-  } catch (error) {
-    logger.error('removeVote exception', error)
+  } catch (err) {
+    if (err instanceof VoteRepositoryError) {
+      throw err
+    }
+    logger.error('removeVote exception', err)
+    throw new VoteRepositoryError('removeVote: unexpected error', { cause: err })
   }
 }
 
