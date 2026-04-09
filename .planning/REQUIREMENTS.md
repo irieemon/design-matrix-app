@@ -26,7 +26,7 @@ Requirements for v1.1. Each maps to a roadmap phase.
 
 ### Quality (new for v1.1)
 
-- [ ] **QA-01**: Playwright mobile critical-paths spec parity — `tests/e2e/mobile-critical-paths.spec.ts` passes on iPhone 14 Pro + Galaxy S21 projects (3 currently failing: DesktopOnlyHint role, projects submit button 44px target, MobileJoinPage 16px font)
+- [ ] **QA-01**: Test suite parity — (a) `tests/e2e/mobile-critical-paths.spec.ts` passes on iPhone 14 Pro + Galaxy S21 projects (3 currently failing: DesktopOnlyHint role, projects submit button 44px target, MobileJoinPage 16px font); (b) `src/lib/realtime/__tests__/BrainstormRealtimeManager.test.ts` — fix 22 pre-existing `ReferenceError: mockChannel is not defined` scope bugs (discovered 2026-04-09 by Roz during Phase 05.4a pre-build review; currently 3/25 passing, 18/18 in `.simple.test.ts` are green and unaffected)
 - [ ] **QA-02**: Automated Playwright E2E regression for owner → invite → accept → collaborator-sees-project flow (currently manual only, verified in Phase 05.3)
 - [ ] **QA-03**: pgTAP (or equivalent) coverage for Phase 05.3 SQL migrations — RLS recursion fix, digest() schema qualification, accept_invitation() OUT-param ambiguity, projects SELECT RLS widening
 
