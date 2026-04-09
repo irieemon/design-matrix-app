@@ -12,7 +12,7 @@
 
 ### Phases
 
-- [ ] **Phase 05.4a: Session-Scope Voting** — Dot-voting UI + realtime tallies + session presence. Lower risk, reuses existing `voteRepository` and `BrainstormRealtimeManager`.
+- [x] **Phase 05.4a: Session-Scope Voting** ✅ (2026-04-09) — Dot-voting UI + realtime tallies + session presence. See `.planning/phases/05.4a-session-scope-voting/05.4a-VERIFICATION.md`. Satisfied COLLAB-01-session, COLLAB-05-UI, COLLAB-06. 10 tech debt items routed to Phase 05.5 QA-04.
 - [ ] **Phase 05.4b: Project-Scope Realtime Matrix** — `ProjectRealtimeManager`, live cursors, soft drag lock, position sync. Higher-risk multi-client E2E work.
 - [ ] **Phase 05.5: Quality Debt Closure** — MOB-02 iOS device verify, Phase 07 Playwright spec drift, Phase 05.3 invite E2E regression, pgTAP coverage for 05.3 SQL migrations.
 

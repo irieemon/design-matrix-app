@@ -2,19 +2,20 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Advanced Collaboration & Quality
-status: paused
-stopped_at: Phase 05.4a Wave 2 complete — Wave 3 queued
-last_updated: "2026-04-09T21:00:00.000Z"
-last_activity: 2026-04-09 -- Wave 2 shipped (Units 2+3, commits 1f601fd + 36ae490); user paused before Wave 3
+status: phase_complete
+stopped_at: Phase 05.4a complete — 05.4b next
+last_updated: "2026-04-09T22:00:00.000Z"
+last_activity: 2026-04-09 -- Phase 05.4a verified and closed; 3 requirements satisfied (COLLAB-01-session, COLLAB-05-UI, COLLAB-06)
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 0
   completed_plans: 0
-  percent: 0
-active_phase: 05.4a-session-scope-voting
-active_phase_units_complete: 3
-active_phase_units_total: 5
+  percent: 33
+active_phase: null
+next_phase: 05.4b-project-realtime-matrix
+shipped_in_v1_1:
+  - 05.4a (2026-04-09)
 shipped_milestones:
   - v1.0 (2026-04-09)
 ---
