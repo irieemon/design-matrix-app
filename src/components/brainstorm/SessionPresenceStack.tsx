@@ -26,6 +26,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { ScopedRealtimeManager } from '../../lib/realtime/ScopedRealtimeManager'
 import type { PresenceParticipant, Scope } from '../../lib/realtime/ScopedRealtimeManager'
+import { userIdToHsl, toInitials } from '../../utils/userColor'
 
 export type { PresenceParticipant }
 
@@ -42,36 +43,6 @@ export interface SessionPresenceStackProps {
 }
 
 const MAX_VISIBLE = 5
-
-// ---------------------------------------------------------------------------
-// HSL hash — deterministic per userId (UX §2c, same algorithm shared with 05.4b)
-// hsl((hash(userId) % 360), 55%, 65%)
-// ---------------------------------------------------------------------------
-function hashString(s: string): number {
-  let hash = 0
-  for (let i = 0; i < s.length; i++) {
-    hash = (hash * 31 + s.charCodeAt(i)) >>> 0
-  }
-  return hash
-}
-
-function userIdToHsl(userId: string): string {
-  const hue = hashString(userId) % 360
-  return `hsl(${hue}, 55%, 65%)`
-}
-
-// ---------------------------------------------------------------------------
-// Derive initials from displayName (up to 2 chars, uppercased)
-// ---------------------------------------------------------------------------
-function toInitials(displayName: string): string {
-  return displayName
-    .split(' ')
-    .map((w) => w[0] ?? '')
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-}
 
 function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') return false

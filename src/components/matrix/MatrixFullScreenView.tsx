@@ -32,6 +32,10 @@ import { DotVotingProvider } from '../../contexts/DotVotingContext'
 import { DotBudgetIndicator } from '../brainstorm/DotBudgetIndicator'
 import { SessionPresenceStack } from '../brainstorm/SessionPresenceStack'
 import { ScopedRealtimeManager } from '../../lib/realtime/ScopedRealtimeManager'
+// Phase 05.4b: project-scope realtime components (Wave 1)
+import { ProjectRealtimeProvider } from '../../contexts/ProjectRealtimeContext'
+import { ProjectPresenceStack } from '../project/ProjectPresenceStack'
+import { ReconnectingBadge } from '../project/ReconnectingBadge'
 
 // Lazy load modals for performance
 const AddIdeaModal = lazy(() => import('../AddIdeaModal'))
@@ -586,9 +590,22 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
 
   // Phase 05.4a: hoist DotVotingProvider to wrap the full view so DotBudgetIndicator
   // (header) and DotVoteControls (idea cards) share a single context instance (D-11).
+  // Phase 05.4b: ProjectRealtimeProvider wraps the inner content (D-32). Both
+  // providers coexist when a session is active (D-31).
   const viewContent = (
+    <ProjectRealtimeProvider
+      projectId={currentProject?.id ?? ''}
+      currentUserId={currentUser.id}
+      currentUserDisplayName={currentUser.full_name ?? currentUser.email ?? currentUser.id}
+      setIdeas={setIdeas ?? (() => undefined)}
+    >
+      <div
+        data-testid="project-realtime-provider"
+        style={{ display: 'contents' }}
+      >
     <div
       ref={handleContainerRef}
+      data-testid="fullscreen-view"
       className="fixed inset-0 z-[9999]"
       style={{
         width: '100vw',
@@ -607,8 +624,11 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
           pointerEvents: (showAddModal || showAIModal || editingIdea) ? 'none' : 'auto'
         }}
       />
+      {/* Phase 05.4b: ReconnectingBadge — visible during reconnecting/polling (D-24) */}
+      <ReconnectingBadge />
       {/* Persistent Action Bar - Always Visible */}
       <div
+        data-testid="matrix-action-bar"
         className="absolute top-0 left-0 right-0 z-[101] bg-slate-900/95 backdrop-blur-md border-b border-white/10"
         style={{
           height: '64px',
@@ -657,6 +677,14 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
                 {/* Reads votesUsed from DotVotingContext (provider hoisted at view root) */}
                 <DotBudgetIndicator />
               </>
+            )}
+            {/* Phase 05.4b: project-scope presence — always shown, orthogonal to session (D-31) */}
+            {currentProject && (
+              <ProjectPresenceStack
+                scope={{ type: 'project', id: currentProject.id }}
+                currentUserId={currentUser.id}
+                currentUserDisplayName={currentUser.full_name ?? currentUser.email ?? currentUser.id}
+              />
             )}
             {/* DEV MODE: Diagnostic Banner */}
             {import.meta.env.DEV && (
@@ -871,6 +899,8 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
           </div>
         )}
     </div>
+    </div>
+    </ProjectRealtimeProvider>
   )
 
   // Wrap with DotVotingProvider when a voting session is active (D-11).
