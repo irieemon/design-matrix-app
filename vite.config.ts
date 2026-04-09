@@ -77,6 +77,9 @@ export default defineConfig(({ mode }) => {
                 SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY, // Backend API only
                 OPENAI_API_KEY: env.OPENAI_API_KEY,
                 ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
+                AI_GATEWAY_API_KEY: env.AI_GATEWAY_API_KEY, // Vercel AI Gateway (Phase 2+)
+                RESEND_API_KEY: env.RESEND_API_KEY, // Transactional email (Phase 05.2)
+                RESEND_FROM_EMAIL: env.RESEND_FROM_EMAIL,
                 STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY, // Stripe backend API
                 STRIPE_WEBHOOK_SECRET: env.STRIPE_WEBHOOK_SECRET, // Stripe webhook signature verification
                 VITE_STRIPE_PRICE_ID_TEAM: env.VITE_STRIPE_PRICE_ID_TEAM, // Team plan price ID

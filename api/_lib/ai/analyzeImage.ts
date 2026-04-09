@@ -9,11 +9,43 @@
  * model is always selected (never MiniMax).
  */
 
-import { generateText } from 'ai';
+import { generateObject } from 'ai';
+import { z } from 'zod';
 import type { VercelResponse } from '@vercel/node';
 import type { AuthenticatedRequest } from '../middleware/index.js';
 import { selectModel } from './modelRouter.js';
 import { getModel } from './providers.js';
+
+// Structured output schema. The frontend (AIIdeaModal normalizeAnalysisResult)
+// expects exactly these fields — using generateObject forces the model to
+// return them directly instead of the markdown-heavy blob generateText was
+// producing.
+const imageAnalysisSchema = z.object({
+  subject: z
+    .string()
+    .describe(
+      'A concise 3-8 word title summarizing what the image is about. No markdown, no trailing colon.'
+    ),
+  description: z
+    .string()
+    .describe(
+      'A 1-2 sentence summary of the image and its relevance. Plain prose, no markdown formatting, no bullet points.'
+    ),
+  textContent: z
+    .string()
+    .describe('Any text visible in the image, extracted verbatim. Empty string if none.'),
+  insights: z
+    .array(z.string())
+    .max(5)
+    .describe(
+      '3-5 short actionable insights or observations relevant to the project. Each insight is one sentence, no markdown.'
+    ),
+  relevanceScore: z
+    .number()
+    .min(0)
+    .max(100)
+    .describe('How relevant this image is to the project context, 0-100.'),
+});
 
 /**
  * Handles the analyze-image action.
@@ -70,9 +102,11 @@ async function analyzeImageWithVision(
 
   const model = getModel(selection.gatewayModelId);
 
-  // AI SDK vision content parts format (replaces raw OpenAI fetch)
-  const { text } = await generateText({
+  // Structured output: forces the model to return the exact fields the UI
+  // normalizer expects, eliminating the need for ad-hoc text parsing.
+  const { object } = await generateObject({
     model,
+    schema: imageAnalysisSchema,
     messages: [{
       role: 'user',
       content: [
@@ -84,32 +118,16 @@ async function analyzeImageWithVision(
     temperature: selection.temperature,
   });
 
-  console.log('AI SDK vision response received');
+  console.log('AI SDK vision response received (structured)');
 
-  try {
-    // Try to parse as JSON if it's structured analysis
-    if (text.trim().startsWith('{')) {
-      return JSON.parse(text);
-    } else {
-      // Return text analysis
-      return {
-        type: analysisType,
-        description: text,
-        extractedText: text,
-        insights: extractImageInsights(text, projectContext),
-        relevance: assessImageProjectRelevance(text, projectContext),
-      };
-    }
-  } catch (_parseError) {
-    console.log('Returning raw analysis (not JSON):', text.substring(0, 200));
-    return {
-      type: analysisType,
-      description: text,
-      extractedText: '',
-      insights: [],
-      relevance: 'medium',
-    };
-  }
+  return {
+    type: analysisType,
+    ...object,
+    // Back-compat fields for any older consumers that read these
+    extractedText: object.textContent,
+    relevance:
+      object.relevanceScore >= 70 ? 'high' : object.relevanceScore >= 40 ? 'medium' : 'low',
+  };
 }
 
 function getImageAnalysisPrompt(analysisType: string, projectContext: any): string {
@@ -120,7 +138,9 @@ PROJECT CONTEXT:
 - Type: ${projectContext.projectType || 'General'}
 - Description: ${projectContext.description || 'No description available'}` : '';
 
-  const baseInstructions = `You are an expert visual analyst. Analyze this image in detail and provide insights relevant to the project context.${projectInfo}
+  const baseInstructions = `You are an expert visual analyst helping populate a prioritization matrix for a project.${projectInfo}
+
+Analyze the image and return a structured response. Keep the subject concise (3-8 words, no markdown), the description to 1-2 sentences of plain prose, and insights as 3-5 short actionable observations.
 
 Focus on:`;
 
@@ -178,57 +198,3 @@ Provide a comprehensive analysis of what you see and how it might be relevant to
   }
 }
 
-function extractImageInsights(analysisContent: string, _projectContext: any): string[] {
-  const insights: string[] = [];
-
-  // Look for insight indicators in the analysis
-  const insightKeywords = ['insight:', 'observation:', 'key finding:', 'important:', 'notable:'];
-  const lines = analysisContent.split('\n');
-
-  lines.forEach(line => {
-    insightKeywords.forEach(keyword => {
-      if (line.toLowerCase().includes(keyword)) {
-        insights.push(line.trim());
-      }
-    });
-  });
-
-  // If no specific insights found, extract bullet points
-  if (insights.length === 0) {
-    const bulletPoints = lines.filter(line =>
-      line.trim().startsWith('•') ||
-      line.trim().startsWith('-') ||
-      line.trim().match(/^\d+\./)
-    );
-    insights.push(...bulletPoints.slice(0, 3)); // Top 3 bullet points
-  }
-
-  return insights.filter(insight => insight.length > 10); // Filter out very short insights
-}
-
-function assessImageProjectRelevance(analysisContent: string, projectContext: any): 'high' | 'medium' | 'low' {
-  if (!projectContext?.projectName && !projectContext?.projectType) {
-    return 'medium';
-  }
-
-  const content = analysisContent.toLowerCase();
-  const projectName = (projectContext.projectName || '').toLowerCase();
-  const projectType = (projectContext.projectType || '').toLowerCase();
-
-  // High relevance indicators
-  if (content.includes(projectName) ||
-      content.includes(projectType) ||
-      content.includes('directly related') ||
-      content.includes('highly relevant')) {
-    return 'high';
-  }
-
-  // Low relevance indicators
-  if (content.includes('not related') ||
-      content.includes('unrelated') ||
-      content.includes('no connection')) {
-    return 'low';
-  }
-
-  return 'medium';
-}

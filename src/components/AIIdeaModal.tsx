@@ -766,7 +766,13 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
                         size="sm"
                         icon={isImageBusy ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
                       >
-                        Analyze Image
+                        {imageStage === 'resizing'
+                          ? 'Resizing...'
+                          : imageStage === 'uploading'
+                          ? 'Uploading...'
+                          : imageStage === 'analyzing'
+                          ? 'Analyzing...'
+                          : 'Analyze Image'}
                       </Button>
                       <Button
                         onClick={handleRemoveImage}

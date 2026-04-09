@@ -182,14 +182,17 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     createIdeaOptimistic(
       ideaWithUser,
       async () => {
-        const createdIdeaResponse = await DatabaseService.createIdea(ideaWithUser, supabase)
+        // Lock-free client to bypass GoTrueClient navigator.locks deadlock
+        const authClient = createAuthenticatedClientFromLocalStorage() || supabase
+        const createdIdeaResponse = await DatabaseService.createIdea(ideaWithUser, authClient)
         if (createdIdeaResponse.success && createdIdeaResponse.data) {
-          logger.debug('✅ Idea created successfully in database:', { data: createdIdeaResponse.data })
           return createdIdeaResponse.data
-        } else {
-          logger.error('❌ Failed to create idea in database:', createdIdeaResponse.error, { response: createdIdeaResponse })
-          throw new Error(typeof createdIdeaResponse.error === 'string' ? createdIdeaResponse.error : 'Failed to create idea')
         }
+        throw new Error(
+          typeof createdIdeaResponse.error === 'string'
+            ? createdIdeaResponse.error
+            : JSON.stringify(createdIdeaResponse.error) || 'Failed to create idea'
+        )
       }
     )
     
@@ -205,13 +208,14 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
     updateIdeaOptimistic(
       updatedIdea,
       async () => {
+        const authClient = createAuthenticatedClientFromLocalStorage() || supabase
         const result = await DatabaseService.updateIdea(updatedIdea.id, {
           content: updatedIdea.content,
           details: updatedIdea.details,
           x: updatedIdea.x,
           y: updatedIdea.y,
           priority: updatedIdea.priority
-        }, supabase)
+        }, authClient)
         if (result) {
           logger.debug('✅ Idea updated successfully in database:', { result })
           return result
@@ -265,29 +269,20 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
 
     // Only update database if we found the idea and determined new state
     if (newCollapsedState !== undefined) {
+      const authClient = createAuthenticatedClientFromLocalStorage() || supabase
       await DatabaseService.updateIdea(ideaId, {
         is_collapsed: newCollapsedState
-      }, supabase)
+      }, authClient)
     }
   }, []) // ✅ Empty dependencies - pure functional updates
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
-    logger.debug('🔵 useIdeas.handleDragEnd CALLED', event)
     const { active, delta, over: _over } = event
-
-    logger.debug('🔵 Delta:', delta)
-    if (!delta || (delta.x === 0 && delta.y === 0)) {
-      logger.debug('⚠️ No delta or zero delta, returning early')
-      return
-    }
+    if (!delta || (delta.x === 0 && delta.y === 0)) return
 
     const ideaId = active.id as string
     const idea = optimisticData.find(i => i.id === ideaId)
-    logger.debug('🔵 Found idea:', idea ? idea.id : 'NOT FOUND')
-    if (!idea) {
-      logger.debug('⚠️ Idea not found in optimisticData, returning early')
-      return
-    }
+    if (!idea) return
 
     // ✅ CRITICAL FIX: Get the ACTUAL matrix container that the card is being dragged within
     // This ensures we measure the VISIBLE matrix, not a hidden duplicate elsewhere in the DOM
@@ -377,18 +372,10 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
       ideaId,
       { x: finalX, y: finalY },
       async () => {
-        logger.debug('💾 Database update starting for:', { ideaId, x: finalX, y: finalY })
-        const result = await DatabaseService.updateIdea(ideaId, {
-          x: finalX,
-          y: finalY
-        }, supabase)
-        if (result) {
-          logger.debug('✅ Idea position updated successfully in database:', { result })
-          return result
-        } else {
-          logger.error('❌ Database update returned null/undefined')
-          throw new Error('Failed to update idea position')
-        }
+        const authClient = createAuthenticatedClientFromLocalStorage() || supabase
+        const result = await DatabaseService.updateIdea(ideaId, { x: finalX, y: finalY }, authClient)
+        if (result) return result
+        throw new Error('Failed to update idea position')
       }
     )
     logger.debug('✅ moveIdeaOptimistic call completed')

@@ -26,6 +26,23 @@ export const useOptimisticUpdates = (
   const [optimisticData, setOptimisticData] = useState<IdeaCard[]>(baseData)
   const updateTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map())
 
+  // CRITICAL: mirror pendingUpdates in a ref so all callbacks read the latest
+  // value regardless of when they were closure-captured. Without this, the
+  // async .then(confirmUpdate) path in createIdeaOptimistic reads a stale
+  // pendingUpdates Map from its parent callback's closure and bails out
+  // with `if (!update) return`, leaving the temp entry in optimisticData
+  // forever and never adding the server row to baseData. Symptoms: new cards
+  // can't be dragged (moveIdeaOptimistic.baseData.find misses), and
+  // pendingUpdates accumulates stale move entries across drags.
+  const pendingUpdatesRef = useRef(pendingUpdates)
+  pendingUpdatesRef.current = pendingUpdates
+
+  // Also mirror baseData in a ref for the same reason — moveIdeaOptimistic,
+  // updateIdeaOptimistic, deleteIdeaOptimistic all look up the idea in
+  // baseData.find(), and stale closures would miss newly-created cards.
+  const baseDataRef = useRef(baseData)
+  baseDataRef.current = baseData
+
   const { onSuccess, onError, onRevert } = options
 
   // Sync optimistic data with base data when it changes
@@ -86,7 +103,7 @@ export const useOptimisticUpdates = (
 
   // Confirm an optimistic update (when backend succeeds)
   const confirmUpdate = useCallback((updateId: string, serverData?: any) => {
-    const update = pendingUpdates.get(updateId)
+    const update = pendingUpdatesRef.current.get(updateId)
     if (!update) return
 
     // Clear timeout
@@ -156,11 +173,11 @@ export const useOptimisticUpdates = (
     }
 
     onSuccess?.(updateId, serverData)
-  }, [pendingUpdates, setBaseData, onSuccess])
+  }, [setBaseData, onSuccess])
 
   // Revert an optimistic update (when backend fails or timeout)
   const revertUpdate = useCallback((updateId: string) => {
-    const update = pendingUpdates.get(updateId)
+    const update = pendingUpdatesRef.current.get(updateId)
     if (!update) return
 
     // Clear timeout
@@ -214,7 +231,7 @@ export const useOptimisticUpdates = (
     }
 
     onRevert?.(updateId, update.originalData)
-  }, [pendingUpdates, onRevert, setBaseData])
+  }, [onRevert, setBaseData])
 
   // Handle update failure
   const handleUpdateFailure = useCallback((updateId: string, error: any) => {
@@ -262,7 +279,7 @@ export const useOptimisticUpdates = (
     updatedIdea: IdeaCard,
     actualUpdateFunction: () => Promise<IdeaCard>
   ) => {
-    const originalIdea = baseData.find(idea => idea.id === updatedIdea.id)
+    const originalIdea = baseDataRef.current.find(idea => idea.id ===updatedIdea.id)
     if (!originalIdea) return null
 
     const updateId = `update_${updatedIdea.id}_${Date.now()}`
@@ -287,14 +304,14 @@ export const useOptimisticUpdates = (
       })
 
     return updateId
-  }, [baseData, applyOptimisticUpdate, confirmUpdate, handleUpdateFailure])
+  }, [applyOptimisticUpdate, confirmUpdate, handleUpdateFailure])
 
   // Optimistic idea deletion
   const deleteIdeaOptimistic = useCallback((
     ideaId: string,
     actualDeleteFunction: () => Promise<boolean>
   ) => {
-    const originalIdea = baseData.find(idea => idea.id === ideaId)
+    const originalIdea = baseDataRef.current.find(idea => idea.id ===ideaId)
     if (!originalIdea) {
       return null
     }
@@ -325,7 +342,7 @@ export const useOptimisticUpdates = (
       })
 
     return updateId
-  }, [baseData, applyOptimisticUpdate, confirmUpdate, handleUpdateFailure])
+  }, [applyOptimisticUpdate, confirmUpdate, handleUpdateFailure])
 
   // Optimistic idea move/drag
   const moveIdeaOptimistic = useCallback((
@@ -333,7 +350,7 @@ export const useOptimisticUpdates = (
     newPosition: { x: number; y: number },
     actualMoveFunction: () => Promise<IdeaCard>
   ) => {
-    const originalIdea = baseData.find(idea => idea.id === ideaId)
+    const originalIdea = baseDataRef.current.find(idea => idea.id === ideaId)
     if (!originalIdea) return null
 
     const updateId = `move_${ideaId}_${Date.now()}`
@@ -362,7 +379,7 @@ export const useOptimisticUpdates = (
       })
 
     return updateId
-  }, [baseData, applyOptimisticUpdate, confirmUpdate, handleUpdateFailure])
+  }, [applyOptimisticUpdate, confirmUpdate, handleUpdateFailure])
 
   // Get current state info
   const getOptimisticState = useCallback(() => {

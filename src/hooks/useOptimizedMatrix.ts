@@ -9,7 +9,13 @@ import { useState, useCallback, useEffect } from 'react'
 import type { DragEndEvent } from '@dnd-kit/core'
 import type { IdeaCard, User, Project } from '../types'
 import { DatabaseService } from '../lib/database'
-import { supabase } from '../lib/supabase'
+import { supabase, createAuthenticatedClientFromLocalStorage } from '../lib/supabase'
+
+// Lock-free authenticated client helper. The singleton `supabase` client
+// deadlocks on the GoTrueClient navigator.locks lock in this codebase, so
+// any write (insert/update/delete) or read that triggers getSession must
+// go through createAuthenticatedClientFromLocalStorage.
+const dbClient = () => createAuthenticatedClientFromLocalStorage() || supabase
 import {
   applyPixelDelta,
   legacyToNormalized,
@@ -70,7 +76,7 @@ export const useOptimizedMatrix = (options: UseOptimizedMatrixOptions): UseOptim
             x: Math.round(pixelPosition.x),
             y: Math.round(pixelPosition.y),
             matrix_position: update.position
-          }, supabase)
+          }, dbClient())
         }
         logger.debug('✅ Batch position update completed:', updates.length, 'ideas')
       } catch (_error) {
@@ -112,7 +118,7 @@ export const useOptimizedMatrix = (options: UseOptimizedMatrixOptions): UseOptim
       }
 
       // Load from database
-      const loadedIdeas = await DatabaseService.getProjectIdeas(projectId, supabase)
+      const loadedIdeas = await DatabaseService.getProjectIdeas(projectId, dbClient())
       setIdeas(loadedIdeas || [])
       logger.debug('✅ Loaded ideas from database:', loadedIdeas?.length || 0)
 
@@ -160,7 +166,7 @@ export const useOptimizedMatrix = (options: UseOptimizedMatrixOptions): UseOptim
       setIdeas(prev => [...prev, optimisticIdea])
 
       // Create in database
-      const result = await DatabaseService.createIdea(ideaWithUser, supabase)
+      const result = await DatabaseService.createIdea(ideaWithUser, dbClient())
 
       if (result.success && result.data) {
         // Replace optimistic update with real data
@@ -212,7 +218,7 @@ export const useOptimizedMatrix = (options: UseOptimizedMatrixOptions): UseOptim
         matrix_position: updatedIdea.matrix_position
       }
 
-      const result = await DatabaseService.updateIdea(updatedIdea.id, updateData, supabase)
+      const result = await DatabaseService.updateIdea(updatedIdea.id, updateData, dbClient())
 
       if (result) {
         // Update with server response
@@ -252,7 +258,7 @@ export const useOptimizedMatrix = (options: UseOptimizedMatrixOptions): UseOptim
       setIdeas(prev => prev.filter(idea => idea.id !== ideaId))
 
       // Delete from database
-      const success = await DatabaseService.deleteIdea(ideaId, supabase)
+      const success = await DatabaseService.deleteIdea(ideaId, dbClient())
 
       if (success) {
         logger.debug('✅ Idea deleted successfully:', ideaId)
@@ -291,7 +297,7 @@ export const useOptimizedMatrix = (options: UseOptimizedMatrixOptions): UseOptim
       // Update in database
       await DatabaseService.updateIdea(ideaId, {
         is_collapsed: newCollapsedState
-      }, supabase)
+      }, dbClient())
     } catch (_err) {
       logger.error('❌ Failed to toggle collapse:', err)
       // Revert on error
