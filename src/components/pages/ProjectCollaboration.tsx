@@ -103,10 +103,10 @@ const ProjectCollaboration: React.FC<ProjectCollaborationProps> = ({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between mb-6 sm:mb-8">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
           {onNavigateBack && (
             <Button
               onClick={onNavigateBack}
@@ -115,14 +115,14 @@ const ProjectCollaboration: React.FC<ProjectCollaborationProps> = ({
               icon={<ArrowLeft className="w-5 h-5" />}
             />
           )}
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-sapphire-100">
-                <Users className="w-6 h-6 text-info-600" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-3 mb-2 min-w-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-sapphire-100 flex-shrink-0">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-info-600" />
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-graphite-900">Team Collaboration</h1>
-                <p className="text-graphite-600">Manage access and permissions for "{currentProject.name}"</p>
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-3xl font-bold text-graphite-900 truncate">Team Collaboration</h1>
+                <p className="text-sm sm:text-base text-graphite-600 truncate">Manage access and permissions for "{currentProject.name}"</p>
               </div>
             </div>
           </div>

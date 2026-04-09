@@ -23,6 +23,7 @@ import { useLogger } from '../../lib/logging'
 import { getCardZIndex } from '../../lib/matrix/zIndex'
 import { areIdeasEqual } from '../../lib/matrix/performance'
 import { ConfirmModal } from '../shared/Modal'
+import { calculateQuadrant, QUADRANT_COLORS } from '../../utils/matrixQuadrant'
 
 interface OptimizedIdeaCardProps {
   idea: IdeaCard
@@ -77,31 +78,6 @@ const PRIORITY_CONFIG = {
     scale: 'scale-110',
     weight: 'weight--bold'
   }
-} as const
-
-// Utility function to calculate quadrant based on matrix coordinates
-function calculateQuadrant(x: number, y: number): 'quick-wins' | 'strategic' | 'reconsider' | 'avoid' {
-  // COORDINATE SYSTEM ALIGNMENT:
-  // - Stored coordinates: 0-520 range (center at 260)
-  // - Rendering: Converted to percentages via ((coord + 40) / 600) * 100
-  // - Center line: 50% of container (both visually and in percentage)
-  // - Coordinate 260: (260 + 40) / 600 = 300/600 = 50% (exactly at center!)
-  // Result: Using 260 as boundary aligns perfectly with 50% visual center
-  const centerX = 260 // Maps to 50% visually after percentage conversion
-  const centerY = 260
-
-  if (x < centerX && y < centerY) return 'quick-wins'    // Top-left (low difficulty, high value)
-  if (x >= centerX && y < centerY) return 'strategic'       // Top-right (high difficulty, high value)
-  if (x < centerX && y >= centerY) return 'reconsider'      // Bottom-left (low difficulty, low value)
-  return 'avoid'                                            // Bottom-right (high difficulty, low value)
-}
-
-// Quadrant color mapping
-const QUADRANT_COLORS = {
-  'quick-wins': '#10B981',  // Green
-  'strategic': '#3B82F6',   // Blue
-  'reconsider': '#F59E0B',  // Amber
-  'avoid': '#EF4444'        // Red
 } as const
 
 // Utility function for user display name

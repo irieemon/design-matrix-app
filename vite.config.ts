@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
         server.middlewares.use((req, res, next) => {
           res.setHeader(
             'Content-Security-Policy',
-            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://vfovtgtjailvrphsgafv.supabase.co; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://vfovtgtjailvrphsgafv.supabase.co https://vitals.vercel-analytics.com ws: wss:; worker-src 'self' blob: https://cdnjs.cloudflare.com;"
+            "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://vfovtgtjailvrphsgafv.supabase.co; media-src 'self' blob: https://vfovtgtjailvrphsgafv.supabase.co; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://vfovtgtjailvrphsgafv.supabase.co https://vitals.vercel-analytics.com ws: wss:; worker-src 'self' blob: https://cdnjs.cloudflare.com;"
           )
           next()
         })

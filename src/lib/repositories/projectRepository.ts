@@ -353,10 +353,10 @@ export class ProjectRepository {
     try {
       logger.debug('Deleting project:', projectId)
 
-      // In a real implementation, this might also need to handle cascading deletes
-      // for related ideas, collaborators, etc.
-      // ✅ Use authenticated client with RLS enforcement
-      const { error } = await supabase
+      // Use lock-free client to bypass GoTrueClient navigator.locks deadlock
+      // on mutations (same pattern as useIdeas.ts, createProject).
+      const client = getAuthenticatedClient()
+      const { error } = await client
         .from('projects')
         .delete()
         .eq('id', projectId)

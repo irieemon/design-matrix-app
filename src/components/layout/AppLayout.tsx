@@ -9,6 +9,8 @@ const AIIdeaModal = lazy(() => import('../AIIdeaModal'))
 const EditIdeaModal = lazy(() => import('../EditIdeaModal'))
 import { useSkipLinks } from '../../hooks/useAccessibility'
 import { getAccessibleLandmarkProps } from '../../utils/accessibility'
+import { useBreakpoint } from '../../hooks/useBreakpoint'
+import MobileShell from '../mobile/MobileShell'
 
 interface AppLayoutProps {
   currentUser: User
@@ -66,6 +68,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isInFullscreen, setIsInFullscreen] = useState(false)
+  const { isMobile } = useBreakpoint()
 
   // Initialize skip links for accessibility
   useSkipLinks()
@@ -120,6 +123,41 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   }
 
   const activeIdea = activeId ? (ideas || []).find(i => i.id === activeId) : null
+
+  if (isMobile) {
+    return (
+      <MobileShell
+        currentUser={currentUser}
+        currentProject={currentProject}
+        currentPage={currentPage}
+        onPageChange={onPageChange}
+        ideas={ideas}
+        addIdea={addIdea}
+        updateIdea={updateIdea}
+        deleteIdea={deleteIdea}
+        editingIdea={editingIdea}
+        onSetEditingIdea={setEditingIdea}
+      >
+        {React.cloneElement(children as React.ReactElement, {
+          activeId,
+          editingIdea,
+          onSetEditingIdea: setEditingIdea,
+          onSetShowAddModal: setShowAddModal,
+          onSetShowAIModal: setShowAIModal,
+          showAddModal,
+          showAIModal,
+          ideas,
+          setIdeas,
+          addIdea,
+          updateIdea,
+          deleteIdea,
+          toggleCollapse,
+          handleDragEnd,
+          loadIdeas,
+        })}
+      </MobileShell>
+    )
+  }
 
   return (
     <div

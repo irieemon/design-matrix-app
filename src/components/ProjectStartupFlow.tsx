@@ -258,7 +258,6 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
           onChange={(e) => handleInputChange('name', e.target.value)}
           placeholder="e.g., Mobile App Launch, Q4 Marketing Campaign"
           className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          autoFocus
         />
       </div>
 
@@ -266,7 +265,7 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
         <label className="block text-sm font-medium text-slate-700 mb-3">
           Project Type *
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {PROJECT_TYPES.map((type) => (
             <div
               key={type.id}
@@ -485,8 +484,8 @@ const ProjectStartupFlow: React.FC<ProjectStartupFlowProps> = ({ currentUser, on
   )
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[calc(100vh-1rem)] sm:max-h-[90vh] overflow-y-auto shadow-2xl my-2 sm:my-0">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>

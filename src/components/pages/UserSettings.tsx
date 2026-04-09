@@ -308,11 +308,11 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
 
       {/* Subscription Section */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
           <h3 className="text-lg font-semibold text-slate-900">Subscription & Billing</h3>
           <button
             onClick={() => handlePageChange('pricing')}
-            className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
+            className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
           >
             <TrendingUp className="w-4 h-4" />
             <span>View All Plans</span>
@@ -326,10 +326,10 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
         ) : subscription ? (
           <div className="space-y-4">
             {/* Current Plan */}
-            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <CreditCard className="w-5 h-5 text-slate-500" />
-                <div>
+            <div className="flex items-center justify-between gap-3 p-4 bg-slate-50 rounded-lg flex-wrap">
+              <div className="flex items-center space-x-3 min-w-0">
+                <CreditCard className="w-5 h-5 text-slate-500 flex-shrink-0" />
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-700">Current Plan</p>
                   <div className="flex items-center space-x-2 mt-1">
                     <span

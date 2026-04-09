@@ -147,7 +147,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
           onProjectSelect((projects || []).find(p => p.id !== project.id) || null as any)
         }
       }
-    } catch (_error) {
+    } catch (error) {
       logger.error('Error deleting project:', error)
     }
     setShowDeleteConfirm({ project: null as any, show: false })
@@ -190,14 +190,14 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-neutral-900 mb-2">Project Management</h1>
+      <div className="flex flex-col gap-4 mb-6 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 mb-2 break-words">Project Management</h1>
           <p className="text-neutral-600">Manage all your priority matrix projects</p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <Button
             onClick={() => setShowAIStarter(true)}
             variant="sapphire"

@@ -513,6 +513,9 @@ export class ProjectService extends BaseService {
    */
   static async legacyCreateProject(project: Omit<Project, 'id' | 'created_at' | 'updated_at'>): Promise<Project | null> {
     const result = await this.createProject(project)
+    if (!result.success) {
+      logger.error('legacyCreateProject failed:', result.error)
+    }
     return result.success ? result.data : null
   }
 

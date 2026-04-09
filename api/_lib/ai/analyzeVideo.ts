@@ -25,14 +25,15 @@ export const VIDEO_ANALYSIS_MAX_FRAMES = 12;
  * the AI can plausibly populate — id/timestamps are filled server-side
  * when the idea is persisted.
  */
+// OpenAI strict mode requires every property to be in `required`, so we can't
+// use Zod `.default()` here (it marks fields as optional in the generated JSON
+// schema). All fields are required; defaults are applied post-parse below.
 const SuggestedIdeaSchema = z.object({
   content: z.string().min(1),
-  details: z.string().default(''),
-  x: z.number().default(260),
-  y: z.number().default(260),
-  priority: z
-    .enum(['low', 'moderate', 'high', 'strategic', 'innovation'])
-    .default('moderate'),
+  details: z.string(),
+  x: z.number(),
+  y: z.number(),
+  priority: z.enum(['low', 'moderate', 'high', 'strategic', 'innovation']),
 });
 
 const VideoAnalysisSchema = z.object({
@@ -117,6 +118,10 @@ TYPE: ${type}
 ${description ? `DESCRIPTION: ${description}` : ''}
 
 Return a JSON object matching the provided schema: { summary, suggestedIdeas[] }.
-Each suggestedIdeas entry must include at minimum: content (short title),
-details (explanation), priority (low|moderate|high|strategic|innovation).`;
+Each suggestedIdeas entry MUST include ALL of these fields:
+- content (short title)
+- details (explanation)
+- priority (one of: low | moderate | high | strategic | innovation)
+- x (number 0-520, use 260 if unsure)
+- y (number 0-520, use 260 if unsure)`;
 }

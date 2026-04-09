@@ -14,7 +14,7 @@ import VideoAnalysisProgress, {
 } from './video/VideoAnalysisProgress'
 import { useCsrfToken } from '../hooks/useCsrfToken'
 import { DatabaseService } from '../lib/database'
-import { supabase } from '../lib/supabase'
+import { supabase, createAuthenticatedClientFromLocalStorage } from '../lib/supabase'
 import { Project, IdeaCard, User, ProjectType } from '../types'
 import { logger } from '../utils/logger'
 import {
@@ -115,6 +115,20 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         },
         { headers: getCsrfHeaders() },
       )
+
+      // Auto-populate projectName if user skipped the form (video-first path).
+      // Review step doesn't have a name input, so an empty name reaches
+      // createProject as VALIDATION_ERROR. Derive from summary or default.
+      if (!projectName.trim()) {
+        const derived = result.summary
+          .split(/[.!?]/)[0]
+          .trim()
+          .slice(0, 80) || 'Video Project'
+        setProjectName(derived)
+      }
+      if (!projectDescription.trim()) {
+        setProjectDescription(result.summary)
+      }
 
       // Merge suggested ideas into the existing review flow. We intentionally
       // reuse the same state slot that generateProjectIdeas populates so the
@@ -283,11 +297,22 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         ? (analysis.projectAnalysis.recommendedProjectType || 'other') as ProjectType
         : selectedProjectType as ProjectType
 
+      // Fallback: derive name/description if empty (video-first path skips the form).
+      const summary =
+        analysis.projectAnalysis.primaryGoals?.[0] ||
+        analysis.projectAnalysis.projectTypeReasoning ||
+        ''
+      const safeName =
+        projectName.trim() ||
+        summary.split(/[.!?]/)[0].trim().slice(0, 80) ||
+        'Video Project'
+      const safeDescription = projectDescription.trim() || summary || 'Generated from video analysis'
+
       // Create the project
       logger.debug('🏗️ Creating project with type:', finalProjectType)
       const project = await DatabaseService.createProject({
-        name: projectName,
-        description: projectDescription,
+        name: safeName,
+        description: safeDescription,
         project_type: finalProjectType,
         status: 'active',
         priority_level: 'medium',
@@ -300,7 +325,9 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         throw new Error('Failed to create project')
       }
 
-      // Create the ideas
+      // Create the ideas — use lock-free client to bypass GoTrueClient deadlock
+      // (same pattern as useIdeas.ts addIdea).
+      const ideaClient = createAuthenticatedClientFromLocalStorage() || supabase
       logger.debug('💡 Creating', analysis.generatedIdeas.length, 'ideas...')
       const createdIdeas: IdeaCard[] = []
 
@@ -314,7 +341,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
           created_by: currentUser.id,
           is_collapsed: true,
           project_id: project.id
-        }, supabase)
+        }, ideaClient)
 
         if (newIdea.success && newIdea.data) {
           createdIdeas.push(newIdea.data)
