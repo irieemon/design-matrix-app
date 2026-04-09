@@ -2,37 +2,42 @@
 
 ## Active Pipeline
 **Feature:** Phase 05.4a — Session-Scope Voting
-**Phase:** build
+**Phase:** paused
 **Sizing:** Large (downsized from full 05.4)
-**Stop Reason:** (none -- pipeline active)
+**Stop Reason:** user_paused — clean checkpoint between waves
 **Started:** 2026-04-09
+**Paused at:** End of Wave 2 (Units 2+3 shipped)
 
-<!-- PIPELINE_STATUS: {"phase": "build", "sizing": "large", "roz_qa": "approved_test_spec", "telemetry_captured": false, "stop_reason": null} -->
+<!-- PIPELINE_STATUS: {"phase": "paused", "sizing": "large", "roz_qa": "wave2_passed", "telemetry_captured": false, "stop_reason": "user_paused"} -->
 
-## Current Unit
-**Unit 1 of 5:** voteRepository.removeVote D-07 fix (~60 LOC, low risk)
-**Depends on:** Sable UX (done), Cal ADR (done), Roz test spec review (approved)
-**GSD mirror:** .planning/phases/05.4a-session-scope-voting/
-**ADR:** .planning/phases/05.4a-session-scope-voting/05.4a-PLAN.md
+## Resume Instructions
+
+Next session: `/gsd-progress` or tell Eva "resume 05.4a wave 3".
+
+Wave 3 scope (queued):
+- **Unit 4:** DotVoteControls + DotBudgetIndicator + SessionPresenceStack (~900 LOC, 34 tests)
+- **Unit 5:** MatrixFullScreenView wire-up (~50 LOC, 5 integration tests)
+- **Poirot cleanup bundle:** Findings 1, 3, 4 from Wave 2 (DELETE classifier, removeVote sync ref, resubscribe null guard) — bundle into Colby's Wave 3 context
+
+Estimated burn: ~250-370k tokens (Wave 3 is biggest wave).
+
+## Progress
+
+| # | Unit | Agent | Status | Commit |
+|---|------|-------|--------|--------|
+| — | Sable UX | sable-ux | DONE | docs/ux/phase-05.4a-session-scope-voting.md |
+| — | Cal ADR | cal | DONE | 05.4a-PLAN.md (13 decisions, 5 units, 81 tests) |
+| — | Roz test spec review | roz | APPROVED | scoped re-review |
+| 1 | voteRepository D-07 fix | colby | ✅ SHIPPED | dc7c01b |
+| 2 | ScopedRealtimeManager | colby | ✅ SHIPPED | 1f601fd |
+| 3 | useDotVoting + context | colby | ✅ SHIPPED | 1f601fd (+36ae490 Poirot F2 fix) |
+| 4 | 3 components | colby | ⏭ QUEUED | — |
+| 5 | MatrixFullScreenView wire-up | colby | ⏭ QUEUED | — |
 
 ## Configuration
 **Branching Strategy:** trunk-based
 **Platform:** GitHub
 **Integration Branch:** main
-**Feature Branch:** main
-
-## Progress
-
-| # | Unit | Agent | Status | Notes |
-|---|------|-------|--------|-------|
-| — | Sable UX | sable-ux | DONE | docs/ux/phase-05.4a-session-scope-voting.md |
-| — | Cal ADR | cal | DONE | 05.4a-PLAN.md, 13 decisions, 5 units, 81 tests |
-| — | Roz test spec review | roz | APPROVED | Scoped re-review 2026-04-09 |
-| 1 | voteRepository D-07 fix | colby | PENDING | ~60 LOC, TDD |
-| 2 | ScopedRealtimeManager + tests | colby | QUEUED | ~450 LOC |
-| 3 | useDotVoting + DotVotingContext | colby | QUEUED | ~500 LOC |
-| 4 | DotVoteControls + DotBudgetIndicator + SessionPresenceStack | colby | QUEUED | ~900 LOC |
-| 5 | Wire-up in MatrixFullScreenView | colby | QUEUED | ~50 LOC |
 
 ## Queue
-(unit 1 next)
+- Wave 3: Units 4 + 5 + Poirot cleanup bundle

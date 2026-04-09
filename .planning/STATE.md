@@ -2,16 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Advanced Collaboration & Quality
-status: ready_to_plan
-stopped_at: v1.1 milestone opened — awaiting phase planning
-last_updated: "2026-04-09T19:30:00.000Z"
-last_activity: 2026-04-09 -- /gsd-new-milestone 1.1 completed; Phase 05.4a next
+status: paused
+stopped_at: Phase 05.4a Wave 2 complete — Wave 3 queued
+last_updated: "2026-04-09T21:00:00.000Z"
+last_activity: 2026-04-09 -- Wave 2 shipped (Units 2+3, commits 1f601fd + 36ae490); user paused before Wave 3
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
   percent: 0
+active_phase: 05.4a-session-scope-voting
+active_phase_units_complete: 3
+active_phase_units_total: 5
 shipped_milestones:
   - v1.0 (2026-04-09)
 ---
