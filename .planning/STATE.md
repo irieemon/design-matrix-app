@@ -1,25 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Advanced Collaboration & Quality
-status: ready_to_plan
-stopped_at: v1.2 milestone opened — awaiting phase planning
-last_updated: "2026-04-10T03:00:00.000Z"
-last_activity: 2026-04-10 -- /gsd-new-milestone 1.2 completed; Phase 08 next
+milestone: v1.2
+milestone_name: — Production Hardening
+status: planning
+stopped_at: Phase 10 context gathered
+last_updated: "2026-04-10T17:19:37.847Z"
+last_activity: 2026-04-09 — milestone opened
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
-shipped_milestones:
-  - v1.0 (2026-04-09)
-  - v1.1 (2026-04-10)
-next_phase: 05.4b-project-realtime-matrix
-shipped_in_v1_1:
-  - 05.4a (2026-04-09)
-shipped_milestones:
-  - v1.0 (2026-04-09)
+  completed_phases: 2
+  total_plans: 2
+  completed_plans: 2
+  percent: 100
 ---
 
 # Project State
@@ -43,6 +35,7 @@ Progress: [░░░░░░░░░░] 0% (0/3 phases)
 ## Orchestration Mode
 
 **Eva + GSD hybrid** (per feedback_eva_plus_gsd_hybrid.md):
+
 - Eva is default persona; routes work through pipeline agents (Sable → Cal → Roz → Colby → Roz → Ellis)
 - Eva mirrors all work into `.planning/phases/*/` (CONTEXT, PLAN, SUMMARY, VERIFICATION)
 - `docs/pipeline/` state runs in parallel to `.planning/`
@@ -79,6 +72,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-09T19:30:00Z
-Stopped at: v1.1 milestone opened, ready for Phase 05.4a planning
+Last session: 2026-04-10T17:19:37.839Z
+Stopped at: Phase 10 context gathered
 Resume: Next step is Sable UX pass on dot-voting + session presence, then Cal ADR for Phase 05.4a
