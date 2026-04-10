@@ -311,6 +311,8 @@ jobs:
       # automatically — no separate `npm run dev &` step needed (Q3 RESOLVED).
       # ------------------------------------------------------------------------
       - name: Run E2E integration tests (Playwright)
+        id: playwright
+        continue-on-error: true
         run: >
           npx playwright test
           --config playwright.ci.config.ts
@@ -337,6 +339,7 @@ jobs:
       # GITHUB_ENV and are automatically available to this step.
       # ------------------------------------------------------------------------
       - name: Run migration integration tests (Vitest)
+        id: vitest
         run: npx vitest run src/lib/__tests__/phase05.3-migrations.integration.test.ts
         env:
           E2E_COLLAB_OWNER_ID: '11111111-1111-1111-1111-111111111111'
@@ -347,7 +350,30 @@ jobs:
           E2E_INVITE_RAW_TOKEN_2: 'ci-test-invite-token-2'
 
       # ------------------------------------------------------------------------
-      # 10. Upload test artifacts on failure
+      # 10. Check combined test results
+      #
+      # Playwright runs with continue-on-error so Vitest always executes even if
+      # Playwright fails. This step re-raises failure so the workflow job status
+      # reflects the true outcome of both test suites.
+      # ------------------------------------------------------------------------
+      - name: Check test results
+        if: always()
+        run: |
+          if [ "${{ steps.playwright.outcome }}" = "failure" ] && [ "${{ steps.vitest.outcome }}" = "failure" ]; then
+            echo "Both Playwright and Vitest failed"
+            exit 1
+          elif [ "${{ steps.playwright.outcome }}" = "failure" ]; then
+            echo "Playwright E2E tests failed (Vitest passed)"
+            exit 1
+          elif [ "${{ steps.vitest.outcome }}" = "failure" ]; then
+            echo "Vitest integration tests failed (Playwright passed)"
+            exit 1
+          else
+            echo "All tests passed"
+          fi
+
+      # ------------------------------------------------------------------------
+      # 11. Upload test artifacts on failure
       # ------------------------------------------------------------------------
       - name: Upload test artifacts
         if: failure()
