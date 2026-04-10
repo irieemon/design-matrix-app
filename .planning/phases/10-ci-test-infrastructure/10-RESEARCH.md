@@ -332,27 +332,36 @@ VALUES
    'email', '33333333-3333-3333-3333-333333333333', NOW(), NOW(), NOW());
 
 -- Test project owned by user 1
-INSERT INTO projects (id, name, owner_id, created_at, updated_at)
+-- NOTE: projects table has required columns: project_type, status, visibility, priority_level
+-- (table created via Supabase dashboard, no CREATE TABLE migration exists)
+INSERT INTO projects (id, name, owner_id, project_type, status, visibility, priority_level, created_at, updated_at)
 VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'CI Test Project',
-        '11111111-1111-1111-1111-111111111111', NOW(), NOW());
+        '11111111-1111-1111-1111-111111111111',
+        'software', 'active', 'private', 'medium',
+        NOW(), NOW());
 
 -- Collaborator relationship (user 2 is editor on the project)
 INSERT INTO project_collaborators (project_id, user_id, role, created_at)
 VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
         '22222222-2222-2222-2222-222222222222', 'editor', NOW());
 
--- Test invitation for accept_invitation RPC tests
--- Token hash: SHA256 of 'ci-test-invite-token-raw-value-1234567890abcdef'
--- The raw token value is passed to tests via E2E_INVITE_RAW_TOKEN env var
+-- Test invitations for accept_invitation RPC tests
+-- Token hash uses: encode(extensions.digest(p_token::text, 'sha256'::text), 'hex')
+-- (confirmed in migration 20260408150000_phase5_accept_invitation_ambiguity_fix.sql)
+-- NOTE: column name is `email` (NOT `invited_email`)
 INSERT INTO project_invitations (
-  project_id, invited_email, role, token_hash, invited_by, expires_at, created_at
-) VALUES (
-  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-  'collaborator@test.com', 'editor',
-  encode(sha256('ci-test-invite-token-raw-value-1234567890abcdef'::bytea), 'hex'),
-  '11111111-1111-1111-1111-111111111111',
-  NOW() + interval '7 days', NOW()
-);
+  project_id, email, role, token_hash, invited_by, expires_at, created_at
+) VALUES
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+   'collaborator@test.com', 'editor',
+   encode(extensions.digest('ci-test-invite-token-1'::text, 'sha256'::text), 'hex'),
+   '11111111-1111-1111-1111-111111111111',
+   NOW() + interval '7 days', NOW()),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+   'stranger@test.com', 'viewer',
+   encode(extensions.digest('ci-test-invite-token-2'::text, 'sha256'::text), 'hex'),
+   '11111111-1111-1111-1111-111111111111',
+   NOW() + interval '7 days', NOW());
 ```
 [CITED: laros.io + gist patterns adapted for project schema]
 
@@ -374,26 +383,22 @@ INSERT INTO project_invitations (
 |---|-------|---------|---------------|
 | A1 | Supabase `start` on ubuntu-latest completes in under 5 minutes | Common Pitfalls | Workflow timeout; add retry or increase timeout |
 | A2 | The project's `vite.config.ts` CSP allows connections to `localhost:54321` via `'self'` connect-src | Pitfall 4 | E2E tests fail with network errors; need CSP adjustment |
-| A3 | The `project_invitations.token_hash` column uses SHA256 hex encoding | Seed SQL | accept_invitation RPC tests fail; verify hash function in migration SQL |
+| A3 | The `project_invitations.token_hash` column uses SHA256 hex encoding via `extensions.digest` | Seed SQL | RESOLVED -- confirmed in migration 20260408150000 |
 | A4 | `wait-on` package is available (or equivalent) for dev server readiness | Code Examples | Need to install it or use alternative polling |
 | A5 | Existing 27 migrations apply cleanly on a fresh Postgres 15 via `supabase start` | Architecture | Migration errors block all tests; need to verify locally first |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Token hash algorithm in accept_invitation RPC**
-   - What we know: The RPC hashes the raw token and matches against `token_hash` column
-   - What's unclear: Whether it uses SHA256, SHA3, or pgcrypto digest -- need to check the migration SQL
-   - Recommendation: Read the accept_invitation function definition in migrations to match the hash in seed.sql
+1. **Token hash algorithm in accept_invitation RPC** -- RESOLVED
+   - **Answer:** The RPC uses `extensions.digest(p_token::text, 'sha256'::text)` with hex encoding via `encode(..., 'hex')`. Confirmed in migration `20260408150000_phase5_accept_invitation_ambiguity_fix.sql` line 24. The `pgcrypto` extension is created in `20260408000000_phase5_collab_schema.sql` line 14 (`create extension if not exists pgcrypto`). Seed SQL must use `encode(extensions.digest('token-value'::text, 'sha256'::text), 'hex')` to match.
 
-2. **Projects table schema for seed data**
-   - What we know: Tests reference `projects` table with `id`, `name`, `owner_id`
-   - What's unclear: Exact column set and required fields (may have `description`, `settings`, etc.)
-   - Recommendation: Check project table schema before writing seed.sql
+2. **Projects table schema for seed data** -- RESOLVED
+   - **Answer:** The `projects` table was created via Supabase dashboard (no CREATE TABLE migration exists). Based on the TypeScript `Project` interface in `src/types/index.ts` lines 178-207, the table has required columns: `id` (uuid), `name` (text), `owner_id` (uuid), `project_type` (text enum), `status` (text enum), `visibility` (text enum), `priority_level` (text enum), `created_at` (timestamptz), `updated_at` (timestamptz). Optional/nullable: `description`, `start_date`, `target_date`, `budget`, `team_size`, `tags`, `team_id`, `settings`, `is_ai_generated`, `ai_analysis`. Seed INSERT must include the required enum columns with valid values (e.g., `project_type='software'`, `status='active'`, `visibility='private'`, `priority_level='medium'`).
+   - **No `public.users` or `public.user_profiles` table exists** in migrations. The app uses `auth.users` directly for user identity. No additional public user profile table seed INSERT is needed.
+   - **Column name note:** `project_invitations` uses column `email` (NOT `invited_email`). Seed SQL must use `email` as the column name.
 
-3. **Dev server env var handling**
-   - What we know: `vite.config.ts` uses `loadEnv` and app reads `VITE_SUPABASE_URL`
-   - What's unclear: Whether setting these as workflow env vars is sufficient, or if a `.env.test` file is needed
-   - Recommendation: Test that `VITE_SUPABASE_URL=http://localhost:54321 npm run dev` works
+3. **Dev server env var handling** -- RESOLVED
+   - **Answer:** Playwright's `webServer` subprocess inherits `process.env` by default. The `playwright.ci.config.ts` `webServer.env` block (lines 216-219) only adds `NODE_ENV='test'` and `CI='true'` on top of the inherited environment. Since `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set as workflow-level env vars, the `npm run dev` subprocess started by Playwright will inherit them automatically. No `.env.test` file or explicit `npm run dev &` step is needed -- Playwright handles dev server lifecycle via `webServer` config. Confirmed by reading `playwright.ci.config.ts` lines 204-219.
 
 ## Environment Availability
 
@@ -474,7 +479,7 @@ INSERT INTO project_invitations (
 - Standard stack: HIGH -- Supabase CLI + setup-cli are official, well-documented tools
 - Architecture: HIGH -- Pattern follows official Supabase CI testing guidance and existing project patterns
 - Pitfalls: MEDIUM -- Startup time and CSP behavior are environment-dependent; need runtime verification
-- Seed SQL: MEDIUM -- auth.users INSERT pattern verified via multiple sources, but project-specific schema (projects, project_invitations) needs verification against actual migrations
+- Seed SQL: HIGH -- auth.users INSERT pattern verified via multiple sources; project schema confirmed via TypeScript interface; token hash algorithm confirmed via migration SQL; invitation column name confirmed as `email`
 
 **Research date:** 2026-04-10
 **Valid until:** 2026-05-10 (stable tooling, 30-day window)
