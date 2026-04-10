@@ -71,7 +71,10 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
     const file = event.target.files?.[0]
     // Reset input so selecting the same file twice still fires change.
     if (event.target) event.target.value = ''
-    if (!file) return
+    if (!file) {
+      setVideoError("Couldn't read that video. Try a different file or format.")
+      return
+    }
 
     setVideoError(undefined)
     setVideoStage('extracting')
@@ -404,7 +407,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
                 <input
                   ref={videoInputRef}
                   type="file"
-                  accept="video/mp4,video/webm,video/quicktime"
+                  accept="video/*"
                   className="sr-only"
                   onChange={handleVideoFileSelected}
                   aria-label="Upload video for AI analysis"
