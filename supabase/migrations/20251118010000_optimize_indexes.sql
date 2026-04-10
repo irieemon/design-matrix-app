@@ -11,12 +11,6 @@ CREATE INDEX IF NOT EXISTS idx_ideas_editing_by
   ON public.ideas(editing_by)
   WHERE editing_by IS NOT NULL;
 
--- Index for project_collaborators.invited_by foreign key
--- Improves performance when querying collaborators by inviter
-CREATE INDEX IF NOT EXISTS idx_project_collaborators_invited_by
-  ON public.project_collaborators(invited_by)
-  WHERE invited_by IS NOT NULL;
-
 -- Index for teams.owner_id foreign key
 -- Improves performance when querying teams by owner
 CREATE INDEX IF NOT EXISTS idx_teams_owner_id
@@ -64,10 +58,9 @@ DROP INDEX IF EXISTS public.idx_admin_user_stats_email;
 -- Performance Analysis Comments
 -- ===================================================================
 
--- Foreign Key Indexes Added (3):
+-- Foreign Key Indexes Added (2):
 -- 1. idx_ideas_editing_by - Partial index (NULL values excluded for efficiency)
--- 2. idx_project_collaborators_invited_by - Partial index (NULL values excluded)
--- 3. idx_teams_owner_id - Full index (owner_id is always set)
+-- 2. idx_teams_owner_id - Full index (owner_id is always set)
 --
 -- Impact: Faster JOIN operations and foreign key constraint validation
 -- Cost: Minimal storage overhead, maintained on writes
