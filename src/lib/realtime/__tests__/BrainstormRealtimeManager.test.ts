@@ -8,19 +8,31 @@
  * - Presence tracking
  * - Automatic reconnection with exponential backoff
  * - Error handling and cleanup
+ *
+ * Scope fix (05.5): mockChannel was only visible inside the vi.mock() factory.
+ * Now it is exposed by importing the mocked supabase module via vi.mocked()
+ * and reading supabase.channel() after clearAllMocks() in beforeEach. This
+ * makes mockChannel available to all nested describe blocks without require().
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { BrainstormRealtimeManager, type PresenceState } from '../BrainstormRealtimeManager'
 import type { BrainstormRealtimeConfig, SessionState } from '../../../types/BrainstormSession'
+import * as supabaseModule from '../../supabase'
 
-// Mock Supabase - use factory function to avoid hoisting issues
+// Mock Supabase - factory creates the mock channel object once; vi.mocked()
+// lets us access it from test bodies without require().
+//
+// NOTE: subscribe does NOT auto-fire SUBSCRIBED. Reconnection tests rely on
+// reconnectAttempts accumulating across errors without being reset by a
+// SUBSCRIBED callback. Tests that need SUBSCRIBED to fire call the captured
+// callback manually (see "should reset reconnect attempts" test).
 vi.mock('../../supabase', () => {
   const mockChannel = {
     on: vi.fn().mockReturnThis(),
-    subscribe: vi.fn((callback: any) => {
-      // Immediately call with SUBSCRIBED status
-      callback('SUBSCRIBED', null)
+    subscribe: vi.fn((_callback: (status: string, err: Error | null) => void) => {
+      // Do NOT auto-fire SUBSCRIBED — tests invoke the callback explicitly
+      // when they need to test status-driven behavior.
       return mockChannel
     }),
     track: vi.fn(),
@@ -38,17 +50,29 @@ vi.mock('../../supabase', () => {
   }
 })
 
+// Module-level variable accessible to all nested describe blocks.
+// Assigned in beforeEach via vi.mocked(supabaseModule.supabase).channel()
+// so each test gets fresh spy call history after vi.clearAllMocks().
+let mockChannel: {
+  on: ReturnType<typeof vi.fn>
+  subscribe: ReturnType<typeof vi.fn>
+  track: ReturnType<typeof vi.fn>
+  send: ReturnType<typeof vi.fn>
+  presenceState: ReturnType<typeof vi.fn>
+  state: string
+  unsubscribe: ReturnType<typeof vi.fn>
+}
+
 describe('BrainstormRealtimeManager', () => {
   let manager: BrainstormRealtimeManager
   let config: BrainstormRealtimeConfig
 
-  // Helper to get mocked channel
-  const getMockChannel = () => {
-    const { supabase } = require('../../supabase')
-    return supabase.channel()
-  }
-
   beforeEach(() => {
+    // Capture the channel reference BEFORE clearing mocks so the channel()
+    // call doesn't pollute spy call counts checked by tests.
+    const mocked = vi.mocked(supabaseModule.supabase)
+    mockChannel = mocked.channel('') as typeof mockChannel
+
     vi.clearAllMocks()
     vi.useFakeTimers()
 
@@ -71,13 +95,13 @@ describe('BrainstormRealtimeManager', () => {
 
   describe('Channel Subscription', () => {
     it('should create three channels on subscribe', () => {
-      const { supabase } = require('../../supabase')
+      const mocked = vi.mocked(supabaseModule.supabase)
 
       manager.subscribe(config)
 
       // Should create ideas, participants, and session channels
-      expect(supabase.channel).toHaveBeenCalledTimes(3)
-      expect(supabase.channel).toHaveBeenCalledWith(
+      expect(mocked.channel).toHaveBeenCalledTimes(3)
+      expect(mocked.channel).toHaveBeenCalledWith(
         `ideas:test-session-123`,
         expect.objectContaining({
           config: {
@@ -86,13 +110,11 @@ describe('BrainstormRealtimeManager', () => {
           }
         })
       )
-      expect(supabase.channel).toHaveBeenCalledWith(`participants:test-session-123`)
-      expect(supabase.channel).toHaveBeenCalledWith(`session:test-session-123`)
+      expect(mocked.channel).toHaveBeenCalledWith(`participants:test-session-123`)
+      expect(mocked.channel).toHaveBeenCalledWith(`session:test-session-123`)
     })
 
     it('should register postgres_changes listeners for ideas', () => {
-      const mockChannel = getMockChannel()
-
       manager.subscribe(config)
 
       // Verify INSERT, UPDATE, DELETE listeners registered
@@ -129,8 +151,6 @@ describe('BrainstormRealtimeManager', () => {
     })
 
     it('should subscribe to all channels', () => {
-      const mockChannel = getMockChannel()
-
       manager.subscribe(config)
 
       expect(mockChannel.subscribe).toHaveBeenCalledTimes(3)
@@ -143,20 +163,18 @@ describe('BrainstormRealtimeManager', () => {
     })
 
     it('should unsubscribe from all channels on cleanup', () => {
-      const { supabase } = require('../../supabase')
+      const mocked = vi.mocked(supabaseModule.supabase)
 
       manager.subscribe(config)
       manager.unsubscribe()
 
-      expect(supabase.removeChannel).toHaveBeenCalledTimes(3)
+      expect(mocked.removeChannel).toHaveBeenCalledTimes(3)
       expect(manager.isSubscribed()).toBe(false)
     })
   })
 
   describe('Event Handling - Idea Created', () => {
     it('should call onIdeaCreated immediately for INSERT events', () => {
-      const mockChannel = getMockChannel()
-
       manager.subscribe(config)
 
       // Find the INSERT handler
@@ -183,8 +201,6 @@ describe('BrainstormRealtimeManager', () => {
 
   describe('Event Batching - Idea Updated', () => {
     it('should batch UPDATE events and flush after 200ms', () => {
-      const mockChannel = getMockChannel()
-
       manager.subscribe(config)
 
       // Find the UPDATE handler
@@ -505,16 +521,17 @@ describe('BrainstormRealtimeManager', () => {
     })
 
     it('should provide resubscribe method for reconnection', () => {
+      const mocked = vi.mocked(supabaseModule.supabase)
       manager.subscribe(config)
 
-      const { supabase } = require('../../supabase')
+      // Clear call counts to isolate what resubscribe triggers
       vi.clearAllMocks()
 
       manager.resubscribe()
 
       // Should unsubscribe old channels and create new ones
-      expect(mockRemoveChannel).toHaveBeenCalledTimes(3)
-      expect(supabase.channel).toHaveBeenCalledTimes(3)
+      expect(mocked.removeChannel).toHaveBeenCalledTimes(3)
+      expect(mocked.channel).toHaveBeenCalledTimes(3)
     })
   })
 

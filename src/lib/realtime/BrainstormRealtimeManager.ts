@@ -52,9 +52,10 @@ export class BrainstormRealtimeManager {
     // This allows subscribe() to be called again for new sessions or resubscriptions
     this.cleanup(false)
 
-    // Reset reconnection state
-    this.reconnectAttempts = 0
-    this.reconnectDelay = 1000
+    // NOTE: reconnectAttempts is intentionally NOT reset here. It resets only
+    // when SUBSCRIBED status fires on a channel (indicating a real successful
+    // connection). This lets the max-attempts guard accumulate across reconnect
+    // cycles rather than being cleared by each resubscribe() call.
 
     try {
       // Create ideas channel with error handling
@@ -408,11 +409,12 @@ export class BrainstormRealtimeManager {
       clearTimeout(this.reconnectTimer)
     }
 
-    // Exponential backoff
+    // Exponential backoff — compute delay before incrementing so attempt 0
+    // uses the base delay (1s), then each subsequent attempt doubles it.
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts)
+    this.reconnectAttempts++
 
     this.reconnectTimer = setTimeout(() => {
-      this.reconnectAttempts++
       console.log(`Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`)
       this.resubscribe()
     }, delay)
