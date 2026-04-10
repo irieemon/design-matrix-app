@@ -258,44 +258,6 @@ jobs:
           "
 
       # ------------------------------------------------------------------------
-      # 9. Verify GoTrue can authenticate the seeded test users (diagnostic)
-      #
-      # Calls the password grant endpoint directly. If this step fails, user
-      # creation or GoTrue config is broken — no point paying the 2+ min
-      # Playwright install cost before we know auth works.
-      # ------------------------------------------------------------------------
-      - name: Verify auth (diagnostic)
-        run: |
-          echo "=== Running containers ==="
-          docker ps --format "table {{.Names}}\t{{.Status}}" | head -20
-
-          echo "=== GoTrue container logs ==="
-          docker logs supabase_auth_design-matrix-app 2>&1 | tail -30 || docker logs $(docker ps --filter "name=auth" --format "{{.Names}}") 2>&1 | tail -30 || echo "Could not get auth container logs"
-          echo "=== End GoTrue logs ==="
-
-          echo "Checking public.users table..."
-          PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -d postgres \
-            -c "SELECT id, email FROM public.users LIMIT 5;" 2>&1 \
-            || echo "Could not query public.users"
-
-          echo "Testing GoTrue auth for owner@test.com..."
-          RESPONSE=$(curl -s -X POST http://localhost:54321/auth/v1/token?grant_type=password \
-            -H "apikey: $VITE_SUPABASE_ANON_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{"email":"owner@test.com","password":"test-password-123"}')
-          echo "$RESPONSE" | head -c 500
-          echo ""
-          if echo "$RESPONSE" | grep -q "access_token"; then
-            echo "Auth works — got access_token"
-          else
-            echo "Auth FAILED — no access_token in response"
-            echo "Full response: $RESPONSE"
-            echo "=== GoTrue logs after failed auth ==="
-            docker logs supabase_auth_design-matrix-app 2>&1 | tail -20 || docker logs $(docker ps --filter "name=auth" --format "{{.Names}}") 2>&1 | tail -20 || echo "Could not get auth container logs"
-            exit 1
-          fi
-
-      # ------------------------------------------------------------------------
       # 8. Install Playwright browsers (Chromium only per playwright.ci.config.ts)
       # ------------------------------------------------------------------------
       - name: Install Playwright browsers
