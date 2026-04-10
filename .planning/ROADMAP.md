@@ -50,7 +50,10 @@
   3. `src/lib/__tests__/phase05.3-migrations.integration.test.ts` runs in CI and passes
   4. CI workflow uses a dedicated Supabase test project with seed data that is reset between runs
   5. GitHub Actions workflow file committed and documented
-**Plans:** TBD (run /gsd-plan-phase 10)
+**Plans:** 2 plans
+Plans:
+- [ ] 10-01-PLAN.md -- Supabase config, seed data, and conditional test skip guards
+- [ ] 10-02-PLAN.md -- GitHub Actions integration-tests.yml workflow
 
 ### Deferred to v1.3+
 
@@ -65,7 +68,7 @@
 |-------|----------------|--------|-----------|
 | 08. Operational Fixes | 0/? | Not started | - |
 | 09. RealtimeSubscriptionManager Bug Fix | 0/? | Not started | - |
-| 10. CI Test Infrastructure | 0/? | Not started | - |
+| 10. CI Test Infrastructure | 0/2 | Planning complete | - |
 
 ---
-*Last updated: 2026-04-10 — v1.2 milestone opened via /gsd-new-milestone*
+*Last updated: 2026-04-10 — Phase 10 plans created via /gsd-plan-phase*
