@@ -10,6 +10,12 @@
 
 <!-- PIPELINE_STATUS: {"phase": "paused", "sizing": "large", "roz_qa": "wave2_passed", "telemetry_captured": false, "stop_reason": "user_paused"} -->
 
+## Completed: Phase 10 — CI Test Infrastructure (2026-04-10)
+**Sizing:** Small | **Stop Reason:** completed_clean
+**Result:** Integration tests 7/7 pass. E2E tests run but have pre-existing UI selector issues (documented).
+**Key deliverables:** baseline migration, GoTrue Admin API seeding, integration-tests.yml workflow
+**Team:** Cal (arch review), Roz (test strategy + QA), Colby (build), Ellis (commits)
+
 ## Resume Instructions
 
 Next session: `/gsd-progress` or tell Eva "resume 05.4a wave 3".
@@ -41,3 +47,4 @@ Estimated burn: ~250-370k tokens (Wave 3 is biggest wave).
 
 ## Queue
 - Wave 3: Units 4 + 5 + Poirot cleanup bundle
+<!-- COMPACTION: 2026-04-09T20:29:09Z -->
