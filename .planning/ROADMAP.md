@@ -14,7 +14,7 @@
 
 - [x] **Phase 05.4a: Session-Scope Voting** ✅ (2026-04-09) — Dot-voting UI + realtime tallies + session presence. See `.planning/phases/05.4a-session-scope-voting/05.4a-VERIFICATION.md`. Satisfied COLLAB-01-session, COLLAB-05-UI, COLLAB-06. 10 tech debt items routed to Phase 05.5 QA-04.
 - [x] **Phase 05.4b: Project-Scope Realtime Matrix** ✅ (2026-04-10) — ProjectPresenceStack, LiveCursorsLayer, LockedCardOverlay, ReconnectingBadge, useDragLock, useLiveCursors, useProjectRealtime. Satisfied COLLAB-01-matrix, COLLAB-02, COLLAB-07. 151 tests + 5 todo + 6 E2E skip. ~1.249M tokens. See `.planning/phases/05.4b-project-realtime-matrix/05.4b-VERIFICATION.md`.
-- [ ] **Phase 05.5: Quality Debt Closure** — MOB-02 iOS device verify, Phase 07 Playwright spec drift, Phase 05.3 invite E2E regression, pgTAP coverage for 05.3 SQL migrations.
+- [x] **Phase 05.5: Quality Debt Closure** ✅ (2026-04-10) — MOB-02 verified on real iOS device, BRM 22 test failures fixed (43/43), invite E2E + SQL migration tests written (test.skip), Playwright mobile specs confirmed passing, iOS video input bug fixed + mobile video gate added. See `.planning/phases/05.5-quality-debt-closure/05.5-VERIFICATION.md`.
 
 ### Phase Details
 
