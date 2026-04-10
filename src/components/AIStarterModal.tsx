@@ -13,6 +13,7 @@ import VideoAnalysisProgress, {
   type VideoAnalysisStage,
 } from './video/VideoAnalysisProgress'
 import { useCsrfToken } from '../hooks/useCsrfToken'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 import { DatabaseService } from '../lib/database'
 import { supabase, createAuthenticatedClientFromLocalStorage } from '../lib/supabase'
 import { Project, IdeaCard, User, ProjectType } from '../types'
@@ -45,6 +46,7 @@ interface AIStarterModalProps {
 
 
 const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, onProjectCreated }) => {
+  const { isMobile } = useBreakpoint()
   const [step, setStep] = useState<AIStarterStep>('initial')
   const [projectName, setProjectName] = useState('')
   const [projectDescription, setProjectDescription] = useState('')
@@ -395,6 +397,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
 
           {step === 'initial' && (
             <>
+              {!isMobile && (
               <div className="mb-4 rounded-lg border p-4" style={{ borderColor: 'var(--graphite-200)' }}>
                 <p className="mb-2 text-sm font-medium" style={{ color: 'var(--graphite-800)' }}>
                   Got a video? Let AI pull ideas straight from it.
@@ -428,6 +431,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
                   errorMessage={videoError}
                 />
               </div>
+              )}
               <ProjectBasicsStep
               projectName={projectName}
               onProjectNameChange={setProjectName}
