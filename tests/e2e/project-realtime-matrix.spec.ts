@@ -25,6 +25,8 @@ import { test, expect, Browser, BrowserContext, Page } from '@playwright/test'
 // Environment config — must be set for live runs
 // ---------------------------------------------------------------------------
 
+const SKIP_LIVE = !process.env['CI_SUPABASE'];
+
 const USER_A_EMAIL = process.env['E2E_USER_A_EMAIL'] ?? 'user-a@example.com'
 const USER_A_PASSWORD = process.env['E2E_USER_A_PASSWORD'] ?? 'password-a'
 const USER_B_EMAIL = process.env['E2E_USER_B_EMAIL'] ?? 'user-b@example.com'
@@ -38,7 +40,7 @@ const PRESENCE_STACK_SELECTOR = '[data-testid="project-presence-stack"]'
 // ---------------------------------------------------------------------------
 
 async function signIn(page: Page, email: string, password: string): Promise<void> {
-  await page.goto('http://localhost:3003/login')
+  await page.goto('http://localhost:3003/')
   await page.fill('[type="email"]', email)
   await page.fill('[type="password"]', password)
   await page.click('[type="submit"]')
@@ -56,7 +58,8 @@ async function enterFullscreenMatrix(page: Page): Promise<void> {
 // T-054B-300: Two browsers see each other in presence stack
 // ---------------------------------------------------------------------------
 
-test.skip('T-054B-300: two browsers see each other in presence stack', async ({ browser }: { browser: Browser }) => {
+test('T-054B-300: two browsers see each other in presence stack', async ({ browser }: { browser: Browser }) => {
+  test.skip(SKIP_LIVE, 'Requires live Supabase (set CI_SUPABASE=true)');
   // Arrange: two browser contexts, each signed in as different users
   const ctxA: BrowserContext = await browser.newContext()
   const ctxB: BrowserContext = await browser.newContext()
@@ -88,7 +91,8 @@ test.skip('T-054B-300: two browsers see each other in presence stack', async ({ 
 // T-054B-301: Cursor appears in browser B when A moves mouse
 // ---------------------------------------------------------------------------
 
-test.skip('T-054B-301: cursor appears in browser B when A moves mouse', async ({ browser }: { browser: Browser }) => {
+test('T-054B-301: cursor appears in browser B when A moves mouse', async ({ browser }: { browser: Browser }) => {
+  test.skip(SKIP_LIVE, 'Requires live Supabase (set CI_SUPABASE=true)');
   const ctxA: BrowserContext = await browser.newContext()
   const ctxB: BrowserContext = await browser.newContext()
   const pageA: Page = await ctxA.newPage()
@@ -123,7 +127,8 @@ test.skip('T-054B-301: cursor appears in browser B when A moves mouse', async ({
 // T-054B-302: Drag starts lock overlay in browser B
 // ---------------------------------------------------------------------------
 
-test.skip('T-054B-302: drag starts lock overlay in browser B', async ({ browser }: { browser: Browser }) => {
+test('T-054B-302: drag starts lock overlay in browser B', async ({ browser }: { browser: Browser }) => {
+  test.skip(SKIP_LIVE, 'Requires live Supabase (set CI_SUPABASE=true)');
   const ctxA: BrowserContext = await browser.newContext()
   const ctxB: BrowserContext = await browser.newContext()
   const pageA: Page = await ctxA.newPage()
@@ -172,7 +177,8 @@ test.skip('T-054B-302: drag starts lock overlay in browser B', async ({ browser 
 // T-054B-303: Drop propagates position in browser B within 2s
 // ---------------------------------------------------------------------------
 
-test.skip('T-054B-303: drop propagates position in browser B within 2s', async ({ browser }: { browser: Browser }) => {
+test('T-054B-303: drop propagates position in browser B within 2s', async ({ browser }: { browser: Browser }) => {
+  test.skip(SKIP_LIVE, 'Requires live Supabase (set CI_SUPABASE=true)');
   const ctxA: BrowserContext = await browser.newContext()
   const ctxB: BrowserContext = await browser.newContext()
   const pageA: Page = await ctxA.newPage()
@@ -222,7 +228,8 @@ test.skip('T-054B-303: drop propagates position in browser B within 2s', async (
 // T-054B-304: Disconnect shows reconnecting badge
 // ---------------------------------------------------------------------------
 
-test.skip('T-054B-304: disconnect shows reconnecting badge (Playwright route block)', async ({ browser }: { browser: Browser }) => {
+test('T-054B-304: disconnect shows reconnecting badge (Playwright route block)', async ({ browser }: { browser: Browser }) => {
+  test.skip(SKIP_LIVE, 'Requires live Supabase (set CI_SUPABASE=true)');
   const ctxA: BrowserContext = await browser.newContext()
   const pageA: Page = await ctxA.newPage()
 
@@ -246,7 +253,8 @@ test.skip('T-054B-304: disconnect shows reconnecting badge (Playwright route blo
 // T-054B-305: Reconnect shows recovery toast
 // ---------------------------------------------------------------------------
 
-test.skip('T-054B-305: reconnect shows recovery toast', async ({ browser }: { browser: Browser }) => {
+test('T-054B-305: reconnect shows recovery toast', async ({ browser }: { browser: Browser }) => {
+  test.skip(SKIP_LIVE, 'Requires live Supabase (set CI_SUPABASE=true)');
   const ctxA: BrowserContext = await browser.newContext()
   const pageA: Page = await ctxA.newPage()
 

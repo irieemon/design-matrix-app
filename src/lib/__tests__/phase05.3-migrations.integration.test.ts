@@ -98,7 +98,11 @@ beforeAll(() => {
 // ---------------------------------------------------------------------------
 
 describe('Phase 05.3 Migration 1 — projects SELECT RLS for collaborators', () => {
-  it.skip('collaborator user can SELECT the project they were added to', async () => {
+  it('collaborator user can SELECT the project they were added to', async () => {
+    if (!process.env['CI_SUPABASE'] || !prerequisitesMet) {
+      console.log('Skipping: requires CI_SUPABASE=true and all E2E_COLLAB_* env vars');
+      return;
+    }
     // PREREQUISITE: COLLAB_USER_ID must already be in project_collaborators
     // for PROJECT_ID. Add manually or via accept_invitation before running.
 
@@ -116,7 +120,11 @@ describe('Phase 05.3 Migration 1 — projects SELECT RLS for collaborators', () 
     expect(data?.id).toBe(PROJECT_ID)
   })
 
-  it.skip('non-collaborator user cannot SELECT a project they have no access to', async () => {
+  it('non-collaborator user cannot SELECT a project they have no access to', async () => {
+    if (!process.env['CI_SUPABASE'] || !prerequisitesMet) {
+      console.log('Skipping: requires CI_SUPABASE=true and all E2E_COLLAB_* env vars');
+      return;
+    }
     // Arrange: create a fresh anon client with a different user's token
     // that has no relationship to PROJECT_ID.
     // NOTE: In a live run, configure E2E_STRANGER_TOKEN for a third user.
@@ -151,7 +159,11 @@ describe('Phase 05.3 Migration 1 — projects SELECT RLS for collaborators', () 
 // ---------------------------------------------------------------------------
 
 describe('Phase 05.3 Migration 2 — is_project_collaborator function', () => {
-  it.skip('returns true for a user who is a collaborator on the project', async () => {
+  it('returns true for a user who is a collaborator on the project', async () => {
+    if (!process.env['CI_SUPABASE'] || !prerequisitesMet) {
+      console.log('Skipping: requires CI_SUPABASE=true and all E2E_COLLAB_* env vars');
+      return;
+    }
     // PREREQUISITE: COLLAB_USER_ID must be in project_collaborators for PROJECT_ID.
 
     // Act: call the function via RPC
@@ -165,7 +177,11 @@ describe('Phase 05.3 Migration 2 — is_project_collaborator function', () => {
     expect(data).toBe(true)
   })
 
-  it.skip('returns false for a user who is not a collaborator on the project', async () => {
+  it('returns false for a user who is not a collaborator on the project', async () => {
+    if (!process.env['CI_SUPABASE'] || !prerequisitesMet) {
+      console.log('Skipping: requires CI_SUPABASE=true and all E2E_COLLAB_* env vars');
+      return;
+    }
     const nonMemberId = getEnv('E2E_STRANGER_USER_ID')
     if (!nonMemberId) {
       console.warn('E2E_STRANGER_USER_ID not set — skipping non-collaborator check')
@@ -194,7 +210,11 @@ describe('Phase 05.3 Migration 2 — is_project_collaborator function', () => {
 // ---------------------------------------------------------------------------
 
 describe('Phase 05.3 Migration 3 — accept_invitation RPC inserts collaborator row', () => {
-  it.skip('accept_invitation with a valid token creates a project_collaborators entry', async () => {
+  it('accept_invitation with a valid token creates a project_collaborators entry', async () => {
+    if (!process.env['CI_SUPABASE'] || !prerequisitesMet) {
+      console.log('Skipping: requires CI_SUPABASE=true and all E2E_COLLAB_* env vars');
+      return;
+    }
     // PREREQUISITE: A valid (unhashed) invitation token for PROJECT_ID sent to
     // COLLAB_USER_ID must be available. Set E2E_INVITE_RAW_TOKEN to the raw
     // token string before the test run.
@@ -227,7 +247,11 @@ describe('Phase 05.3 Migration 3 — accept_invitation RPC inserts collaborator 
 // ---------------------------------------------------------------------------
 
 describe('Phase 05.3 Migration 4 — accept_invitation returns project_id OUT param', () => {
-  it.skip('accept_invitation response shape includes project_id and role', async () => {
+  it('accept_invitation response shape includes project_id and role', async () => {
+    if (!process.env['CI_SUPABASE'] || !prerequisitesMet) {
+      console.log('Skipping: requires CI_SUPABASE=true and all E2E_COLLAB_* env vars');
+      return;
+    }
     // PREREQUISITE: Same as Migration 3 test — requires E2E_INVITE_RAW_TOKEN_2
     // (a second unused token) so this test can run independently of test 3.
     const rawToken = getEnv('E2E_INVITE_RAW_TOKEN_2')
@@ -261,7 +285,11 @@ describe('Phase 05.3 Migration 4 — accept_invitation returns project_id OUT pa
     expect(['viewer', 'editor']).toContain(row.role)
   })
 
-  it.skip('accept_invitation returns 400-equivalent error for invalid token', async () => {
+  it('accept_invitation returns 400-equivalent error for invalid token', async () => {
+    if (!process.env['CI_SUPABASE'] || !prerequisitesMet) {
+      console.log('Skipping: requires CI_SUPABASE=true and all E2E_COLLAB_* env vars');
+      return;
+    }
     // Act: call with a syntactically valid but non-existent token
     const bogusToken = 'a'.repeat(64) // 64-char hex-like string, not in DB
 

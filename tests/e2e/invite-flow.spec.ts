@@ -32,6 +32,8 @@ import { test, expect, Browser, BrowserContext, Page } from '@playwright/test'
 // Environment config — must be set for live runs
 // ---------------------------------------------------------------------------
 
+const SKIP_LIVE = !process.env['CI_SUPABASE'];
+
 const OWNER_EMAIL = process.env['E2E_OWNER_EMAIL'] ?? 'owner@example.com'
 const OWNER_PASSWORD = process.env['E2E_OWNER_PASSWORD'] ?? 'password-owner'
 const INVITEE_EMAIL = process.env['E2E_INVITEE_EMAIL'] ?? 'invitee@example.com'
@@ -96,7 +98,8 @@ async function getAuthHeadersFromPage(page: Page): Promise<{ Authorization: stri
 // T-055-100: Owner can send an invitation
 // ---------------------------------------------------------------------------
 
-test.skip('T-055-100: owner sends invitation and receives inviteUrl', async ({ browser }: { browser: Browser }) => {
+test('T-055-100: owner sends invitation and receives inviteUrl', async ({ browser }: { browser: Browser }) => {
+  test.skip(SKIP_LIVE, 'Requires live Supabase (set CI_SUPABASE=true)');
   // Step 1: Owner signs in
   const ownerCtx: BrowserContext = await browser.newContext()
   const ownerPage: Page = await ownerCtx.newPage()
@@ -129,7 +132,8 @@ test.skip('T-055-100: owner sends invitation and receives inviteUrl', async ({ b
 // T-055-101: Invitee accepts via invite URL and sees the project
 // ---------------------------------------------------------------------------
 
-test.skip('T-055-101: invitee accepts invitation via URL and sees project in list', async ({ browser }: { browser: Browser }) => {
+test('T-055-101: invitee accepts invitation via URL and sees project in list', async ({ browser }: { browser: Browser }) => {
+  test.skip(SKIP_LIVE, 'Requires live Supabase (set CI_SUPABASE=true)');
   // This test requires the invite URL from the API response.
   // In a live run, obtain it by intercepting the network response from
   // POST /api/invitations/create, or by querying the database directly.
@@ -213,7 +217,8 @@ test.skip('T-055-101: invitee accepts invitation via URL and sees project in lis
 // T-055-102: Expired/invalid invite URL shows error state
 // ---------------------------------------------------------------------------
 
-test.skip('T-055-102: expired or invalid invite token shows unavailable state', async ({ page }: { page: Page }) => {
+test('T-055-102: expired or invalid invite token shows unavailable state', async ({ page }: { page: Page }) => {
+  test.skip(SKIP_LIVE, 'Requires live Supabase (set CI_SUPABASE=true)');
   // Use a well-formed but non-existent token to hit the invalid state.
   const fakeToken = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
   await page.goto(`${BASE_URL}/invite#token=${fakeToken}`)
@@ -228,7 +233,8 @@ test.skip('T-055-102: expired or invalid invite token shows unavailable state', 
 // T-055-103: Accept endpoint requires authentication
 // ---------------------------------------------------------------------------
 
-test.skip('T-055-103: POST /api/invitations/accept returns 401 without auth token', async ({ page }: { page: Page }) => {
+test('T-055-103: POST /api/invitations/accept returns 401 without auth token', async ({ page }: { page: Page }) => {
+  test.skip(SKIP_LIVE, 'Requires live Supabase (set CI_SUPABASE=true)');
   await page.goto(`${BASE_URL}/`)
 
   const response = await page.evaluate(async () => {
