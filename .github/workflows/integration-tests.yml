@@ -129,6 +129,11 @@ jobs:
       # ------------------------------------------------------------------------
       - name: Verify auth (diagnostic)
         run: |
+          echo "Checking public.users table..."
+          PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -d postgres \
+            -c "SELECT id, email FROM public.users LIMIT 5;" 2>&1 \
+            || echo "Could not query public.users"
+
           echo "Testing GoTrue auth for owner@test.com..."
           RESPONSE=$(curl -s -X POST http://localhost:54321/auth/v1/token?grant_type=password \
             -H "apikey: $VITE_SUPABASE_ANON_KEY" \

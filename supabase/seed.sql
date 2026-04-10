@@ -51,6 +51,19 @@ INSERT INTO auth.users (
     NOW(), NOW()
   );
 
+-- ----------------------------------------------------------------------------
+-- Public user profile rows
+-- Required by RLS policies (users can only see their own row) and the
+-- is_admin() function, both of which query public.users WHERE id = auth.uid().
+-- Without these rows GoTrue may fail schema introspection with a 500 error
+-- when it evaluates RLS policies during authentication.
+-- ----------------------------------------------------------------------------
+
+INSERT INTO public.users (id, email, full_name, role, is_active, created_at, updated_at) VALUES
+  ('11111111-1111-1111-1111-111111111111', 'owner@test.com',        'Test Owner',        'user', true, NOW(), NOW()),
+  ('22222222-2222-2222-2222-222222222222', 'collaborator@test.com', 'Test Collaborator', 'user', true, NOW(), NOW()),
+  ('33333333-3333-3333-3333-333333333333', 'stranger@test.com',     'Test Stranger',     'user', true, NOW(), NOW());
+
 -- Identity rows required for GoTrue email/password sign-in (post-2024 Supabase)
 INSERT INTO auth.identities (
   id, user_id, identity_data, provider, provider_id,
@@ -141,3 +154,12 @@ INSERT INTO project_invitations (
     NOW() + interval '7 days',
     NOW()
   );
+
+-- ----------------------------------------------------------------------------
+-- Refresh the admin materialized view now that public.users data exists.
+-- admin_user_stats is built on public.users — without a refresh it remains
+-- empty and any subsequent REFRESH MATERIALIZED VIEW CONCURRENTLY (which
+-- requires an existing unique index on a non-empty view) would fail.
+-- ----------------------------------------------------------------------------
+
+REFRESH MATERIALIZED VIEW IF EXISTS public.admin_user_stats;
