@@ -109,3 +109,56 @@ export function watchCsrfToken(
 ): () => void {
   return watchCookie(COOKIE_NAMES.CSRF_TOKEN, callback, intervalMs)
 }
+
+/**
+ * Wait for the CSRF token cookie to appear, up to timeoutMs.
+ *
+ * Polls getCsrfToken() every intervalMs milliseconds. Resolves with the token
+ * string as soon as it is found, or with null if the timeout expires first.
+ * Never rejects — callers can proceed without the token and the request will
+ * fail with 403 (same as the current synchronous behavior).
+ *
+ * Use this instead of the synchronous getCsrfToken() in fire-and-forget paths
+ * that run immediately after page load, before auth hydration completes.
+ */
+export function waitForCsrfToken(
+  timeoutMs: number = 3000,
+  intervalMs: number = 100
+): Promise<string | null> {
+  return new Promise<string | null>((resolve) => {
+    // Check immediately before starting the interval
+    const immediate = getCsrfToken()
+    if (immediate !== null) {
+      resolve(immediate)
+      return
+    }
+
+    // 0ms timeout: resolve null right away if cookie isn't already present
+    if (timeoutMs <= 0) {
+      resolve(null)
+      return
+    }
+
+    let intervalId: ReturnType<typeof setInterval>
+    let timeoutId: ReturnType<typeof setTimeout>
+
+    function cleanup() {
+      clearInterval(intervalId)
+      clearTimeout(timeoutId)
+    }
+
+    intervalId = setInterval(() => {
+      const token = getCsrfToken()
+      if (token !== null) {
+        cleanup()
+        resolve(token)
+      }
+    }, intervalMs)
+
+    timeoutId = setTimeout(() => {
+      cleanup()
+      logger.warn('waitForCsrfToken: timed out waiting for CSRF cookie', { timeoutMs })
+      resolve(null)
+    }, timeoutMs)
+  })
+}

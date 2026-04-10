@@ -12,6 +12,7 @@
 
 import { generateText, experimental_transcribe } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
+import { getModel } from './providers.js';
 import { createClient } from '@supabase/supabase-js';
 import type { VercelResponse } from '@vercel/node';
 import type { AuthenticatedRequest } from '../middleware/index.js';
@@ -118,10 +119,10 @@ export async function handleTranscribeAudio(req: AuthenticatedRequest, res: Verc
     }
 
     // Step 2: Summarize transcript via generateText (gpt-4o-mini for cost efficiency).
-    // Bypasses the Vercel AI Gateway and reuses the @ai-sdk/openai provider created
-    // above for Whisper, calling OpenAI directly with OPENAI_API_KEY. Avoids the
-    // AI_GATEWAY_API_KEY requirement for this endpoint.
-    const summaryModel = openai('gpt-4o-mini');
+    // Routes through the Vercel AI Gateway via getModel() to match all other handlers.
+    // The Whisper transcription above remains a targeted @ai-sdk/openai exception (gateway
+    // does not support transcription models). AI_GATEWAY_API_KEY is required for this step.
+    const summaryModel = getModel('openai/gpt-4o-mini');
 
     const projectInfo = projectContext
       ? `\n\nProject: ${projectContext.projectName || 'Unknown'}\nType: ${projectContext.projectType || 'General'}`

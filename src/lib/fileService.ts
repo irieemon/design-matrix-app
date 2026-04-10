@@ -1,6 +1,6 @@
 import { supabase, createAuthenticatedClientFromLocalStorage } from './supabase'
 import { logger } from '../utils/logger'
-import { getCsrfToken } from '../utils/cookieUtils'
+import { waitForCsrfToken } from '../utils/cookieUtils'
 import { ProjectFile } from '../types'
 
 export interface UploadFileResult {
@@ -383,7 +383,7 @@ export class FileService {
       // a flat 'sb-access-token' key. Use getSession() as the canonical accessor.
       const { data: { session } } = await supabase.auth.getSession()
       const accessToken = session?.access_token || ''
-      const csrfToken = getCsrfToken()
+      const csrfToken = await waitForCsrfToken(3000, 100)
       const response = await fetch('/api/ai?action=analyze-file', {
         method: 'POST',
         headers: {
