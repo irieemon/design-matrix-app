@@ -16,13 +16,17 @@ Real-time collaborative brainstorming with AI-powered multi-modal analysis — t
 
 Prioritas is live with the full v1.0 foundation (security, AI SDK v6, multi-modal, billing, mobile) PLUS v1.1 real-time collaboration: session dot voting with optimistic UI, project-scope live cursors, soft drag lock, presence avatars, reconnecting badge, and a clean test baseline (BrainstormRealtimeManager 43/43, MOB-02 verified on real iOS device).
 
-## Next Milestone Goals (v1.2 proposed)
+## Current Milestone: v1.2 — Production Hardening
 
-- **Production hardening:** Resend domain verification, analyze-file CSRF race, AI Gateway migration
-- **BUG-01:** RealtimeSubscriptionManager.subscribeToIdeas clearing bug (D-34 workaround in place)
-- **Test infrastructure:** Enable test.skip E2E and integration tests in CI (live Supabase)
-- **Mobile video:** Revisit iOS frame extraction when WebCodecs API matures
-- **Advanced features** from v2 backlog
+**Goal:** Make Prioritas production-ready — fix known bugs, close operational gaps, get the test suite running against live infrastructure in CI. No new features.
+
+**Target phases:**
+- **Phase 08** — Resend domain verification + analyze-file CSRF race + AI Gateway migration
+- **Phase 09** — BUG-01: RealtimeSubscriptionManager ideas-clearing root cause fix
+- **Phase 10** — CI test infrastructure: enable test.skip tests in GitHub Actions with live Supabase
+
+**Deferred to v1.3+:**
+- Mobile video re-enablement, advanced features from v2 backlog, OAuth
 
 **Orchestration:** Eva + GSD hybrid (Eva routes pipeline agents, mirrors state into .planning/)
 

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Advanced Collaboration & Quality
-status: milestone_complete
-stopped_at: v1.1 shipped — awaiting v1.2 scope
-last_updated: "2026-04-10T02:30:00.000Z"
-last_activity: 2026-04-10 -- v1.1 milestone archived and tagged
+status: ready_to_plan
+stopped_at: v1.2 milestone opened — awaiting phase planning
+last_updated: "2026-04-10T03:00:00.000Z"
+last_activity: 2026-04-10 -- /gsd-new-milestone 1.2 completed; Phase 08 next
 progress:
   total_phases: 3
-  completed_phases: 3
+  completed_phases: 0
   total_plans: 0
   completed_plans: 0
-  percent: 100
+  percent: 0
 shipped_milestones:
   - v1.0 (2026-04-09)
   - v1.1 (2026-04-10)
