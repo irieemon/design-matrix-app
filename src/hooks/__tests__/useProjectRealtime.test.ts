@@ -195,136 +195,41 @@ describe('useProjectRealtime', () => {
     expect(firstInstance.unsubscribe).toHaveBeenCalledOnce()
   })
 
-  it('T-054B-014: registers postgres_changes UPDATE listener for ideas filtered by project', () => {
+  it('T-054B-014: does NOT register postgres_changes UPDATE listener for ideas (ADR-0009 D-34 removed)', () => {
     renderHook(() => useProjectRealtime(defaultOpts))
-    expect(mockManagerInstance.current!.onPostgresChange).toHaveBeenCalledWith(
-      'ideas',
-      { event: 'UPDATE', filter: 'project_id=eq.proj-1' },
-      expect.any(Function)
+    const calls = mockManagerInstance.current!.onPostgresChange.mock.calls
+    const ideasUpdateCall = calls.find(
+      (c: unknown[]) => c[0] === 'ideas' && (c[1] as { event: string }).event === 'UPDATE'
     )
+    expect(ideasUpdateCall).toBeUndefined()
   })
 
-  it('T-054B-015: registers postgres_changes INSERT listener for ideas', () => {
+  it('T-054B-015: does NOT register postgres_changes INSERT listener for ideas (ADR-0009 D-34 removed)', () => {
     renderHook(() => useProjectRealtime(defaultOpts))
-    expect(mockManagerInstance.current!.onPostgresChange).toHaveBeenCalledWith(
-      'ideas',
-      { event: 'INSERT', filter: 'project_id=eq.proj-1' },
-      expect.any(Function)
+    const calls = mockManagerInstance.current!.onPostgresChange.mock.calls
+    const ideasInsertCall = calls.find(
+      (c: unknown[]) => c[0] === 'ideas' && (c[1] as { event: string }).event === 'INSERT'
     )
+    expect(ideasInsertCall).toBeUndefined()
   })
 
-  it('T-054B-016: registers postgres_changes DELETE listener for ideas', () => {
+  it('T-054B-016: does NOT register postgres_changes DELETE listener for ideas (ADR-0009 D-34 removed)', () => {
     renderHook(() => useProjectRealtime(defaultOpts))
-    expect(mockManagerInstance.current!.onPostgresChange).toHaveBeenCalledWith(
-      'ideas',
-      { event: 'DELETE', filter: 'project_id=eq.proj-1' },
-      expect.any(Function)
+    const calls = mockManagerInstance.current!.onPostgresChange.mock.calls
+    const ideasDeleteCall = calls.find(
+      (c: unknown[]) => c[0] === 'ideas' && (c[1] as { event: string }).event === 'DELETE'
     )
+    expect(ideasDeleteCall).toBeUndefined()
   })
 
-  it('T-054B-017: UPDATE handler merges payload into setIdeas (D-34)', () => {
-    const setIdeas = vi.fn()
-    renderHook(() =>
-      useProjectRealtime({
-        ...defaultOpts,
-        setIdeas: setIdeas as unknown as React.Dispatch<React.SetStateAction<IdeaCard[]>>,
-      })
-    )
+  // T-054B-017 through T-054B-020 removed — merge logic moved to useIdeas per ADR-0009.
+  // New merge tests live in useIdeas tests (T-0009-006 through T-0009-009).
 
-    const handler = capturedPostgresHandlers.get('ideas:UPDATE')
-    expect(handler).toBeDefined()
-
-    act(() => {
-      handler!({
-        new: { id: 'i1', x: 200, y: 300, content: 'Updated' },
-        old: { id: 'i1', x: 100, y: 100, content: 'Old' },
-        eventType: 'UPDATE',
-      })
-    })
-
-    expect(setIdeas).toHaveBeenCalledOnce()
-    const updater = setIdeas.mock.calls[0][0] as (prev: IdeaCard[]) => IdeaCard[]
-    const initial = [{ id: 'i1', x: 0, y: 0, content: 'Old' }] as IdeaCard[]
-    const result = updater(initial)
-    expect(result).toHaveLength(1)
-    expect(result[0].x).toBe(200)
-    expect(result[0].y).toBe(300)
-  })
-
-  it('T-054B-018: INSERT handler appends idea when not already present', () => {
-    const setIdeas = vi.fn()
-    renderHook(() =>
-      useProjectRealtime({
-        ...defaultOpts,
-        setIdeas: setIdeas as unknown as React.Dispatch<React.SetStateAction<IdeaCard[]>>,
-      })
-    )
-
-    const handler = capturedPostgresHandlers.get('ideas:INSERT')
-    expect(handler).toBeDefined()
-
-    act(() => {
-      handler!({
-        new: { id: 'i2', content: 'New idea', x: 50, y: 50 },
-        old: null,
-        eventType: 'INSERT',
-      })
-    })
-
-    expect(setIdeas).toHaveBeenCalledOnce()
-    const updater = setIdeas.mock.calls[0][0] as (prev: IdeaCard[]) => IdeaCard[]
-    const result = updater([] as IdeaCard[])
-    expect(result).toHaveLength(1)
-    expect(result[0].id).toBe('i2')
-  })
-
-  it('T-054B-019: INSERT handler is idempotent (no duplicate on re-receive)', () => {
-    const setIdeas = vi.fn()
-    renderHook(() =>
-      useProjectRealtime({
-        ...defaultOpts,
-        setIdeas: setIdeas as unknown as React.Dispatch<React.SetStateAction<IdeaCard[]>>,
-      })
-    )
-
-    const handler = capturedPostgresHandlers.get('ideas:INSERT')!
-    act(() => {
-      handler({
-        new: { id: 'i1', content: 'Existing', x: 0, y: 0 },
-        old: null,
-        eventType: 'INSERT',
-      })
-    })
-
-    const updater = setIdeas.mock.calls[0][0] as (prev: IdeaCard[]) => IdeaCard[]
-    const initial = [{ id: 'i1', content: 'Existing' }] as IdeaCard[]
-    const result = updater(initial)
-    expect(result).toHaveLength(1)
-  })
-
-  it('T-054B-020: DELETE handler removes idea by id', () => {
-    const setIdeas = vi.fn()
-    renderHook(() =>
-      useProjectRealtime({
-        ...defaultOpts,
-        setIdeas: setIdeas as unknown as React.Dispatch<React.SetStateAction<IdeaCard[]>>,
-      })
-    )
-
-    const handler = capturedPostgresHandlers.get('ideas:DELETE')!
-    act(() => {
-      handler({
-        new: {} as Record<string, unknown>,
-        old: { id: 'i1' },
-        eventType: 'DELETE',
-      })
-    })
-
-    const updater = setIdeas.mock.calls[0][0] as (prev: IdeaCard[]) => IdeaCard[]
-    const initial = [{ id: 'i1' }, { id: 'i2' }] as IdeaCard[]
-    const result = updater(initial)
-    expect(result).toHaveLength(1)
-    expect(result[0].id).toBe('i2')
+  it('T-0009-010: useProjectRealtime does NOT register onPostgresChange for ideas table at all', () => {
+    renderHook(() => useProjectRealtime(defaultOpts))
+    const calls = mockManagerInstance.current!.onPostgresChange.mock.calls
+    const anyIdeasCall = calls.find((c: unknown[]) => c[0] === 'ideas')
+    expect(anyIdeasCall).toBeUndefined()
   })
 
   it('T-054B-021: connectionState reflects manager onConnectionStateChange', () => {

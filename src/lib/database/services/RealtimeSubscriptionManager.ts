@@ -10,6 +10,16 @@ import { logger } from '../../../utils/logger'
 import { ValidationHelpers } from '../utils/ValidationHelpers'
 import type { IdeaCard, Project } from '../../../types'
 
+/**
+ * Event payload delivered to subscribeToIdeas callbacks.
+ * Mirrors the Supabase postgres_changes payload shape for the ideas table.
+ */
+export type RealtimeIdeaPayload = {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE'
+  new: Partial<IdeaCard> & { id: string }
+  old: (Partial<IdeaCard> & { id: string }) | null
+}
+
 export class RealtimeSubscriptionManager {
   /**
    * Generate simplified channel name to prevent binding mismatches
@@ -36,10 +46,14 @@ export class RealtimeSubscriptionManager {
   }
 
   /**
-   * Subscribe to real-time idea changes
+   * Subscribe to real-time idea changes.
+   *
+   * ADR-0009: callback now receives a RealtimeIdeaPayload (eventType + new + old)
+   * instead of a full idea array. The consumer (useIdeas) merges the payload into
+   * its own state with INSERT/UPDATE/DELETE logic.
    */
   static subscribeToIdeas(
-    callback: (ideas: IdeaCard[]) => void,
+    callback: (payload: RealtimeIdeaPayload) => void,
     projectId?: string,
     userId?: string,
     options?: { skipInitialLoad?: boolean }
@@ -47,93 +61,68 @@ export class RealtimeSubscriptionManager {
     logger.debug('Setting up real-time subscription...', { projectId, userId, options })
 
     try {
-      // Generate simplified channel name to prevent binding mismatches
       const channelName = this.generateChannelName(projectId, userId)
       logger.debug('🔄 Creating optimized channel:', channelName)
 
-      // CRITICAL FIX: Wrap channel creation in try-catch to prevent crashes
       let channel
       try {
-        // Optimized real-time subscription with simplified filters
         channel = supabase
           .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'ideas'
-            // Removed complex filters to prevent binding mismatch
-          },
-          async (payload) => {
-            const newData = payload.new as Record<string, any> | null
-            const oldData = payload.old as Record<string, any> | null
-            logger.debug('🔴 Real-time change detected:', payload.eventType, newData?.id)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'ideas'
+              // NOTE: No server-side filter — binding mismatches were observed with
+              // complex filters. Project scoping is enforced in the callback below.
+            },
+            (payload) => {
+              const newData = payload.new as Record<string, any> | null
+              const oldData = payload.old as Record<string, any> | null
+              logger.debug('🔴 Real-time change detected:', payload.eventType, newData?.id)
 
-            try {
-              // Smart filtering: only refresh if change is relevant to current project
-              const shouldRefresh = !projectId ||
+              // Only forward events relevant to the subscribed project.
+              const isRelevant = !projectId ||
                 (newData && 'project_id' in newData && newData.project_id === projectId) ||
                 (oldData && 'project_id' in oldData && oldData.project_id === projectId)
 
-              if (shouldRefresh) {
-                logger.debug('✅ Real-time change relevant - refreshing ideas')
-
-                // Trigger callback - let consumer handle data fetching
-                // This is a placeholder - actual implementation would fetch fresh data
-                callback([])
-              } else {
-                logger.debug('⏩ Real-time change not relevant to current project, skipping refresh')
+              if (!isRelevant) {
+                logger.debug('⏩ Real-time change not relevant to current project, skipping')
+                return
               }
-            } catch (error) {
-              logger.error('❌ Error processing real-time change:', error)
-              // Still try to refresh on error to maintain consistency
-              callback([])
-            }
-          }
-        )
-        .subscribe((status, err) => {
-          logger.debug('Subscription status:', status)
 
-          if (err) {
-            logger.error('❌ Subscription error:', err)
-            // CRITICAL FIX: Graceful handling of binding mismatch without crashing
-            if (err.message?.includes('binding mismatch') || err.message?.includes('bindings')) {
-              logger.warn('🔄 Binding mismatch detected - using polling fallback')
-              logger.warn('⚠️ Real-time updates disabled due to schema mismatch. App will still work with manual refresh.')
-              // Don't crash - just disable realtime for this session
-              // User can still use the app, just without live updates
-              return
+              logger.debug('✅ Real-time change relevant — forwarding payload to consumer')
+              callback({
+                eventType: payload.eventType as RealtimeIdeaPayload['eventType'],
+                new: (newData ?? {}) as RealtimeIdeaPayload['new'],
+                old: oldData as RealtimeIdeaPayload['old'],
+              })
             }
-            // For other errors, log but don't crash
-            logger.error('⚠️ Real-time subscription error, continuing without live updates')
-          } else if (status === 'SUBSCRIBED') {
-            logger.debug('✅ Successfully subscribed to real-time updates!')
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-            logger.warn('⚠️ Real-time subscription failed or closed:', status)
-            logger.warn('Continuing without live updates - manual refresh still works')
-          }
-        })
+          )
+          .subscribe((status, err) => {
+            logger.debug('Subscription status:', status)
+
+            if (err) {
+              logger.error('❌ Subscription error:', err)
+              if (err.message?.includes('binding mismatch') || err.message?.includes('bindings')) {
+                logger.warn('🔄 Binding mismatch detected - using polling fallback')
+                logger.warn('⚠️ Real-time updates disabled due to schema mismatch. App will still work with manual refresh.')
+                return
+              }
+              logger.error('⚠️ Real-time subscription error, continuing without live updates')
+            } else if (status === 'SUBSCRIBED') {
+              logger.debug('✅ Successfully subscribed to real-time updates!')
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+              logger.warn('⚠️ Real-time subscription failed or closed:', status)
+              logger.warn('Continuing without live updates - manual refresh still works')
+            }
+          })
 
       } catch (channelError) {
         logger.error('❌ Failed to create realtime channel:', channelError)
         logger.warn('⚠️ Continuing without realtime updates - app will work with manual refresh')
-
-        // Load initial data even if realtime fails
-        if (!options?.skipInitialLoad) {
-          logger.debug('🔄 Loading initial data (realtime disabled)...')
-          callback([])
-        }
-
-        // Return no-op unsubscribe
         return () => logger.debug('No-op unsubscribe (realtime disabled)')
-      }
-
-      // Load initial data when subscription is set up (unless explicitly skipped)
-      if (!options?.skipInitialLoad) {
-        logger.debug('🔄 Loading initial data for subscription...', { projectId })
-        // Trigger callback for initial load - consumer will fetch data
-        callback([])
       }
 
       return () => {
@@ -144,21 +133,9 @@ export class RealtimeSubscriptionManager {
           logger.warn('Error removing channel (already removed?):', removeError)
         }
       }
-    } catch (error) {  // Closes outer try block from line 49
+    } catch (error) {
       logger.error('❌ Failed to set up real-time subscription:', error)
       logger.warn('⚠️ App will continue to work without realtime updates')
-
-      // CRITICAL FIX: Still load initial data even if subscription completely fails
-      if (!options?.skipInitialLoad) {
-        logger.debug('🔄 Loading initial data (subscription setup failed)...')
-        try {
-          callback([])
-        } catch (callbackError) {
-          logger.error('Error in initial data callback:', callbackError)
-        }
-      }
-
-      // Return a no-op unsubscribe function
       return () => {
         logger.debug('No-op unsubscribe (subscription failed)')
       }

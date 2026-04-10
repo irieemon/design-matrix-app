@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { DragEndEvent } from '@dnd-kit/core'
 import { IdeaCard, User, Project } from '../types'
 import { DatabaseService } from '../lib/database'
+import type { RealtimeIdeaPayload } from '../lib/database/services/RealtimeSubscriptionManager'
 import { useOptimisticUpdates } from './useOptimisticUpdates'
 import { useLogger } from '../lib/logging'
 import { useCurrentUser } from '../contexts/UserContext'
@@ -442,26 +443,48 @@ export const useIdeas = (options: UseIdeasOptions): UseIdeasReturn => {
 
     logger.debug('🔄 Setting up project-specific subscription for:', { projectId: currentProject.id })
     const unsubscribe = DatabaseService.subscribeToIdeas(
-      (freshIdeas) => {
-        // MEMORY LEAK FIX: Use ref to get CURRENT project, not stale closure value
-        // Prevents cross-project pollution and memory leaks from old subscriptions
+      (payload: RealtimeIdeaPayload) => {
+        // MEMORY LEAK FIX: Use ref to get CURRENT project, not stale closure value.
+        // Prevents cross-project pollution from subscriptions that outlive a project switch.
         const activeProject = currentProjectRef.current
         if (!activeProject?.id) {
           logger.debug('🔄 Subscription callback: no active project, ignoring update')
           return
         }
 
-        // Only update ideas if they belong to the current project
-        const projectIdeas = freshIdeas.filter(idea => idea.project_id === activeProject.id)
-        logger.debug('🔄 Subscription callback: filtered ideas for current project:', {
-          filteredCount: projectIdeas.length,
-          projectId: activeProject.id
-        })
-        setIdeas(projectIdeas)
+        const { eventType, new: incoming, old: outgoing } = payload
+
+        // Guard: project_id on the payload must match active project.
+        // RealtimeSubscriptionManager already filters by project, but we re-check
+        // here in case the ref changed between event emission and callback execution.
+        const payloadProjectId =
+          (incoming as Record<string, any>)?.project_id ??
+          (outgoing as Record<string, any>)?.project_id
+        if (payloadProjectId && payloadProjectId !== activeProject.id) {
+          logger.debug('🔄 Subscription callback: payload project_id mismatch, skipping')
+          return
+        }
+
+        logger.debug('🔄 Subscription callback: merging realtime event', { eventType, id: incoming?.id })
+
+        if (eventType === 'INSERT') {
+          setIdeas((prev) =>
+            prev.some((i) => i.id === incoming.id) ? prev : [...prev, incoming as IdeaCard]
+          )
+        } else if (eventType === 'UPDATE') {
+          setIdeas((prev) =>
+            prev.map((i) => (i.id === incoming.id ? { ...i, ...incoming } : i))
+          )
+        } else if (eventType === 'DELETE') {
+          const deletedId = outgoing?.id ?? incoming?.id
+          if (deletedId) {
+            setIdeas((prev) => prev.filter((i) => i.id !== deletedId))
+          }
+        }
       },
       currentProject.id,
       currentUser.id,
-      { skipInitialLoad: true }, // Skip initial load since ideas are loaded by project change effect
+      { skipInitialLoad: true }, // Initial load handled by project-change effect
       supabase
     )
 

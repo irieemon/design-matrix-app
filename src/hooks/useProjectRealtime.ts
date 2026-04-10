@@ -2,10 +2,13 @@
  * useProjectRealtime — Phase 05.4b Wave 1, Unit 1.3
  *
  * Owns the single ScopedRealtimeManager for the project scope (D-25).
- * Wires postgres_changes listeners that MERGE payloads into the injected
- * setIdeas setter (D-34 — avoids the broken RealtimeSubscriptionManager path).
  * Tracks previousConnectionState via ref for recovery toast gating (D-24).
  * Registers a 10s polling-tick reconcile handler (D-22).
+ *
+ * NOTE (ADR-0009): The D-34 postgres_changes listeners for the ideas table have
+ * been removed. Idea realtime merge now lives in useIdeas via
+ * RealtimeSubscriptionManager. This hook retains presence, connection state,
+ * and polling-tick (D-22 reconciliation safety net).
  *
  * Consumed by ProjectRealtimeContext.Provider (D-32). Not used directly
  * inside components — use useProjectRealtimeContext() instead.
@@ -63,50 +66,6 @@ export function useProjectRealtime(
     })
 
     // -----------------------------------------------------------------------
-    // D-34: postgres_changes listeners — merge payloads, do NOT clear state.
-    // -----------------------------------------------------------------------
-    const filter = `project_id=eq.${projectId}`
-
-    const unsubUpdate = mgr.onPostgresChange<IdeaCard>(
-      'ideas',
-      { event: 'UPDATE', filter },
-      (payload) => {
-        setIdeasRef.current((prev) =>
-          prev.map((idea) =>
-            idea.id === (payload.new as IdeaCard).id
-              ? { ...idea, ...payload.new }
-              : idea
-          )
-        )
-      }
-    )
-
-    const unsubInsert = mgr.onPostgresChange<IdeaCard>(
-      'ideas',
-      { event: 'INSERT', filter },
-      (payload) => {
-        const incoming = payload.new as IdeaCard
-        setIdeasRef.current((prev) =>
-          prev.some((i) => i.id === incoming.id) ? prev : [...prev, incoming]
-        )
-      }
-    )
-
-    const unsubDelete = mgr.onPostgresChange<IdeaCard>(
-      'ideas',
-      { event: 'DELETE', filter },
-      (payload) => {
-        // DELETE payloads carry the deleted row in `old`; `new` is empty.
-        const deletedId =
-          (payload.old as IdeaCard | null)?.id ??
-          (payload.new as IdeaCard | null)?.id
-        if (deletedId) {
-          setIdeasRef.current((prev) => prev.filter((i) => i.id !== deletedId))
-        }
-      }
-    )
-
-    // -----------------------------------------------------------------------
     // Presence
     // -----------------------------------------------------------------------
     const unsubPresence = mgr.onPresence((incoming) => {
@@ -134,9 +93,6 @@ export function useProjectRealtime(
     setManager(mgr)
 
     return () => {
-      unsubUpdate()
-      unsubInsert()
-      unsubDelete()
       unsubPresence()
       unsubscribeConnectionState()
       unsubscribePolling()

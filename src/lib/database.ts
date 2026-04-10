@@ -32,6 +32,7 @@ import { RoadmapRepository } from './database/repositories/RoadmapRepository'
 import { InsightsRepository } from './database/repositories/InsightsRepository'
 import { IdeaLockingService } from './database/services/IdeaLockingService'
 import { RealtimeSubscriptionManager } from './database/services/RealtimeSubscriptionManager'
+import type { RealtimeIdeaPayload } from './database/services/RealtimeSubscriptionManager'
 import { supabase } from './supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -150,29 +151,22 @@ export class DatabaseService {
   // ============================================================================
 
   /**
-   * Subscribe to real-time changes with improved error handling
+   * Subscribe to real-time idea changes.
    * DELEGATES TO: RealtimeSubscriptionManager.subscribeToIdeas
-   * NOTE: Wraps the callback to fetch actual data from IdeaService
+   *
+   * ADR-0009: Thin pass-through — the manager now delivers RealtimeIdeaPayload
+   * (eventType + new + old) directly to the callback. Merge logic lives in the
+   * consumer (useIdeas). The `client` parameter is retained for API compatibility
+   * but is no longer used (no refetch occurs on each event).
    */
   static subscribeToIdeas(
-    callback: (ideas: IdeaCard[]) => void,
+    callback: (payload: RealtimeIdeaPayload) => void,
     projectId?: string,
     userId?: string,
     options?: { skipInitialLoad?: boolean },
-    client: SupabaseClient = supabase
+    _client: SupabaseClient = supabase
   ) {
-    return RealtimeSubscriptionManager.subscribeToIdeas(
-      async (_ideas) => {
-        // Fetch fresh ideas from IdeaService with authenticated client
-        const freshIdeas = projectId
-          ? await this.getProjectIdeas(projectId, client)
-          : await this.getAllIdeas(client)
-        callback(freshIdeas || [])
-      },
-      projectId,
-      userId,
-      options
-    )
+    return RealtimeSubscriptionManager.subscribeToIdeas(callback, projectId, userId, options)
   }
 
   // ============================================================================
