@@ -129,6 +129,13 @@ jobs:
       # ------------------------------------------------------------------------
       - name: Verify auth (diagnostic)
         run: |
+          echo "=== Running containers ==="
+          docker ps --format "table {{.Names}}\t{{.Status}}" | head -20
+
+          echo "=== GoTrue container logs ==="
+          docker logs supabase_auth_design-matrix-app 2>&1 | tail -30 || docker logs $(docker ps --filter "name=auth" --format "{{.Names}}") 2>&1 | tail -30 || echo "Could not get auth container logs"
+          echo "=== End GoTrue logs ==="
+
           echo "Checking public.users table..."
           PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -d postgres \
             -c "SELECT id, email FROM public.users LIMIT 5;" 2>&1 \
@@ -146,6 +153,8 @@ jobs:
           else
             echo "Auth FAILED — no access_token in response"
             echo "Full response: $RESPONSE"
+            echo "=== GoTrue logs after failed auth ==="
+            docker logs supabase_auth_design-matrix-app 2>&1 | tail -20 || docker logs $(docker ps --filter "name=auth" --format "{{.Names}}") 2>&1 | tail -20 || echo "Could not get auth container logs"
             exit 1
           fi
 
