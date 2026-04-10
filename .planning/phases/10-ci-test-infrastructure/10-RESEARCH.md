@@ -341,7 +341,8 @@ VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'CI Test Project',
         NOW(), NOW());
 
 -- Collaborator relationship (user 2 is editor on the project)
-INSERT INTO project_collaborators (project_id, user_id, role, created_at)
+-- NOTE: column is `joined_at` (NOT `created_at`); it has default now() and can be omitted
+INSERT INTO project_collaborators (project_id, user_id, role, joined_at)
 VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
         '22222222-2222-2222-2222-222222222222', 'editor', NOW());
 
