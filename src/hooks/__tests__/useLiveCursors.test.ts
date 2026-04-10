@@ -21,8 +21,12 @@ vi.mock('../../utils/logger', () => ({
 
 // Stable mock for cursorThrottle — returns the fn directly (no throttling in tests)
 // so broadcasts fire synchronously on every pointermove.
+// Declared via vi.hoisted so it is available before vi.mock factory runs.
+const { mockThrottleByFrameInterval } = vi.hoisted(() => ({
+  mockThrottleByFrameInterval: vi.fn((fn: (arg: unknown) => void, _ms: number) => fn),
+}))
 vi.mock('../../utils/cursorThrottle', () => ({
-  throttleByFrameInterval: (fn: (arg: unknown) => void, _ms: number) => fn,
+  throttleByFrameInterval: mockThrottleByFrameInterval,
 }))
 
 type BroadcastHandler = (payload: unknown) => void
@@ -244,46 +248,20 @@ describe('useLiveCursors', () => {
   })
 
   it('T-054B-116: broadcasts are throttled to 50ms', () => {
-    vi.useFakeTimers()
+    mockThrottleByFrameInterval.mockClear()
 
-    // Override throttle mock: use real throttle behavior for this test
-    // by restoring the module mock and re-testing at the integration level.
-    // Simpler approach: use real timers and fake performance.now.
-    let perfNow = 0
-    vi.spyOn(performance, 'now').mockImplementation(() => perfNow)
-
-    // Re-import with unmocked throttle — use vi.importActual approach inline.
-    // Instead, test the observable: with 50ms throttle, 5 rapid dispatches → 1 broadcast.
-    // The cursorThrottle mock returns fn directly, so throttle is bypassed.
-    // For this test we need to verify the throttle IS applied. We test it by
-    // checking the real throttle logic: call 5 times at t=0..20ms → 1 call.
-    // We achieve this by NOT mocking cursorThrottle and using performance.now spy.
-
-    // Since vi.mock is module-level, we verify the hook wires throttle correctly
-    // by using a manager with a spy and confirming sendBroadcast call count
-    // when performance.now stays < 50ms between calls.
     const manager = makeManager()
     const { result } = renderHook(() =>
       useLiveCursors({ manager, currentUserId: CURRENT_USER_ID, currentUserDisplayName: 'Me' })
     )
 
+    // attachPointerTracking is where throttleByFrameInterval is called — must invoke it.
     const el = document.createElement('div')
-    act(() => {
-      result.current.attachPointerTracking(el)
-    })
+    act(() => { result.current.attachPointerTracking(el) })
 
-    // With the cursorThrottle mock bypassed (fn returned directly), all 5 calls go through.
-    // This test verifies the hook WIRES the throttle (the mock proof is in T-054B-114/115).
-    // The real throttle behavior is verified in cursorThrottle.test.ts.
-    // Here we just assert ≥1 sendBroadcast was called for 5 moves.
-    for (let i = 0; i < 5; i++) {
-      dispatchPointerMove(el, i * 10, i * 10, { left: 0, top: 0, width: 400, height: 400 })
-    }
-
-    expect(mockManagerInstance.current!.sendBroadcast).toHaveBeenCalled()
-
-    vi.spyOn(performance, 'now').mockRestore()
-    vi.useRealTimers()
+    // Verify the hook wires throttleByFrameInterval with the correct 50ms interval.
+    // Real throttle behavior is exercised in cursorThrottle.test.ts.
+    expect(mockThrottleByFrameInterval).toHaveBeenCalledWith(expect.any(Function), 50)
   })
 
   it('T-054B-117: pauseBroadcast prevents sendBroadcast', () => {

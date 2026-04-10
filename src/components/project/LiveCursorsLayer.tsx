@@ -87,7 +87,7 @@ export function LiveCursorsLayer({
               position: 'absolute',
               left: `${cursor.x}%`,
               top: `${cursor.y}%`,
-              transition: reduced ? 'none' : 'transform 80ms ease-out',
+              transition: reduced ? 'none' : 'left 80ms ease-out, top 80ms ease-out',
               pointerEvents: 'none',
               userSelect: 'none',
             }}

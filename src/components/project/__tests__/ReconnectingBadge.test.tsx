@@ -61,7 +61,7 @@ function makeContextValue(
     lockedCards: new Map(),
     currentUserId: 'user-1',
     currentUserDisplayName: 'Me',
-    attachPointerTracking: () => undefined,
+    attachPointerTracking: () => () => {},
     dragLock: {
       acquire: () => true,
       release: () => undefined,
