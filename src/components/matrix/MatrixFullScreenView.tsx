@@ -32,7 +32,7 @@ import { DotVotingProvider } from '../../contexts/DotVotingContext'
 import { DotBudgetIndicator } from '../brainstorm/DotBudgetIndicator'
 import { SessionPresenceStack } from '../brainstorm/SessionPresenceStack'
 import { ScopedRealtimeManager } from '../../lib/realtime/ScopedRealtimeManager'
-// Phase 05.4b: project-scope realtime components (Waves 1 & 2)
+// Phase 05.4b: project-scope realtime components (Waves 1, 2 & 3)
 import { ProjectRealtimeProvider, useProjectRealtimeContext } from '../../contexts/ProjectRealtimeContext'
 import { ProjectPresenceStack } from '../project/ProjectPresenceStack'
 import { ReconnectingBadge } from '../project/ReconnectingBadge'
@@ -155,6 +155,160 @@ function MatrixCanvasWithCursors({
   )
 }
 
+// ---------------------------------------------------------------------------
+// DragLockAwareDndContext — inner component that reads drag lock + cursor pause
+// from ProjectRealtimeContext and owns the DndContext + drag state (D-21, D-29).
+// Must render inside ProjectRealtimeProvider.
+// ---------------------------------------------------------------------------
+
+interface DragLockAwareDndContextProps {
+  ideas: IdeaCard[]
+  currentUser: User
+  onEditIdea: (idea: IdeaCard | null) => void
+  onDeleteIdea: (ideaId: string) => Promise<void>
+  onToggleCollapse: (ideaId: string, collapsed?: boolean) => Promise<void>
+  onDragEnd: (event: DragEndEvent) => Promise<void>
+  zoomLevel: number
+  showGrid: boolean
+  showLabels: boolean
+  mobileIdeaIds: Set<string>
+  hasOpenModal: boolean
+}
+
+function DragLockAwareDndContext({
+  ideas,
+  currentUser,
+  onEditIdea,
+  onDeleteIdea,
+  onToggleCollapse,
+  onDragEnd,
+  zoomLevel,
+  showGrid,
+  showLabels,
+  mobileIdeaIds,
+  hasOpenModal,
+}: DragLockAwareDndContextProps): React.ReactElement {
+  const { dragLock, pauseBroadcast, resumeBroadcast } = useProjectRealtimeContext()
+
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const activeIdea = activeId ? ideas.find((i) => i.id === activeId) : null
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    })
+  )
+
+  /**
+   * handleDragStart — D-21 call sequence is load-bearing for T-054B-261.
+   * isLockedByOther FIRST. If locked → return early. Never calls acquire,
+   * setActiveId, or sendBroadcast.
+   */
+  const handleDragStart = (event: any) => {
+    const ideaId = event.active.id as string
+    logger.debug('🎯 FULLSCREEN Drag started!', ideaId)
+
+    // D-21: short-circuit — isLockedByOther is the first and only gate.
+    if (dragLock.isLockedByOther(ideaId)) {
+      logger.debug('🔒 Drag blocked: card locked by another user', ideaId)
+      return
+    }
+
+    // acquire broadcasts drag_lock to remote peers (D-29 self-echo dedup in useDragLock).
+    dragLock.acquire(ideaId)
+
+    // Pause cursor broadcast during drag (Wave 2 integration).
+    pauseBroadcast()
+
+    setActiveId(ideaId)
+    logger.debug('🎯 FULLSCREEN Drag acquired:', { ideaId, hasOnDragEndProp: !!onDragEnd })
+  }
+
+  const handleDragEndWrapper = async (event: DragEndEvent) => {
+    const ideaId = event.active.id as string
+    logger.debug('🎯 FULLSCREEN Drag ended!', ideaId, event.delta)
+
+    // release broadcasts drag_release and clears the auto-expire timer (T-054B-214).
+    // Must fire BEFORE the DB write so remote peers see the card unlocked promptly.
+    dragLock.release(ideaId)
+
+    // Resume cursor broadcast after drag.
+    resumeBroadcast()
+
+    // Guard: if activeId is null, drag was short-circuited by isLockedByOther.
+    // No DB write, no further processing.
+    if (activeId === null) {
+      return
+    }
+
+    setActiveId(null)
+
+    try {
+      await onDragEnd(event)
+      logger.debug('✅ FULLSCREEN Drag completed successfully')
+    } catch (error) {
+      console.error('❌ Fullscreen drag failed:', error)
+      logger.error('❌ Fullscreen drag failed:', error)
+    }
+  }
+
+  return (
+    <div data-testid="dnd-context-root" style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEndWrapper}
+      >
+        <MatrixCanvasWithCursors
+          ideas={ideas}
+          activeId={activeId}
+          currentUser={currentUser}
+          onEditIdea={onEditIdea}
+          onDeleteIdea={onDeleteIdea}
+          onToggleCollapse={onToggleCollapse}
+          zoomLevel={zoomLevel}
+          showGrid={showGrid}
+          showLabels={showLabels}
+          mobileIdeaIds={mobileIdeaIds}
+          hasOpenModal={hasOpenModal}
+        />
+
+        <DragOverlay
+          dropAnimation={{
+            duration: 200,
+            easing: 'ease',
+          }}
+        >
+          {activeIdea ? (
+            <div
+              role="img"
+              aria-label={`Dragging ${activeIdea.content}`}
+              style={{
+                width: activeIdea.is_collapsed ? '100px' : '130px',
+                height: activeIdea.is_collapsed ? '50px' : 'auto',
+                minHeight: activeIdea.is_collapsed ? '50px' : '90px',
+                display: 'block',
+                background: 'var(--surface-primary)',
+                boxSizing: 'border-box',
+                overflow: 'hidden',
+              }}
+            >
+              <OptimizedIdeaCard
+                idea={activeIdea}
+                isDragOverlay
+                currentUser={currentUser}
+                onEdit={() => {}}
+                onDelete={() => {}}
+                onToggleCollapse={() => {}}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+    </div>
+  )
+}
+
 /**
  * MatrixFullScreenView Component
  *
@@ -266,18 +420,6 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
 
   // Ref for fullscreen container (used as modal portal target)
   const fullscreenContainerRef = useRef<HTMLDivElement | null>(null)
-
-  // Local drag state for fullscreen DndContext
-  const [activeId, setActiveId] = useState<string | null>(null)
-
-  // Configure drag sensors with distance threshold (same as AppLayout)
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // Require 8px movement before drag starts
-      },
-    })
-  )
 
   // Debug log to verify fullscreen view is rendering
   React.useEffect(() => {
@@ -497,45 +639,6 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
   }, [isActive, onExit])
 
   /**
-   * Drag handlers for fullscreen DndContext
-   */
-  const handleDragStart = (event: any) => {
-    logger.debug('🎯 FULLSCREEN Drag started!', event.active.id)
-    setActiveId(event.active.id as string)
-    logger.debug('🎯 FULLSCREEN Drag started:', {
-      ideaId: event.active.id,
-      hasOnDragEndProp: !!onDragEnd
-    })
-  }
-
-  const handleDragEndWrapper = async (event: DragEndEvent) => {
-    logger.debug('🎯 FULLSCREEN Drag ended!', event.active.id, event.delta)
-    logger.debug('📺 Fullscreen status at drag end:', {
-      hasFullscreenElement: !!document.fullscreenElement,
-      hasEnteredFlag: hasEnteredFullscreen.current
-    })
-    logger.debug('🎯 Fullscreen drag ended:', {
-      ideaId: event.active.id,
-      delta: event.delta,
-      hasOnDragEnd: !!onDragEnd
-    })
-    setActiveId(null)
-
-    try {
-      await onDragEnd(event)
-      logger.debug('✅ Fullscreen drag completed successfully')
-      logger.debug('📺 Fullscreen status after completion:', {
-        hasFullscreenElement: !!document.fullscreenElement,
-        hasEnteredFlag: hasEnteredFullscreen.current
-      })
-      logger.debug('✅ Fullscreen drag completed successfully')
-    } catch (error) {
-      console.error('❌ Fullscreen drag failed:', error)
-      logger.error('❌ Fullscreen drag failed:', error)
-    }
-  }
-
-  /**
    * Action callbacks for modals
    */
   const handleAddIdea = () => {
@@ -609,9 +712,6 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
       prev ? { ...prev, ...updatedSession } : null
     )
   }
-
-  // Get the active idea for drag overlay
-  const activeIdea = activeId ? ideas.find(i => i.id === activeId) : null
 
   /**
    * Keyboard shortcuts handler
@@ -838,61 +938,21 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
           pointerEvents: (showAddModal || showAIModal || editingIdea) ? 'none' : 'auto'
         }}
       >
-        {/* Fullscreen DndContext - keeps drag operations inside fullscreen element */}
-        <div data-testid="dnd-context-root" style={{ position: 'relative', width: '100%', height: '100%' }}>
-        <DndContext
-          sensors={sensors}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEndWrapper}
-        >
-          <MatrixCanvasWithCursors
-            ideas={ideas}
-            activeId={activeId}
-            currentUser={currentUser}
-            onEditIdea={onEditIdea}
-            onDeleteIdea={onDeleteIdea}
-            onToggleCollapse={onToggleCollapse}
-            zoomLevel={zoomLevel}
-            showGrid={showGrid}
-            showLabels={showLabels}
-            mobileIdeaIds={mobileIdeaIds}
-            hasOpenModal={!!(showAddModal || showAIModal || editingIdea)}
-          />
-
-          {/* DragOverlay - rendered inside fullscreen container */}
-          <DragOverlay
-            dropAnimation={{
-              duration: 200,
-              easing: 'ease',
-            }}
-          >
-            {activeIdea ? (
-              <div
-                role="img"
-                aria-label={`Dragging ${activeIdea.content}`}
-                style={{
-                  width: activeIdea.is_collapsed ? '100px' : '130px',
-                  height: activeIdea.is_collapsed ? '50px' : 'auto',
-                  minHeight: activeIdea.is_collapsed ? '50px' : '90px',
-                  display: 'block',
-                  background: 'var(--surface-primary)',
-                  boxSizing: 'border-box',
-                  overflow: 'hidden',
-                }}
-              >
-                <OptimizedIdeaCard
-                  idea={activeIdea}
-                  isDragOverlay
-                  currentUser={currentUser}
-                  onEdit={() => {}}
-                  onDelete={() => {}}
-                  onToggleCollapse={() => {}}
-                />
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-        </div>{/* /dnd-context-root */}
+        {/* DragLockAwareDndContext — reads drag lock + cursor pause from context,
+            owns activeId state and drag handlers (Wave 3, Unit 3.5) */}
+        <DragLockAwareDndContext
+          ideas={ideas}
+          currentUser={currentUser}
+          onEditIdea={onEditIdea}
+          onDeleteIdea={onDeleteIdea}
+          onToggleCollapse={onToggleCollapse}
+          onDragEnd={onDragEnd}
+          zoomLevel={zoomLevel}
+          showGrid={showGrid}
+          showLabels={showLabels}
+          mobileIdeaIds={mobileIdeaIds}
+          hasOpenModal={!!(showAddModal || showAIModal || editingIdea)}
+        />
       </div>
 
       {/* Modals - Rendered inside fullscreen container with pointer events enabled */}

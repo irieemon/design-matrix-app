@@ -18,6 +18,7 @@ import React, { createContext, useContext } from 'react'
 import { useProjectRealtime } from '../hooks/useProjectRealtime'
 import type { UseProjectRealtimeReturn } from '../hooks/useProjectRealtime'
 import { useLiveCursors } from '../hooks/useLiveCursors'
+import { useDragLock } from '../hooks/useDragLock'
 import type { ScopedRealtimeManager } from '../lib/realtime/ScopedRealtimeManager'
 import type { ConnectionState, PresenceParticipant } from '../lib/realtime/ScopedRealtimeManager'
 import type { IdeaCard } from '../types'
@@ -74,16 +75,6 @@ export interface ProjectRealtimeProviderProps {
   children: React.ReactNode
 }
 
-// Empty Map singleton — stable reference avoids re-renders for lockedCards in Wave 1/2.
-const EMPTY_LOCKED_CARDS = new Map<string, LockEntry>()
-
-// No-op drag lock — Wave 3 replaces this by passing real methods.
-const NOOP_DRAG_LOCK: ProjectRealtimeContextValue['dragLock'] = {
-  acquire: () => true,
-  release: () => undefined,
-  isLockedByOther: () => false,
-}
-
 export function ProjectRealtimeProvider({
   projectId,
   currentUserId,
@@ -111,19 +102,27 @@ export function ProjectRealtimeProvider({
     resumeBroadcast,
   } = useLiveCursors({ manager, currentUserId, currentUserDisplayName })
 
+  // Wave 3: drag lock state — populated from drag_lock/drag_release broadcasts.
+  const {
+    lockedCards,
+    acquire,
+    release,
+    isLockedByOther,
+  } = useDragLock({ manager, currentUserId, currentUserDisplayName })
+
   const value: ProjectRealtimeContextValue = {
     manager,
     connectionState,
     previousConnectionState,
     participants,
     cursors,
-    lockedCards: EMPTY_LOCKED_CARDS,
+    lockedCards,
     currentUserId,
     currentUserDisplayName,
     attachPointerTracking,
     pauseBroadcast,
     resumeBroadcast,
-    dragLock: NOOP_DRAG_LOCK,
+    dragLock: { acquire, release, isLockedByOther },
   }
 
   return (

@@ -5,6 +5,8 @@ import { OptimizedIdeaCard } from './matrix/OptimizedIdeaCard'
 import { SkeletonMatrix } from './ui'
 import { DotVotingContext } from '../contexts/DotVotingContext'
 import { DotVoteControls } from './brainstorm/DotVoteControls'
+import { ProjectRealtimeContext } from '../contexts/ProjectRealtimeContext'
+import { LockedCardOverlay } from './project/LockedCardOverlay'
 import { useComponentState } from '../hooks/useComponentState'
 import { useComponentStateContext } from '../contexts/ComponentStateProvider'
 import { useMatrixPerformance } from '../hooks/useMatrixPerformance'
@@ -94,6 +96,10 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
   // Nullable context read — returns null when no DotVotingProvider wraps this
   // component (non-session mode). Never throws, unlike useDotVotingContext().
   const votingContext = useContext(DotVotingContext)
+
+  // Nullable context read — returns null when no ProjectRealtimeProvider wraps
+  // this component (non-fullscreen path, D-27). Never throws.
+  const projectRealtimeContext = useContext(ProjectRealtimeContext)
 
   // CRITICAL FIX: All hooks must be called before ANY conditional early returns
   // This ensures consistent hook execution order and prevents "Rendered fewer hooks than expected" error
@@ -440,6 +446,9 @@ const DesignMatrix = forwardRef<DesignMatrixRef, DesignMatrixProps>(({
               />
               {votingContext && (
                 <DotVoteControls ideaId={idea.id} ideaTitle={idea.content} />
+              )}
+              {projectRealtimeContext && (
+                <LockedCardOverlay ideaId={idea.id} ideaTitle={idea.content} />
               )}
             </div>
           )
