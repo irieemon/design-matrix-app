@@ -13,7 +13,7 @@
 
 ### Phases
 
-- [ ] **Phase 08: Operational Fixes** — Resend domain verification, analyze-file CSRF race fix, AI Gateway project-wide migration
+- [x] **Phase 08: Operational Fixes** ✅ (2026-04-10) — CSRF race fixed (waitForCsrfToken), AI Gateway last gap closed (transcribeAudio summary), Resend domain config runbook ready. See `.planning/phases/08-operational-fixes/08-VERIFICATION.md`.
 - [ ] **Phase 09: RealtimeSubscriptionManager Bug Fix** — Fix the root-cause ideas-clearing bug (BUG-01), remove D-34 workaround from useProjectRealtime
 - [ ] **Phase 10: CI Test Infrastructure** — Enable test.skip E2E + integration tests in GitHub Actions with live Supabase, seed data strategy
 
