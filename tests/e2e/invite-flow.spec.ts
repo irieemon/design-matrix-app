@@ -77,7 +77,7 @@ async function signUp(page: Page, email: string, password: string): Promise<void
 }
 
 async function navigateToProject(page: Page, projectId: string): Promise<void> {
-  await page.goto(`${BASE_URL}/?project=${projectId}`)
+  await page.goto(`${BASE_URL}/collaboration?project=${projectId}`)
   await page.waitForLoadState('networkidle', { timeout: 15_000 })
 }
 
@@ -173,7 +173,10 @@ test('T-055-101: invitee accepts invitation via URL and sees project in list', a
           },
           body: JSON.stringify({ projectId, email, role: 'editor' }),
         })
-        return res.ok ? res.json() : null
+        if (!res.ok) {
+          return { __debug_error: true, status: res.status, body: await res.clone().text() }
+        }
+        return await res.json()
       },
       {
         projectId: PROJECT_ID,
@@ -183,9 +186,15 @@ test('T-055-101: invitee accepts invitation via URL and sees project in list', a
       }
     )
 
-    expect(createResponse).not.toBeNull()
-    expect(createResponse.inviteUrl).toBeTruthy()
-    inviteUrl = createResponse.inviteUrl as string
+    // TODO(sean): remove diagnostic after T-055-101 root cause confirmed (#e2e-invite)
+    let inviteCreateResponse = createResponse
+    if (inviteCreateResponse && typeof inviteCreateResponse === 'object' && '__debug_error' in inviteCreateResponse) {
+      console.log('[T-055-101 debug] POST /api/invitations/create', inviteCreateResponse.status, inviteCreateResponse.body)
+      inviteCreateResponse = null
+    }
+    expect(inviteCreateResponse).not.toBeNull()
+    expect(inviteCreateResponse.inviteUrl).toBeTruthy()
+    inviteUrl = inviteCreateResponse.inviteUrl as string
 
     // --- Invitee: open invite URL ---
     // The invite URL format is: {base}/invite#token={rawToken}

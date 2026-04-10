@@ -202,6 +202,7 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
                 size="md"
                 icon={<Maximize2 className="w-4 h-4" />}
                 aria-label="Enter full-screen mode"
+                data-testid="enter-fullscreen"
               >
                 Full Screen
               </Button>

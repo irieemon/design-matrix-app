@@ -1,0 +1,7 @@
+# Exclude test files from Vercel deployment.
+# Without this, the functions glob `api/**/*.ts` in vercel.json could
+# match test files under api/**/__tests__/ or api/**/*.test.ts and expose
+# them as routable serverless functions. Defensive: explicit > implicit.
+api/**/__tests__/**
+api/**/*.test.ts
+api/**/*.spec.ts
