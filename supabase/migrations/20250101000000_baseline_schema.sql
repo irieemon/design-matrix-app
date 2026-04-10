@@ -382,3 +382,58 @@ CREATE POLICY "Team owners can manage members"
         AND t.owner_id = (SELECT auth.uid())
     )
   );
+
+-- ============================================================================
+-- 10. public.subscriptions  (stub)
+-- 11. public.usage_tracking (stub)
+--
+-- Stub tables for admin_user_stats materialized view — full schema in
+-- 20260408160000_billing_schema.sql.
+--
+-- The admin migration (20250113000000_create_admin_system.sql) builds a
+-- materialized view that LEFT JOINs both tables. Without these stubs the
+-- view DDL fails in CI where migrations run sequentially from an empty DB.
+-- The billing migration uses CREATE TABLE IF NOT EXISTS so it will no-op the
+-- table creation and only add its indexes, functions, and policies on top.
+-- ============================================================================
+
+-- -------- 10. public.subscriptions --------
+
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+  user_id                 uuid        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  stripe_customer_id      text        UNIQUE,
+  stripe_subscription_id  text        UNIQUE,
+  tier                    text        NOT NULL DEFAULT 'free'
+                                        CHECK (tier IN ('free', 'team', 'enterprise')),
+  status                  text        NOT NULL DEFAULT 'active'
+                                        CHECK (status IN ('active', 'canceled', 'past_due', 'incomplete', 'trialing')),
+  current_period_start    timestamptz,
+  current_period_end      timestamptz,
+  cancel_at_period_end    boolean     NOT NULL DEFAULT false,
+  past_due_since          timestamptz,
+  created_at              timestamptz NOT NULL DEFAULT now(),
+  updated_at              timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS subscriptions_select_own ON public.subscriptions;
+CREATE POLICY subscriptions_select_own ON public.subscriptions
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- -------- 11. public.usage_tracking --------
+
+CREATE TABLE IF NOT EXISTS public.usage_tracking (
+  user_id        uuid  NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  resource_type  text  NOT NULL CHECK (resource_type IN ('ai_idea')),
+  period_start   date  NOT NULL DEFAULT date_trunc('month', now())::date,
+  count          int   NOT NULL DEFAULT 0,
+  updated_at     timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, resource_type)
+);
+
+ALTER TABLE public.usage_tracking ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS usage_tracking_select_own ON public.usage_tracking;
+CREATE POLICY usage_tracking_select_own ON public.usage_tracking
+  FOR SELECT USING (auth.uid() = user_id);
