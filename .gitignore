@@ -106,8 +106,10 @@ jspm_packages/
 # Supabase temporary files
 supabase/.temp/
 
-# Temporary SQL migrations (should be in supabase/migrations)
+# SQL files outside migrations (temp files, dumps)
 *.sql
+!supabase/migrations/*.sql
+!supabase/seed.sql
 
 # Temporary documentation files (should be in claudedocs)
 *_FIX.md
