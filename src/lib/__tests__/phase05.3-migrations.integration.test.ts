@@ -152,7 +152,7 @@ describe('Phase 05.3 Migration 1 — projects SELECT RLS for collaborators', () 
 // ---------------------------------------------------------------------------
 // Migration 2: is_project_collaborator function
 //
-// SQL verified: CREATE FUNCTION is_project_collaborator(p_project_id uuid, p_user_id uuid)
+// SQL verified: CREATE FUNCTION is_project_collaborator(_project_id uuid, _user_id uuid)
 //   RETURNS boolean
 //   LANGUAGE sql STABLE SECURITY DEFINER
 //   AS $$ SELECT EXISTS (SELECT 1 FROM project_collaborators ...) $$
@@ -168,8 +168,8 @@ describe('Phase 05.3 Migration 2 — is_project_collaborator function', () => {
 
     // Act: call the function via RPC
     const { data, error } = await ownerClient.rpc('is_project_collaborator', {
-      p_project_id: PROJECT_ID,
-      p_user_id: COLLAB_USER_ID,
+      _project_id: PROJECT_ID,
+      _user_id: COLLAB_USER_ID,
     })
 
     // Assert
@@ -190,8 +190,8 @@ describe('Phase 05.3 Migration 2 — is_project_collaborator function', () => {
 
     // Act: call the function for a user with no relationship to the project
     const { data, error } = await ownerClient.rpc('is_project_collaborator', {
-      p_project_id: PROJECT_ID,
-      p_user_id: nonMemberId,
+      _project_id: PROJECT_ID,
+      _user_id: nonMemberId,
     })
 
     // Assert
