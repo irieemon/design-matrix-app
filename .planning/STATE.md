@@ -3,16 +3,20 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Advanced Collaboration & Quality
 status: phase_complete
-stopped_at: Phase 05.4a complete — 05.4b next
-last_updated: "2026-04-09T22:00:00.000Z"
-last_activity: 2026-04-09 -- Phase 05.4a verified and closed; 3 requirements satisfied (COLLAB-01-session, COLLAB-05-UI, COLLAB-06)
+stopped_at: Phase 05.4b complete — 05.5 next
+last_updated: "2026-04-10T01:00:00.000Z"
+last_activity: 2026-04-10 -- Phase 05.4b verified and closed; 3 requirements satisfied (COLLAB-01-matrix, COLLAB-02, COLLAB-07)
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 0
   completed_plans: 0
-  percent: 33
+  percent: 66
 active_phase: null
+next_phase: 05.5-quality-debt-closure
+shipped_in_v1_1:
+  - 05.4a (2026-04-09)
+  - 05.4b (2026-04-10)
 next_phase: 05.4b-project-realtime-matrix
 shipped_in_v1_1:
   - 05.4a (2026-04-09)
