@@ -47,20 +47,20 @@ const BASE_URL = process.env['E2E_BASE_URL'] ?? 'http://localhost:3003'
 
 async function signIn(page: Page, email: string, password: string): Promise<void> {
   await page.goto(`${BASE_URL}/`)
-  await page.waitForSelector('[type="email"]', { timeout: 10_000 })
+  await page.waitForSelector('[data-testid="auth-submit-button"]', { timeout: 10_000 })
   await page.fill('[type="email"]', email)
   await page.fill('[type="password"]', password)
-  await page.click('[type="submit"]')
-  // Wait for redirect away from the auth screen
-  await page.waitForFunction(
-    () => !document.querySelector('[type="submit"]') || document.querySelector('[data-testid="main-app"]'),
-    { timeout: 15_000 }
-  )
+  await page.click('[data-testid="auth-submit-button"]')
+  await page.waitForSelector('[data-testid="auth-submit-button"]', {
+    state: 'detached',
+    timeout: 20_000
+  })
+  await page.waitForSelector('#main-content', { timeout: 10_000 })
 }
 
 async function signUp(page: Page, email: string, password: string): Promise<void> {
   await page.goto(`${BASE_URL}/`)
-  await page.waitForSelector('[type="email"]', { timeout: 10_000 })
+  await page.waitForSelector('[data-testid="auth-submit-button"]', { timeout: 10_000 })
   // Switch to sign-up mode if a toggle exists
   const signUpButton = page.getByRole('button', { name: /sign up/i })
   if (await signUpButton.isVisible()) {
@@ -68,11 +68,12 @@ async function signUp(page: Page, email: string, password: string): Promise<void
   }
   await page.fill('[type="email"]', email)
   await page.fill('[type="password"]', password)
-  await page.click('[type="submit"]')
-  await page.waitForFunction(
-    () => !document.querySelector('[type="submit"]') || document.querySelector('[data-testid="main-app"]'),
-    { timeout: 15_000 }
-  )
+  await page.click('[data-testid="auth-submit-button"]')
+  await page.waitForSelector('[data-testid="auth-submit-button"]', {
+    state: 'detached',
+    timeout: 20_000
+  })
+  await page.waitForSelector('#main-content', { timeout: 10_000 })
 }
 
 async function navigateToProject(page: Page, projectId: string): Promise<void> {

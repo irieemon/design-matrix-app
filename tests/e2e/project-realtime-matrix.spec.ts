@@ -41,10 +41,15 @@ const PRESENCE_STACK_SELECTOR = '[data-testid="project-presence-stack"]'
 
 async function signIn(page: Page, email: string, password: string): Promise<void> {
   await page.goto('http://localhost:3003/')
+  await page.waitForSelector('[data-testid="auth-submit-button"]', { timeout: 10_000 })
   await page.fill('[type="email"]', email)
   await page.fill('[type="password"]', password)
-  await page.click('[type="submit"]')
-  await page.waitForURL(/\/(dashboard|project)/, { timeout: 10_000 })
+  await page.click('[data-testid="auth-submit-button"]')
+  await page.waitForSelector('[data-testid="auth-submit-button"]', {
+    state: 'detached',
+    timeout: 20_000
+  })
+  await page.waitForSelector('#main-content', { timeout: 10_000 })
 }
 
 async function enterFullscreenMatrix(page: Page): Promise<void> {
