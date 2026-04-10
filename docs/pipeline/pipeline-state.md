@@ -26,33 +26,26 @@
 
 ## Resume Instructions
 
-Next session: `/gsd-progress` or tell Eva "resume 05.4a wave 3".
+Both milestones complete. Next session options:
+1. `/gsd-new-milestone` to open v1.3 and define next priorities
+2. Fix E2E Playwright selectors — tests run in CI but fail on outdated UI selectors (invite button, matrix fullscreen)
+3. New feature work
 
-Wave 3 scope (queued):
-- **Unit 4:** DotVoteControls + DotBudgetIndicator + SessionPresenceStack (~900 LOC, 34 tests)
-- **Unit 5:** MatrixFullScreenView wire-up (~50 LOC, 5 integration tests)
-- **Poirot cleanup bundle:** Findings 1, 3, 4 from Wave 2 (DELETE classifier, removeVote sync ref, resubscribe null guard) — bundle into Colby's Wave 3 context
+## Session Context (2026-04-10)
 
-Estimated burn: ~250-370k tokens (Wave 3 is biggest wave).
+This session established the hybrid GSD + atelier workflow:
+- GSD handles planning artifacts (discuss → research → plan → verify)
+- Atelier team handles review and execution (Cal reviews, Roz validates, Colby builds, Ellis commits)
+- `/gsd-execute-phase` is NOT used — Colby executes from PLAN.md files directly
+- Colby is she/her
 
-## Progress
-
-| # | Unit | Agent | Status | Commit |
-|---|------|-------|--------|--------|
-| — | Sable UX | sable-ux | DONE | docs/ux/phase-05.4a-session-scope-voting.md |
-| — | Cal ADR | cal | DONE | 05.4a-PLAN.md (13 decisions, 5 units, 81 tests) |
-| — | Roz test spec review | roz | APPROVED | scoped re-review |
-| 1 | voteRepository D-07 fix | colby | ✅ SHIPPED | dc7c01b |
-| 2 | ScopedRealtimeManager | colby | ✅ SHIPPED | 1f601fd |
-| 3 | useDotVoting + context | colby | ✅ SHIPPED | 1f601fd (+36ae490 Poirot F2 fix) |
-| 4 | 3 components | colby | ⏭ QUEUED | — |
-| 5 | MatrixFullScreenView wire-up | colby | ⏭ QUEUED | — |
+Key learnings from Phase 10 CI work:
+- 9 tables were dashboard-created with no migrations — baseline migration needed
+- `.gitignore` had `*.sql` blocking 17 migration files from git
+- GoTrue v2 requires Admin API for user creation (direct SQL INSERT breaks internal state)
+- MSW in global test setup blocks real Supabase — guard with CI_SUPABASE env var
 
 ## Configuration
 **Branching Strategy:** trunk-based
 **Platform:** GitHub
 **Integration Branch:** main
-
-## Queue
-- Wave 3: Units 4 + 5 + Poirot cleanup bundle
-<!-- COMPACTION: 2026-04-09T20:29:09Z -->
