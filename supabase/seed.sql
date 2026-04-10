@@ -162,4 +162,7 @@ INSERT INTO project_invitations (
 -- requires an existing unique index on a non-empty view) would fail.
 -- ----------------------------------------------------------------------------
 
-REFRESH MATERIALIZED VIEW IF EXISTS public.admin_user_stats;
+DO $$ BEGIN
+  REFRESH MATERIALIZED VIEW public.admin_user_stats;
+EXCEPTION WHEN undefined_table THEN NULL;
+END $$;
