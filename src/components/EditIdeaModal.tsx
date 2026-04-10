@@ -202,19 +202,16 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
     >
       <div className="p-6" data-testid="edit-idea-modal">
         <div className="flex items-center space-x-3 mb-6">
-          <Edit3 className="w-5 h-5" style={{ color: 'var(--sapphire-600)' }} />
-          <p style={{ color: 'var(--graphite-600)' }}>Edit your idea details and priority</p>
+          <Edit3 className="w-5 h-5 text-sapphire-600" />
+          <p className="text-graphite-600">Edit your idea details and priority</p>
         </div>
 
         {/* Error Display */}
         {modalError && (
-          <div className="mb-6 rounded-lg p-4 border" style={{
-            backgroundColor: 'var(--garnet-50)',
-            borderColor: 'var(--garnet-200)'
-          }}>
+          <div className="mb-6 rounded-lg p-4 border bg-garnet-50 border-garnet-200">
             <div className="flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--garnet-600)' }} />
-              <div className="text-sm" style={{ color: 'var(--garnet-800)' }}>{modalError}</div>
+              <AlertCircle className="w-5 h-5 flex-shrink-0 text-garnet-600" />
+              <div className="text-sm text-garnet-800">{modalError}</div>
             </div>
             <Button
               onClick={() => setModalError(null)}
@@ -229,16 +226,10 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
 
         {/* Loading State Indicator */}
         {isSubmitting && (
-          <div className="mb-6 rounded-lg p-4 border" style={{
-            backgroundColor: 'var(--sapphire-50)',
-            borderColor: 'var(--sapphire-200)'
-          }}>
+          <div className="mb-6 rounded-lg p-4 border bg-sapphire-50 border-sapphire-200">
             <div className="flex items-center space-x-2">
-              <div className="animate-spin w-4 h-4 border-2 rounded-full" style={{
-                borderColor: 'var(--sapphire-600)',
-                borderTopColor: 'transparent'
-              }}></div>
-              <div className="text-sm" style={{ color: 'var(--sapphire-800)' }}>Processing your request...</div>
+              <div className="animate-spin w-4 h-4 border-2 rounded-full border-sapphire-600 border-t-transparent"></div>
+              <div className="text-sm text-sapphire-800">Processing your request...</div>
             </div>
           </div>
         )}
@@ -275,18 +266,13 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
 
           {/* Priority */}
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--graphite-700)' }}>
+            <label className="block text-sm font-medium mb-2 text-graphite-700">
               Priority Level
             </label>
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value as IdeaCard['priority'])}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2"
-              style={{
-                borderColor: 'var(--hairline-default)',
-                color: 'var(--graphite-900)',
-                backgroundColor: 'var(--surface-primary)'
-              }}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 border-hairline-default text-graphite-900 bg-surface-primary"
               onFocus={(e) => {
                 e.target.style.borderColor = 'var(--sapphire-500)';
                 e.target.style.boxShadow = '0 0 0 3px var(--sapphire-100)';
@@ -306,21 +292,18 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
           </div>
 
           {/* Info */}
-          <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--canvas-secondary)' }}>
-            <h4 className="text-sm font-medium mb-2" style={{ color: 'var(--graphite-700)' }}>💡 Tip</h4>
-            <div className="text-sm" style={{ color: 'var(--graphite-600)' }}>
+          <div className="rounded-lg p-4 bg-canvas-secondary">
+            <h4 className="text-sm font-medium mb-2 text-graphite-700">💡 Tip</h4>
+            <div className="text-sm text-graphite-600">
               You can drag this idea on the matrix to change its value vs complexity positioning.
             </div>
           </div>
 
           {/* Delete Confirmation */}
           {showDeleteConfirm ? (
-            <div className="rounded-lg p-4 border" style={{
-              backgroundColor: 'var(--garnet-50)',
-              borderColor: 'var(--garnet-200)'
-            }}>
-              <h4 className="text-sm font-medium mb-2" style={{ color: 'var(--garnet-800)' }}>Confirm Deletion</h4>
-              <p className="text-sm mb-4" style={{ color: 'var(--garnet-600)' }}>
+            <div className="rounded-lg p-4 border bg-garnet-50 border-garnet-200">
+              <h4 className="text-sm font-medium mb-2 text-garnet-800">Confirm Deletion</h4>
+              <p className="text-sm mb-4 text-garnet-600">
                 Are you sure you want to delete this idea? This action cannot be undone.
               </p>
               <div className="flex space-x-3">
@@ -346,7 +329,7 @@ const EditIdeaModal: React.FC<EditIdeaModalProps> = ({ idea, isOpen, currentUser
             </div>
           ) : (
             /* Actions - Clean layout with delete on left, save/cancel on right */
-            <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--hairline-default)' }}>
+            <div className="flex items-center justify-between pt-4 border-t border-hairline-default">
               {/* Delete Button - Solid red to match other delete buttons */}
               <Button
                 type="button"

@@ -121,19 +121,12 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
   if (isCreating) {
     return (
       <div
-        className="rounded-2xl shadow-sm p-6 mb-6"
-        style={{
-          backgroundColor: 'var(--surface-primary)',
-          borderWidth: '1px',
-          borderStyle: 'solid',
-          borderColor: 'var(--hairline-default)'
-        }}
+        className="rounded-2xl shadow-sm p-6 mb-6 bg-surface-primary border border-hairline-default"
       >
         <div className="space-y-4">
           <div>
             <label
-              className="block text-sm font-medium mb-2"
-              style={{ color: 'var(--graphite-700)' }}
+              className="block text-sm font-medium mb-2 text-graphite-700"
             >
               Project Name
             </label>
@@ -142,11 +135,8 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               placeholder="Enter project name..."
-              className="w-full px-3 py-2 rounded-lg focus:outline-none"
+              className="w-full px-3 py-2 rounded-lg focus:outline-none border border-hairline-default"
               style={{
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: 'var(--hairline-default)',
                 transition: 'border-color 0.15s, box-shadow 0.15s'
               }}
               onFocus={handleInputFocus}
@@ -156,8 +146,7 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
           </div>
           <div>
             <label
-              className="block text-sm font-medium mb-2"
-              style={{ color: 'var(--graphite-700)' }}
+              className="block text-sm font-medium mb-2 text-graphite-700"
             >
               Description (optional)
             </label>
@@ -166,11 +155,8 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
               placeholder="Brief description of your project..."
-              className="w-full px-3 py-2 rounded-lg focus:outline-none"
+              className="w-full px-3 py-2 rounded-lg focus:outline-none border border-hairline-default"
               style={{
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: 'var(--hairline-default)',
                 transition: 'border-color 0.15s, box-shadow 0.15s'
               }}
               onFocus={handleInputFocus}
@@ -202,24 +188,16 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
   if (!currentProject) {
     return (
       <div
-        className="rounded-2xl shadow-sm p-6 mb-6"
-        style={{
-          backgroundColor: 'var(--surface-primary)',
-          borderWidth: '1px',
-          borderStyle: 'solid',
-          borderColor: 'var(--hairline-default)'
-        }}
+        className="rounded-2xl shadow-sm p-6 mb-6 bg-surface-primary border border-hairline-default"
       >
         <div className="text-center">
           <h3
-            className="text-lg font-medium mb-2"
-            style={{ color: 'var(--graphite-900)' }}
+            className="text-lg font-medium mb-2 text-graphite-900"
           >
             Create Your First Project
           </h3>
           <p
-            className="mb-4"
-            style={{ color: 'var(--graphite-600)' }}
+            className="mb-4 text-graphite-600"
           >
             Give your priority matrix a name to get started
           </p>
@@ -255,19 +233,12 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
   if (isEditing) {
     return (
       <div
-        className="rounded-2xl shadow-sm p-6 mb-6"
-        style={{
-          backgroundColor: 'var(--surface-primary)',
-          borderWidth: '1px',
-          borderStyle: 'solid',
-          borderColor: 'var(--hairline-default)'
-        }}
+        className="rounded-2xl shadow-sm p-6 mb-6 bg-surface-primary border border-hairline-default"
       >
         <div className="space-y-4">
           <div>
             <label
-              className="block text-sm font-medium mb-2"
-              style={{ color: 'var(--graphite-700)' }}
+              className="block text-sm font-medium mb-2 text-graphite-700"
             >
               Project Name
             </label>
@@ -275,11 +246,8 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
               type="text"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg focus:outline-none"
+              className="w-full px-3 py-2 rounded-lg focus:outline-none border border-hairline-default"
               style={{
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: 'var(--hairline-default)',
                 transition: 'border-color 0.15s, box-shadow 0.15s'
               }}
               onFocus={handleInputFocus}
@@ -289,8 +257,7 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
           </div>
           <div>
             <label
-              className="block text-sm font-medium mb-2"
-              style={{ color: 'var(--graphite-700)' }}
+              className="block text-sm font-medium mb-2 text-graphite-700"
             >
               Description (optional)
             </label>
@@ -299,11 +266,8 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
               placeholder="Brief description of your project..."
-              className="w-full px-3 py-2 rounded-lg focus:outline-none"
+              className="w-full px-3 py-2 rounded-lg focus:outline-none border border-hairline-default"
               style={{
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: 'var(--hairline-default)',
                 transition: 'border-color 0.15s, box-shadow 0.15s'
               }}
               onFocus={handleInputFocus}
@@ -346,24 +310,14 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-1">
             <h1
-              className="text-2xl font-bold"
-              style={{ color: 'var(--graphite-900)' }}
+              className="text-2xl font-bold text-graphite-900"
             >
               {currentProject?.name || 'No Project Selected'}
             </h1>
             {currentProject?.description && Math.ceil(currentProject.description.length / 80) > 3 && (
               <button
                 onClick={() => setIsDescriptionCollapsed(!isDescriptionCollapsed)}
-                className="flex items-center transition-colors"
-                style={{
-                  color: 'var(--graphite-400)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--graphite-600)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--graphite-400)'
-                }}
+                className="flex items-center transition-colors text-graphite-400 hover:text-graphite-600"
                 title={isDescriptionCollapsed ? "Show full description" : "Collapse description"}
               >
                 {isDescriptionCollapsed ? (
@@ -376,8 +330,7 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
           </div>
           {currentProject?.description && (
             <div
-              className={`transition-all duration-200 ${isDescriptionCollapsed && Math.ceil(currentProject.description.length / 80) > 3 ? 'line-clamp-3' : ''}`}
-              style={{ color: 'var(--graphite-600)' }}
+              className={`transition-all duration-200 text-graphite-600 ${isDescriptionCollapsed && Math.ceil(currentProject.description.length / 80) > 3 ? 'line-clamp-3' : ''}`}
             >
               {isDescriptionCollapsed && Math.ceil(currentProject.description.length / 80) > 3
                 ? currentProject.description.substring(0, 240) + '...'
@@ -386,8 +339,7 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
           )}
           {currentProject && (
             <div
-              className="text-xs mt-2"
-              style={{ color: 'var(--graphite-500)' }}
+              className="text-xs mt-2 text-graphite-500"
             >
               Created by {
                 currentProject.owner?.full_name ||
@@ -401,18 +353,7 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ currentUser, currentProje
         </div>
         <button
           onClick={startEditing}
-          className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-all"
-          style={{
-            color: 'var(--graphite-600)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = 'var(--graphite-900)'
-            e.currentTarget.style.backgroundColor = 'var(--surface-primary)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--graphite-600)'
-            e.currentTarget.style.backgroundColor = 'transparent'
-          }}
+          className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-all text-graphite-600 hover:text-graphite-900 hover:bg-surface-primary"
           title="Edit project details"
         >
           <Edit2 className="w-4 h-4" />

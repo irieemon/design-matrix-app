@@ -56,8 +56,8 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ isOpen, onClose, onAdd, cur
     >
       <div data-testid="add-idea-modal">
         <div className="flex items-center space-x-3 mb-6">
-          <Plus className="w-5 h-5" style={{ color: 'var(--sapphire-600)' }} />
-          <p style={{ color: 'var(--graphite-600)' }}>Create a new idea for your priority matrix</p>
+          <Plus className="w-5 h-5 text-sapphire-600" />
+          <p className="text-graphite-600">Create a new idea for your priority matrix</p>
         </div>
 
         <form onSubmit={handleSubmit} data-testid="add-idea-form" className="space-y-6">
@@ -93,7 +93,7 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ isOpen, onClose, onAdd, cur
 
           {/* Priority */}
           <div>
-            <label htmlFor="idea-priority" className="block text-sm font-medium mb-2" style={{ color: 'var(--graphite-700)' }}>
+            <label htmlFor="idea-priority" className="block text-sm font-medium mb-2 text-graphite-700">
               Priority Level
             </label>
             <select
@@ -101,12 +101,7 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ isOpen, onClose, onAdd, cur
               value={priority}
               onChange={(e) => setPriority(e.target.value as IdeaCard['priority'])}
               data-testid="idea-priority-select"
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2"
-              style={{
-                borderColor: 'var(--hairline-default)',
-                color: 'var(--graphite-900)',
-                backgroundColor: 'var(--surface-primary)'
-              }}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 border-hairline-default text-graphite-900 bg-surface-primary"
               onFocus={(e) => {
                 e.target.style.borderColor = 'var(--sapphire-500)';
                 e.target.style.boxShadow = '0 0 0 3px var(--sapphire-100)';
@@ -125,9 +120,9 @@ const AddIdeaModal: React.FC<AddIdeaModalProps> = ({ isOpen, onClose, onAdd, cur
           </div>
 
           {/* Info */}
-          <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--canvas-secondary)' }}>
-            <h4 className="text-sm font-medium mb-2" style={{ color: 'var(--graphite-700)' }}>💡 Tip</h4>
-            <div className="text-sm" style={{ color: 'var(--graphite-600)' }}>
+          <div className="rounded-lg p-4 bg-canvas-secondary">
+            <h4 className="text-sm font-medium mb-2 text-graphite-700">💡 Tip</h4>
+            <div className="text-sm text-graphite-600">
               After creating your idea, you can drag it to any position on the matrix to set its value vs complexity positioning.
             </div>
           </div>

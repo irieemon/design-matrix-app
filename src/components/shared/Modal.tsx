@@ -157,9 +157,9 @@ export const BaseModal: React.FC<BaseModalProps> = ({
 
         {/* Header */}
         {(title || showCloseButton) && (
-          <header className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--hairline-default)' }}>
+          <header className="flex items-center justify-between p-6 border-b border-hairline-default">
             {title && (
-              <h2 id={titleId} className="text-xl font-semibold" style={{ color: 'var(--graphite-900)' }}>
+              <h2 id={titleId} className="text-xl font-semibold text-graphite-900">
                 {title}
               </h2>
             )}
@@ -247,15 +247,15 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       <div className="p-6">
         <div className="flex items-start">
           <div className="flex-shrink-0">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center`} style={{ backgroundColor: 'var(--canvas-secondary)' }} role="img" aria-label={`${variant} icon`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-canvas-secondary`} role="img" aria-label={`${variant} icon`}>
               <X className={`w-6 h-6 ${variantStyles[variant].icon}`} aria-hidden="true" />
             </div>
           </div>
           <div className="ml-4">
-            <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--graphite-900)' }}>
+            <h3 className="text-lg font-medium mb-2 text-graphite-900">
               {title}
             </h3>
-            <p id={messageId} className="text-sm mb-6" style={{ color: 'var(--graphite-500)' }}>
+            <p id={messageId} className="text-sm mb-6 text-graphite-500">
               {message}
             </p>
             <div className="flex space-x-3">
@@ -333,7 +333,7 @@ export const FormModal: React.FC<FormModalProps> = ({
         </div>
 
         {showFooter && (
-          <div className="px-6 py-4 border-t flex justify-end space-x-3" style={{ backgroundColor: 'var(--canvas-secondary)', borderColor: 'var(--hairline-default)' }}>
+          <div className="px-6 py-4 border-t flex justify-end space-x-3 bg-canvas-secondary border-hairline-default">
             <Button
               type="button"
               onClick={onClose}
@@ -423,7 +423,7 @@ export const Drawer: React.FC<DrawerProps> = ({
       {/* Drawer */}
       <div
         className={`
-          absolute top-0 h-full shadow-xl
+          absolute top-0 h-full shadow-xl bg-surface-primary
           ${sizeClasses[size]}
           ${positionClasses[position]}
           transform ease-in-out
@@ -431,15 +431,14 @@ export const Drawer: React.FC<DrawerProps> = ({
           ${className}
         `}
         style={{
-          backgroundColor: 'var(--surface-primary)',
           transitionProperty: 'transform',
           transitionDuration: 'var(--duration-moderate)',
           transitionTimingFunction: 'var(--easing-glide)'
         }}
       >
         {title && (
-          <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--hairline-default)' }}>
-            <h2 className="text-xl font-semibold" style={{ color: 'var(--graphite-900)' }}>{title}</h2>
+          <div className="flex items-center justify-between p-6 border-b border-hairline-default">
+            <h2 className="text-xl font-semibold text-graphite-900">{title}</h2>
             <Button
               onClick={onClose}
               variant="ghost"

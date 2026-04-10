@@ -315,14 +315,14 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
   // Create custom title component with icon and subtitle
   const modalTitle = (
     <div className="flex items-center space-x-3">
-      <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--sapphire-100)' }}>
-        <Sparkles className="w-5 h-5" style={{ color: 'var(--sapphire-600)' }} />
+      <div className="p-2 rounded-lg bg-sapphire-100">
+        <Sparkles className="w-5 h-5 text-sapphire-600" />
       </div>
       <div>
-        <h2 className="text-xl font-bold" style={{ color: 'var(--graphite-900)' }}>
+        <h2 className="text-xl font-bold text-graphite-900">
           {historicalOperation.state.data ? 'Historical AI Insights' : 'AI Strategic Insights'}
         </h2>
-        <p className="text-sm" style={{ color: 'var(--graphite-600)' }}>
+        <p className="text-sm text-graphite-600">
           {historicalOperation.state.data ? 'Previously generated analysis' : `Analysis of ${(ideas || []).length} ideas in your priority matrix`}
           {!historicalOperation.state.data && filesWithContent.length > 0 && (
             <span className="block mt-1">
@@ -343,12 +343,9 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
       size="xl"
       showCloseButton={false}
     >
-      <div style={{ backgroundColor: 'var(--surface-primary)' }}>
+      <div className="bg-surface-primary">
         {/* Custom header with icon and subtitle */}
-        <div className="p-6 border-b" style={{
-          borderColor: 'var(--hairline-default)',
-          backgroundColor: 'var(--canvas-secondary)'
-        }}>
+        <div className="p-6 border-b border-hairline-default bg-canvas-secondary">
           <div className="flex items-center justify-between">
             {modalTitle}
             <Button
@@ -363,32 +360,24 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
 
         {/* File References Section */}
         {!historicalOperation.state.data && filesWithContent.length > 0 && (
-          <div className="px-6 py-4 border-b" style={{
-            backgroundColor: 'var(--sapphire-50)',
-            borderColor: 'var(--sapphire-100)'
-          }}>
+          <div className="px-6 py-4 border-b bg-sapphire-50 border-sapphire-100">
             <div className="flex items-start space-x-3">
-              <FileText className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: 'var(--sapphire-600)' }} />
+              <FileText className="w-5 h-5 mt-0.5 flex-shrink-0 text-sapphire-600" />
               <div>
-                <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--sapphire-900)' }}>Document Analysis Sources</h3>
+                <h3 className="text-sm font-semibold mb-2 text-sapphire-900">Document Analysis Sources</h3>
                 <div className="flex flex-wrap gap-2">
                   {filesWithContent.map((file, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center px-3 py-1 text-xs rounded-full border"
-                      style={{
-                        backgroundColor: 'var(--surface-primary)',
-                        color: 'var(--sapphire-800)',
-                        borderColor: 'var(--sapphire-200)'
-                      }}
+                      className="inline-flex items-center px-3 py-1 text-xs rounded-full border bg-surface-primary text-sapphire-800 border-sapphire-200"
                     >
-                      <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: 'var(--sapphire-400)' }}></span>
+                      <span className="w-2 h-2 rounded-full mr-2 bg-sapphire-400"></span>
                       {file.original_name}
-                      <span className="ml-1" style={{ color: 'var(--sapphire-600)' }}>({file.file_type})</span>
+                      <span className="ml-1 text-sapphire-600">({file.file_type})</span>
                     </span>
                   ))}
                 </div>
-                <p className="text-xs mt-2" style={{ color: 'var(--sapphire-700)' }}>
+                <p className="text-xs mt-2 text-sapphire-700">
                   These documents were analyzed to provide contextual insights and recommendations for your project.
                 </p>
               </div>
@@ -403,41 +392,37 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
               {/* Premium AI Processing Interface */}
               <div className="max-w-2xl mx-auto">
                 {/* Main Progress Bar */}
-                <div className="rounded-2xl p-6 mb-6" style={{ backgroundColor: 'var(--canvas-secondary)' }}>
+                <div className="rounded-2xl p-6 mb-6 bg-canvas-secondary">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <div className="relative">
-                        <Sparkles className="w-6 h-6 animate-spin" style={{ color: 'var(--sapphire-600)' }} />
-                        <div className="absolute inset-0 rounded-full animate-pulse" style={{
-                          backgroundColor: 'var(--sapphire-600)',
-                          opacity: 0.2
-                        }}></div>
+                        <Sparkles className="w-6 h-6 animate-spin text-sapphire-600" />
+                        <div className="absolute inset-0 rounded-full animate-pulse bg-sapphire-600 opacity-20"></div>
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold capitalize" style={{ color: 'var(--graphite-900)' }}>
+                        <h3 className="text-lg font-semibold capitalize text-graphite-900">
                           {aiStage === 'analyzing' && '🔍 Analyzing Ideas'}
                           {aiStage === 'synthesizing' && '🧠 Synthesizing Insights'}
                           {aiStage === 'optimizing' && '⚡ Optimizing Recommendations'}
                           {aiStage === 'finalizing' && '✨ Finalizing Report'}
                           {aiStage === 'complete' && '✅ Complete!'}
                         </h3>
-                        <p className="text-sm" style={{ color: 'var(--graphite-600)' }}>
+                        <p className="text-sm text-graphite-600">
                           {estimatedTime > 0 ? `~${estimatedTime} seconds remaining` : 'Almost done...'}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold" style={{ color: 'var(--sapphire-600)' }}>{Math.round(aiProgress)}%</div>
+                      <div className="text-2xl font-bold text-sapphire-600">{Math.round(aiProgress)}%</div>
                     </div>
                   </div>
 
                   {/* Animated Progress Bar */}
-                  <div className="w-full rounded-full h-3 overflow-hidden" style={{ backgroundColor: 'var(--graphite-200)' }}>
+                  <div className="w-full rounded-full h-3 overflow-hidden bg-graphite-200">
                     <div
-                      className="h-full rounded-full transition-all duration-500 ease-out relative"
+                      className="h-full rounded-full transition-all duration-500 ease-out relative bg-sapphire-600"
                       style={{
-                        width: `${aiProgress}%`,
-                        backgroundColor: 'var(--sapphire-600)'
+                        width: `${aiProgress}%`
                       }}
                     >
                       <div className="absolute inset-0 bg-white opacity-30 animate-pulse"></div>
@@ -446,28 +431,16 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
                 </div>
                 
                 {/* Processing Steps */}
-                <div className="rounded-xl border p-4" style={{
-                  backgroundColor: 'var(--surface-primary)',
-                  borderColor: 'var(--hairline-default)'
-                }}>
-                  <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--graphite-700)' }}>AI Processing Steps</h4>
+                <div className="rounded-xl border p-4 bg-surface-primary border-hairline-default">
+                  <h4 className="text-sm font-semibold mb-3 text-graphite-700">AI Processing Steps</h4>
                   <div className="space-y-2 max-h-32 overflow-y-auto">
                     {processingSteps.map((step, index) => (
                       <div
                         key={index}
-                        className="flex items-center space-x-2 text-sm transition-all duration-300"
-                        style={{
-                          color: index === processingSteps.length - 1 ? 'var(--sapphire-600)' : 'var(--graphite-500)',
-                          fontWeight: index === processingSteps.length - 1 ? 500 : 400
-                        }}
+                        className={`flex items-center space-x-2 text-sm transition-all duration-300 ${index === processingSteps.length - 1 ? 'text-sapphire-600 font-medium' : 'text-graphite-500 font-normal'}`}
                       >
                         <div
-                          className={`w-1.5 h-1.5 rounded-full ${index === processingSteps.length - 1 ? 'animate-pulse' : ''}`}
-                          style={{
-                            backgroundColor: index === processingSteps.length - 1
-                              ? 'var(--sapphire-500)'
-                              : 'var(--graphite-300)'
-                          }}
+                          className={`w-1.5 h-1.5 rounded-full ${index === processingSteps.length - 1 ? 'animate-pulse bg-sapphire-500' : 'bg-graphite-300'}`}
                         ></div>
                         <span>{step}</span>
                       </div>
@@ -485,15 +458,8 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
                       <div
                         key={stage}
                         className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                          isActive ? 'scale-125 animate-pulse' : ''
+                          isActive ? 'scale-125 animate-pulse bg-sapphire-500' : isComplete ? 'bg-emerald-500' : 'bg-graphite-300'
                         }`}
-                        style={{
-                          backgroundColor: isActive
-                            ? 'var(--sapphire-500)'
-                            : isComplete
-                            ? 'var(--emerald-500)'
-                            : 'var(--graphite-300)'
-                        }}
                       ></div>
                     )
                   })}
@@ -503,15 +469,12 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
           )}
 
           {(insightsOperation.state.error || historicalOperation.state.error) && (
-            <div className="rounded-xl p-4 mb-6 border" style={{
-              backgroundColor: 'var(--garnet-50)',
-              borderColor: 'var(--garnet-200)'
-            }}>
+            <div className="rounded-xl p-4 mb-6 border bg-garnet-50 border-garnet-200">
               <div className="flex items-center space-x-2">
-                <AlertTriangle className="w-5 h-5" style={{ color: 'var(--garnet-600)' }} />
-                <span className="font-medium" style={{ color: 'var(--garnet-800)' }}>Error</span>
+                <AlertTriangle className="w-5 h-5 text-garnet-600" />
+                <span className="font-medium text-garnet-800">Error</span>
               </div>
-              <p className="mt-1" style={{ color: 'var(--garnet-700)' }}>{insightsOperation.state.error || historicalOperation.state.error}</p>
+              <p className="mt-1 text-garnet-700">{insightsOperation.state.error || historicalOperation.state.error}</p>
               <Button
                 onClick={() => insightsOperation.execute()}
                 variant="danger"
@@ -531,28 +494,25 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
                 return (
                   <>
                     {/* Executive Summary */}
-                    <div className="rounded-2xl p-6 border" style={{
-                      backgroundColor: 'var(--canvas-secondary)',
-                      borderColor: 'var(--hairline-default)'
-                    }}>
-                      <h3 className="text-lg font-semibold mb-3 flex items-center" style={{ color: 'var(--graphite-900)' }}>
-                        <TrendingUp className="w-5 h-5 mr-2" style={{ color: 'var(--graphite-600)' }} />
+                    <div className="rounded-2xl p-6 border bg-canvas-secondary border-hairline-default">
+                      <h3 className="text-lg font-semibold mb-3 flex items-center text-graphite-900">
+                        <TrendingUp className="w-5 h-5 mr-2 text-graphite-600" />
                         Executive Summary
                       </h3>
-                      <p className="leading-relaxed" style={{ color: 'var(--graphite-700)' }}>{insights?.executiveSummary}</p>
+                      <p className="leading-relaxed text-graphite-700">{insights?.executiveSummary}</p>
                     </div>
 
                     {/* Key Insights */}
                     <div>
-                      <h3 className="text-lg font-semibold mb-4 flex items-center" style={{ color: 'var(--graphite-900)' }}>
-                        <Lightbulb className="w-5 h-5 mr-2" style={{ color: 'var(--amber-600)' }} />
+                      <h3 className="text-lg font-semibold mb-4 flex items-center text-graphite-900">
+                        <Lightbulb className="w-5 h-5 mr-2 text-amber-600" />
                         Key Insights
                       </h3>
                       <div className="grid gap-4">
                         {(insights?.keyInsights || []).map((item: any, index: number) => (
                           <div key={index} className="lux-card">
-                            <h4 className="font-semibold mb-2" style={{ color: 'var(--graphite-900)' }}>{item.insight}</h4>
-                            <p className="text-sm" style={{ color: 'var(--graphite-600)' }}>{item.impact}</p>
+                            <h4 className="font-semibold mb-2 text-graphite-900">{item.insight}</h4>
+                            <p className="text-sm text-graphite-600">{item.impact}</p>
                           </div>
                         ))}
                       </div>
@@ -560,50 +520,41 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
 
                     {/* Priority Recommendations */}
                     <div>
-                      <h3 className="text-lg font-semibold mb-4 flex items-center" style={{ color: 'var(--graphite-900)' }}>
-                        <Target className="w-5 h-5 mr-2" style={{ color: 'var(--sapphire-600)' }} />
+                      <h3 className="text-lg font-semibold mb-4 flex items-center text-graphite-900">
+                        <Target className="w-5 h-5 mr-2 text-sapphire-600" />
                         Priority Recommendations
                       </h3>
                       <div className="grid md:grid-cols-3 gap-6">
-                        <div className="rounded-xl p-4 border" style={{
-                          backgroundColor: 'var(--garnet-50)',
-                          borderColor: 'var(--garnet-200)'
-                        }}>
-                          <h4 className="font-semibold mb-3" style={{ color: 'var(--garnet-800)' }}>🚨 Immediate (30 days)</h4>
+                        <div className="rounded-xl p-4 border bg-garnet-50 border-garnet-200">
+                          <h4 className="font-semibold mb-3 text-garnet-800">🚨 Immediate (30 days)</h4>
                           <ul className="space-y-2">
                             {(insights?.priorityRecommendations?.immediate || []).map((item: string, index: number) => (
-                              <li key={index} className="text-sm flex items-start" style={{ color: 'var(--garnet-700)' }}>
-                                <CheckCircle className="w-3 h-3 mr-2 mt-0.5 flex-shrink-0" style={{ color: 'var(--garnet-600)' }} />
+                              <li key={index} className="text-sm flex items-start text-garnet-700">
+                                <CheckCircle className="w-3 h-3 mr-2 mt-0.5 flex-shrink-0 text-garnet-600" />
                                 {item}
                               </li>
                             ))}
                           </ul>
                         </div>
 
-                        <div className="rounded-xl p-4 border" style={{
-                          backgroundColor: 'var(--amber-50)',
-                          borderColor: 'var(--amber-200)'
-                        }}>
-                          <h4 className="font-semibold mb-3" style={{ color: 'var(--amber-800)' }}>⏳ Short Term (3 months)</h4>
+                        <div className="rounded-xl p-4 border bg-amber-50 border-amber-200">
+                          <h4 className="font-semibold mb-3 text-amber-800">⏳ Short Term (3 months)</h4>
                           <ul className="space-y-2">
                             {(insights?.priorityRecommendations?.shortTerm || []).map((item: string, index: number) => (
-                              <li key={index} className="text-sm flex items-start" style={{ color: 'var(--amber-700)' }}>
-                                <CheckCircle className="w-3 h-3 mr-2 mt-0.5 flex-shrink-0" style={{ color: 'var(--amber-600)' }} />
+                              <li key={index} className="text-sm flex items-start text-amber-700">
+                                <CheckCircle className="w-3 h-3 mr-2 mt-0.5 flex-shrink-0 text-amber-600" />
                                 {item}
                               </li>
                             ))}
                           </ul>
                         </div>
 
-                        <div className="rounded-xl p-4 border" style={{
-                          backgroundColor: 'var(--sapphire-50)',
-                          borderColor: 'var(--sapphire-200)'
-                        }}>
-                          <h4 className="font-semibold mb-3" style={{ color: 'var(--sapphire-800)' }}>🎯 Long Term (6-12 months)</h4>
+                        <div className="rounded-xl p-4 border bg-sapphire-50 border-sapphire-200">
+                          <h4 className="font-semibold mb-3 text-sapphire-800">🎯 Long Term (6-12 months)</h4>
                           <ul className="space-y-2">
                             {(insights?.priorityRecommendations?.longTerm || []).map((item: string, index: number) => (
-                              <li key={index} className="text-sm flex items-start" style={{ color: 'var(--sapphire-700)' }}>
-                                <CheckCircle className="w-3 h-3 mr-2 mt-0.5 flex-shrink-0" style={{ color: 'var(--sapphire-600)' }} />
+                              <li key={index} className="text-sm flex items-start text-sapphire-700">
+                                <CheckCircle className="w-3 h-3 mr-2 mt-0.5 flex-shrink-0 text-sapphire-600" />
                                 {item}
                               </li>
                             ))}
@@ -615,36 +566,30 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
                     {/* Risk Assessment */}
                     {insights?.riskAssessment && (
                       <div className="grid md:grid-cols-2 gap-6">
-                        <div className="rounded-xl p-4 border" style={{
-                          backgroundColor: 'var(--garnet-50)',
-                          borderColor: 'var(--garnet-200)'
-                        }}>
-                          <h4 className="font-semibold mb-3 flex items-center" style={{ color: 'var(--garnet-800)' }}>
+                        <div className="rounded-xl p-4 border bg-garnet-50 border-garnet-200">
+                          <h4 className="font-semibold mb-3 flex items-center text-garnet-800">
                             <AlertTriangle className="w-4 h-4 mr-2" />
                             Risk Areas
                           </h4>
                           <ul className="space-y-2">
                             {(insights.riskAssessment?.risks || []).map((risk: string, index: number) => (
-                              <li key={index} className="text-sm flex items-start" style={{ color: 'var(--garnet-700)' }}>
-                                <div className="w-2 h-2 rounded-full mr-2 mt-1.5 flex-shrink-0" style={{ backgroundColor: 'var(--garnet-400)' }}></div>
+                              <li key={index} className="text-sm flex items-start text-garnet-700">
+                                <div className="w-2 h-2 rounded-full mr-2 mt-1.5 flex-shrink-0 bg-garnet-400"></div>
                                 {risk}
                               </li>
                             ))}
                           </ul>
                         </div>
 
-                        <div className="rounded-xl p-4 border" style={{
-                          backgroundColor: 'var(--emerald-50)',
-                          borderColor: 'var(--emerald-200)'
-                        }}>
-                          <h4 className="font-semibold mb-3 flex items-center" style={{ color: 'var(--emerald-800)' }}>
+                        <div className="rounded-xl p-4 border bg-emerald-50 border-emerald-200">
+                          <h4 className="font-semibold mb-3 flex items-center text-emerald-800">
                             <TrendingUp className="w-4 h-4 mr-2" />
                             Risk Mitigations
                           </h4>
                           <ul className="space-y-2">
                             {(insights.riskAssessment?.mitigations || []).map((mitigation: string, index: number) => (
-                              <li key={index} className="text-sm flex items-start" style={{ color: 'var(--emerald-700)' }}>
-                                <div className="w-2 h-2 rounded-full mr-2 mt-1.5 flex-shrink-0" style={{ backgroundColor: 'var(--emerald-400)' }}></div>
+                              <li key={index} className="text-sm flex items-start text-emerald-700">
+                                <div className="w-2 h-2 rounded-full mr-2 mt-1.5 flex-shrink-0 bg-emerald-400"></div>
                                 {mitigation}
                               </li>
                             ))}
@@ -664,12 +609,9 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
         </div>
 
         {/* Footer */}
-        <div className="border-t p-6" style={{
-          borderColor: 'var(--hairline-default)',
-          backgroundColor: 'var(--canvas-secondary)'
-        }}>
+        <div className="border-t p-6 border-hairline-default bg-canvas-secondary">
           <div className="flex justify-between items-center">
-            <p className="text-sm" style={{ color: 'var(--graphite-500)' }}>
+            <p className="text-sm text-graphite-500">
               {historicalOperation.state.data ? 'Historical insight' : 'Generated by AI'} • Analysis based on {historicalOperation.state.data ? 'saved data' : (ideas || []).length + ' ideas'}
               {!historicalOperation.state.data && filesWithContent.length > 0 && ` • ${filesWithContent.length} document${filesWithContent.length !== 1 ? 's' : ''} analyzed`}
             </p>

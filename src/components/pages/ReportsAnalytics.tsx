@@ -232,19 +232,16 @@ const ReportsAnalytics: React.FC<ReportsAnalyticsProps> = ({ ideas, currentUser,
             </div>
 
             {/* Prominent AI Insights Button */}
-            <div className="rounded-xl border p-6" style={{
-              backgroundColor: 'var(--canvas-secondary)',
-              borderColor: 'var(--hairline-default)'
-            }}>
+            <div className="rounded-xl border p-6 bg-canvas-secondary border-hairline-default">
               <div className="flex items-start space-x-4">
-                <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--sapphire-100)' }}>
-                  <Sparkles className="w-8 h-8" style={{ color: 'var(--sapphire-600)' }} />
+                <div className="p-3 rounded-lg bg-sapphire-100">
+                  <Sparkles className="w-8 h-8 text-sapphire-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--graphite-900)' }}>
+                  <h3 className="text-xl font-bold mb-2 text-graphite-900">
                     Generate AI Insights
                   </h3>
-                  <p className="text-sm mb-4" style={{ color: 'var(--graphite-600)' }}>
+                  <p className="text-sm mb-4 text-graphite-600">
                     Get strategic analysis & recommendations based on your ideas
                   </p>
                   <Button

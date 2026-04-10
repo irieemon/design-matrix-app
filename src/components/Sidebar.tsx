@@ -122,8 +122,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
 
       {/* Header Section */}
       <div
-        className={`${isCollapsed ? 'p-4' : 'p-6'} border-b transition-all duration-300`}
-        style={{ borderColor: 'var(--hairline-default)' }}
+        className={`${isCollapsed ? 'p-4' : 'p-6'} border-b border-hairline-default transition-all duration-300`}
       >
         {isCollapsed ? (
           /* Collapsed Header */
@@ -134,14 +133,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
                 background: 'linear-gradient(to bottom right, var(--surface-primary), var(--graphite-100))'
               }}
             >
-              <div style={{ color: 'var(--sapphire-600)' }}>
+              <div className="text-sapphire-600">
                 <PrioritasLogo size={24} />
               </div>
             </div>
             <button
               onClick={handleToggleCollapse}
-              className="p-2 rounded-lg transition-colors hover:bg-graphite-100"
-              style={{ color: 'var(--graphite-600)' }}
+              className="p-2 rounded-lg transition-colors hover:bg-graphite-100 text-graphite-600"
               aria-label="Expand sidebar"
             >
               <ChevronRight className="w-4 h-4" />
@@ -157,14 +155,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
                   background: 'linear-gradient(to bottom right, var(--surface-primary), var(--graphite-100))'
                 }}
               >
-                <div style={{ color: 'var(--sapphire-600)' }}>
+                <div className="text-sapphire-600">
                   <PrioritasLogo size={24} />
                 </div>
               </div>
               <div>
                 <h2
-                  className="text-xl font-bold"
-                  style={{ color: 'var(--graphite-900)' }}
+                  className="text-xl font-bold text-graphite-900"
                 >
                   Prioritas
                 </h2>
@@ -172,8 +169,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
             </div>
             <button
               onClick={handleToggleCollapse}
-              className="p-2 rounded-lg transition-colors hover:bg-graphite-100"
-              style={{ color: 'var(--graphite-600)' }}
+              className="p-2 rounded-lg transition-colors hover:bg-graphite-100 text-graphite-600"
               aria-label="Collapse sidebar"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -185,15 +181,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
       {/* Navigation Section */}
       <nav
         ref={navContainerRef}
-        className={`flex-1 ${isCollapsed ? 'px-3 py-6' : 'px-6 py-8'} overflow-y-auto transition-all duration-300`}
-        style={{ position: 'relative' }}
+        className={`flex-1 ${isCollapsed ? 'px-3 py-6' : 'px-6 py-8'} overflow-y-auto transition-all duration-300 relative`}
       >
         {/* Animated Selection Indicator */}
         <div
-          className="absolute left-0 w-1 rounded-r-full pointer-events-none"
+          className="absolute left-0 w-1 rounded-r-full pointer-events-none bg-graphite-900"
           style={{
             ...indicatorStyle,
-            backgroundColor: 'var(--graphite-900)',
             marginLeft: isCollapsed ? '8px' : '16px'
           }}
         />
@@ -221,21 +215,18 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
             {!isCollapsed && (
               <div>
                 <div
-                  className="text-xs font-semibold uppercase tracking-widest mb-3"
-                  style={{ color: 'var(--graphite-500)' }}
+                  className="text-xs font-semibold uppercase tracking-widest mb-3 text-graphite-500"
                 >
                   Current Project
                 </div>
                 <div className="mb-3">
                   <div
-                    className="font-bold text-base truncate"
-                    style={{ color: 'var(--graphite-900)' }}
+                    className="font-bold text-base truncate text-graphite-900"
                   >
                     {currentProject.name}
                   </div>
                   <div
-                    className="text-xs"
-                    style={{ color: 'var(--graphite-500)' }}
+                    className="text-xs text-graphite-500"
                   >
                     Active workspace
                   </div>
@@ -263,8 +254,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-sm truncate">{tool.label}</div>
                           <div
-                            className="text-xs truncate"
-                            style={{ color: isActive ? 'inherit' : 'var(--graphite-500)' }}
+                            className={`text-xs truncate ${isActive ? '' : 'text-graphite-500'}`}
                           >
                             {tool.description}
                           </div>
@@ -282,29 +272,22 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
         {!currentProject && !isCollapsed && (
           <div className="py-12 text-center">
             <div
-              className="rounded-xl p-6 border"
-              style={{
-                backgroundColor: 'var(--canvas-secondary)',
-                borderColor: 'var(--hairline-default)'
-              }}
+              className="rounded-xl p-6 border bg-canvas-secondary border-hairline-default"
             >
               <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
-                style={{ backgroundColor: 'var(--graphite-200)' }}
+                className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 bg-graphite-200"
               >
-                <div style={{ color: 'var(--graphite-500)' }}>
+                <div className="text-graphite-500">
                   <PrioritasLogo size={24} />
                 </div>
               </div>
               <div
-                className="text-sm font-medium mb-1"
-                style={{ color: 'var(--graphite-600)' }}
+                className="text-sm font-medium mb-1 text-graphite-600"
               >
                 No Project Selected
               </div>
               <div
-                className="text-xs"
-                style={{ color: 'var(--graphite-500)' }}
+                className="text-xs text-graphite-500"
               >
                 Choose a project to access tools
               </div>
@@ -315,8 +298,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
 
       {/* Footer Section */}
       <div
-        className={`${isCollapsed ? 'p-2' : 'p-3'} border-t transition-all duration-300`}
-        style={{ borderColor: 'var(--hairline-default)' }}
+        className={`${isCollapsed ? 'p-2' : 'p-3'} border-t border-hairline-default transition-all duration-300`}
       >
         {isCollapsed ? (
           <div className="space-y-1">
@@ -326,8 +308,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
               active={currentPage === 'user'}
               icon={
                 <div
-                  className="w-6 h-6 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: 'var(--graphite-200)' }}
+                  className="w-6 h-6 rounded-lg flex items-center justify-center bg-graphite-200"
                 >
                   <User className="w-3 h-3" style={{ color: 'inherit' }} />
                 </div>
@@ -341,8 +322,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
             {currentUser && AdminService.isAdmin(currentUser) && (
               <button
                 onClick={onAdminAccess}
-                className="w-full p-2 rounded-lg transition-colors hover:bg-graphite-100"
-                style={{ color: 'var(--graphite-500)' }}
+                className="w-full p-2 rounded-lg transition-colors hover:bg-graphite-100 text-graphite-500"
                 title="Admin Portal"
               >
                 <Shield className="w-4 h-4 mx-auto" />
@@ -352,8 +332,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
             {/* Logout Button */}
             <button
               onClick={onLogout}
-              className="w-full p-2 rounded-lg transition-colors hover:bg-graphite-100"
-              style={{ color: 'var(--graphite-500)' }}
+              className="w-full p-2 rounded-lg transition-colors hover:bg-graphite-100 text-graphite-500"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4 mx-auto" />
@@ -368,8 +347,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
                 active={currentPage === 'user'}
                 icon={
                   <div
-                    className="w-6 h-6 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: 'var(--graphite-200)' }}
+                    className="w-6 h-6 rounded-lg flex items-center justify-center bg-graphite-200"
                   >
                     <User className="w-3 h-3" style={{ color: 'inherit' }} />
                   </div>
@@ -387,8 +365,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
 
               <button
                 onClick={onLogout}
-                className="ml-2 p-2 rounded-lg transition-colors hover:bg-graphite-100"
-                style={{ color: 'var(--graphite-500)' }}
+                className="ml-2 p-2 rounded-lg transition-colors hover:bg-graphite-100 text-graphite-500"
                 title="Sign Out"
               >
                 <LogOut className="w-3 h-3" />
@@ -399,8 +376,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentProject, onPageCh
             {currentUser && AdminService.isAdmin(currentUser) && (
               <button
                 onClick={onAdminAccess}
-                className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors hover:bg-graphite-100"
-                style={{ color: 'var(--graphite-500)' }}
+                className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors hover:bg-graphite-100 text-graphite-500"
               >
                 <Shield className="w-4 h-4" />
                 <span className="text-sm">Admin Portal</span>

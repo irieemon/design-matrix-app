@@ -239,23 +239,21 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ backgroundColor: 'var(--scrim-overlay)' }}>
-      <div className="rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col" style={{ backgroundColor: 'var(--surface-primary)' }}>
+      <div className="rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col bg-surface-primary">
         {/* Header */}
-        <div className="p-6" style={{
-          background: 'linear-gradient(to right, var(--graphite-700), var(--graphite-800))',
-          color: 'var(--surface-primary)'
+        <div className="p-6 text-surface-primary" style={{
+          background: 'linear-gradient(to right, var(--graphite-700), var(--graphite-800))'
         }}>
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold mb-1">Export Roadmap</h2>
-              <p style={{ color: 'var(--sapphire-100)' }}>Choose your export format and options</p>
+              <p className="text-sapphire-100">Choose your export format and options</p>
             </div>
             <Button
               onClick={onClose}
               variant="ghost"
               size="sm"
-              className="p-2 rounded-full transition-colors"
-              style={{ color: 'var(--surface-primary)' }}
+              className="p-2 rounded-full transition-colors text-surface-primary"
             >
               <X className="w-6 h-6" />
             </Button>
@@ -266,24 +264,20 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
         <div className="flex-1 p-6 overflow-y-auto min-h-0">
           {/* Export Mode Selection */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--graphite-900)' }}>Export Mode</h3>
+            <h3 className="text-lg font-semibold mb-4 text-graphite-900">Export Mode</h3>
             <div className="grid grid-cols-1 gap-3">
               {exportModes.map((mode) => (
                 <div
                   key={mode.id}
                   onClick={() => setExportMode(mode.id)}
-                  className="relative rounded-lg p-4 cursor-pointer transition-all"
+                  className={`relative rounded-lg p-4 cursor-pointer transition-all border ${
+                    exportMode === mode.id
+                      ? 'border-sapphire-500 bg-sapphire-50'
+                      : 'border-hairline-default'
+                  }`}
                   style={exportMode === mode.id ? {
-                    borderWidth: '1px',
-                    borderStyle: 'solid',
-                    borderColor: 'var(--sapphire-500)',
-                    backgroundColor: 'var(--sapphire-50)',
                     boxShadow: '0 0 0 3px var(--sapphire-100)'
-                  } : {
-                    borderWidth: '1px',
-                    borderStyle: 'solid',
-                    borderColor: 'var(--hairline-default)'
-                  }}
+                  } : undefined}
                   onMouseEnter={(e) => {
                     if (exportMode !== mode.id) {
                       e.currentTarget.style.borderColor = 'var(--hairline-hover)';
@@ -298,39 +292,35 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
                   }}
                 >
                   <div className="flex items-start">
-                    <mode.icon className="w-5 h-5 mt-1 mr-3" style={{
-                      color: exportMode === mode.id ? 'var(--sapphire-600)' : 'var(--graphite-400)'
-                    }} />
+                    <mode.icon className={`w-5 h-5 mt-1 mr-3 ${
+                      exportMode === mode.id ? 'text-sapphire-600' : 'text-graphite-400'
+                    }`} />
                     <div className="flex-1">
                       <div className="flex items-center">
-                        <h4 className="font-medium" style={{
-                          color: exportMode === mode.id ? 'var(--sapphire-900)' : 'var(--graphite-900)'
-                        }}>
+                        <h4 className={`font-medium ${
+                          exportMode === mode.id ? 'text-sapphire-900' : 'text-graphite-900'
+                        }`}>
                           {mode.name}
                         </h4>
                         {mode.recommended && (
-                          <span className="ml-2 px-2 py-1 text-xs rounded-full" style={{
-                            backgroundColor: 'var(--emerald-100)',
-                            color: 'var(--emerald-700)'
-                          }}>
+                          <span className="ml-2 px-2 py-1 text-xs rounded-full bg-emerald-100 text-emerald-700">
                             Recommended
                           </span>
                         )}
                       </div>
-                      <p className="text-sm mt-1" style={{
-                        color: exportMode === mode.id ? 'var(--sapphire-700)' : 'var(--graphite-600)'
-                      }}>
+                      <p className={`text-sm mt-1 ${
+                        exportMode === mode.id ? 'text-sapphire-700' : 'text-graphite-600'
+                      }`}>
                         {mode.description}
                       </p>
                     </div>
-                    <div className="w-4 h-4 rounded-full mt-1" style={{
-                      borderWidth: '2px',
-                      borderStyle: 'solid',
-                      borderColor: exportMode === mode.id ? 'var(--sapphire-500)' : 'var(--hairline-default)',
-                      backgroundColor: exportMode === mode.id ? 'var(--sapphire-500)' : 'transparent'
-                    }}>
+                    <div className={`w-4 h-4 rounded-full mt-1 border-2 ${
+                      exportMode === mode.id
+                        ? 'border-sapphire-500 bg-sapphire-500'
+                        : 'border-hairline-default bg-transparent'
+                    }`}>
                       {exportMode === mode.id && (
-                        <div className="w-2 h-2 rounded-full m-auto mt-0.5" style={{ backgroundColor: 'var(--surface-primary)' }}></div>
+                        <div className="w-2 h-2 rounded-full m-auto mt-0.5 bg-surface-primary"></div>
                       )}
                     </div>
                   </div>
@@ -342,17 +332,11 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
           {/* Team Selection for Track Mode */}
           {exportMode === 'track' && (
             <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--graphite-900)' }}>Select Team</h3>
+              <h3 className="text-lg font-semibold mb-4 text-graphite-900">Select Team</h3>
               <select
                 value={selectedTeam}
                 onChange={(e) => setSelectedTeam(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg"
-                style={{
-                  borderWidth: '1px',
-                  borderStyle: 'solid',
-                  borderColor: 'var(--hairline-default)',
-                  color: 'var(--graphite-900)'
-                }}
+                className="w-full px-3 py-2 rounded-lg border border-hairline-default text-graphite-900"
                 onFocus={(e) => {
                   e.target.style.boxShadow = '0 0 0 3px var(--sapphire-100)';
                   e.target.style.borderColor = 'var(--sapphire-500)';
@@ -374,22 +358,18 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
 
           {/* Format Selection */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--graphite-900)' }}>Export Format</h3>
+            <h3 className="text-lg font-semibold mb-4 text-graphite-900">Export Format</h3>
             <div className="grid grid-cols-2 gap-3">
               <div
                 onClick={() => setExportFormat('pdf')}
-                className="rounded-lg p-4 cursor-pointer text-center transition-all"
+                className={`rounded-lg p-4 cursor-pointer text-center transition-all border ${
+                  exportFormat === 'pdf'
+                    ? 'border-sapphire-500 bg-sapphire-50'
+                    : 'border-hairline-default'
+                }`}
                 style={exportFormat === 'pdf' ? {
-                  borderWidth: '1px',
-                  borderStyle: 'solid',
-                  borderColor: 'var(--sapphire-500)',
-                  backgroundColor: 'var(--sapphire-50)',
                   boxShadow: '0 0 0 3px var(--sapphire-100)'
-                } : {
-                  borderWidth: '1px',
-                  borderStyle: 'solid',
-                  borderColor: 'var(--hairline-default)'
-                }}
+                } : undefined}
                 onMouseEnter={(e) => {
                   if (exportFormat !== 'pdf') {
                     e.currentTarget.style.borderColor = 'var(--hairline-hover)';
@@ -403,35 +383,31 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
                   }
                 }}
               >
-                <FileText className="w-8 h-8 mx-auto mb-2" style={{
-                  color: exportFormat === 'pdf' ? 'var(--sapphire-600)' : 'var(--graphite-400)'
-                }} />
-                <h4 className="font-medium" style={{
-                  color: exportFormat === 'pdf' ? 'var(--sapphire-900)' : 'var(--graphite-900)'
-                }}>
+                <FileText className={`w-8 h-8 mx-auto mb-2 ${
+                  exportFormat === 'pdf' ? 'text-sapphire-600' : 'text-graphite-400'
+                }`} />
+                <h4 className={`font-medium ${
+                  exportFormat === 'pdf' ? 'text-sapphire-900' : 'text-graphite-900'
+                }`}>
                   PDF
                 </h4>
-                <p className="text-sm mt-1" style={{
-                  color: exportFormat === 'pdf' ? 'var(--sapphire-700)' : 'var(--graphite-600)'
-                }}>
+                <p className={`text-sm mt-1 ${
+                  exportFormat === 'pdf' ? 'text-sapphire-700' : 'text-graphite-600'
+                }`}>
                   Best for sharing and printing
                 </p>
               </div>
 
               <div
                 onClick={() => setExportFormat('png')}
-                className="rounded-lg p-4 cursor-pointer text-center transition-all"
+                className={`rounded-lg p-4 cursor-pointer text-center transition-all border ${
+                  exportFormat === 'png'
+                    ? 'border-sapphire-500 bg-sapphire-50'
+                    : 'border-hairline-default'
+                }`}
                 style={exportFormat === 'png' ? {
-                  borderWidth: '1px',
-                  borderStyle: 'solid',
-                  borderColor: 'var(--sapphire-500)',
-                  backgroundColor: 'var(--sapphire-50)',
                   boxShadow: '0 0 0 3px var(--sapphire-100)'
-                } : {
-                  borderWidth: '1px',
-                  borderStyle: 'solid',
-                  borderColor: 'var(--hairline-default)'
-                }}
+                } : undefined}
                 onMouseEnter={(e) => {
                   if (exportFormat !== 'png') {
                     e.currentTarget.style.borderColor = 'var(--hairline-hover)';
@@ -445,17 +421,17 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
                   }
                 }}
               >
-                <Image className="w-8 h-8 mx-auto mb-2" style={{
-                  color: exportFormat === 'png' ? 'var(--sapphire-600)' : 'var(--graphite-400)'
-                }} />
-                <h4 className="font-medium" style={{
-                  color: exportFormat === 'png' ? 'var(--sapphire-900)' : 'var(--graphite-900)'
-                }}>
+                <Image className={`w-8 h-8 mx-auto mb-2 ${
+                  exportFormat === 'png' ? 'text-sapphire-600' : 'text-graphite-400'
+                }`} />
+                <h4 className={`font-medium ${
+                  exportFormat === 'png' ? 'text-sapphire-900' : 'text-graphite-900'
+                }`}>
                   PNG
                 </h4>
-                <p className="text-sm mt-1" style={{
-                  color: exportFormat === 'png' ? 'var(--sapphire-700)' : 'var(--graphite-600)'
-                }}>
+                <p className={`text-sm mt-1 ${
+                  exportFormat === 'png' ? 'text-sapphire-700' : 'text-graphite-600'
+                }`}>
                   High-quality image
                 </p>
               </div>
@@ -463,9 +439,9 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
           </div>
 
           {/* Export Summary */}
-          <div className="rounded-lg p-4 mb-6" style={{ backgroundColor: 'var(--canvas-secondary)' }}>
-            <h4 className="font-medium mb-2" style={{ color: 'var(--graphite-900)' }}>Export Summary</h4>
-            <div className="space-y-1 text-sm" style={{ color: 'var(--graphite-600)' }}>
+          <div className="rounded-lg p-4 mb-6 bg-canvas-secondary">
+            <h4 className="font-medium mb-2 text-graphite-900">Export Summary</h4>
+            <div className="space-y-1 text-sm text-graphite-600">
               <div>• <strong>Mode:</strong> {exportModes.find(m => m.id === exportMode)?.name}</div>
               <div>• <strong>Format:</strong> {exportFormat.toUpperCase()}</div>
               <div>• <strong>Features:</strong> {
@@ -480,15 +456,10 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
             </div>
 
             {features.length === 0 && (
-              <div className="mt-3 p-3 rounded-lg" style={{
-                backgroundColor: 'var(--amber-50)',
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                borderColor: 'var(--amber-200)'
-              }}>
+              <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
                 <div className="flex items-center space-x-2">
-                  <span style={{ color: 'var(--amber-600)' }}>⚠️</span>
-                  <p className="text-sm" style={{ color: 'var(--amber-800)' }}>
+                  <span className="text-amber-600">⚠️</span>
+                  <p className="text-sm text-amber-800">
                     <strong>No features found.</strong> Please add roadmap features before exporting.
                   </p>
                 </div>
@@ -498,12 +469,7 @@ const RoadmapExportModal: React.FC<RoadmapExportModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex-shrink-0 px-6 py-4" style={{
-          backgroundColor: 'var(--canvas-secondary)',
-          borderTopWidth: '1px',
-          borderTopStyle: 'solid',
-          borderTopColor: 'var(--hairline-default)'
-        }}>
+        <div className="flex-shrink-0 px-6 py-4 bg-canvas-secondary border-t border-hairline-default">
           <div className="flex items-center justify-between">
             <Button
               onClick={onClose}

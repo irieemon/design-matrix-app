@@ -127,10 +127,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl, fileName, onDownload }) 
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96 rounded-lg" style={{ backgroundColor: 'var(--canvas-secondary)' }}>
+      <div className="flex items-center justify-center h-96 rounded-lg bg-canvas-secondary">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--sapphire-600)' }}></div>
-          <p style={{ color: 'var(--graphite-700)' }}>Loading PDF...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4 border-sapphire-600"></div>
+          <p className="text-graphite-700">Loading PDF...</p>
         </div>
       </div>
     )
@@ -138,18 +138,12 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl, fileName, onDownload }) 
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 rounded-lg" style={{ backgroundColor: 'var(--canvas-secondary)' }}>
-        <FileText className="w-16 h-16 mb-4" style={{ color: 'var(--garnet-400)' }} />
-        <p className="mb-2" style={{ color: 'var(--garnet-600)' }}>{error}</p>
+      <div className="flex flex-col items-center justify-center h-96 rounded-lg bg-canvas-secondary">
+        <FileText className="w-16 h-16 mb-4 text-garnet-400" />
+        <p className="mb-2 text-garnet-600">{error}</p>
         <button
           onClick={onDownload}
-          className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
-          style={{
-            backgroundColor: 'var(--sapphire-600)',
-            color: 'white'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--sapphire-700)'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--sapphire-600)'}
+          className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors bg-sapphire-600 text-white hover:bg-sapphire-700"
         >
           <Download className="w-4 h-4" />
           <span>Download PDF</span>
@@ -159,15 +153,12 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl, fileName, onDownload }) 
   }
 
   return (
-    <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--canvas-secondary)' }}>
+    <div className="rounded-lg p-4 bg-canvas-secondary">
       {/* Controls */}
-      <div className="flex items-center justify-between mb-4 rounded-lg p-3 border" style={{
-        backgroundColor: 'var(--surface-primary)',
-        borderColor: 'var(--hairline-default)'
-      }}>
+      <div className="flex items-center justify-between mb-4 rounded-lg p-3 border bg-surface-primary border-hairline-default">
         <div className="flex items-center space-x-2">
-          <FileText className="w-5 h-5" style={{ color: 'var(--graphite-600)' }} />
-          <h4 className="text-sm font-medium" style={{ color: 'var(--graphite-900)' }}>PDF Preview</h4>
+          <FileText className="w-5 h-5 text-graphite-600" />
+          <h4 className="text-sm font-medium text-graphite-900">PDF Preview</h4>
         </div>
 
         <div className="flex items-center space-x-4">
@@ -175,24 +166,18 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl, fileName, onDownload }) 
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setScale(s => Math.max(0.5, s - 0.25))}
-              className="p-2 rounded transition-colors"
-              style={{ backgroundColor: 'transparent' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--canvas-secondary)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              className="p-2 rounded transition-colors hover:bg-canvas-secondary"
               title="Zoom out"
               aria-label="Zoom out"
             >
               <ZoomOut className="w-4 h-4" />
             </button>
-            <span className="text-sm font-medium min-w-[60px] text-center" style={{ color: 'var(--graphite-700)' }}>
+            <span className="text-sm font-medium min-w-[60px] text-center text-graphite-700">
               {Math.round(scale * 100)}%
             </span>
             <button
               onClick={() => setScale(s => Math.min(3.0, s + 0.25))}
-              className="p-2 rounded transition-colors"
-              style={{ backgroundColor: 'transparent' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--canvas-secondary)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              className="p-2 rounded transition-colors hover:bg-canvas-secondary"
               title="Zoom in"
               aria-label="Zoom in"
             >
@@ -201,28 +186,22 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl, fileName, onDownload }) 
           </div>
 
           {/* Page navigation */}
-          <div className="flex items-center space-x-2 border-l pl-4" style={{ borderColor: 'var(--hairline-default)' }}>
+          <div className="flex items-center space-x-2 border-l pl-4 border-hairline-default">
             <button
               onClick={() => setPageNum(p => Math.max(1, p - 1))}
               disabled={pageNum <= 1}
-              className="p-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: 'transparent' }}
-              onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--canvas-secondary)')}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              className="p-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-canvas-secondary"
               aria-label="Previous page"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-sm min-w-[80px] text-center" style={{ color: 'var(--graphite-700)' }}>
+            <span className="text-sm min-w-[80px] text-center text-graphite-700">
               Page {pageNum} / {numPages}
             </span>
             <button
               onClick={() => setPageNum(p => Math.min(numPages, p + 1))}
               disabled={pageNum >= numPages}
-              className="p-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: 'transparent' }}
-              onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--canvas-secondary)')}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              className="p-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-canvas-secondary"
               aria-label="Next page"
             >
               <ChevronRight className="w-4 h-4" />
@@ -232,13 +211,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl, fileName, onDownload }) 
           {/* Download */}
           <button
             onClick={onDownload}
-            className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors"
-            style={{
-              backgroundColor: 'var(--sapphire-600)',
-              color: 'white'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--sapphire-700)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--sapphire-600)'}
+            className="flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors bg-sapphire-600 text-white hover:bg-sapphire-700"
             title="Download PDF"
           >
             <Download className="w-4 h-4" />
@@ -250,11 +223,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl, fileName, onDownload }) 
       {/* PDF Canvas */}
       <div
         ref={containerRef}
-        className="rounded-lg border overflow-auto max-h-[600px] flex justify-center p-4"
-        style={{
-          backgroundColor: 'var(--surface-primary)',
-          borderColor: 'var(--hairline-default)'
-        }}
+        className="rounded-lg border overflow-auto max-h-[600px] flex justify-center p-4 bg-surface-primary border-hairline-default"
       >
         <canvas
           ref={canvasRef}
@@ -269,25 +238,17 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ fileUrl, fileName, onDownload }) 
         <button
           onClick={() => setPageNum(p => Math.max(1, p - 1))}
           disabled={pageNum <= 1}
-          className="px-4 py-2 border rounded-lg disabled:opacity-50"
-          style={{
-            backgroundColor: 'var(--surface-primary)',
-            borderColor: 'var(--hairline-default)'
-          }}
+          className="px-4 py-2 border rounded-lg disabled:opacity-50 bg-surface-primary border-hairline-default"
         >
           Previous
         </button>
-        <span className="text-sm" style={{ color: 'var(--graphite-700)' }}>
+        <span className="text-sm text-graphite-700">
           {pageNum} / {numPages}
         </span>
         <button
           onClick={() => setPageNum(p => Math.min(numPages, p + 1))}
           disabled={pageNum >= numPages}
-          className="px-4 py-2 border rounded-lg disabled:opacity-50"
-          style={{
-            backgroundColor: 'var(--surface-primary)',
-            borderColor: 'var(--hairline-default)'
-          }}
+          className="px-4 py-2 border rounded-lg disabled:opacity-50 bg-surface-primary border-hairline-default"
         >
           Next
         </button>

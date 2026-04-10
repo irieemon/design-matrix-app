@@ -89,8 +89,7 @@ export default function AuthenticationFlow({
   if (isLoading && !forceShowAuth) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center p-4"
-        style={{ backgroundColor: 'var(--canvas-primary)' }}
+        className="min-h-screen flex items-center justify-center p-4 bg-canvas-primary"
       >
         <div className="text-center max-w-md w-full">
           {/* Logo - Matches AuthScreen exactly */}

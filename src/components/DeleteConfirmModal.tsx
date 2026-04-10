@@ -59,34 +59,22 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: 'var(--hairline-default)' }}>
+        <div className="flex items-center justify-between p-6 border-b border-hairline-default">
           <div className="flex items-center space-x-3">
             <div
-              className="p-2 rounded-xl"
-              style={{ backgroundColor: isDangerous ? 'var(--garnet-50)' : 'var(--graphite-100)' }}
+              className={`p-2 rounded-xl ${isDangerous ? 'bg-garnet-50' : 'bg-graphite-100'}`}
             >
               {isDangerous ? (
-                <AlertTriangle className="w-5 h-5" style={{ color: 'var(--garnet-600)' }} />
+                <AlertTriangle className="w-5 h-5 text-garnet-600" />
               ) : (
-                <Trash2 className="w-5 h-5" style={{ color: 'var(--graphite-600)' }} />
+                <Trash2 className="w-5 h-5 text-graphite-600" />
               )}
             </div>
-            <h3 className="text-lg font-semibold" style={{ color: 'var(--graphite-900)' }}>{title}</h3>
+            <h3 className="text-lg font-semibold text-graphite-900">{title}</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg transition-colors"
-            style={{
-              color: 'var(--graphite-400)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--graphite-600)'
-              e.currentTarget.style.backgroundColor = 'var(--graphite-100)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--graphite-400)'
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }}
+            className="p-2 rounded-lg transition-colors text-graphite-400 hover:text-graphite-600 hover:bg-graphite-100"
           >
             <X className="w-5 h-5" />
           </button>
@@ -94,41 +82,20 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
 
         {/* Content */}
         <div className="p-6">
-          <p className="leading-relaxed" style={{ color: 'var(--graphite-600)' }}>{message}</p>
+          <p className="leading-relaxed text-graphite-600">{message}</p>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end space-x-3 p-6 border-t rounded-b-2xl" style={{ borderColor: 'var(--hairline-default)', backgroundColor: 'var(--graphite-50)' }}>
+        <div className="flex items-center justify-end space-x-3 p-6 border-t rounded-b-2xl border-hairline-default bg-graphite-50">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg transition-colors font-medium"
-            style={{
-              color: 'var(--graphite-600)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--graphite-900)'
-              e.currentTarget.style.backgroundColor = 'var(--graphite-200)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--graphite-600)'
-              e.currentTarget.style.backgroundColor = 'transparent'
-            }}
+            className="px-4 py-2 rounded-lg transition-colors font-medium text-graphite-600 hover:text-graphite-900 hover:bg-graphite-200"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
-            className="px-4 py-2 rounded-lg font-medium transition-colors"
-            style={{
-              backgroundColor: isDangerous ? 'var(--garnet-600)' : 'var(--graphite-900)',
-              color: 'white',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = isDangerous ? 'var(--garnet-700)' : 'var(--graphite-800)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = isDangerous ? 'var(--garnet-600)' : 'var(--graphite-900)'
-            }}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors text-white ${isDangerous ? 'bg-garnet-600 hover:bg-garnet-700' : 'bg-graphite-900 hover:bg-graphite-800'}`}
           >
             {confirmText}
           </button>

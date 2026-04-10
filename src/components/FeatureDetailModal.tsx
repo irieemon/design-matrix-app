@@ -162,21 +162,21 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
     }
   }
 
-  const getPriorityColor = (priority: string): React.CSSProperties => {
+  const getPriorityColorClass = (priority: string): string => {
     switch (priority) {
-      case 'high': return { backgroundColor: 'var(--garnet-100)', color: 'var(--garnet-800)', borderColor: 'var(--garnet-200)' }
-      case 'medium': return { backgroundColor: 'var(--amber-100)', color: 'var(--amber-800)', borderColor: 'var(--amber-200)' }
-      case 'low': return { backgroundColor: 'var(--sapphire-100)', color: 'var(--sapphire-800)', borderColor: 'var(--sapphire-200)' }
-      default: return { backgroundColor: 'var(--graphite-100)', color: 'var(--graphite-800)', borderColor: 'var(--hairline-default)' }
+      case 'high': return 'bg-garnet-100 text-garnet-800 border-garnet-200'
+      case 'medium': return 'bg-amber-100 text-amber-800 border-amber-200'
+      case 'low': return 'bg-sapphire-100 text-sapphire-800 border-sapphire-200'
+      default: return 'bg-graphite-100 text-graphite-800 border-hairline-default'
     }
   }
 
-  const getStatusColor = (status: string): React.CSSProperties => {
+  const getStatusColorClass = (status: string): string => {
     switch (status) {
-      case 'completed': return { backgroundColor: 'var(--emerald-100)', color: 'var(--emerald-800)', borderColor: 'var(--emerald-200)' }
-      case 'in-progress': return { backgroundColor: 'var(--sapphire-100)', color: 'var(--sapphire-800)', borderColor: 'var(--sapphire-200)' }
-      case 'planned': return { backgroundColor: 'var(--graphite-100)', color: 'var(--graphite-800)', borderColor: 'var(--hairline-default)' }
-      default: return { backgroundColor: 'var(--graphite-100)', color: 'var(--graphite-800)', borderColor: 'var(--hairline-default)' }
+      case 'completed': return 'bg-emerald-100 text-emerald-800 border-emerald-200'
+      case 'in-progress': return 'bg-sapphire-100 text-sapphire-800 border-sapphire-200'
+      case 'planned': return 'bg-graphite-100 text-graphite-800 border-hairline-default'
+      default: return 'bg-graphite-100 text-graphite-800 border-hairline-default'
     }
   }
 
@@ -222,13 +222,13 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}>
-      <div className="rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border" style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--hairline-default)' }}>
+      <div className="rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border bg-surface-primary border-hairline-default">
         {/* Header */}
-        <div className="border-b p-6" style={{ backgroundColor: 'var(--canvas-secondary)', borderColor: 'var(--hairline-default)' }}>
+        <div className="border-b p-6 bg-canvas-secondary border-hairline-default">
           <div className="flex items-start justify-between gap-6">
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-lg shadow-sm" style={{ backgroundImage: 'linear-gradient(to bottom right, var(--graphite-700), var(--graphite-800))', color: 'var(--surface-primary)' }}>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-lg shadow-sm text-surface-primary" style={{ backgroundImage: 'linear-gradient(to bottom right, var(--graphite-700), var(--graphite-800))' }}>
                   {getTeamIcon(currentFeature.team)}
                 </div>
                 {editMode ? (
@@ -236,11 +236,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                     type="text"
                     value={currentFeature.title}
                     onChange={(e) => updateFeature({ title: e.target.value })}
-                    className="text-2xl font-bold bg-transparent border-0 border-b-2 focus:outline-none flex-1 pb-1 min-w-0"
-                    style={{
-                      borderColor: 'var(--hairline-default)',
-                      color: 'var(--graphite-900)',
-                    }}
+                    className="text-2xl font-bold bg-transparent border-0 border-b-2 focus:outline-none flex-1 pb-1 min-w-0 border-hairline-default text-graphite-900"
                     placeholder="Feature title"
                     onFocus={(e) => {
                       e.target.style.borderColor = 'var(--sapphire-500)';
@@ -250,7 +246,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                     }}
                   />
                 ) : (
-                  <h2 className="text-2xl font-bold leading-tight truncate" style={{ color: 'var(--graphite-900)' }}>{currentFeature.title}</h2>
+                  <h2 className="text-2xl font-bold leading-tight truncate text-graphite-900">{currentFeature.title}</h2>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -260,12 +256,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                       <select
                         value={currentFeature.priority}
                         onChange={(e) => updateFeature({ priority: e.target.value as 'high' | 'medium' | 'low' })}
-                        className="appearance-none border rounded-lg px-3 py-2 pr-8 text-sm font-medium focus:outline-none cursor-pointer min-w-[140px]"
-                        style={{
-                          backgroundColor: 'var(--canvas-secondary)',
-                          borderColor: 'var(--hairline-default)',
-                          color: 'var(--graphite-700)'
-                        }}
+                        className="appearance-none border rounded-lg px-3 py-2 pr-8 text-sm font-medium focus:outline-none cursor-pointer min-w-[140px] bg-canvas-secondary border-hairline-default text-graphite-700"
                         onFocus={(e) => {
                           e.target.style.borderColor = 'var(--sapphire-500)';
                           e.target.style.backgroundColor = 'var(--surface-primary)';
@@ -279,18 +270,13 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                         <option value="medium">Medium Priority</option>
                         <option value="low">Low Priority</option>
                       </select>
-                      <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--graphite-400)' }} />
+                      <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 pointer-events-none text-graphite-400" />
                     </div>
                     <div className="relative">
                       <select
                         value={currentFeature.status}
                         onChange={(e) => updateFeature({ status: e.target.value as 'planned' | 'in-progress' | 'completed' })}
-                        className="appearance-none border rounded-lg px-3 py-2 pr-8 text-sm font-medium focus:outline-none cursor-pointer min-w-[120px]"
-                        style={{
-                          backgroundColor: 'var(--canvas-secondary)',
-                          borderColor: 'var(--hairline-default)',
-                          color: 'var(--graphite-700)'
-                        }}
+                        className="appearance-none border rounded-lg px-3 py-2 pr-8 text-sm font-medium focus:outline-none cursor-pointer min-w-[120px] bg-canvas-secondary border-hairline-default text-graphite-700"
                         onFocus={(e) => {
                           e.target.style.borderColor = 'var(--sapphire-500)';
                           e.target.style.backgroundColor = 'var(--surface-primary)';
@@ -304,18 +290,13 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                         <option value="in-progress">In Progress</option>
                         <option value="completed">Completed</option>
                       </select>
-                      <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--graphite-400)' }} />
+                      <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 pointer-events-none text-graphite-400" />
                     </div>
                     <div className="relative">
                       <select
                         value={currentFeature.team}
                         onChange={(e) => updateFeature({ team: e.target.value })}
-                        className="appearance-none border rounded-lg px-3 py-2 pr-8 text-sm font-medium focus:outline-none cursor-pointer min-w-[140px]"
-                        style={{
-                          backgroundColor: 'var(--canvas-secondary)',
-                          borderColor: 'var(--hairline-default)',
-                          color: 'var(--graphite-700)'
-                        }}
+                        className="appearance-none border rounded-lg px-3 py-2 pr-8 text-sm font-medium focus:outline-none cursor-pointer min-w-[140px] bg-canvas-secondary border-hairline-default text-graphite-700"
                         onFocus={(e) => {
                           e.target.style.borderColor = 'var(--sapphire-500)';
                           e.target.style.backgroundColor = 'var(--surface-primary)';
@@ -329,16 +310,16 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                           <option key={team} value={team}>{getTeamDisplayName(team)}</option>
                         ))}
                       </select>
-                      <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--graphite-400)' }} />
+                      <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 pointer-events-none text-graphite-400" />
                     </div>
                   </>
                 ) : (
                   <>
-                    <span className="px-3 py-1.5 rounded-lg text-xs font-medium border" style={getPriorityColor(currentFeature.priority)}>
+                    <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${getPriorityColorClass(currentFeature.priority)}`}>
                       <Flag className="w-3 h-3 inline mr-1.5" />
                       {currentFeature.priority} priority
                     </span>
-                    <span className="px-3 py-1.5 rounded-lg text-xs font-medium border" style={getStatusColor(currentFeature.status)}>
+                    <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${getStatusColorClass(currentFeature.status)}`}>
                       <Clock className="w-3 h-3 inline mr-1.5" />
                       {currentFeature.status}
                     </span>
@@ -409,27 +390,22 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
           <div className="space-y-6">
             {/* Overview Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-xl p-4 border" style={{ backgroundColor: 'var(--sapphire-50)', borderColor: 'var(--sapphire-200)' }}>
+              <div className="rounded-xl p-4 border bg-sapphire-50 border-sapphire-200">
                 <div className="flex items-center space-x-2 mb-3">
-                  <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'var(--sapphire-500)' }}>
-                    <Calendar className="w-4 h-4" style={{ color: 'var(--surface-primary)' }} />
+                  <div className="p-1.5 rounded-lg bg-sapphire-500">
+                    <Calendar className="w-4 h-4 text-surface-primary" />
                   </div>
-                  <h3 className="font-semibold" style={{ color: 'var(--sapphire-900)' }}>Timeline</h3>
+                  <h3 className="font-semibold text-sapphire-900">Timeline</h3>
                 </div>
                 {editMode ? (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--sapphire-900)' }}>Start Month</label>
+                      <label className="block text-xs font-medium mb-1 text-sapphire-900">Start Month</label>
                       <div className="relative">
                         <select
                           value={currentFeature.startMonth}
                           onChange={(e) => updateFeature({ startMonth: parseInt(e.target.value) })}
-                          className="appearance-none w-full px-3 py-2 border rounded-lg focus:outline-none text-sm pr-8"
-                          style={{
-                            borderColor: 'var(--sapphire-200)',
-                            color: 'var(--sapphire-900)',
-                            backgroundColor: 'var(--surface-primary)'
-                          }}
+                          className="appearance-none w-full px-3 py-2 border rounded-lg focus:outline-none text-sm pr-8 border-sapphire-200 text-sapphire-900 bg-surface-primary"
                           onFocus={(e) => {
                             e.target.style.borderColor = 'var(--sapphire-500)';
                             e.target.style.boxShadow = '0 0 0 3px var(--sapphire-100)';
@@ -450,21 +426,16 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                             )
                           })}
                         </select>
-                        <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--sapphire-400)' }} />
+                        <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 pointer-events-none text-sapphire-400" />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--sapphire-900)' }}>Duration</label>
+                      <label className="block text-xs font-medium mb-1 text-sapphire-900">Duration</label>
                       <div className="relative">
                         <select
                           value={currentFeature.duration}
                           onChange={(e) => updateFeature({ duration: parseInt(e.target.value) })}
-                          className="appearance-none w-full px-3 py-2 border rounded-lg focus:outline-none text-sm pr-8"
-                          style={{
-                            borderColor: 'var(--sapphire-200)',
-                            color: 'var(--sapphire-900)',
-                            backgroundColor: 'var(--surface-primary)'
-                          }}
+                          className="appearance-none w-full px-3 py-2 border rounded-lg focus:outline-none text-sm pr-8 border-sapphire-200 text-sapphire-900 bg-surface-primary"
                           onFocus={(e) => {
                             e.target.style.borderColor = 'var(--sapphire-500)';
                             e.target.style.boxShadow = '0 0 0 3px var(--sapphire-100)';
@@ -483,15 +454,15 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                             )
                           })}
                         </select>
-                        <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--sapphire-400)' }} />
+                        <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 pointer-events-none text-sapphire-400" />
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    <p className="font-medium" style={{ color: 'var(--sapphire-800)' }}>{timeline.start}</p>
-                    <p className="text-sm" style={{ color: 'var(--sapphire-700)' }}>to {timeline.end}</p>
-                    <p className="text-xs px-2 py-1 rounded inline-block mt-2" style={{ color: 'var(--sapphire-600)', backgroundColor: 'var(--sapphire-200)' }}>
+                    <p className="font-medium text-sapphire-800">{timeline.start}</p>
+                    <p className="text-sm text-sapphire-700">to {timeline.end}</p>
+                    <p className="text-xs px-2 py-1 rounded inline-block mt-2 text-sapphire-600 bg-sapphire-200">
                       {currentFeature.duration} month{currentFeature.duration !== 1 ? 's' : ''}
                     </p>
                   </div>
@@ -501,7 +472,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
               <div className="rounded-xl p-4 border" style={{ backgroundColor: 'var(--purple-50)', borderColor: 'var(--purple-200)' }}>
                 <div className="flex items-center space-x-2 mb-3">
                   <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'var(--purple-500)' }}>
-                    <Users className="w-4 h-4" style={{ color: 'var(--surface-primary)' }} />
+                    <Users className="w-4 h-4 text-surface-primary" />
                   </div>
                   <h3 className="font-semibold" style={{ color: 'var(--purple-900)' }}>Team</h3>
                 </div>
@@ -512,24 +483,19 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
               </div>
 
               {(currentFeature.complexity || editMode) && (
-                <div className="rounded-xl p-4 border" style={{ backgroundColor: 'var(--amber-50)', borderColor: 'var(--amber-200)' }}>
+                <div className="rounded-xl p-4 border bg-amber-50 border-amber-200">
                   <div className="flex items-center space-x-2 mb-3">
-                    <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'var(--amber-500)' }}>
-                      <Zap className="w-4 h-4" style={{ color: 'var(--surface-primary)' }} />
+                    <div className="p-1.5 rounded-lg bg-amber-500">
+                      <Zap className="w-4 h-4 text-surface-primary" />
                     </div>
-                    <h3 className="font-semibold" style={{ color: 'var(--amber-900)' }}>Complexity</h3>
+                    <h3 className="font-semibold text-amber-900">Complexity</h3>
                   </div>
                   {editMode ? (
                     <div className="relative">
                       <select
                         value={currentFeature.complexity || 'medium'}
                         onChange={(e) => updateFeature({ complexity: e.target.value })}
-                        className="appearance-none w-full px-3 py-2 border rounded-lg focus:outline-none text-sm"
-                        style={{
-                          borderColor: 'var(--amber-200)',
-                          color: 'var(--amber-900)',
-                          backgroundColor: 'var(--surface-primary)'
-                        }}
+                        className="appearance-none w-full px-3 py-2 border rounded-lg focus:outline-none text-sm border-amber-200 text-amber-900 bg-surface-primary"
                         onFocus={(e) => {
                           e.target.style.borderColor = 'var(--amber-500)';
                           e.target.style.boxShadow = '0 0 0 3px var(--amber-100)';
@@ -543,12 +509,12 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                         <option value="medium">Medium</option>
                         <option value="high">High</option>
                       </select>
-                      <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--amber-400)' }} />
+                      <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 pointer-events-none text-amber-400" />
                     </div>
                   ) : (
                     <div className="space-y-1">
-                      <p className="font-medium capitalize" style={{ color: 'var(--amber-800)' }}>{currentFeature.complexity}</p>
-                      <p className="text-xs px-2 py-1 rounded inline-block" style={{ color: 'var(--amber-600)', backgroundColor: 'var(--amber-200)' }}>Estimated effort</p>
+                      <p className="font-medium capitalize text-amber-800">{currentFeature.complexity}</p>
+                      <p className="text-xs px-2 py-1 rounded inline-block text-amber-600 bg-amber-200">Estimated effort</p>
                     </div>
                   )}
                 </div>
@@ -557,10 +523,10 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
 
             {/* Description */}
             {(currentFeature.description || editMode) && (
-              <div className="rounded-xl p-4 border" style={{ backgroundColor: 'var(--canvas-secondary)', borderColor: 'var(--hairline-default)' }}>
-                <h3 className="font-semibold mb-3 flex items-center space-x-2" style={{ color: 'var(--graphite-900)' }}>
-                  <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'var(--graphite-500)' }}>
-                    <Target className="w-4 h-4" style={{ color: 'var(--surface-primary)' }} />
+              <div className="rounded-xl p-4 border bg-canvas-secondary border-hairline-default">
+                <h3 className="font-semibold mb-3 flex items-center space-x-2 text-graphite-900">
+                  <div className="p-1.5 rounded-lg bg-graphite-500">
+                    <Target className="w-4 h-4 text-surface-primary" />
                   </div>
                   <span>Description</span>
                 </h3>
@@ -568,12 +534,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                   <textarea
                     value={currentFeature.description || ''}
                     onChange={(e) => updateFeature({ description: e.target.value })}
-                    className="w-full h-24 px-3 py-2 border rounded-lg resize-none focus:outline-none text-sm"
-                    style={{
-                      borderColor: 'var(--hairline-default)',
-                      color: 'var(--graphite-700)',
-                      backgroundColor: 'var(--surface-primary)'
-                    }}
+                    className="w-full h-24 px-3 py-2 border rounded-lg resize-none focus:outline-none text-sm border-hairline-default text-graphite-700 bg-surface-primary"
                     placeholder="Enter feature description..."
                     onFocus={(e) => {
                       e.target.style.borderColor = 'var(--sapphire-500)';
@@ -585,54 +546,49 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                     }}
                   />
                 ) : (
-                  <p className="leading-relaxed text-sm" style={{ color: 'var(--graphite-700)' }}>{currentFeature.description}</p>
+                  <p className="leading-relaxed text-sm text-graphite-700">{currentFeature.description}</p>
                 )}
               </div>
             )}
 
             {/* User Stories */}
             {((currentFeature.userStories && currentFeature.userStories.length > 0) || editMode) && (
-              <div className="rounded-2xl p-6 border shadow-sm" style={{ backgroundImage: 'linear-gradient(to bottom right, var(--emerald-50), var(--emerald-100))', borderColor: 'var(--emerald-200)' }}>
-                <h3 className="font-semibold mb-6 flex items-center space-x-3 text-lg" style={{ color: 'var(--emerald-900)' }}>
-                  <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--emerald-500)' }}>
-                    <Users className="w-5 h-5" style={{ color: 'var(--surface-primary)' }} />
+              <div className="rounded-2xl p-6 border shadow-sm border-emerald-200" style={{ backgroundImage: 'linear-gradient(to bottom right, var(--emerald-50), var(--emerald-100))' }}>
+                <h3 className="font-semibold mb-6 flex items-center space-x-3 text-lg text-emerald-900">
+                  <div className="p-2 rounded-lg bg-emerald-500">
+                    <Users className="w-5 h-5 text-surface-primary" />
                   </div>
                   <span>User Stories</span>
-                  <span className="px-3 py-1 rounded-full text-sm font-medium" style={{ backgroundColor: 'var(--emerald-200)', color: 'var(--emerald-800)' }}>
+                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-emerald-200 text-emerald-800">
                     {currentFeature.userStories?.length || 0}
                   </span>
                 </h3>
                 <div className="space-y-4">
                   {currentFeature.userStories?.map((story, index) => (
-                    <div key={index} className="flex items-start space-x-4 rounded-xl p-4 border" style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--emerald-200)' }}>
+                    <div key={index} className="flex items-start space-x-4 rounded-xl p-4 border bg-surface-primary border-emerald-200">
                       <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm" style={{ backgroundImage: 'linear-gradient(to right, var(--emerald-500), var(--emerald-600))' }}>
-                        <span className="text-sm font-bold" style={{ color: 'var(--surface-primary)' }}>{index + 1}</span>
+                        <span className="text-sm font-bold text-surface-primary">{index + 1}</span>
                       </div>
-                      <p className="flex-1 leading-relaxed" style={{ color: 'var(--emerald-800)' }}>{story}</p>
+                      <p className="flex-1 leading-relaxed text-emerald-800">{story}</p>
                       {editMode && (
                         <Button
                           onClick={() => removeUserStory(index)}
                           variant="ghost"
                           size="sm"
                           icon={<Trash2 className="w-4 h-4" />}
-                          className="flex-shrink-0"
-                          style={{ color: 'var(--garnet-500)' }}
+                          className="flex-shrink-0 text-garnet-500"
                           aria-label="Remove user story"
                         />
                       )}
                     </div>
                   ))}
                   {editMode && (
-                    <div className="flex items-center space-x-3 rounded-xl p-4 border-2 border-dashed" style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--emerald-300)' }}>
+                    <div className="flex items-center space-x-3 rounded-xl p-4 border-2 border-dashed bg-surface-primary border-emerald-300">
                       <input
                         type="text"
                         value={newUserStory}
                         onChange={(e) => setNewUserStory(e.target.value)}
-                        className="flex-1 px-4 py-2.5 border-2 rounded-xl focus:outline-none"
-                        style={{
-                          borderColor: 'var(--emerald-200)',
-                          color: 'var(--emerald-900)'
-                        }}
+                        className="flex-1 px-4 py-2.5 border-2 rounded-xl focus:outline-none border-emerald-200 text-emerald-900"
                         placeholder="Add a new user story..."
                         onKeyPress={(e) => e.key === 'Enter' && addUserStory()}
                         onFocus={(e) => {
@@ -660,24 +616,23 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
 
             {/* Deliverables */}
             {((currentFeature.deliverables && currentFeature.deliverables.length > 0) || editMode) && (
-              <div className="rounded-lg p-6 border" style={{ backgroundColor: 'var(--sapphire-50)', borderColor: 'var(--sapphire-200)' }}>
-                <h3 className="font-semibold mb-4 flex items-center space-x-2" style={{ color: 'var(--sapphire-900)' }}>
+              <div className="rounded-lg p-6 border bg-sapphire-50 border-sapphire-200">
+                <h3 className="font-semibold mb-4 flex items-center space-x-2 text-sapphire-900">
                   <CheckCircle className="w-5 h-5" />
                   <span>Key Deliverables ({currentFeature.deliverables?.length || 0})</span>
                 </h3>
                 <div className="space-y-3">
                   {currentFeature.deliverables?.map((deliverable, index) => (
-                    <div key={index} className="flex items-center space-x-2 rounded-lg p-3 border" style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--sapphire-300)' }}>
-                      <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--sapphire-600)' }} />
-                      <span className="text-sm flex-1" style={{ color: 'var(--sapphire-800)' }}>{deliverable}</span>
+                    <div key={index} className="flex items-center space-x-2 rounded-lg p-3 border bg-surface-primary border-sapphire-300">
+                      <CheckCircle className="w-4 h-4 flex-shrink-0 text-sapphire-600" />
+                      <span className="text-sm flex-1 text-sapphire-800">{deliverable}</span>
                       {editMode && (
                         <Button
                           onClick={() => removeDeliverable(index)}
                           variant="ghost"
                           size="sm"
                           icon={<Trash2 className="w-4 h-4" />}
-                          className="flex-shrink-0"
-                          style={{ color: 'var(--garnet-600)' }}
+                          className="flex-shrink-0 text-garnet-600"
                           aria-label="Remove deliverable"
                         />
                       )}
@@ -689,12 +644,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                         type="text"
                         value={newDeliverable}
                         onChange={(e) => setNewDeliverable(e.target.value)}
-                        className="flex-1 px-3 py-2 border rounded-lg focus:outline-none"
-                        style={{
-                          borderColor: 'var(--sapphire-300)',
-                          color: 'var(--sapphire-900)',
-                          backgroundColor: 'var(--surface-primary)'
-                        }}
+                        className="flex-1 px-3 py-2 border rounded-lg focus:outline-none border-sapphire-300 text-sapphire-900 bg-surface-primary"
                         placeholder="Add a new deliverable..."
                         onKeyPress={(e) => e.key === 'Enter' && addDeliverable()}
                         onFocus={(e) => {
@@ -722,16 +672,16 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
 
             {/* Success Criteria */}
             {((currentFeature.successCriteria && currentFeature.successCriteria.length > 0) || editMode) && (
-              <div className="rounded-lg p-6 border" style={{ backgroundColor: 'var(--emerald-50)', borderColor: 'var(--emerald-200)' }}>
-                <h3 className="font-semibold mb-4 flex items-center space-x-2" style={{ color: 'var(--emerald-900)' }}>
+              <div className="rounded-lg p-6 border bg-emerald-50 border-emerald-200">
+                <h3 className="font-semibold mb-4 flex items-center space-x-2 text-emerald-900">
                   <Target className="w-5 h-5" />
                   <span>Success Criteria ({currentFeature.successCriteria?.length || 0})</span>
                 </h3>
                 <div className="space-y-2">
                   {currentFeature.successCriteria?.map((criteria, index) => (
                     <div key={index} className="flex items-start space-x-2">
-                      <CheckCircle className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: 'var(--emerald-600)' }} />
-                      <span className="flex-1" style={{ color: 'var(--emerald-800)' }}>{criteria}</span>
+                      <CheckCircle className="w-4 h-4 mt-1 flex-shrink-0 text-emerald-600" />
+                      <span className="flex-1 text-emerald-800">{criteria}</span>
                       {editMode && (
                         <Button
                           onClick={() => {
@@ -744,8 +694,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                           variant="ghost"
                           size="sm"
                           icon={<Trash2 className="w-4 h-4" />}
-                          className="flex-shrink-0"
-                          style={{ color: 'var(--garnet-600)' }}
+                          className="flex-shrink-0 text-garnet-600"
                           aria-label="Remove success criteria"
                         />
                       )}
@@ -755,12 +704,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                     <div className="flex items-center space-x-2">
                       <input
                         type="text"
-                        className="flex-1 px-3 py-2 border rounded-lg focus:outline-none"
-                        style={{
-                          borderColor: 'var(--emerald-300)',
-                          color: 'var(--emerald-900)',
-                          backgroundColor: 'var(--surface-primary)'
-                        }}
+                        className="flex-1 px-3 py-2 border rounded-lg focus:outline-none border-emerald-300 text-emerald-900 bg-surface-primary"
                         placeholder="Add success criteria..."
                         onKeyPress={(e) => {
                           if (e.key === 'Enter' && e.currentTarget.value.trim()) {
@@ -803,16 +747,16 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
 
             {/* Risks */}
             {((currentFeature.risks && currentFeature.risks.length > 0) || editMode) && (
-              <div className="rounded-lg p-6 border" style={{ backgroundColor: 'var(--garnet-50)', borderColor: 'var(--garnet-200)' }}>
-                <h3 className="font-semibold mb-4 flex items-center space-x-2" style={{ color: 'var(--garnet-900)' }}>
+              <div className="rounded-lg p-6 border bg-garnet-50 border-garnet-200">
+                <h3 className="font-semibold mb-4 flex items-center space-x-2 text-garnet-900">
                   <AlertTriangle className="w-5 h-5" />
                   <span>Risk Factors ({currentFeature.risks?.length || 0})</span>
                 </h3>
                 <div className="space-y-2">
                   {currentFeature.risks?.map((risk, index) => (
                     <div key={index} className="flex items-start space-x-2">
-                      <AlertTriangle className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: 'var(--garnet-600)' }} />
-                      <span className="flex-1" style={{ color: 'var(--garnet-800)' }}>{risk}</span>
+                      <AlertTriangle className="w-4 h-4 mt-1 flex-shrink-0 text-garnet-600" />
+                      <span className="flex-1 text-garnet-800">{risk}</span>
                       {editMode && (
                         <Button
                           onClick={() => {
@@ -825,8 +769,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                           variant="ghost"
                           size="sm"
                           icon={<Trash2 className="w-4 h-4" />}
-                          className="flex-shrink-0"
-                          style={{ color: 'var(--garnet-600)' }}
+                          className="flex-shrink-0 text-garnet-600"
                           aria-label="Remove risk"
                         />
                       )}
@@ -836,12 +779,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                     <div className="flex items-center space-x-2">
                       <input
                         type="text"
-                        className="flex-1 px-3 py-2 border rounded-lg focus:outline-none"
-                        style={{
-                          borderColor: 'var(--garnet-300)',
-                          color: 'var(--garnet-900)',
-                          backgroundColor: 'var(--surface-primary)'
-                        }}
+                        className="flex-1 px-3 py-2 border rounded-lg focus:outline-none border-garnet-300 text-garnet-900 bg-surface-primary"
                         placeholder="Add risk factor..."
                         onKeyPress={(e) => {
                           if (e.key === 'Enter' && e.currentTarget.value.trim()) {
@@ -884,8 +822,8 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
 
             {/* Related Ideas */}
             {((currentFeature.relatedIdeas && currentFeature.relatedIdeas.length > 0) || editMode) && (
-              <div className="rounded-lg p-6 border" style={{ backgroundColor: 'var(--canvas-secondary)', borderColor: 'var(--hairline-default)' }}>
-                <h3 className="font-semibold mb-4 flex items-center space-x-2" style={{ color: 'var(--graphite-900)' }}>
+              <div className="rounded-lg p-6 border bg-canvas-secondary border-hairline-default">
+                <h3 className="font-semibold mb-4 flex items-center space-x-2 text-graphite-900">
                   <Flag className="w-5 h-5" />
                   <span>Related Ideas ({currentFeature.relatedIdeas?.length || 0})</span>
                 </h3>
@@ -894,12 +832,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                     {currentFeature.relatedIdeas?.map((idea, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm border"
-                        style={{
-                          backgroundColor: 'var(--graphite-100)',
-                          color: 'var(--graphite-800)',
-                          borderColor: 'var(--hairline-default)'
-                        }}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm border bg-graphite-100 text-graphite-800 border-hairline-default"
                       >
                         {idea}
                         {editMode && (
@@ -914,8 +847,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                             variant="ghost"
                             size="xs"
                             icon={<X className="w-3 h-3" />}
-                            className="ml-2"
-                            style={{ color: 'var(--graphite-600)' }}
+                            className="ml-2 text-graphite-600"
                             aria-label="Remove related idea"
                           />
                         )}
@@ -926,12 +858,7 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
                     <div className="flex items-center space-x-2">
                       <input
                         type="text"
-                        className="flex-1 px-3 py-2 border rounded-lg focus:outline-none"
-                        style={{
-                          borderColor: 'var(--hairline-default)',
-                          color: 'var(--graphite-900)',
-                          backgroundColor: 'var(--surface-primary)'
-                        }}
+                        className="flex-1 px-3 py-2 border rounded-lg focus:outline-none border-hairline-default text-graphite-900 bg-surface-primary"
                         placeholder="Add related idea..."
                         onKeyPress={(e) => {
                           if (e.key === 'Enter' && e.currentTarget.value.trim()) {
@@ -975,9 +902,9 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t" style={{ backgroundColor: 'var(--canvas-secondary)', borderColor: 'var(--hairline-default)' }}>
+        <div className="px-6 py-4 border-t bg-canvas-secondary border-hairline-default">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-sm" style={{ color: 'var(--graphite-600)' }}>
+            <div className="flex items-center space-x-2 text-sm text-graphite-600">
               <Clock className="w-4 h-4" />
               <span>ID: {currentFeature.id}</span>
             </div>
@@ -995,19 +922,19 @@ const FeatureDetailModal: React.FC<FeatureDetailModalProps> = ({
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 flex items-center justify-center z-[60] p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-          <div className="rounded-xl shadow-2xl max-w-md w-full" style={{ backgroundColor: 'var(--surface-primary)' }}>
+          <div className="rounded-xl shadow-2xl max-w-md w-full bg-surface-primary">
             <div className="p-6">
               <div className="flex items-center space-x-3 mb-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--garnet-100)' }}>
-                  <Trash2 className="w-5 h-5" style={{ color: 'var(--garnet-600)' }} />
+                <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-garnet-100">
+                  <Trash2 className="w-5 h-5 text-garnet-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold" style={{ color: 'var(--graphite-900)' }}>Delete Feature</h3>
-                  <p className="text-sm" style={{ color: 'var(--graphite-600)' }}>This action cannot be undone</p>
+                  <h3 className="text-lg font-semibold text-graphite-900">Delete Feature</h3>
+                  <p className="text-sm text-graphite-600">This action cannot be undone</p>
                 </div>
               </div>
 
-              <p className="mb-6" style={{ color: 'var(--graphite-700)' }}>
+              <p className="mb-6 text-graphite-700">
                 Are you sure you want to delete <strong>"{currentFeature.title}"</strong>?
                 This will permanently remove the feature and all its associated data.
               </p>
