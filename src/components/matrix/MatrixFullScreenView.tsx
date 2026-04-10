@@ -228,18 +228,19 @@ function DragLockAwareDndContext({
     const ideaId = event.active.id as string
     logger.debug('🎯 FULLSCREEN Drag ended!', ideaId, event.delta)
 
+    // Guard: if activeId is null, drag was short-circuited by isLockedByOther.
+    // release and resumeBroadcast must NOT fire — the lock was never acquired
+    // and the cursor throttle was never paused.
+    if (activeId === null) {
+      return
+    }
+
     // release broadcasts drag_release and clears the auto-expire timer (T-054B-214).
     // Must fire BEFORE the DB write so remote peers see the card unlocked promptly.
     dragLock.release(ideaId)
 
     // Resume cursor broadcast after drag.
     resumeBroadcast()
-
-    // Guard: if activeId is null, drag was short-circuited by isLockedByOther.
-    // No DB write, no further processing.
-    if (activeId === null) {
-      return
-    }
 
     setActiveId(null)
 

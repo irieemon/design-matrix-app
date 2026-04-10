@@ -501,29 +501,7 @@ describe('MatrixFullScreenView — Wave 3 drag lock integration', () => {
     mockRelease.mockReset()
   })
 
-  it('T-054B-260: drag start acquires lock and sets activeId', async () => {
-    render(<MatrixFullScreenView {...baseProps} />)
-
-    const dragHandle = screen.getByTestId('dnd-context-root')
-    // Fire drag start via the DragLockAwareDndContext's onDragStart
-    await act(async () => {
-      dragHandle.dispatchEvent(
-        new CustomEvent('drag-start-test', {
-          detail: { ideaId: 'i1' },
-          bubbles: true,
-        })
-      )
-    })
-
-    // We verify by checking acquire was called (integration via context)
-    // The overlay only renders when lockedCards has the entry — set it manually
-    mockLockedCards.set('i1', { userId: 'u1', displayName: 'Alice', acquiredAt: Date.now() })
-
-    // acquire is called through the DragLockAwareDndContext; verify via mock
-    // In the implementation, handleDragStart calls dragLock.acquire(ideaId)
-    // The test verifies acquire mock was set up correctly
-    expect(mockAcquire).toBeDefined()
-  })
+  it.todo('T-054B-260: drag start acquires lock and sets activeId — requires DndKit sensor simulation (PointerSensor + fireEvent.pointerDown/pointerMove) to invoke handleDragStart and assert mockAcquire.toHaveBeenCalledWith("i1") and activeId rendered in DragOverlay; CustomEvent dispatch does not reach DndKit onDragStart handler')
 
   it('T-054B-261: drag start short-circuits via isLockedByOther guard before acquire or setActiveId', async () => {
     // Pre-configure: card i1 is locked by another user
@@ -542,15 +520,7 @@ describe('MatrixFullScreenView — Wave 3 drag lock integration', () => {
     expect(mockAcquire).not.toHaveBeenCalled()
   })
 
-  it('T-054B-262: drag end releases lock before DB write', async () => {
-    const onDragEnd = vi.fn().mockResolvedValue(undefined)
-    render(<MatrixFullScreenView {...baseProps} onDragEnd={onDragEnd} />)
-
-    // release should fire during handleDragEndWrapper before onDragEnd
-    // Verify mock is wired — actual call order verified in unit 3.1 tests
-    expect(mockRelease).toBeDefined()
-    expect(onDragEnd).toBeDefined()
-  })
+  it.todo('T-054B-262: drag end releases lock before DB write — requires DndKit sensor simulation to fire a synthetic drag_end event and assert mockRelease call order relative to onDragEnd; call ordering is exercised in useDragLock unit tests (T-054B-214)')
 
   it('T-054B-263: LockedCardOverlay renders inside design-matrix when remote lock received', async () => {
     // Pre-populate lock state before render
@@ -618,21 +588,9 @@ describe('MatrixFullScreenView — Wave 3 drag lock integration', () => {
     expect(mockAcquire).not.toHaveBeenCalled()
   })
 
-  it('T-054B-267: cursor broadcast pauses during drag', () => {
-    render(<MatrixFullScreenView {...baseProps} />)
+  it.todo('T-054B-267: cursor broadcast pauses during drag — requires DndKit sensor simulation to fire a synthetic dragstart and assert mockPauseBroadcast.toHaveBeenCalledTimes(1); behavioral contract: pauseBroadcast() is called in handleDragStart after acquire() returns true')
 
-    // pauseBroadcast is called inside handleDragStart after acquire succeeds.
-    // Verify the mock is in scope and connected — actual invocation tested
-    // in the DragLockAwareDndContext unit path.
-    expect(mockPauseBroadcast).toBeDefined()
-  })
-
-  it('T-054B-268: cursor broadcast resumes after drag end', () => {
-    render(<MatrixFullScreenView {...baseProps} />)
-
-    // resumeBroadcast is called inside handleDragEndWrapper.
-    expect(mockResumeBroadcast).toBeDefined()
-  })
+  it.todo('T-054B-268: cursor broadcast resumes after drag end — requires DndKit sensor simulation to fire a synthetic dragend and assert mockResumeBroadcast.toHaveBeenCalledTimes(1); behavioral contract: resumeBroadcast() is called in handleDragEndWrapper on the non-blocked path (activeId !== null)')
 
   it('T-054B-269: lock timeout fires on stuck lock', async () => {
     vi.useFakeTimers()
@@ -687,18 +645,5 @@ describe('MatrixFullScreenView — Wave 3 drag lock integration', () => {
     expect(mockIsLockedByOther('i1')).toBe(false)
   })
 
-  it('T-054B-273: drag overlay still renders for self drag (not blocked by own lock)', async () => {
-    // isLockedByOther returns false — self drag is allowed
-    mockIsLockedByOther.mockReturnValue(false)
-    mockAcquire.mockReturnValue(true)
-
-    render(<MatrixFullScreenView {...baseProps} />)
-
-    // When isLockedByOther is false, acquire is called and activeId is set.
-    // The DragOverlay renders when activeId is non-null.
-    // Since we can't fire DnD events in this test without a real DragEvent,
-    // verify that isLockedByOther correctly returns false (self-drag allowed path).
-    expect(mockIsLockedByOther('i1')).toBe(false)
-    expect(mockAcquire).toBeDefined()
-  })
+  it.todo('T-054B-273: drag overlay still renders for self drag — requires DndKit sensor simulation to fire a synthetic dragstart with isLockedByOther returning false and assert activeId is set + DragOverlay is present in DOM; behavioral contract: when isLockedByOther(ideaId) returns false, handleDragStart calls acquire() and sets activeId, causing DragOverlay to render')
 })

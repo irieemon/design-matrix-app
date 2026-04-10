@@ -108,15 +108,19 @@ export function useDragLock({
         // D-29: Self-echo — own broadcast echoes back; do not overwrite local state.
         if (userId === uid) return
 
+        let didUpdate = false
         setLockedCards((prev) => {
           // D-21b: First-broadcast-wins — if already locked (by self or another), ignore.
           if (prev.has(ideaId)) return prev
           const next = new Map(prev)
           next.set(ideaId, { userId, displayName, acquiredAt: Date.now() })
+          didUpdate = true
           return next
         })
 
-        scheduleExpire(ideaId)
+        // Only reset the 8s expiry timer when the entry was actually added.
+        // Calling scheduleExpire on every re-broadcast would delay expiry indefinitely.
+        if (didUpdate) scheduleExpire(ideaId)
       }
     )
 
