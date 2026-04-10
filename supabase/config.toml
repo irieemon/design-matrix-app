@@ -1,0 +1,16 @@
+[api]
+port = 54321
+
+[db]
+port = 54322
+
+[studio]
+port = 54323
+
+[auth]
+site_url = "http://localhost:3003"
+additional_redirect_urls = ["http://localhost:3003"]
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
