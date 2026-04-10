@@ -121,13 +121,37 @@ jobs:
           "
 
       # ------------------------------------------------------------------------
-      # 7. Install Playwright browsers (Chromium only per playwright.ci.config.ts)
+      # 7. Verify GoTrue can authenticate the seeded test users (diagnostic)
+      #
+      # Calls the password grant endpoint directly. If this step fails, the seed
+      # or GoTrue config is broken — no point paying the 2+ min Playwright
+      # install cost before we know auth works.
+      # ------------------------------------------------------------------------
+      - name: Verify auth (diagnostic)
+        run: |
+          echo "Testing GoTrue auth for owner@test.com..."
+          RESPONSE=$(curl -s -X POST http://localhost:54321/auth/v1/token?grant_type=password \
+            -H "apikey: $VITE_SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"email":"owner@test.com","password":"test-password-123"}')
+          echo "$RESPONSE" | head -c 500
+          echo ""
+          if echo "$RESPONSE" | grep -q "access_token"; then
+            echo "Auth works — got access_token"
+          else
+            echo "Auth FAILED — no access_token in response"
+            echo "Full response: $RESPONSE"
+            exit 1
+          fi
+
+      # ------------------------------------------------------------------------
+      # 8. Install Playwright browsers (Chromium only per playwright.ci.config.ts)
       # ------------------------------------------------------------------------
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
       # ------------------------------------------------------------------------
-      # 8. Run E2E integration tests (Playwright)
+      # 9. Run E2E integration tests (Playwright)
       #
       # Runs only the 2 target files (D-06). playwright.ci.config.ts handles the
       # dev server via webServer config (npm run dev on port 3003, 120s timeout).
