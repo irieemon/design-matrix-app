@@ -16,6 +16,11 @@
 --   projects → ideas → project_files →
 --   project_roadmaps → project_insights → team_members
 --
+-- NOTE: No RLS policies are created here. All policies are created and managed
+--       by later migrations (e.g. 20251117190000_fix_all_rls_warnings.sql).
+--       This avoids "policy already exists" errors when migrations run
+--       sequentially from a clean database.
+--
 -- ============================================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -43,21 +48,6 @@ CREATE TABLE IF NOT EXISTS public.users (
 
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users can view own profile" ON public.users;
-CREATE POLICY "Users can view own profile"
-  ON public.users FOR SELECT
-  USING ((SELECT auth.uid()) = id);
-
-DROP POLICY IF EXISTS "Users can update own profile" ON public.users;
-CREATE POLICY "Users can update own profile"
-  ON public.users FOR UPDATE
-  USING ((SELECT auth.uid()) = id);
-
-DROP POLICY IF EXISTS "Users can insert own profile" ON public.users;
-CREATE POLICY "Users can insert own profile"
-  ON public.users FOR INSERT
-  WITH CHECK ((SELECT auth.uid()) = id);
-
 -- ============================================================================
 -- 2. public.user_profiles
 -- ============================================================================
@@ -69,21 +59,6 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
 );
 
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Users can view own user_profile" ON public.user_profiles;
-CREATE POLICY "Users can view own user_profile"
-  ON public.user_profiles FOR SELECT
-  USING ((SELECT auth.uid()) = id);
-
-DROP POLICY IF EXISTS "Users can update own user_profile" ON public.user_profiles;
-CREATE POLICY "Users can update own user_profile"
-  ON public.user_profiles FOR UPDATE
-  USING ((SELECT auth.uid()) = id);
-
-DROP POLICY IF EXISTS "Users can insert own user_profile" ON public.user_profiles;
-CREATE POLICY "Users can insert own user_profile"
-  ON public.user_profiles FOR INSERT
-  WITH CHECK ((SELECT auth.uid()) = id);
 
 -- ============================================================================
 -- 3. public.teams
@@ -103,11 +78,6 @@ CREATE TABLE IF NOT EXISTS public.teams (
 CREATE INDEX IF NOT EXISTS teams_owner_id_idx ON public.teams (owner_id);
 
 ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Team owners can manage their team" ON public.teams;
-CREATE POLICY "Team owners can manage their team"
-  ON public.teams FOR ALL
-  USING ((SELECT auth.uid()) = owner_id);
 
 -- ============================================================================
 -- 4. public.projects
@@ -149,26 +119,6 @@ CREATE INDEX IF NOT EXISTS projects_status_idx    ON public.projects (status);
 
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users can view own projects" ON public.projects;
-CREATE POLICY "Users can view own projects"
-  ON public.projects FOR SELECT
-  USING ((SELECT auth.uid()) = owner_id);
-
-DROP POLICY IF EXISTS "Users can insert own projects" ON public.projects;
-CREATE POLICY "Users can insert own projects"
-  ON public.projects FOR INSERT
-  WITH CHECK ((SELECT auth.uid()) = owner_id);
-
-DROP POLICY IF EXISTS "Users can update own projects" ON public.projects;
-CREATE POLICY "Users can update own projects"
-  ON public.projects FOR UPDATE
-  USING ((SELECT auth.uid()) = owner_id);
-
-DROP POLICY IF EXISTS "Users can delete own projects" ON public.projects;
-CREATE POLICY "Users can delete own projects"
-  ON public.projects FOR DELETE
-  USING ((SELECT auth.uid()) = owner_id);
-
 -- ============================================================================
 -- 5. public.ideas
 -- ============================================================================
@@ -200,29 +150,6 @@ CREATE INDEX IF NOT EXISTS ideas_created_at_idx  ON public.ideas (created_at DES
 
 ALTER TABLE public.ideas ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users can view ideas" ON public.ideas;
-CREATE POLICY "Users can view ideas"
-  ON public.ideas FOR SELECT
-  USING (true);
-
-DROP POLICY IF EXISTS "Users can insert ideas" ON public.ideas;
-CREATE POLICY "Users can insert ideas"
-  ON public.ideas FOR INSERT
-  WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Users can update own ideas" ON public.ideas;
-CREATE POLICY "Users can update own ideas"
-  ON public.ideas FOR UPDATE
-  USING (
-    created_by = (SELECT auth.uid())::text
-    OR editing_by = (SELECT auth.uid())::text
-  );
-
-DROP POLICY IF EXISTS "Users can delete own ideas" ON public.ideas;
-CREATE POLICY "Users can delete own ideas"
-  ON public.ideas FOR DELETE
-  USING (created_by = (SELECT auth.uid())::text);
-
 -- ============================================================================
 -- 6. public.project_files
 -- ============================================================================
@@ -253,29 +180,6 @@ CREATE INDEX IF NOT EXISTS project_files_uploaded_by_idx ON public.project_files
 
 ALTER TABLE public.project_files ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Project owners can manage files" ON public.project_files;
-CREATE POLICY "Project owners can manage files"
-  ON public.project_files FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.projects p
-      WHERE p.id = project_files.project_id
-        AND p.owner_id = (SELECT auth.uid())
-    )
-  );
-
-DROP POLICY IF EXISTS "Users can view files in their projects" ON public.project_files;
-CREATE POLICY "Users can view files in their projects"
-  ON public.project_files FOR SELECT
-  USING (
-    uploaded_by = (SELECT auth.uid())
-    OR EXISTS (
-      SELECT 1 FROM public.projects p
-      WHERE p.id = project_files.project_id
-        AND p.owner_id = (SELECT auth.uid())
-    )
-  );
-
 -- ============================================================================
 -- 7. public.project_roadmaps
 -- ============================================================================
@@ -297,17 +201,6 @@ CREATE INDEX IF NOT EXISTS project_roadmaps_created_by_idx ON public.project_roa
 
 ALTER TABLE public.project_roadmaps ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users can manage roadmaps in own projects" ON public.project_roadmaps;
-CREATE POLICY "Users can manage roadmaps in own projects"
-  ON public.project_roadmaps FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.projects p
-      WHERE p.id = project_roadmaps.project_id
-        AND p.owner_id = (SELECT auth.uid())
-    )
-  );
-
 -- ============================================================================
 -- 8. public.project_insights
 -- ============================================================================
@@ -327,17 +220,6 @@ CREATE INDEX IF NOT EXISTS project_insights_project_id_idx ON public.project_ins
 CREATE INDEX IF NOT EXISTS project_insights_created_by_idx ON public.project_insights (created_by);
 
 ALTER TABLE public.project_insights ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Users can manage insights in own projects" ON public.project_insights;
-CREATE POLICY "Users can manage insights in own projects"
-  ON public.project_insights FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.projects p
-      WHERE p.id = project_insights.project_id
-        AND p.owner_id = (SELECT auth.uid())
-    )
-  );
 
 -- ============================================================================
 -- 9. public.team_members
@@ -359,29 +241,6 @@ CREATE INDEX IF NOT EXISTS team_members_team_id_idx ON public.team_members (team
 CREATE INDEX IF NOT EXISTS team_members_user_id_idx ON public.team_members (user_id);
 
 ALTER TABLE public.team_members ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Team members can view their team" ON public.team_members;
-CREATE POLICY "Team members can view their team"
-  ON public.team_members FOR SELECT
-  USING (
-    user_id = (SELECT auth.uid())
-    OR EXISTS (
-      SELECT 1 FROM public.teams t
-      WHERE t.id = team_members.team_id
-        AND t.owner_id = (SELECT auth.uid())
-    )
-  );
-
-DROP POLICY IF EXISTS "Team owners can manage members" ON public.team_members;
-CREATE POLICY "Team owners can manage members"
-  ON public.team_members FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.teams t
-      WHERE t.id = team_members.team_id
-        AND t.owner_id = (SELECT auth.uid())
-    )
-  );
 
 -- ============================================================================
 -- 10. public.subscriptions  (stub)
@@ -417,10 +276,6 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
 
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS subscriptions_select_own ON public.subscriptions;
-CREATE POLICY subscriptions_select_own ON public.subscriptions
-  FOR SELECT USING (auth.uid() = user_id);
-
 -- -------- 11. public.usage_tracking --------
 
 CREATE TABLE IF NOT EXISTS public.usage_tracking (
@@ -433,7 +288,3 @@ CREATE TABLE IF NOT EXISTS public.usage_tracking (
 );
 
 ALTER TABLE public.usage_tracking ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS usage_tracking_select_own ON public.usage_tracking;
-CREATE POLICY usage_tracking_select_own ON public.usage_tracking
-  FOR SELECT USING (auth.uid() = user_id);
