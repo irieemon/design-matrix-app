@@ -10,23 +10,19 @@ Real-time collaborative brainstorming with AI-powered multi-modal analysis — t
 
 ## Current State
 
-**Shipped:** v1.0 — Launch Readiness (2026-04-09)
-**Audit:** 36/43 v1 requirements complete + 2 partial = 88%, 5 deferred to v1.1
-**Archive:** [.planning/milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) | [.planning/milestones/v1.0-REQUIREMENTS.md](milestones/v1.0-REQUIREMENTS.md) | [.planning/v1.0-MILESTONE-AUDIT.md](v1.0-MILESTONE-AUDIT.md)
+**Shipped:** v1.1 — Advanced Collaboration & Quality (2026-04-10)
+**Previous:** v1.0 — Launch Readiness (2026-04-09)
+**Archives:** [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) | [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
-Prioritas is live with security hardening, AI SDK v6 + multi-provider routing, full multi-modal analysis (image/audio/voice/video), invitation-based collaboration, real Stripe billing enforcement, and mobile brainstorm polish. Real-time presence/voting/matrix-sync deferred to v1.1.
+Prioritas is live with the full v1.0 foundation (security, AI SDK v6, multi-modal, billing, mobile) PLUS v1.1 real-time collaboration: session dot voting with optimistic UI, project-scope live cursors, soft drag lock, presence avatars, reconnecting badge, and a clean test baseline (BrainstormRealtimeManager 43/43, MOB-02 verified on real iOS device).
 
-## Current Milestone: v1.1 — Advanced Collaboration & Quality
+## Next Milestone Goals (v1.2 proposed)
 
-**Goal:** Finish the real-time collaboration experience deferred from v1.0 and close the quality-debt backlog. Stabilization only — no brand-new features.
-
-**Target phases:**
-- **05.4a** — Session-scope voting (dot-voting UI + realtime tallies + session presence)
-- **05.4b** — Project-scope realtime matrix (presence, live cursors, drag lock, position sync)
-- **05.5** — Quality debt closure (MOB-02 iOS verify, Playwright spec drift, invite E2E regression, pgTAP for Phase 05.3 migrations)
-
-**Deferred to v1.2:**
-- Production hardening: Resend domain verification, analyze-file CSRF race, AI Gateway project-wide migration
+- **Production hardening:** Resend domain verification, analyze-file CSRF race, AI Gateway migration
+- **BUG-01:** RealtimeSubscriptionManager.subscribeToIdeas clearing bug (D-34 workaround in place)
+- **Test infrastructure:** Enable test.skip E2E and integration tests in CI (live Supabase)
+- **Mobile video:** Revisit iOS frame extraction when WebCodecs API matures
+- **Advanced features** from v2 backlog
 
 **Orchestration:** Eva + GSD hybrid (Eva routes pipeline agents, mirrors state into .planning/)
 

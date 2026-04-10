@@ -2,22 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Advanced Collaboration & Quality
-status: milestone_ready_to_complete
-stopped_at: All 3 phases complete — v1.1 ready for /gsd-complete-milestone
-last_updated: "2026-04-10T02:00:00.000Z"
-last_activity: 2026-04-10 -- Phase 05.5 verified and closed; all 10 v1.1 requirements satisfied
+status: milestone_complete
+stopped_at: v1.1 shipped — awaiting v1.2 scope
+last_updated: "2026-04-10T02:30:00.000Z"
+last_activity: 2026-04-10 -- v1.1 milestone archived and tagged
 progress:
   total_phases: 3
   completed_phases: 3
   total_plans: 0
   completed_plans: 0
   percent: 100
-active_phase: null
-next_phase: null
-shipped_in_v1_1:
-  - 05.4a (2026-04-09)
-  - 05.4b (2026-04-10)
-  - 05.5 (2026-04-10)
+shipped_milestones:
+  - v1.0 (2026-04-09)
+  - v1.1 (2026-04-10)
 next_phase: 05.4b-project-realtime-matrix
 shipped_in_v1_1:
   - 05.4a (2026-04-09)
