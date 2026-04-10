@@ -4,13 +4,19 @@ import { cleanup } from '@testing-library/react'
 import { server } from './mocks/server'
 import './utils/custom-matchers'  // Load custom matchers
 
+// MSW intercepts all HTTP requests. When running against a real Supabase
+// instance (CI_SUPABASE=true), skip MSW so requests reach the live API.
+const useMsw = !process.env['CI_SUPABASE']
+
 // Start the MSW server before all tests
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
+beforeAll(() => {
+  if (useMsw) server.listen({ onUnhandledRequest: 'error' })
+})
 
 // Clean up after each test
 afterEach(() => {
   cleanup()
-  server.resetHandlers()
+  if (useMsw) server.resetHandlers()
   vi.clearAllMocks()
   // Clear localStorage
   localStorage.clear()
@@ -19,7 +25,9 @@ afterEach(() => {
 })
 
 // Stop the MSW server after all tests
-afterAll(() => server.close())
+afterAll(() => {
+  if (useMsw) server.close()
+})
 
 // Mock window.crypto for tests
 Object.defineProperty(window, 'crypto', {
