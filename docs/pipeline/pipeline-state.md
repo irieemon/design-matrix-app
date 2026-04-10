@@ -1,14 +1,22 @@
 # Pipeline State
 
 ## Active Pipeline
-**Feature:** Phase 05.4a — Session-Scope Voting
-**Phase:** paused
-**Sizing:** Large (downsized from full 05.4)
-**Stop Reason:** user_paused — clean checkpoint between waves
-**Started:** 2026-04-09
-**Paused at:** End of Wave 2 (Units 2+3 shipped)
+**Phase:** idle
+**Stop Reason:** completed_clean
 
-<!-- PIPELINE_STATUS: {"phase": "paused", "sizing": "large", "roz_qa": "wave2_passed", "telemetry_captured": false, "stop_reason": "user_paused"} -->
+<!-- PIPELINE_STATUS: {"phase": "idle", "sizing": null, "roz_qa": null, "telemetry_captured": false, "stop_reason": "completed_clean"} -->
+
+## Completed Milestones
+
+### v1.1 — Advanced Collaboration & Quality (2026-04-09)
+- 05.4a Session-Scope Voting ✅ verified
+- 05.4b Project Realtime Matrix ✅ verified  
+- 05.5 Quality Debt Closure ✅ verified
+
+### v1.2 — Production Hardening (2026-04-10)
+- 08 Operational Fixes ✅ verified
+- 09 Realtime Subscription Bug Fix ✅ verified
+- 10 CI Test Infrastructure ✅ verified (today, integration tests green)
 
 ## Completed: Phase 10 — CI Test Infrastructure (2026-04-10)
 **Sizing:** Small | **Stop Reason:** completed_clean
