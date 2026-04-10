@@ -60,6 +60,15 @@ vi.mock('../../hooks/useProjectRealtime', () => ({
   })),
 }))
 
+vi.mock('../../hooks/useLiveCursors', () => ({
+  useLiveCursors: vi.fn(() => ({
+    cursors: new Map(),
+    attachPointerTracking: vi.fn(() => () => {}),
+    pauseBroadcast: vi.fn(),
+    resumeBroadcast: vi.fn(),
+  })),
+}))
+
 // ---------------------------------------------------------------------------
 // Imports after mocks
 // ---------------------------------------------------------------------------

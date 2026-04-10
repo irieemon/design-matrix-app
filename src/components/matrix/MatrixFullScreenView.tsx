@@ -32,10 +32,11 @@ import { DotVotingProvider } from '../../contexts/DotVotingContext'
 import { DotBudgetIndicator } from '../brainstorm/DotBudgetIndicator'
 import { SessionPresenceStack } from '../brainstorm/SessionPresenceStack'
 import { ScopedRealtimeManager } from '../../lib/realtime/ScopedRealtimeManager'
-// Phase 05.4b: project-scope realtime components (Wave 1)
-import { ProjectRealtimeProvider } from '../../contexts/ProjectRealtimeContext'
+// Phase 05.4b: project-scope realtime components (Waves 1 & 2)
+import { ProjectRealtimeProvider, useProjectRealtimeContext } from '../../contexts/ProjectRealtimeContext'
 import { ProjectPresenceStack } from '../project/ProjectPresenceStack'
 import { ReconnectingBadge } from '../project/ReconnectingBadge'
+import { LiveCursorsLayer } from '../project/LiveCursorsLayer'
 
 // Lazy load modals for performance
 const AddIdeaModal = lazy(() => import('../AddIdeaModal'))
@@ -86,6 +87,72 @@ interface MatrixFullScreenViewProps {
   activeSessionId?: string
   /** Authenticated user ID for voting context */
   sessionUserId?: string
+}
+
+// ---------------------------------------------------------------------------
+// MatrixCanvasWithCursors — inner component that reads from ProjectRealtimeContext
+// to attach pointer tracking and render the LiveCursorsLayer.
+// Must render inside the ProjectRealtimeProvider tree.
+// ---------------------------------------------------------------------------
+
+interface MatrixCanvasWithCursorsProps {
+  ideas: IdeaCard[]
+  activeId: string | null
+  currentUser: User
+  onEditIdea: (idea: IdeaCard | null) => void
+  onDeleteIdea: (ideaId: string) => Promise<void>
+  onToggleCollapse: (ideaId: string, collapsed?: boolean) => Promise<void>
+  zoomLevel: number
+  showGrid: boolean
+  showLabels: boolean
+  mobileIdeaIds: Set<string>
+  hasOpenModal: boolean
+}
+
+function MatrixCanvasWithCursors({
+  ideas,
+  activeId,
+  currentUser,
+  onEditIdea,
+  onDeleteIdea,
+  onToggleCollapse,
+  zoomLevel,
+  showGrid,
+  showLabels,
+  mobileIdeaIds,
+  hasOpenModal,
+}: MatrixCanvasWithCursorsProps): React.ReactElement {
+  const { cursors, currentUserId, attachPointerTracking } = useProjectRealtimeContext()
+  const canvasRef = useRef<HTMLDivElement | null>(null)
+
+  // Attach pointer tracking to the matrix container for cursor broadcasting.
+  useEffect(() => {
+    const el = canvasRef.current?.querySelector('.matrix-container') as HTMLElement | null
+    if (!el) return
+    return attachPointerTracking(el)
+  // Re-run if attachPointerTracking identity changes (provider remount).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attachPointerTracking])
+
+  return (
+    <div ref={canvasRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <DesignMatrix
+        ideas={ideas}
+        activeId={activeId || null}
+        currentUser={currentUser}
+        onEditIdea={onEditIdea}
+        onDeleteIdea={onDeleteIdea}
+        onToggleCollapse={onToggleCollapse}
+        zoomLevel={zoomLevel}
+        showGrid={showGrid}
+        showLabels={showLabels}
+        isFullscreen={true}
+        mobileIdeaIds={mobileIdeaIds}
+        hasOpenModal={hasOpenModal}
+      />
+      <LiveCursorsLayer cursors={cursors} currentUserId={currentUserId} />
+    </div>
+  )
 }
 
 /**
@@ -772,14 +839,15 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
         }}
       >
         {/* Fullscreen DndContext - keeps drag operations inside fullscreen element */}
+        <div data-testid="dnd-context-root" style={{ position: 'relative', width: '100%', height: '100%' }}>
         <DndContext
           sensors={sensors}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEndWrapper}
         >
-          <DesignMatrix
+          <MatrixCanvasWithCursors
             ideas={ideas}
-            activeId={activeId || null}
+            activeId={activeId}
             currentUser={currentUser}
             onEditIdea={onEditIdea}
             onDeleteIdea={onDeleteIdea}
@@ -787,7 +855,6 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
             zoomLevel={zoomLevel}
             showGrid={showGrid}
             showLabels={showLabels}
-            isFullscreen={true}
             mobileIdeaIds={mobileIdeaIds}
             hasOpenModal={!!(showAddModal || showAIModal || editingIdea)}
           />
@@ -825,6 +892,7 @@ export const MatrixFullScreenView: React.FC<MatrixFullScreenViewProps> = ({
             ) : null}
           </DragOverlay>
         </DndContext>
+        </div>{/* /dnd-context-root */}
       </div>
 
       {/* Modals - Rendered inside fullscreen container with pointer events enabled */}

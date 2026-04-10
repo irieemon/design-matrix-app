@@ -17,6 +17,7 @@
 import React, { createContext, useContext } from 'react'
 import { useProjectRealtime } from '../hooks/useProjectRealtime'
 import type { UseProjectRealtimeReturn } from '../hooks/useProjectRealtime'
+import { useLiveCursors } from '../hooks/useLiveCursors'
 import type { ScopedRealtimeManager } from '../lib/realtime/ScopedRealtimeManager'
 import type { ConnectionState, PresenceParticipant } from '../lib/realtime/ScopedRealtimeManager'
 import type { IdeaCard } from '../types'
@@ -42,15 +43,19 @@ export interface ProjectRealtimeContextValue {
   connectionState: ConnectionState
   previousConnectionState: ConnectionState | null
   participants: PresenceParticipant[]
-  /** Wave 1: always empty Map. Wave 2 populates this. */
+  /** Wave 2: live cursor positions for remote users. Empty Map in Wave 1. */
   cursors: Map<string, CursorState>
-  /** Wave 1: always empty Map. Wave 3 populates this. */
+  /** Wave 3: drag-locked card entries. Empty Map in Waves 1/2. */
   lockedCards: Map<string, LockEntry>
   currentUserId: string
   currentUserDisplayName: string
-  /** Wave 2: wires pointer-tracking. No-op in Wave 1. */
-  attachPointerTracking: (el: HTMLElement | null) => void
-  /** Wave 3: drag lock methods. No-ops in Wave 1. */
+  /** Wave 2: attach pointermove tracking to a container. Returns a detach fn. */
+  attachPointerTracking: (el: HTMLElement | null) => () => void
+  /** Wave 2: pause cursor broadcasts during drag. */
+  pauseBroadcast: () => void
+  /** Wave 2: resume cursor broadcasts after drag. */
+  resumeBroadcast: () => void
+  /** Wave 3: drag lock methods. No-ops in Waves 1/2. */
   dragLock: {
     acquire: (ideaId: string) => boolean
     release: (ideaId: string) => void
@@ -69,8 +74,7 @@ export interface ProjectRealtimeProviderProps {
   children: React.ReactNode
 }
 
-// Empty Map singletons — stable references avoid re-renders in Wave 1.
-const EMPTY_CURSORS = new Map<string, CursorState>()
+// Empty Map singleton — stable reference avoids re-renders for lockedCards in Wave 1/2.
 const EMPTY_LOCKED_CARDS = new Map<string, LockEntry>()
 
 // No-op drag lock — Wave 3 replaces this by passing real methods.
@@ -99,16 +103,26 @@ export function ProjectRealtimeProvider({
     setIdeas,
   })
 
+  // Wave 2: live cursor state — populated from broadcast events.
+  const {
+    cursors,
+    attachPointerTracking,
+    pauseBroadcast,
+    resumeBroadcast,
+  } = useLiveCursors({ manager, currentUserId, currentUserDisplayName })
+
   const value: ProjectRealtimeContextValue = {
     manager,
     connectionState,
     previousConnectionState,
     participants,
-    cursors: EMPTY_CURSORS,
+    cursors,
     lockedCards: EMPTY_LOCKED_CARDS,
     currentUserId,
     currentUserDisplayName,
-    attachPointerTracking: () => undefined,
+    attachPointerTracking,
+    pauseBroadcast,
+    resumeBroadcast,
     dragLock: NOOP_DRAG_LOCK,
   }
 

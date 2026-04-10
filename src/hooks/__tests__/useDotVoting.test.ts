@@ -76,6 +76,7 @@ function createManagerStub(): ManagerStub {
   const manager = {
     onPostgresChange: vi.fn((_table: string, _filter: unknown, handler: (p: PostgresPayload) => void) => {
       postgresHandler = handler
+      return () => {}
     }),
     onBroadcast: vi.fn(),
     onPresence: vi.fn(),

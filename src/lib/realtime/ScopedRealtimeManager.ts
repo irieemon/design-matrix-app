@@ -110,23 +110,37 @@ export class ScopedRealtimeManager {
     table: string,
     filter: PostgresFilter,
     handler: (payload: { new: T; old: T | null; eventType: string }) => void
-  ): void {
-    this.postgresListeners.push({
+  ): () => void {
+    const entry: PostgresListenerEntry = {
       table,
       filter,
       handler: handler as PostgresListenerEntry['handler'],
-    })
+    }
+    this.postgresListeners.push(entry)
+    return () => {
+      const idx = this.postgresListeners.indexOf(entry)
+      if (idx !== -1) this.postgresListeners.splice(idx, 1)
+    }
   }
 
-  onBroadcast<T = unknown>(event: string, handler: (payload: T) => void): void {
-    this.broadcastListeners.push({
+  onBroadcast<T = unknown>(event: string, handler: (payload: T) => void): () => void {
+    const entry: BroadcastListenerEntry = {
       event,
       handler: handler as BroadcastListenerEntry['handler'],
-    })
+    }
+    this.broadcastListeners.push(entry)
+    return () => {
+      const idx = this.broadcastListeners.indexOf(entry)
+      if (idx !== -1) this.broadcastListeners.splice(idx, 1)
+    }
   }
 
-  onPresence(handler: PresenceHandler): void {
+  onPresence(handler: PresenceHandler): () => void {
     this.presenceHandlers.push(handler)
+    return () => {
+      const idx = this.presenceHandlers.indexOf(handler)
+      if (idx !== -1) this.presenceHandlers.splice(idx, 1)
+    }
   }
 
   onConnectionStateChange(handler: ConnectionStateHandler): () => void {

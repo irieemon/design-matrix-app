@@ -181,7 +181,7 @@ export function useDotVoting(
   useEffect(() => {
     if (!manager) return
 
-    manager.onPostgresChange(
+    const unsubVoteChange = manager.onPostgresChange(
       'idea_votes',
       { event: '*', filter: `session_id=eq.${sessionId}` },
       (payload: VotePayload) => handleVoteEvent(payload)
@@ -203,6 +203,7 @@ export function useDotVoting(
     void reconcile().finally(() => setLoading(false))
 
     return () => {
+      unsubVoteChange()
       unsubStateChange()
       unsubPollingTick()
       clearErrorTimer()

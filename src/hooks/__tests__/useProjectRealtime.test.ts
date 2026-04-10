@@ -59,10 +59,12 @@ const {
       onPostgresChange: vi.fn(
         (table: string, filter: { event: string }, handler: PostgresHandler) => {
           _handlers.set(`${table}:${filter.event}`, handler)
+          return () => {}
         }
       ),
       onPresence: vi.fn((handler: PresenceHandler) => {
         _presenceHandler = handler
+        return () => {}
       }),
       onConnectionStateChange: vi.fn((handler: ConnectionStateHandler) => {
         _connectionHandler = handler

@@ -148,7 +148,7 @@ export function ProjectPresenceStack({
       localManagerRef.current = manager
     }
 
-    manager.onPresence((incoming) => {
+    const unsubPresence = manager.onPresence((incoming) => {
       setParticipants((prev) => {
         const prevIds = new Set(prev.map((p) => p.userId))
         const nextIds = new Set(incoming.map((p) => p.userId))
@@ -185,6 +185,7 @@ export function ProjectPresenceStack({
     }
 
     return () => {
+      unsubPresence()
       if (isOwnedLocally) {
         void manager.unsubscribe()
         localManagerRef.current = null

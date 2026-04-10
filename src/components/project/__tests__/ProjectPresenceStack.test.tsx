@@ -28,10 +28,12 @@ const { capturedPresenceHandler, MockSRM } = vi.hoisted(() => {
     unsubscribe: vi.fn().mockResolvedValue(undefined),
     onPresence: vi.fn((handler: (p: unknown[]) => void) => {
       _presenceHandler = handler
+      return () => {}
     }),
-    onPostgresChange: vi.fn(),
+    onPostgresChange: vi.fn(() => () => {}),
     onConnectionStateChange: vi.fn(() => () => {}),
     onPollingTick: vi.fn(() => () => {}),
+    onBroadcast: vi.fn(() => () => {}),
     sendBroadcast: vi.fn(),
   }))
 

@@ -432,3 +432,119 @@ describe('unsubscribe', () => {
     expect(manager.getConnectionState()).toBe('disconnected')
   })
 })
+
+// T-054B-024b/c/d: unsubscribe returns from onPresence, onBroadcast, onPostgresChange
+describe('handler unsubscribe returns (D-09 exception, Wave 2 prerequisite)', () => {
+  it('T-054B-024b: onPresence returns unsubscribe; calling it removes handler from presenceHandlers', async () => {
+    const ch = makeFreshChannel()
+    mockSupabase.channel.mockReturnValue(ch)
+
+    const manager = new ScopedRealtimeManager({
+      scope: { type: 'project', id: 'p1' },
+      userId: 'u1',
+      displayName: 'Alice',
+    })
+
+    const handler = vi.fn()
+    const unsub = manager.onPresence(handler)
+    unsub()
+
+    await manager.subscribe()
+    // Trigger presence delivery; handler must NOT be called
+    await ch.track({ userId: 'u1', displayName: 'Alice', joinedAt: Date.now() })
+
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('T-054B-024c: onBroadcast returns unsubscribe; calling it removes handler', async () => {
+    const ch = makeFreshChannel()
+    mockSupabase.channel.mockReturnValue(ch)
+
+    const manager = new ScopedRealtimeManager({
+      scope: { type: 'project', id: 'p1' },
+      userId: 'u1',
+      displayName: 'Alice',
+    })
+
+    const handler = vi.fn()
+    const unsub = manager.onBroadcast('cursor_move', handler)
+    unsub()
+
+    await manager.subscribe()
+    manager.sendBroadcast('cursor_move', { x: 1 })
+
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('T-054B-024d: onPostgresChange returns unsubscribe; calling it removes handler', async () => {
+    const ch = makeFreshChannel()
+    mockSupabase.channel.mockReturnValue(ch)
+
+    const manager = new ScopedRealtimeManager({
+      scope: { type: 'project', id: 'p1' },
+      userId: 'u1',
+      displayName: 'Alice',
+    })
+
+    const handler = vi.fn()
+    const unsub = manager.onPostgresChange('ideas', { event: 'UPDATE' }, handler)
+    unsub()
+
+    await manager.subscribe()
+    ch.emitPostgresChange({ table: 'ideas', event: 'UPDATE', new: { id: 'i1' } })
+
+    expect(handler).not.toHaveBeenCalled()
+  })
+})
+
+// T-054A-023b: resubscribe null race
+// Poirot Finding 4: if unsubscribe() fires while a resubscribe() is pending in
+// setTimeout, the captured channel reference must not be passed as null to
+// supabase.removeChannel. After the fix, removeChannel is not called with null
+// and no error is thrown.
+describe('T-054A-023b: resubscribe null race does not call removeChannel with null', () => {
+  it('schedules resubscribe, fires unsubscribe mid-wait, no removeChannel(null) call', async () => {
+    vi.useFakeTimers()
+
+    let callIdx = 0
+    mockSupabase.channel.mockImplementation(() => {
+      callIdx++
+      const ch = createMockChannel({ topic: 'test' })
+      ch.subscribe = vi.fn((cb) => {
+        if (callIdx === 1) {
+          // First channel subscribes OK then immediately errors to trigger reconnect
+          cb?.('SUBSCRIBED')
+          cb?.('CHANNEL_ERROR')
+        }
+        // Subsequent channels: never fire (we will have unsubscribed by then)
+        return ch
+      })
+      return ch
+    })
+
+    mockSupabase.removeChannel.mockResolvedValue(undefined)
+
+    const manager = new ScopedRealtimeManager({
+      scope: { type: 'session', id: 'race-test' },
+      userId: 'u1',
+      displayName: 'Alice',
+    })
+
+    await manager.subscribe()
+    // manager is now reconnecting — resubscribe scheduled for 1000ms
+
+    // Immediately unsubscribe before the timer fires
+    await manager.unsubscribe()
+
+    // Advance past the reconnect delay
+    await vi.advanceTimersByTimeAsync(2000)
+
+    // removeChannel must never have been called with null
+    const calls = mockSupabase.removeChannel.mock.calls
+    for (const [arg] of calls) {
+      expect(arg).not.toBeNull()
+    }
+
+    vi.useRealTimers()
+  })
+})

@@ -67,7 +67,7 @@ export function useProjectRealtime(
     // -----------------------------------------------------------------------
     const filter = `project_id=eq.${projectId}`
 
-    mgr.onPostgresChange<IdeaCard>(
+    const unsubUpdate = mgr.onPostgresChange<IdeaCard>(
       'ideas',
       { event: 'UPDATE', filter },
       (payload) => {
@@ -81,7 +81,7 @@ export function useProjectRealtime(
       }
     )
 
-    mgr.onPostgresChange<IdeaCard>(
+    const unsubInsert = mgr.onPostgresChange<IdeaCard>(
       'ideas',
       { event: 'INSERT', filter },
       (payload) => {
@@ -92,7 +92,7 @@ export function useProjectRealtime(
       }
     )
 
-    mgr.onPostgresChange<IdeaCard>(
+    const unsubDelete = mgr.onPostgresChange<IdeaCard>(
       'ideas',
       { event: 'DELETE', filter },
       (payload) => {
@@ -109,7 +109,7 @@ export function useProjectRealtime(
     // -----------------------------------------------------------------------
     // Presence
     // -----------------------------------------------------------------------
-    mgr.onPresence((incoming) => {
+    const unsubPresence = mgr.onPresence((incoming) => {
       setParticipants(incoming)
     })
 
@@ -134,6 +134,10 @@ export function useProjectRealtime(
     setManager(mgr)
 
     return () => {
+      unsubUpdate()
+      unsubInsert()
+      unsubDelete()
+      unsubPresence()
       unsubscribeConnectionState()
       unsubscribePolling()
       void mgr.unsubscribe()
