@@ -13,6 +13,13 @@ export default defineConfig(({ mode }) => {
       name: 'development-csp',
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
+          // NOTE: VITE_CSP_DISABLED=true disables CSP headers in dev/test mode.
+          // Used by integration-tests.yml so the Supabase client can reach
+          // http://localhost:54321 (different port, not covered by 'self').
+          if (process.env['VITE_CSP_DISABLED'] === 'true') {
+            next()
+            return
+          }
           res.setHeader(
             'Content-Security-Policy',
             "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://vfovtgtjailvrphsgafv.supabase.co; media-src 'self' blob: https://vfovtgtjailvrphsgafv.supabase.co; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://vfovtgtjailvrphsgafv.supabase.co https://vitals.vercel-analytics.com ws: wss:; worker-src 'self' blob: https://cdnjs.cloudflare.com;"
