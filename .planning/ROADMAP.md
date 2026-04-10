@@ -15,7 +15,7 @@
 
 - [x] **Phase 08: Operational Fixes** ✅ (2026-04-10) — CSRF race fixed (waitForCsrfToken), AI Gateway last gap closed (transcribeAudio summary), Resend domain config runbook ready. See `.planning/phases/08-operational-fixes/08-VERIFICATION.md`.
 - [x] **Phase 09: RealtimeSubscriptionManager Bug Fix** ✅ (2026-04-10) — Event-merge pattern fixes dual-subscription race; D-34 workaround removed. ADR-0009. See `.planning/phases/09-realtime-subscription-bug-fix/09-VERIFICATION.md`.
-- [ ] **Phase 10: CI Test Infrastructure** — Enable test.skip E2E + integration tests in GitHub Actions with live Supabase, seed data strategy
+- [x] **Phase 10: CI Test Infrastructure** ✅ (2026-04-10) — Ephemeral Supabase in GitHub Actions, GoTrue Admin API seeding, 7/7 integration tests green, baseline migration for dashboard-created tables. E2E tests run but have pre-existing UI selector issues (follow-up).
 
 ### Phase Details
 
@@ -66,9 +66,9 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 08. Operational Fixes | 0/? | Not started | - |
-| 09. RealtimeSubscriptionManager Bug Fix | 0/? | Not started | - |
-| 10. CI Test Infrastructure | 0/2 | Planning complete | - |
+| 08. Operational Fixes | 3/3 | Complete | 2026-04-10 |
+| 09. RealtimeSubscriptionManager Bug Fix | 1/1 | Complete | 2026-04-10 |
+| 10. CI Test Infrastructure | 2/2 | Complete | 2026-04-10 |
 
 ---
-*Last updated: 2026-04-10 — Phase 10 plans created via /gsd-plan-phase*
+*Last updated: 2026-04-10 — Phase 10 complete (CI infrastructure green, integration tests pass)*
