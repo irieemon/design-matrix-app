@@ -22,6 +22,27 @@
 
 To open v1.3 and begin planning: `/gsd-plan-phase 11`.
 
+### Phase 11: Local CI Reproduction Environment
+
+**Goal:** A developer can execute the CI Integration Tests Playwright suite against a local Supabase instance via a single command (`npm run e2e:local`) with the same env var surface and seed data as CI. Debug iterations complete in seconds-to-tens-of-seconds, not 5-minute CI pipelines.
+
+**Requirements satisfied:** E2E-00
+**Depends on:** Nothing
+**ADR:** [ADR-0010](../docs/architecture/ADR-0010-phase-11-local-ci-repro.md)
+
+**Success Criteria**:
+1. `scripts/e2e-local.sh` + `scripts/e2e-local.env.sh` exist and are wired via `"e2e:local"` in `package.json`. No new Playwright config file — the script invokes `playwright.ci.config.ts` verbatim.
+2. The script defends against both port 3003 holders (kill before start) and orphaned Supabase processes (`supabase status` exit-code check, stop/restart if unhealthy).
+3. **Plumbing smoke test: `npm run e2e:local -- -g "T-055-100"` executes end-to-end and returns Playwright exit code 0** with T-055-100 reporting pass. This is the acceptance bar. No parity assertion for failing tests — Phase 12/13 discover parity gaps as a byproduct of their own debugging.
+4. `.planning/phases/11-local-ci-repro/11-RUNBOOK.md` documents: prereqs (Docker Desktop, Supabase CLI — first place in the repo where Docker is declared as a dev prereq), one-shot usage, pass-through args (`-- -g "<pattern>"`), troubleshooting stubs for 3 flagged risks, known divergence risks appendix.
+5. JWT generation is inline via `node -e` heredoc mirroring the CI workflow's `makeJwt` function verbatim (no separate helper module).
+
+**Deliberate relaxation from initial filing:** The original roadmap criterion #3 required reproducing one of the 8 failing tests with a matching CI error signature. That bar was relaxed during `/architect` clarification to "plumbing smoke only" — the ADR explains why (coupling-to-CI-failure-signature was rejected as acceptance criterion B). Phase 11 does NOT verify parity for failing tests; it verifies the loop executes.
+
+**Estimated plans:** 1
+
+*Full detail and sibling phases in [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md).*
+
 ## Deferred to v1.4+
 
 - Advanced features from v2 backlog (COLLAB-V2-*, AI-V2-*, PLAT-V2-*)
