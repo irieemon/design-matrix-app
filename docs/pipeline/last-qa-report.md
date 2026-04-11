@@ -504,3 +504,46 @@ GSD's executor shipped a phase that would have passed a pipeline review.
 - Live-stack tests enumerated for user gate: **yes** -- see Section 8.
 - Findings classified BLOCKER / MUST-FIX / SUGGESTION: **yes** -- 0 / 0 / 4.
 - Report written only to `docs/pipeline/last-qa-report.md` (Roz's sanctioned QA output path): **yes**.
+
+---
+
+## Wave 5 -- T-P11-001 Retry Post Fix A (Phase 11.5 acceptance)
+
+**Date:** 2026-04-11
+**Command run:** `npm run e2e:local -- -g "T-055-100"`
+**Fix under test:** Fix A -- `export SUPABASE_URL='http://localhost:54321'` added to `scripts/e2e-local.env.sh` top-level workflow env section
+**Exit code:** 0
+**Duration:** ~9s (Playwright) / ~120s total (db reset + seed + test)
+
+### Step-Echo Trace
+
+| Step | Echo | Result |
+|------|------|--------|
+| 1 | resolving repo root | PASS |
+| 1b | preflight binary check | PASS |
+| 2 | checking Docker is running | PASS |
+| 3 | freeing port 3003 | PASS |
+| 4 | checking supabase status | PASS |
+| 5 | resetting database | PASS |
+| 6 | sourcing env block | PASS |
+| 7 | seeding GoTrue users | PASS (3 users created) |
+| 8 | seeding application data | PASS |
+| 9 | generating JWT access tokens | PASS |
+| 10 | exec Playwright | PASS |
+
+### Playwright Result
+
+```
+Running 1 test using 1 worker
+  ✓  1 [chromium] › tests/e2e/invite-flow.spec.ts:117:1 › T-055-100: owner sends invitation and receives inviteUrl (5.1s)
+  1 passed (9.2s)
+```
+
+**1 passed / 0 failed / 0 skipped**
+
+### Verdict: PASS
+
+Fix A resolved the root cause. `SUPABASE_URL` shell-exported as `http://localhost:54321` wins the `loadEnv` OR-chain in `vite.config.ts:80`, directing API handlers to local GoTrue. Local GoTrue accepts the ES256 tokens it issued, returning 200 OK on the invite create endpoint. The success toast fires, the assertion at `invite-flow.spec.ts:141` matches.
+
+**Phase 11.5 acceptance bar: ACHIEVED.**
+**Phase 11 originally-deferred T-P11-001 acceptance bar: ACHIEVED.**

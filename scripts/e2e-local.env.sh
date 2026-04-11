@@ -32,6 +32,13 @@ export CI='true'
 export CI_SUPABASE='true'
 
 export VITE_SUPABASE_URL='http://localhost:54321'
+
+# LOAD-BEARING: the SSR-loaded backend API routes in vite.config.ts:79-108 read
+# env.SUPABASE_URL || env.VITE_SUPABASE_URL. Without shell-exported SUPABASE_URL,
+# loadEnv picks up .env.local's production URL for SUPABASE_URL, the || short-
+# circuits before VITE_SUPABASE_URL, and API handlers target production with
+# locally-issued tokens → 403 bad_jwt. See Phase 11.5 investigation ledger.
+export SUPABASE_URL='http://localhost:54321'
 export VITE_SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
 export SUPABASE_SERVICE_ROLE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
 
