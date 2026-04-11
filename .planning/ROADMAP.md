@@ -39,7 +39,8 @@ To open v1.3 and begin planning: `/gsd-plan-phase 11`.
 
 **Deliberate relaxation from initial filing:** The original roadmap criterion #3 required reproducing one of the 8 failing tests with a matching CI error signature. That bar was relaxed during `/architect` clarification to "plumbing smoke only" — the ADR explains why (coupling-to-CI-failure-signature was rejected as acceptance criterion B). Phase 11 does NOT verify parity for failing tests; it verifies the loop executes.
 
-**Estimated plans:** 1
+**Plans:** 1 plan
+- [ ] 11-01-PLAN.md — Ship four-file local CI reproduction environment (env file + orchestration script + npm entry + runbook) per ADR-0010
 
 *Full detail and sibling phases in [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md).*
 
@@ -57,7 +58,7 @@ To open v1.3 and begin planning: `/gsd-plan-phase 11`.
 | 08. Operational Fixes | v1.2 | 3/3 | Complete | 2026-04-10 |
 | 09. RealtimeSubscriptionManager Bug Fix | v1.2 | 1/1 | Complete | 2026-04-10 |
 | 10. CI Test Infrastructure | v1.2 | 2/2 | Complete | 2026-04-11 |
-| 11. Local CI Reproduction Environment | v1.3 | 0/? | Filed | — |
+| 11. Local CI Reproduction Environment | v1.3 | 0/1 | Planned | — |
 | 12. E2E Realtime Rendering Fix | v1.3 | 0/? | Filed | — |
 | 13. Invite Flow + RPC + Pattern Hygiene | v1.3 | 0/? | Filed | — |
 
