@@ -73,6 +73,7 @@
     "test:visual": "playwright test --config=playwright.visual-regression.config.ts",
     "test:visual:update": "UPDATE_SNAPSHOTS=true playwright test --config=playwright.visual-regression.config.ts",
     "test:ci": "playwright test --config=playwright.ci.config.ts",
+    "e2e:local": "bash scripts/e2e-local.sh",
     "test:cross-browser": "playwright test --config=playwright.functional.config.ts --project=chromium --project=firefox --project=webkit",
     "test:list": "playwright test --config=playwright.functional.config.ts --list"
   },
