@@ -11,7 +11,7 @@
  */
 
 import { test, expect, Page } from '@playwright/test'
-import { TestContext } from '../helpers/test-helpers'
+import { TestContext } from './helpers/test-helpers'
 
 // Test configuration
 const MOBILE_VIEWPORT = { width: 375, height: 667 } // iPhone SE

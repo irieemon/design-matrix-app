@@ -164,7 +164,7 @@ test.describe('Complete User Workflow Journey', () => {
       await user2Page.getByTestId('idea-card-High Value Feature').click()
 
       // User 2 should see locked message
-      await expect(user2Page.getByTestId('locked-by-indicator')).toContain Text(/user1@example.com is editing/)
+      await expect(user2Page.getByTestId('locked-by-indicator')).toContainText(/user1@example.com is editing/)
       await expect(user2Page.getByTestId('edit-idea-button')).toBeDisabled()
     })
   })
