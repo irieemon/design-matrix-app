@@ -157,10 +157,10 @@ export default async function handler(
     if (session.facilitator_id) {
       const { data: facilitator } = await supabase
         .from('user_profiles')
-        .select('name, email')
+        .select('full_name, email')
         .eq('id', session.facilitator_id)
         .single()
-      facilitatorName = facilitator?.name || facilitator?.email
+      facilitatorName = facilitator?.full_name || facilitator?.email
     }
 
     return res.status(200).json({
