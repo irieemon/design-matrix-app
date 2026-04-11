@@ -188,7 +188,8 @@ const secret = 'super-secret-jwt-token-with-at-least-32-characters-long';
 function makeJwt(sub) {
   const header = Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url');
   const now = Math.floor(Date.now()/1000);
-  const payload = Buffer.from(JSON.stringify({sub,role:'authenticated',aud:'authenticated',iss:'supabase-demo',exp:now+3600,iat:now})).toString('base64url');
+  // Phase 11.5 Fix C: iss must match local Supabase URL for CLI 2.58.5+ GoTrue audience validation
+  const payload = Buffer.from(JSON.stringify({sub,role:'authenticated',aud:'authenticated',iss:'http://127.0.0.1:54321/auth/v1',exp:now+3600,iat:now})).toString('base64url');
   const sig = crypto.createHmac('sha256',secret).update(header+'.'+payload).digest('base64url');
   return header+'.'+payload+'.'+sig;
 }
