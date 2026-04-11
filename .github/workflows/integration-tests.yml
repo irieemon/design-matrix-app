@@ -291,7 +291,7 @@ jobs:
           E2E_USER_A_PASSWORD: 'test-password-123'
           E2E_USER_B_EMAIL: 'collaborator@test.com'
           E2E_USER_B_PASSWORD: 'test-password-123'
-          E2E_PROJECT_URL: 'http://localhost:3003/project/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+          E2E_PROJECT_URL: 'http://localhost:3003/?project=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 
       # ------------------------------------------------------------------------
       # 9. Run migration integration tests (Vitest)

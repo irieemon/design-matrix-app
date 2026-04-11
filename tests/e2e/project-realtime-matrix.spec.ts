@@ -31,7 +31,7 @@ const USER_A_EMAIL = process.env['E2E_USER_A_EMAIL'] ?? 'user-a@example.com'
 const USER_A_PASSWORD = process.env['E2E_USER_A_PASSWORD'] ?? 'password-a'
 const USER_B_EMAIL = process.env['E2E_USER_B_EMAIL'] ?? 'user-b@example.com'
 const USER_B_PASSWORD = process.env['E2E_USER_B_PASSWORD'] ?? 'password-b'
-const PROJECT_URL = process.env['E2E_PROJECT_URL'] ?? 'http://localhost:3003/project/test-project-id'
+const PROJECT_URL = process.env['E2E_PROJECT_URL'] ?? 'http://localhost:3003/?project=test-project-id'
 const MATRIX_FULLSCREEN_SELECTOR = '[data-testid="fullscreen-view"]'
 const PRESENCE_STACK_SELECTOR = '[data-testid="project-presence-stack"]'
 

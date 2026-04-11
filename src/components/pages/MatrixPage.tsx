@@ -9,6 +9,7 @@ import MatrixFullScreenView from '../matrix/MatrixFullScreenView'
 import { useProjectFiles } from '../../hooks/useProjectFiles'
 import { generateDemoUUID } from '../../utils/uuid'
 import { Button } from '../ui/Button'
+import { logger } from '../../utils/logger'
 
 interface MatrixPageProps {
   currentUser: User
