@@ -351,3 +351,19 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 > Profile not yet configured. Run `/gsd-profile-user` to generate your developer profile.
 > This section is managed by `generate-claude-profile` -- do not edit manually.
 <!-- GSD:profile-end -->
+
+## Pipeline System (Atelier Pipeline)
+
+This project uses a multi-agent orchestration pipeline for structured development.
+
+**Agents:** Eva (orchestrator), Robert (product), Sable (UX), Cal (architect), Colby (engineer), Roz (QA), Agatha (docs), Ellis (commit)
+
+**Commands:** /pm, /ux, /architect, /debug, /pipeline, /devops, /docs
+
+**Pipeline state:** docs/pipeline/ -- Eva reads this at session start for recovery
+
+**Key rules:**
+- Roz writes tests before Colby builds (Roz-first TDD)
+- Roz verifies every Colby output (no self-review)
+- Ellis commits (Eva never runs git on code)
+- Full test suite between work units

@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: — Production Hardening
-status: planning
-stopped_at: Phase 10 context gathered
-last_updated: "2026-04-10T17:19:37.847Z"
-last_activity: 2026-04-09 — milestone opened
+milestone: v1.3
+milestone_name: — E2E Realtime Hardening
+status: filed
+stopped_at: v1.3 milestone filed after v1.2 archive; Phase 11 not yet planned
+last_updated: "2026-04-11T17:30:00.000Z"
+last_activity: 2026-04-11 -- v1.2 archived via /gsd-complete-milestone; v1.3 filed, ready to plan Phase 11
 progress:
   total_phases: 3
-  completed_phases: 2
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-09 for v1.1)
 
 **Core value:** Real-time collaborative brainstorming with AI-powered multi-modal analysis
-**Current focus:** Milestone v1.1 — Advanced Collaboration & Quality (stabilization only; no new features)
+**Current focus:** Milestone v1.3 — E2E Realtime Hardening (stabilization only; no new features)
 
 ## Current Position
 
-Milestone: v1.1
-Phase: Not started (next: Phase 05.4a — Session-Scope Voting)
-Status: Ready to plan
-Last activity: 2026-04-09 — milestone opened
+Milestone: v1.3 — E2E Realtime Hardening
+Phase: Not started (next: Phase 11 — Local CI Reproduction Environment)
+Status: Filed, ready to plan
+Last activity: 2026-04-11 -- v1.2 archived (`milestones/v1.2-*`); v1.3 filed; ready for `/gsd-plan-phase 11`
 
 Progress: [░░░░░░░░░░] 0% (0/3 phases)
 
@@ -45,8 +45,10 @@ Progress: [░░░░░░░░░░] 0% (0/3 phases)
 
 ### Roadmap Evolution
 
-- v1.0 shipped 2026-04-09. 5 COLLAB requirements + MOB-02 device verify + Playwright spec drift carried forward to v1.1.
-- v1.1 opened 2026-04-09. Phase 05.4 split into 05.4a (session-scope voting) and 05.4b (project-scope realtime matrix) for risk management. Phase 05.5 added to close quality debt. Phase 05.6 production hardening deferred to v1.2.
+- v1.0 shipped 2026-04-09 — 36/43 requirements, 5 deferred to v1.1.
+- v1.1 shipped 2026-04-10 — 10/10 requirements. Realtime voting, matrix, presence, drag lock, quality debt. Phase 05.4 split into 05.4a/05.4b for risk management.
+- v1.2 shipped 2026-04-11 — 7/7 requirements. Operational gaps closed, BUG-01 fixed (ADR-0009), ephemeral Supabase CI workflow shipped, access-control chain fully resolved via 6-pipeline E2E triage arc. CI Integration Tests closed at 3/10; remaining failures re-scoped into v1.3.
+- v1.3 filed 2026-04-11 — E2E Realtime Hardening. 3 phases (11, 12, 13). Local CI reproduction environment as prerequisite; React realtime rendering fix; invite flow + RPC + pattern hygiene.
 
 ### Decisions
 
@@ -54,24 +56,22 @@ Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
 - Eva orchestrates everything going forward; GSD artifacts mirrored per hybrid contract
-- Phase 05.4 split into 05.4a/05.4b to manage risk — session scope ships first as warm-up
-- v1.1 is stabilization only — no brand-new features; enforced via REQUIREMENTS.md scope principle
-- v1.0 plans 05-03 and 05-04 are drafted contracts worth reusing in Cal ADR production
+- v1.2 E2E triage arc closed at 3/10 after retro-lesson "onion-peel strategy change signal" fired — remaining work re-scoped into v1.3 with local CI repro as prerequisite rather than continuing iterative CI-log-based debugging
+- v1.3 is stabilization only — no brand-new features; scope principle enforced in v1.3-REQUIREMENTS.md
 
 ### Pending Todos
 
-- [ai-gateway-project-wide](todos/pending/ai-gateway-project-wide.md) — deferred to v1.2 (OPS-03)
-- analyze-file 403 CSRF race — deferred to v1.2 (OPS-02)
-- Resend domain verification — deferred to v1.2 (OPS-01)
+- Phase 11 planning — run `/gsd-plan-phase 11` to plan the local CI reproduction environment
+- TECH-01 (v1.3): `CollaborationService.ts:97` pattern fix mirroring commit `568a72e`
+- TECH-02 (v1.3): Follow-up ADR on silent error swallowing in `validateProjectAccess` collab/admin queries
 
 ### Blockers/Concerns
 
-- Multi-client Playwright E2E for Phase 05.4b is the project's biggest unknown — budget estimate contingency allocated
-- Phase 05.4b depends on 05.4a's `ScopedRealtimeManager` refactor landing cleanly
-- No automated coverage for Phase 05.3 SQL migrations means Phase 05.4/05.5 realtime work could silently regress RLS policies
+- Local CI reproduction is the prerequisite for any productive v1.3 work. Without it, Phase 12 debug loops against 5-minute CI cycles — the exact anti-pattern that closed the v1.2 arc.
+- T-054B-300..305 share-a-root-cause hypothesis (`strict mode: 2 design-matrix elements`) is unverified — Phase 11 should produce a local repro before Phase 12 commits to the fix direction
 
 ## Session Continuity
 
-Last session: 2026-04-10T17:19:37.839Z
-Stopped at: Phase 10 context gathered
-Resume: Next step is Sable UX pass on dot-voting + session presence, then Cal ADR for Phase 05.4a
+Last session: 2026-04-11 -- v1.2 archived, v1.3 filed
+Stopped at: v1.3 milestone filed; ready to plan Phase 11
+Resume: `/gsd-plan-phase 11` to plan the local CI reproduction environment (v1.3 Phase 11 — the prerequisite that unblocks Phases 12 and 13)

@@ -10,23 +10,23 @@ Real-time collaborative brainstorming with AI-powered multi-modal analysis — t
 
 ## Current State
 
-**Shipped:** v1.1 — Advanced Collaboration & Quality (2026-04-10)
-**Previous:** v1.0 — Launch Readiness (2026-04-09)
-**Archives:** [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) | [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
+**Shipped:** v1.2 — Production Hardening (2026-04-11)
+**Previous:** v1.1 — Advanced Collaboration & Quality (2026-04-10), v1.0 — Launch Readiness (2026-04-09)
+**Archives:** [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) | [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) | [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
-Prioritas is live with the full v1.0 foundation (security, AI SDK v6, multi-modal, billing, mobile) PLUS v1.1 real-time collaboration: session dot voting with optimistic UI, project-scope live cursors, soft drag lock, presence avatars, reconnecting badge, and a clean test baseline (BrainstormRealtimeManager 43/43, MOB-02 verified on real iOS device).
+Prioritas is live with the full v1.0 foundation (security, AI SDK v6, multi-modal, billing, mobile), v1.1 real-time collaboration (session voting, project matrix cursors, drag lock, presence, reconnecting badge, BRM 43/43, MOB-02 verified on real iOS), and v1.2 production hardening (three operational gaps closed, BUG-01 root-cause fixed with ADR-0009, ephemeral Supabase CI workflow running integration tests against real infrastructure, access-control chain fully resolved via a 6-pipeline E2E triage arc).
 
-## Current Milestone: v1.2 — Production Hardening
+## Current Milestone: v1.3 — E2E Realtime Hardening
 
-**Goal:** Make Prioritas production-ready — fix known bugs, close operational gaps, get the test suite running against live infrastructure in CI. No new features.
+**Goal:** Take CI Integration Tests from 3/10 green to 10/10 green. Fix the React realtime rendering cluster (T-054B-300..305), the invite-flow post-accept navigation (T-055-101), and the pre-existing `accept_invitation` RPC bug. Establish a local CI-equivalent debug environment as prerequisite.
 
 **Target phases:**
-- **Phase 08** — Resend domain verification + analyze-file CSRF race + AI Gateway migration
-- **Phase 09** — BUG-01: RealtimeSubscriptionManager ideas-clearing root cause fix
-- **Phase 10** — CI test infrastructure: enable test.skip tests in GitHub Actions with live Supabase
+- **Phase 11** — Local CI Reproduction Environment (prerequisite — unblocks 12 and 13)
+- **Phase 12** — E2E Realtime Rendering Fix (`strict mode: 2 design-matrix elements` root cause → T-054B-300..305)
+- **Phase 13** — Invite Flow + RPC + Pattern Hygiene (T-055-101, `accept_invitation` RPC, `CollaborationService.ts:97`, silent-error ADR)
 
-**Deferred to v1.3+:**
-- Mobile video re-enablement, advanced features from v2 backlog, OAuth
+**Deferred to v1.4+:**
+- Mobile video re-enablement, advanced features from v2 backlog, OAuth, 5 test.todo DndKit sensor tests
 
 **Orchestration:** Eva + GSD hybrid (Eva routes pipeline agents, mirrors state into .planning/)
 
