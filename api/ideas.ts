@@ -128,7 +128,7 @@ async function validateProjectAccess(
   // TODO(sean): remove diagnostic after T-054B root cause confirmed (#e2e-access)
   const probe = (name: string, data: unknown): void => {
     if (process.env.CI === 'true' || process.env.NODE_ENV === 'test') {
-      console.log(`[T-054B-probe] ${name}:`, data)
+      console.error(`[T-054B-probe] ${name}:`, data)
     }
   }
 
