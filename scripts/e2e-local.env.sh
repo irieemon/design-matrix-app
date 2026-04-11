@@ -24,10 +24,11 @@
 # ----------------------------------------------------------------------------
 export CI='true'
 
-# LOAD-BEARING: every target test file (invite-flow.spec.ts,
-# project-realtime-matrix.spec.ts, phase05.3-migrations.integration.test.ts)
-# gates execution on CI_SUPABASE=true and SKIPS SILENTLY if unset. Dropping
-# this line causes target tests to report success with zero actual runs.
+# Every target test file (invite-flow.spec.ts, project-realtime-matrix.spec.ts,
+# phase05.3-migrations.integration.test.ts) gates execution on the variable
+# below and SKIPS SILENTLY if unset. Dropping the next line causes target
+# tests to report success with zero actual runs.
+# LOAD-BEARING — do not remove without updating every CI_SUPABASE check site.
 export CI_SUPABASE='true'
 
 export VITE_SUPABASE_URL='http://localhost:54321'
