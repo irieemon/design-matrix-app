@@ -17,6 +17,15 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(dirname "$SCRIPT_DIR")
 cd "$REPO_ROOT"
 
+# ---- Step 1b: Preflight binary check ----------------------------------------
+>&2 echo "[e2e-local] step 1b: preflight binary check"
+for bin in docker supabase lsof jq psql node curl npx; do
+  command -v "$bin" >/dev/null 2>&1 || {
+    echo "ERROR: required binary '$bin' not on PATH. See .planning/phases/11-local-ci-repro/11-RUNBOOK.md Prerequisites." >&2
+    exit 1
+  }
+done
+
 # ---- Step 2: Verify Docker is running ---------------------------------------
 >&2 echo "[e2e-local] step 2: checking Docker is running"
 docker info >/dev/null 2>&1 || {
@@ -96,6 +105,13 @@ create_user "stranger" '{
 # Verbatim from .github/workflows/integration-tests.yml:167-233
 >&2 echo "[e2e-local] step 8: seeding application data (psql)"
 PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -d postgres <<'EOSQL'
+  -- NOTE: INSERTs on projects / project_collaborators / project_invitations
+  -- intentionally omit ON CONFLICT because step 5 (supabase db reset) wipes
+  -- the DB first. If this block is ever run against a warm DB (e.g., manual
+  -- debug mode without reset), expect duplicate-PK errors on these tables.
+  -- public.users and public.user_profiles below use ON CONFLICT (id) DO NOTHING
+  -- for symmetry with the CI workflow seed block.
+
   -- 1. public.users profiles (depend on auth.users — now exists via API)
   INSERT INTO public.users (id, email, full_name, role, is_active, created_at, updated_at) VALUES
     ('11111111-1111-1111-1111-111111111111', 'owner@test.com',        'Test Owner',        'user', true, NOW(), NOW()),
@@ -179,7 +195,21 @@ function makeJwt(sub) {
 console.log('E2E_COLLAB_OWNER_TOKEN=' + makeJwt('11111111-1111-1111-1111-111111111111'));
 console.log('E2E_COLLAB_USER_TOKEN=' + makeJwt('22222222-2222-2222-2222-222222222222'));
 console.log('E2E_STRANGER_TOKEN=' + makeJwt('33333333-3333-3333-3333-333333333333'));
-")
+") || {
+  echo "ERROR: JWT generation failed — node -e exited non-zero" >&2
+  exit 1
+}
+if [ -z "$JWT_OUTPUT" ]; then
+  echo "ERROR: JWT generation produced empty output" >&2
+  exit 1
+fi
+token_count=$(printf '%s\n' "$JWT_OUTPUT" | grep -c '^E2E_' || true)
+if [ "$token_count" -ne 3 ]; then
+  echo "ERROR: JWT generation produced $token_count token lines, expected 3" >&2
+  echo "Output was:" >&2
+  printf '%s\n' "$JWT_OUTPUT" >&2
+  exit 1
+fi
 while IFS= read -r line; do
   export "$line"
 done <<< "$JWT_OUTPUT"
