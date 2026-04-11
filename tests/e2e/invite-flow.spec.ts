@@ -84,14 +84,29 @@ async function navigateToProject(page: Page, projectId: string): Promise<void> {
 async function getAuthHeadersFromPage(page: Page): Promise<{ Authorization: string }> {
   const token = await page.evaluate(() => {
     try {
-      const key = Object.keys(localStorage).find((k) => k.startsWith('sb-'))
-      if (!key) return ''
-      const parsed = JSON.parse(localStorage.getItem(key) ?? '{}')
-      return parsed?.access_token ?? ''
+      // Filter for the Supabase auth-token key specifically.
+      // Supabase JS v2 stores multiple sb-* keys (CSP, feature flags, etc.).
+      // The auth session is always under the key ending with '-auth-token'.
+      const authKeys = Object.keys(localStorage).filter(
+        (k) => k.startsWith('sb-') && k.endsWith('-auth-token')
+      )
+      for (const key of authKeys) {
+        const raw = localStorage.getItem(key)
+        if (!raw) continue
+        const parsed = JSON.parse(raw)
+        // Handle flat shape: { access_token: string, ... }
+        if (parsed?.access_token) return parsed.access_token
+        // Handle nested shape: { currentSession: { access_token: string, ... } }
+        if (parsed?.currentSession?.access_token) return parsed.currentSession.access_token
+      }
+      return ''
     } catch {
       return ''
     }
   })
+  if (!token) {
+    console.warn('[T-055-101 helper] No access_token found in any sb-*-auth-token localStorage key')
+  }
   return { Authorization: `Bearer ${token}` }
 }
 
