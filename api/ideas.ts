@@ -125,17 +125,8 @@ async function validateProjectAccess(
   authClient: SupabaseClient,
   projectId: string
 ): Promise<string> {
-  // TODO(sean): remove diagnostic after T-054B root cause confirmed (#e2e-access)
-  const probe = (name: string, data: unknown): void => {
-    if (process.env.CI === 'true' || process.env.NODE_ENV === 'test') {
-      console.error(`[T-054B-probe] ${name}:`, data)
-    }
-  }
-
   // Get the authenticated user
   const { data: { user }, error: userError } = await authClient.auth.getUser()
-
-  probe('getUser result', { userId: user?.id, userEmail: user?.email, userAud: user?.aud, userErrorMessage: userError?.message })
 
   if (userError || !user) {
     throw new Error('User not authenticated')
@@ -144,37 +135,29 @@ async function validateProjectAccess(
   // Check if user has access to this project (owner or collaborator)
   const serviceClient = getServiceRoleClient()
 
-  probe('serviceRoleClient config', { serviceRoleKeyPresent: !!process.env.SUPABASE_SERVICE_ROLE_KEY, viteSupabaseUrl: process.env.VITE_SUPABASE_URL, supabaseUrl: process.env.SUPABASE_URL })
-
   const { data: project, error: projectError } = await serviceClient
     .from('projects')
     .select('id, owner_id')
     .eq('id', projectId)
     .single()
 
-  probe('projects query result', { projectId: project?.id, projectOwnerId: project?.owner_id, projectErrorMessage: projectError?.message, projectErrorCode: projectError?.code })
-
   if (projectError || !project) {
     throw new Error('Project not found')
   }
 
   // Check if user is owner
-  probe('owner check', { isOwner: project.owner_id === user.id, projectOwnerId: project.owner_id, userId: user.id })
-
   if (project.owner_id === user.id) {
     console.log(`✅ User ${user.id} is owner of project ${projectId}`)
     return user.id
   }
 
   // Check if user is collaborator
-  const { data: collaboration, error: collabError } = await serviceClient
+  const { data: collaboration } = await serviceClient
     .from('project_collaborators')
-    .select('id')
+    .select('project_id')
     .eq('project_id', projectId)
     .eq('user_id', user.id)
     .single()
-
-  probe('collaborator query result', { collaboration, collabErrorMessage: collabError?.message })
 
   if (collaboration) {
     console.log(`✅ User ${user.id} is collaborator on project ${projectId}`)
@@ -182,13 +165,11 @@ async function validateProjectAccess(
   }
 
   // Check if user is admin
-  const { data: userProfile, error: adminError } = await serviceClient
+  const { data: userProfile } = await serviceClient
     .from('user_profiles')
     .select('role')
     .eq('id', user.id)
     .single()
-
-  probe('admin query result', { userProfile, adminErrorMessage: adminError?.message })
 
   if (userProfile?.role === 'admin') {
     console.log(`✅ User ${user.id} is admin`)
