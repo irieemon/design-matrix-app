@@ -54,5 +54,5 @@ export {
 } from './compose.js'
 
 // Quota enforcement (Phase 06-02)
-export { withQuotaCheck } from './withQuotaCheck'
-export type { QuotaRequest, QuotaResource, QuotaContext } from './withQuotaCheck'
+export { withQuotaCheck } from './withQuotaCheck.js'
+export type { QuotaRequest, QuotaResource, QuotaContext } from './withQuotaCheck.js'
