@@ -4,6 +4,15 @@
  * Re-exports the provider factory, model router, handlers, and shared utilities.
  */
 
+// Model profiles (ADR-0013)
+export {
+  getActiveProfile,
+  FALLBACK_PROFILE,
+  type TaskType,
+  type TaskConfig,
+  type ModelProfile,
+} from './modelProfiles.js';
+
 // Provider factory
 export { getModel } from './providers.js';
 
