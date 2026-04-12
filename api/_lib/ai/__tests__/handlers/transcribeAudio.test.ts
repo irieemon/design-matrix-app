@@ -10,6 +10,18 @@ vi.mock('../../providers.js', () => ({
   getModel: vi.fn(() => 'mock-model-instance'),
 }));
 
+vi.mock('../../modelProfiles.js', () => ({
+  getActiveProfile: vi.fn(() => Promise.resolve({
+    id: 'test-profile',
+    name: 'test',
+    display_name: 'Test',
+    is_active: true,
+    task_configs: {},
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  })),
+}));
+
 vi.mock('../../modelRouter.js', () => ({
   selectModel: vi.fn(() => ({
     provider: 'openai',
@@ -17,7 +29,9 @@ vi.mock('../../modelRouter.js', () => ({
     gatewayModelId: 'openai/whisper-1',
     maxOutputTokens: 4096,
     temperature: 0,
+    fallbackModels: [],
   })),
+  getProviderOptions: vi.fn(() => undefined),
 }));
 
 vi.mock('@ai-sdk/openai', () => ({
