@@ -13,8 +13,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import validator from 'validator'
-import { generateToken, hashToken } from '../_lib/invitationTokens'
-import { sendInviteEmail } from '../_lib/sendInviteEmail'
+import { generateToken, hashToken } from '../_lib/invitationTokens.js'
+import { sendInviteEmail } from '../_lib/sendInviteEmail.js'
 import { withQuotaCheck, type QuotaRequest } from '../_lib/middleware/withQuotaCheck.js'
 
 interface InviterUser {
