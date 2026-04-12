@@ -9,7 +9,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { withQuotaCheck, type QuotaRequest } from './_lib/middleware/withQuotaCheck'
+import { withQuotaCheck, type QuotaRequest } from './_lib/middleware/withQuotaCheck.js'
 
 function getSupabaseAdmin(): SupabaseClient {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''

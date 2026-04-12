@@ -15,7 +15,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import validator from 'validator'
 import { generateToken, hashToken } from '../_lib/invitationTokens'
 import { sendInviteEmail } from '../_lib/sendInviteEmail'
-import { withQuotaCheck, type QuotaRequest } from '../_lib/middleware/withQuotaCheck'
+import { withQuotaCheck, type QuotaRequest } from '../_lib/middleware/withQuotaCheck.js'
 
 interface InviterUser {
   id: string
