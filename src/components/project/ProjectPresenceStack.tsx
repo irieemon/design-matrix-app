@@ -86,6 +86,7 @@ function Avatar({ participant, isSelf, isNew }: AvatarProps): React.ReactElement
     <div
       role="img"
       aria-label={label}
+      data-testid={`presence-avatar-${participant.userId}`}
       title={
         isSelf
           ? `You (viewing this matrix)`
@@ -222,6 +223,7 @@ export function ProjectPresenceStack({
       <div
         role="group"
         aria-label={`Matrix viewers: ${sorted.length} online`}
+        data-testid="project-presence-stack"
         className="flex items-center"
       >
         {visibleParticipants.map((participant, idx) => (

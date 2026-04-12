@@ -9,10 +9,89 @@
 **Why the arc closed instead of continuing:** Retro lesson from this session — 3+ consecutive pipelines with unchanged pass count is the signal to change strategy, not keep iterating. The remaining failures are in React realtime code (presence, cursor broadcasting, fullscreen rendering) and CI-log-based debugging is the wrong tool for that layer. v1.3 establishes local repro as prerequisite.
 
 ## Active Pipeline
-**Phase:** idle
-**Stop Reason:** completed_clean
+**Phase:** review
+**Sizing:** Medium
+**Feature:** Phase 12 — E2E Realtime Rendering Fix
 
-<!-- PIPELINE_STATUS: {"phase": "idle", "sizing": null, "roz_qa": "PASS", "poirot_reviewed": "PASS", "telemetry_captured": false, "stop_reason": "completed_clean"} -->
+<!-- PIPELINE_STATUS: {"phase": "commit", "sizing": "medium", "roz_qa": "PASS", "poirot_reviewed": true, "robert_reviewed": true, "telemetry_captured": true, "stop_reason": null} -->
+
+### Wave 1 Build Units (all DONE)
+- Colby Step 1: data-testid on ProjectPresenceStack.tsx — DONE, lint PASS, typecheck PASS
+- Colby Step 2: CI seed data in integration-tests.yml — DONE
+- Colby Step 2a: RLS migration (20260412000000) — DONE
+- Colby Step 3: ws:// scheme fix in spec.ts — DONE
+
+### Wave 1 QA
+- Roz wave QA: PASS (1 deferred: migration rollback — pre-existing debt)
+- Poirot blind review: 6 findings → 3 fixed (BLOCKER: is_project_collaborator, MUST-FIX: unroute cleanup, NIT: policy name), 1 deferred (rollback), 1 downgraded (test .first()), 1 false positive (userId type)
+
+## Phase 11.7 — API Backend Hardening — Closed 2026-04-12
+
+**Sizing:** Small. **Stop reason:** `completed_clean`.
+
+### What shipped
+- All missing `.js` extensions in api/ fixed (7 files)
+- Unsafe `src/` cross-imports in stripe.ts and webhook.ts refactored → `api/_lib/services/`
+- New `api/_lib/services/stripeService.ts` (Node-safe Stripe wrapper)
+- `updateSubscription`, `getStripeCustomerId`, `saveStripeCustomerId` added to backend subscriptionService
+- `api/tsconfig.json` with NodeNext — compile-time guard against future missing extensions
+- `ROOT_CAUSE_IDEAS_NOT_LOADING_CRITICAL.md` superseded
+- `docs/post-mortems/2026-04-11-prod-bug-01.md` written
+
+### Production verification
+All endpoints return proper auth errors, zero FUNCTION_INVOCATION_FAILED:
+- `/api/projects` → 401
+- `/api/invitations/create` → 401
+- `/api/stripe` → 401
+- `/api/invitations/accept` → 401
+
+### Commit
+```
+eac6db9 fix(11.7): eliminate unsafe src/ cross-imports and enforce NodeNext in api/
+```
+
+### Poirot noted pre-existing findings (not 11.7 regressions)
+- Origin header used unvalidated as Stripe redirect URL
+- priceId not validated against known Stripe price IDs
+- Null subscription cast in webhook checkout handler
+- Incomplete Stripe status branch handling
+These are tracked for a future Stripe security hardening pass.
+
+## Phase 11.6 — withQuotaCheck Architectural Fix — Closed 2026-04-12
+
+**Sizing:** Small. **Stop reason:** `completed_with_warnings`. **Warnings:** 3 hotfix commits for pre-existing missing `.js` extensions discovered during deploy verification (Phase 11.7 latent bombs pulled forward).
+
+### Commits shipped to origin/main (this session: 4)
+```
+28c362e fix(prod): add .js extension to inviteEmailTemplate import
+0e73447 fix(prod): add .js extension to invitationTokens and sendInviteEmail imports
+bc66e47 fix(prod): add .js extension to withQuotaCheck imports in call sites
+07daf2d fix(11.6): restore billing quota enforcement with extended subscriptionService
+```
+
+### Production verification
+- `/api/projects` POST without token → `401 UNAUTHORIZED` (middleware enforcing auth)
+- `/api/invitations/create` POST without token → `401 UNAUTHORIZED` (middleware enforcing auth)
+- Zero `FUNCTION_INVOCATION_FAILED` on final deploy (`prioritas-frh3o9ttv-lakehouse-digital.vercel.app`)
+- Zero `[withQuotaCheck:STUB]` warnings in logs
+
+### Files changed (Phase 11.6 core)
+- `api/_lib/services/subscriptionService.ts` — extended with projects/users branches (155→200 lines)
+- `api/_lib/services/__tests__/subscriptionService.test.ts` — NEW, 13 tests
+- `api/_lib/middleware/withQuotaCheck.ts` — rewritten from stub to real middleware (53→92 lines)
+- `api/_lib/middleware/__tests__/withQuotaCheck.test.ts` — rewired, 10 tests
+
+### Files changed (hotfix — pre-existing .js extensions)
+- `api/projects.ts:12` — added `.js` to withQuotaCheck import
+- `api/invitations/create.ts:16-18` — added `.js` to invitationTokens, sendInviteEmail, withQuotaCheck imports
+- `api/_lib/sendInviteEmail.ts:14` — added `.js` to inviteEmailTemplate import
+
+### Phase 11.7 impact
+Three of the Phase 11.7 latent bombs were fixed during this session (`sendInviteEmail.ts:14`, `invitationTokens` import, `inviteEmailTemplate` import). Phase 11.7 scope is reduced — the remaining work is the cross-import audit, `api/tsconfig.json` NodeNext, and post-mortem doc.
+
+### Acceptance bar: PARTIAL
+- Quota enforcement middleware is live and enforcing auth ✓
+- 402 verification for over-limit free-tier user deferred (requires test account with data at the limit)
 
 ## RESUME HERE — 2026-04-11 (end of PROD-BUG-01 recovery session)
 

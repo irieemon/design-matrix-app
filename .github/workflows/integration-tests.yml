@@ -225,7 +225,32 @@ jobs:
                 NOW()
               );
 
-            -- 5. Refresh admin materialized view now that all data exists
+            -- 5. Test ideas for realtime matrix E2E tests (T-054B-302, T-054B-303)
+            -- Stable text IDs (not UUIDs) per baseline schema (id is TEXT)
+            -- created_by = owner so RLS SELECT policy allows access
+            INSERT INTO public.ideas (id, content, details, x, y, priority, created_by, project_id, created_at, updated_at) VALUES
+              (
+                'idea-ci-001',
+                'CI Test Idea Alpha',
+                'First test idea for drag/drop E2E',
+                25, 25,
+                'high',
+                '11111111-1111-1111-1111-111111111111',
+                'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+                NOW(), NOW()
+              ),
+              (
+                'idea-ci-002',
+                'CI Test Idea Beta',
+                'Second test idea for position propagation',
+                75, 75,
+                'moderate',
+                '11111111-1111-1111-1111-111111111111',
+                'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+                NOW(), NOW()
+              );
+
+            -- 6. Refresh admin materialized view now that all data exists
             DO $$ BEGIN
               REFRESH MATERIALIZED VIEW public.admin_user_stats;
             EXCEPTION WHEN undefined_table THEN NULL;

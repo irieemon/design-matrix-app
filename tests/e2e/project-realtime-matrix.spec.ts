@@ -244,12 +244,15 @@ test('T-054B-304: disconnect shows reconnecting badge (Playwright route block)',
 
     // Block WebSocket connections to simulate disconnect
     await pageA.route('wss://**', (route) => route.abort())
+    await pageA.route('ws://**', (route) => route.abort())
 
     // Assert: reconnecting badge appears within 1.5s of silence
     await expect(
       pageA.getByRole('status', { name: /Reconnecting/i })
     ).toBeVisible({ timeout: 3_000 })
   } finally {
+    await pageA.unroute('wss://**')
+    await pageA.unroute('ws://**')
     await ctxA.close()
   }
 })
@@ -269,6 +272,7 @@ test('T-054B-305: reconnect shows recovery toast', async ({ browser }: { browser
 
     // Block then restore WebSocket to simulate reconnect
     await pageA.route('wss://**', (route) => route.abort())
+    await pageA.route('ws://**', (route) => route.abort())
 
     // Wait for reconnecting badge
     await expect(
@@ -277,6 +281,7 @@ test('T-054B-305: reconnect shows recovery toast', async ({ browser }: { browser
 
     // Restore WebSocket connections
     await pageA.unroute('wss://**')
+    await pageA.unroute('ws://**')
 
     // Assert: recovery toast appears within 5s
     await expect(
