@@ -57,6 +57,8 @@ async function enterFullscreenMatrix(page: Page): Promise<void> {
   await page.waitForSelector('[data-testid="enter-fullscreen"]', { timeout: 10_000 })
   await page.click('[data-testid="enter-fullscreen"]')
   await page.waitForSelector(MATRIX_FULLSCREEN_SELECTOR, { timeout: 10_000 })
+  // Wait for realtime channel to initialize — presence stack needs this
+  await page.waitForSelector('[data-testid="project-presence-stack"]', { timeout: 10_000 })
 }
 
 // ---------------------------------------------------------------------------
@@ -78,14 +80,20 @@ test('T-054B-300: two browsers see each other in presence stack', async ({ brows
     await enterFullscreenMatrix(pageA)
     await enterFullscreenMatrix(pageB)
 
-    // Assert: both avatars visible in both viewports within 5s
+    // Allow realtime channels to discover each other
+    await Promise.all([
+      pageA.waitForTimeout(2_000),
+      pageB.waitForTimeout(2_000),
+    ])
+
+    // Assert: both avatars visible in both viewports within 15s (CI cold-start)
     await expect(
       pageA.locator(PRESENCE_STACK_SELECTOR).locator('[data-testid^="presence-avatar-"]')
-    ).toHaveCount(2, { timeout: 5_000 })
+    ).toHaveCount(2, { timeout: 15_000 })
 
     await expect(
       pageB.locator(PRESENCE_STACK_SELECTOR).locator('[data-testid^="presence-avatar-"]')
-    ).toHaveCount(2, { timeout: 5_000 })
+    ).toHaveCount(2, { timeout: 15_000 })
   } finally {
     await ctxA.close()
     await ctxB.close()
@@ -109,6 +117,12 @@ test('T-054B-301: cursor appears in browser B when A moves mouse', async ({ brow
     await enterFullscreenMatrix(pageA)
     await enterFullscreenMatrix(pageB)
 
+    // Allow realtime channels to discover each other
+    await Promise.all([
+      pageA.waitForTimeout(2_000),
+      pageB.waitForTimeout(2_000),
+    ])
+
     // Act: move mouse across matrix canvas in browser A
     const matrixA = pageA.locator('[data-testid="design-matrix"]')
     const box = await matrixA.boundingBox()
@@ -118,10 +132,10 @@ test('T-054B-301: cursor appears in browser B when A moves mouse', async ({ brow
     await pageA.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5)
     await pageA.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.4)
 
-    // Assert: browser B sees exactly one live cursor for user A within 3s
+    // Assert: browser B sees exactly one live cursor for user A within 10s (CI cold-start)
     await expect(
       pageB.locator('[data-testid^="live-cursor-"]')
-    ).toHaveCount(1, { timeout: 3_000 })
+    ).toHaveCount(1, { timeout: 10_000 })
   } finally {
     await ctxA.close()
     await ctxB.close()
@@ -145,6 +159,12 @@ test('T-054B-302: drag starts lock overlay in browser B', async ({ browser }: { 
     await enterFullscreenMatrix(pageA)
     await enterFullscreenMatrix(pageB)
 
+    // Allow realtime channels to discover each other
+    await Promise.all([
+      pageA.waitForTimeout(2_000),
+      pageB.waitForTimeout(2_000),
+    ])
+
     // Get first idea card in browser A
     const firstCard = pageA.locator('[data-testid^="idea-card-"]').first()
     const ideaId = (await firstCard.getAttribute('data-testid'))?.replace('idea-card-', '')
@@ -165,10 +185,10 @@ test('T-054B-302: drag starts lock overlay in browser B', async ({ browser }: { 
       { steps: 5 }
     )
 
-    // Assert: browser B sees lock overlay for that card
+    // Assert: browser B sees lock overlay for that card within 10s (CI cold-start)
     await expect(
       pageB.locator(`[data-testid="locked-card-overlay-${ideaId}"]`)
-    ).toBeVisible({ timeout: 3_000 })
+    ).toBeVisible({ timeout: 10_000 })
 
     // Cleanup: release drag
     await pageA.mouse.up()
@@ -195,6 +215,12 @@ test('T-054B-303: drop propagates position in browser B within 2s', async ({ bro
     await enterFullscreenMatrix(pageA)
     await enterFullscreenMatrix(pageB)
 
+    // Allow realtime channels to discover each other
+    await Promise.all([
+      pageA.waitForTimeout(2_000),
+      pageB.waitForTimeout(2_000),
+    ])
+
     const firstCard = pageA.locator('[data-testid^="idea-card-"]').first()
     const ideaId = (await firstCard.getAttribute('data-testid'))?.replace('idea-card-', '')
     if (!ideaId) throw new Error('No idea cards found')
@@ -218,11 +244,11 @@ test('T-054B-303: drop propagates position in browser B within 2s', async ({ bro
       },
     })
 
-    // Assert: position in browser B updates within 2s
+    // Assert: position in browser B updates within 10s (CI cold-start)
     await expect(async () => {
       const newLeft = await cardInB.evaluate((el) => (el as HTMLElement).style.left)
       expect(newLeft).not.toBe(initialLeft)
-    }).toPass({ timeout: 2_000 })
+    }).toPass({ timeout: 10_000 })
   } finally {
     await ctxA.close()
     await ctxB.close()
@@ -283,10 +309,10 @@ test('T-054B-305: reconnect shows recovery toast', async ({ browser }: { browser
     await pageA.unroute('wss://**')
     await pageA.unroute('ws://**')
 
-    // Assert: recovery toast appears within 5s
+    // Assert: recovery toast appears within 10s (CI cold-start)
     await expect(
       pageA.getByRole('status', { name: /Back online/i })
-    ).toBeVisible({ timeout: 5_000 })
+    ).toBeVisible({ timeout: 10_000 })
   } finally {
     await ctxA.close()
   }

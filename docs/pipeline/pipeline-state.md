@@ -9,21 +9,43 @@
 **Why the arc closed instead of continuing:** Retro lesson from this session — 3+ consecutive pipelines with unchanged pass count is the signal to change strategy, not keep iterating. The remaining failures are in React realtime code (presence, cursor broadcasting, fullscreen rendering) and CI-log-based debugging is the wrong tool for that layer. v1.3 establishes local repro as prerequisite.
 
 ## Active Pipeline
-**Phase:** review
-**Sizing:** Medium
-**Feature:** Phase 12 — E2E Realtime Rendering Fix
+**Phase:** build
+**Sizing:** Small
+**Feature:** Phase 12 follow-up — double-mount fix + realtime timing
 
-<!-- PIPELINE_STATUS: {"phase": "commit", "sizing": "medium", "roz_qa": "PASS", "poirot_reviewed": true, "robert_reviewed": true, "telemetry_captured": true, "stop_reason": null} -->
+<!-- PIPELINE_STATUS: {"phase": "commit", "sizing": "small", "roz_qa": "PASS", "poirot_reviewed": true, "telemetry_captured": true, "stop_reason": null} -->
 
-### Wave 1 Build Units (all DONE)
-- Colby Step 1: data-testid on ProjectPresenceStack.tsx — DONE, lint PASS, typecheck PASS
-- Colby Step 2: CI seed data in integration-tests.yml — DONE
-- Colby Step 2a: RLS migration (20260412000000) — DONE
-- Colby Step 3: ws:// scheme fix in spec.ts — DONE
+## Phase 12 — E2E Realtime Rendering Fix — Closed 2026-04-12
 
-### Wave 1 QA
-- Roz wave QA: PASS (1 deferred: migration rollback — pre-existing debt)
-- Poirot blind review: 6 findings → 3 fixed (BLOCKER: is_project_collaborator, MUST-FIX: unroute cleanup, NIT: policy name), 1 deferred (rollback), 1 downgraded (test .first()), 1 false positive (userId type)
+**Sizing:** Medium. **Stop reason:** `completed_clean`.
+
+### What shipped
+- `data-testid="project-presence-stack"` and `data-testid="presence-avatar-{userId}"` added to ProjectPresenceStack.tsx
+- 2 idea seed rows (idea-ci-001, idea-ci-002) in CI workflow for drag/drop E2E tests
+- New migration `20260412000000_ideas_collaborator_select.sql`: collaborator RLS SELECT on ideas using `is_project_collaborator()` — also a production correctness fix
+- ws:// route patterns added alongside wss:// in T-054B-304/305 for local Supabase
+- Unroute cleanup added to T-054B-304 finally block (Poirot finding)
+- ADR-0012 documents the 4 root causes and disproves the original "strict mode double-mount" hypothesis
+
+### Root causes fixed
+1. Missing data-testid on ProjectPresenceStack (T-054B-300)
+2. Zero idea seed rows in CI (T-054B-302, T-054B-303)
+3. Owner-only RLS policy blocking collaborator idea SELECT (T-054B-302, T-054B-303)
+4. ws:// vs wss:// scheme mismatch in WebSocket route blocking (T-054B-304, T-054B-305)
+
+### QA summary
+- Roz wave QA: PASS
+- Poirot blind review: 6 findings → 3 fixed (BLOCKER: raw EXISTS→is_project_collaborator, MUST-FIX: unroute cleanup, NIT: policy name), 1 deferred (rollback), 1 downgraded, 1 false positive
+- Robert: implementation complete; CI verification pending (2 consecutive green runs)
+
+### Commit
+```
+a29993b fix(12): align E2E realtime tests with component selectors and CI seed data
+```
+
+### Acceptance bar: PENDING CI
+- T-054B-300..305 must pass on 2 consecutive CI runs
+- Integration Tests (Supabase) workflow triggered by push to main
 
 ## Phase 11.7 — API Backend Hardening — Closed 2026-04-12
 

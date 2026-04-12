@@ -232,14 +232,16 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
               </Button>
             </div>
 
-            <DesignMatrix 
-              ideas={ideas}
-              activeId={activeId || null}
-              currentUser={currentUser}
-              onEditIdea={onSetEditingIdea || (() => {})}
-              onDeleteIdea={deleteIdea || (async () => {})}
-              onToggleCollapse={toggleCollapse || (async () => {})}
-            />
+            {!isFullScreen && (
+              <DesignMatrix
+                ideas={ideas}
+                activeId={activeId || null}
+                currentUser={currentUser}
+                onEditIdea={onSetEditingIdea || (() => {})}
+                onDeleteIdea={deleteIdea || (async () => {})}
+                onToggleCollapse={toggleCollapse || (async () => {})}
+              />
+            )}
 
             {/* Modern Statistics */}
             <div className="mt-10 grid grid-cols-1 md:grid-cols-4 gap-6">
