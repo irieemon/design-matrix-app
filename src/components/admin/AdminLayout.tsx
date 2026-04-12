@@ -80,7 +80,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     { page: 'admin/analytics', icon: BarChart3, label: 'Analytics' },
     { page: 'admin/tokens', icon: DollarSign, label: 'Token Spend' },
     { page: 'admin/faq', icon: HelpCircle, label: 'FAQ' },
-    { page: 'admin/settings', icon: Settings, label: 'Settings' }
+    { page: 'admin/settings', icon: Settings, label: 'AI Models' }
   ]
 
   return (

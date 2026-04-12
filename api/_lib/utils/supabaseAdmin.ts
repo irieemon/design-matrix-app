@@ -51,6 +51,7 @@ export async function trackTokenUsage(params: {
   responseTimeMs: number
   success?: boolean
   errorMessage?: string
+  profileName?: string
 }) {
   try {
     // CRITICAL: Check if supabaseAdmin is initialized
@@ -81,7 +82,8 @@ export async function trackTokenUsage(params: {
         total_cost: totalCost,
         response_time_ms: params.responseTimeMs,
         success: params.success ?? true,
-        error_message: params.errorMessage
+        error_message: params.errorMessage,
+        profile_name: params.profileName ?? null
       })
 
     if (error) {

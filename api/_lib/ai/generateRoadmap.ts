@@ -261,7 +261,7 @@ async function generateRoadmapWithAI(
     task: 'generate-roadmap',
     hasVision: false,
     hasAudio: false,
-    userTier: 'free', // TODO: wire actual user tier
+    userTier: 'free', // NOTE: userTier hardcoded to 'free' — per-tier routing deferred (ADR-0013 anti-goal)
   }, profile);
 
   const model = getModel(selection.gatewayModelId);

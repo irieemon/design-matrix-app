@@ -99,7 +99,7 @@ async function analyzeImageWithVision(
     task: 'analyze-image',
     hasVision: true,
     hasAudio: false,
-    userTier: 'free', // TODO: wire actual user tier from subscription
+    userTier: 'free', // NOTE: userTier hardcoded to 'free' — per-tier routing deferred (ADR-0013 anti-goal)
   }, profile);
 
   const model = getModel(selection.gatewayModelId);

@@ -65,7 +65,7 @@ export async function handleGenerateIdeas(req: AuthenticatedRequest, res: Vercel
       task: 'generate-ideas',
       hasVision: false,
       hasAudio: false,
-      userTier: 'free', // TODO: wire actual user tier from subscription
+      userTier: 'free', // NOTE: userTier hardcoded to 'free' — per-tier routing deferred (ADR-0013 anti-goal)
     }, profile);
 
     const model = getModel(selection.gatewayModelId);
@@ -148,6 +148,7 @@ ${personaContext.additionalPrompt}`;
       usage: mappedUsage,
       responseTimeMs,
       success: true,
+      profileName: profile.name,
     });
 
     // Track AI usage for subscription limits

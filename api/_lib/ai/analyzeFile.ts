@@ -413,9 +413,9 @@ Return as JSON with fields: summary, key_insights (array), relevance_score`;
 }
 
 /**
- * Analyzes text files using AI SDK generateText with gpt-4o-mini.
+ * Analyzes text files using AI SDK generateText.
  * Migrated fetch call #4: was raw fetch to chat/completions with gpt-4o-mini.
- * Uses getModel directly (not selectModel) since text analysis always uses gpt-4o-mini for cost efficiency.
+ * Uses selectModel() with the active profile for model selection (ADR-0013 Step 3).
  */
 async function analyzeTextFile(fileRecord: any, analysis: any, profile?: ModelProfile | null) {
   try {

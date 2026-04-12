@@ -419,7 +419,7 @@ async function generateInsightsWithOpenAI(
     task: 'generate-insights',
     hasVision: multiModalContent.hasVisualContent,
     hasAudio: multiModalContent.hasAudioContent,
-    userTier: 'free', // TODO: wire actual user tier
+    userTier: 'free', // NOTE: userTier hardcoded to 'free' — per-tier routing deferred (ADR-0013 anti-goal)
   }, profile);
 
   const model = getModel(selection.gatewayModelId);
