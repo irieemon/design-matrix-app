@@ -7,6 +7,7 @@
 // Model profiles (ADR-0013)
 export {
   getActiveProfile,
+  invalidateProfileCache,
   FALLBACK_PROFILE,
   type TaskType,
   type TaskConfig,

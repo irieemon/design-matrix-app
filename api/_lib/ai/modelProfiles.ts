@@ -84,6 +84,12 @@ export function _resetCacheForTesting(): void {
   cacheTimestamp = 0;
 }
 
+/** Invalidate the in-memory profile cache so the next call fetches fresh data. */
+export function invalidateProfileCache(): void {
+  cachedProfile = null;
+  cacheTimestamp = 0;
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
