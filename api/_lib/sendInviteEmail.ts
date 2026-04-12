@@ -11,7 +11,7 @@
  */
 
 import { Resend } from 'resend'
-import { buildInviteEmail, type InviteEmailInput } from './inviteEmailTemplate'
+import { buildInviteEmail, type InviteEmailInput } from './inviteEmailTemplate.js'
 
 export type SendResult =
   | { ok: true }
