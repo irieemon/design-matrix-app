@@ -1,9 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type Stripe from 'stripe'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { stripeService } from '../../src/lib/services/stripeService'
-import { subscriptionService } from '../../src/lib/services/subscriptionService'
-import type { SubscriptionTier, SubscriptionUpdateParams } from '../../src/types/subscription'
+import { stripeService } from '../_lib/services/stripeService.js'
+import { updateSubscription, type SubscriptionUpdateParams } from '../_lib/services/subscriptionService.js'
 
 /**
  * Read raw body from Vercel request.
@@ -138,7 +137,7 @@ export default async function webhook(req: VercelRequest, res: VercelResponse) {
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session, admin: SupabaseClient) {
   try {
     const userId = session.metadata?.user_id
-    const tier = session.metadata?.tier as SubscriptionTier
+    const tier = session.metadata?.tier
     const subscriptionId = session.subscription as string
 
     if (!userId || !tier) {
@@ -148,7 +147,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, admin: 
 
     const subscription = await stripeService.getSubscription(subscriptionId)
 
-    await subscriptionService.updateSubscription(userId, {
+    await updateSubscription(userId, {
       tier,
       status: 'active',
       stripe_subscription_id: subscriptionId,
@@ -171,7 +170,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session, admin: 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription, admin: SupabaseClient) {
   try {
     const userId = subscription.metadata?.user_id
-    const tier = subscription.metadata?.tier as SubscriptionTier
+    const tier = subscription.metadata?.tier
 
     if (!userId) {
       console.error('Missing user_id in subscription metadata:', subscription.id)
@@ -200,7 +199,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription, admi
       updates.past_due_since = null
     }
 
-    await subscriptionService.updateSubscription(userId, updates, admin)
+    await updateSubscription(userId, updates, admin)
 
     console.log(`Subscription updated for user ${userId}: ${status}`)
   } catch (error) {
@@ -221,7 +220,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription, admi
       return
     }
 
-    await subscriptionService.updateSubscription(userId, {
+    await updateSubscription(userId, {
       tier: 'free',
       status: 'canceled',
       cancel_at_period_end: false,
@@ -264,7 +263,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice, admin: SupabaseCl
       return
     }
 
-    await subscriptionService.updateSubscription(userId, {
+    await updateSubscription(userId, {
       status: 'active',
       current_period_start: new Date(subscription.current_period_start * 1000),
       current_period_end: new Date(subscription.current_period_end * 1000),
@@ -299,7 +298,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice, admin: SupabaseClien
     }
 
     // Mark past_due with grace anchor (D-17)
-    await subscriptionService.updateSubscription(userId, {
+    await updateSubscription(userId, {
       status: 'past_due',
       past_due_since: new Date(),
     }, admin)

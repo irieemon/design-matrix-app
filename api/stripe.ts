@@ -9,8 +9,8 @@
 import type { VercelResponse } from '@vercel/node'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { withAuth, withRateLimit, compose, type AuthenticatedRequest } from './_lib/middleware/index.js'
-import { stripeService } from '../src/lib/services/stripeService'
-import { subscriptionService } from '../src/lib/services/subscriptionService'
+import { stripeService } from './_lib/services/stripeService.js'
+import { getStripeCustomerId } from './_lib/services/subscriptionService.js'
 
 /**
  * Service-role Supabase client for subscription row read/write in this
@@ -89,7 +89,7 @@ async function handleCreatePortal(req: AuthenticatedRequest, res: VercelResponse
 
     // Get user's Stripe customer ID (pass admin client to bypass RLS)
     const admin = getSupabaseAdmin()
-    const customerId = await subscriptionService.getStripeCustomerId(userId, admin)
+    const customerId = await getStripeCustomerId(userId, admin)
 
     if (!customerId) {
       return res.status(400).json({

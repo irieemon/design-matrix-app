@@ -1,5 +1,12 @@
 # ROOT CAUSE ANALYSIS: Ideas Not Loading in Matrix
 
+> **[SUPERSEDED — 2026-04-12]**
+> The diagnosis below (React hooks stale closure in `useIdeas.ts`) was incorrect.
+> The actual production failure was PROD-BUG-01: missing `.js` extensions on
+> ES module imports in `api/` caused Node runtime resolution errors at cold-start.
+> See `docs/post-mortems/2026-04-11-prod-bug-01.md` for the confirmed root cause
+> and the full remediation applied in Phases 11.5–11.7.
+
 **Status**: CRITICAL BUG IDENTIFIED
 **Date**: 2025-10-01
 **Severity**: HIGH - Core functionality broken

@@ -12,7 +12,7 @@ export type {
   RateLimitConfig,
   CSRFConfig,
   ErrorResponse,
-} from './types'
+} from './types.js'
 
 // Cookie utilities
 export {

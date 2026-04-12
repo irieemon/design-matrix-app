@@ -7,7 +7,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import type { AuthenticatedRequest, MiddlewareHandler, MiddlewareWrapper } from './types'
+import type { AuthenticatedRequest, MiddlewareHandler, MiddlewareWrapper } from './types.js'
 import { getCookie, COOKIE_NAMES } from './cookies.js'
 
 export type { AuthenticatedRequest }

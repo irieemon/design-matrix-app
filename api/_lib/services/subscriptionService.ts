@@ -222,6 +222,99 @@ async function checkAiLimit(
   }
 }
 
+// ============================================================================
+// STRIPE SUBSCRIPTION HELPERS
+// Used by api/stripe.ts and api/stripe/webhook.ts — must stay Node-safe.
+// ============================================================================
+
+/**
+ * Subscription update parameters accepted by updateSubscription.
+ * Mirrors src/types/subscription.ts SubscriptionUpdateParams but declared
+ * here to avoid any transitive import.meta.env dependency.
+ */
+export interface SubscriptionUpdateParams {
+  tier?: string
+  status?: string
+  stripe_customer_id?: string
+  stripe_subscription_id?: string
+  current_period_start?: Date
+  current_period_end?: Date
+  cancel_at_period_end?: boolean
+  past_due_since?: Date | null
+}
+
+/**
+ * Upsert subscription fields for a user.
+ *
+ * Accepts an optional `client` so callers can pass a service-role admin
+ * client when the default module-level supabaseAdmin is insufficient (e.g.
+ * when the caller already constructed its own admin client with the request's
+ * env vars).
+ */
+export async function updateSubscription(
+  userId: string,
+  updates: SubscriptionUpdateParams,
+  client?: import('@supabase/supabase-js').SupabaseClient
+): Promise<void> {
+  const db = client ?? supabaseAdmin
+  if (!db) {
+    console.error('❌ [updateSubscription] Supabase admin client not initialized')
+    throw new Error('Supabase admin client not initialized')
+  }
+
+  const { error } = await db
+    .from('subscriptions')
+    .update(updates)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('❌ [updateSubscription] failed:', error)
+    throw new Error(`Subscription update failed: ${error.message}`)
+  }
+}
+
+/**
+ * Retrieve the Stripe customer ID stored on the user's subscription row.
+ * Returns null when no subscription row exists or when the field is unset.
+ */
+export async function getStripeCustomerId(
+  userId: string,
+  client?: import('@supabase/supabase-js').SupabaseClient
+): Promise<string | null> {
+  const db = client ?? supabaseAdmin
+  if (!db) {
+    console.error('❌ [getStripeCustomerId] Supabase admin client not initialized')
+    return null
+  }
+
+  const { data, error } = await db
+    .from('subscriptions')
+    .select('stripe_customer_id')
+    .eq('user_id', userId)
+    .single()
+
+  if (error) {
+    // PGRST116 = no rows — user has no subscription yet, that's fine
+    if ((error as { code?: string }).code !== 'PGRST116') {
+      console.error('❌ [getStripeCustomerId] query failed:', error)
+    }
+    return null
+  }
+
+  return (data as { stripe_customer_id: string | null })?.stripe_customer_id ?? null
+}
+
+/**
+ * Persist a newly-created Stripe customer ID onto the user's subscription row.
+ */
+export async function saveStripeCustomerId(
+  userId: string,
+  stripeCustomerId: string,
+  client?: import('@supabase/supabase-js').SupabaseClient
+): Promise<void> {
+  await updateSubscription(userId, { stripe_customer_id: stripeCustomerId }, client)
+}
+
 /**
  * Track AI usage
  */
