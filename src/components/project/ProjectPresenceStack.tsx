@@ -134,6 +134,20 @@ export function ProjectPresenceStack({
   const contextManager = ctx?.manager ?? null
 
   useEffect(() => {
+    // When inside ProjectRealtimeProvider but the context manager isn't ready
+    // yet (first render before provider's useEffect runs), skip this effect.
+    // Creating a local manager would open a competing channel subscription that
+    // conflicts with the provider's module-cached manager, causing rapid
+    // join/leave cycles that prevent presence from ever establishing.
+    if (!propManager && !contextManager && ctx !== null) {
+      return () => {
+        if (slideTimerRef.current !== null) {
+          clearTimeout(slideTimerRef.current)
+          slideTimerRef.current = null
+        }
+      }
+    }
+
     // Resolve manager: explicit prop wins, then context, then create locally.
     const manager =
       propManager ??

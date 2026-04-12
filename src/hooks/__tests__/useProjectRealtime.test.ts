@@ -6,9 +6,16 @@
  * ScopedRealtimeManager is mocked via vi.hoisted so the constructor spy is
  * available both inside the factory and in the test body.
  * IdeaRepository is mocked so the polling-tick test can verify the call.
+ *
+ * NOTE: The hook uses a module-level managerCache with a 2s teardown grace
+ * period (TEARDOWN_GRACE_MS). Tests use fake timers so that:
+ *  - Each beforeEach flushes any pending teardown from the prior test,
+ *    ensuring acquireManager always calls new ScopedRealtimeManager() fresh.
+ *  - Tests that verify unsubscribe() call vi.runAllTimers() explicitly to
+ *    advance past the grace period.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import type { IdeaCard } from '../../types'
 
@@ -144,7 +151,24 @@ const defaultOpts = {
   setIdeas: defaultSetIdeas,
 }
 
+// ---------------------------------------------------------------------------
+// Setup / teardown
+//
+// Fake timers are activated each test so that releaseManager's TEARDOWN_GRACE_MS
+// setTimeout is a fake timer. At the start of each beforeEach, vi.runAllTimers()
+// fires any pending teardown from the prior test, clearing the module-level
+// managerCache so acquireManager creates a fresh ScopedRealtimeManager instance.
+// ---------------------------------------------------------------------------
+
 beforeEach(() => {
+  // Activate fake timers first so that any teardown timer scheduled by the
+  // previous test's cleanup (releaseManager) is a fake timer we can flush.
+  vi.useFakeTimers()
+  // Flush pending teardown timers left by the prior test's cleanup. This
+  // empties the module-level managerCache so the next acquireManager() call
+  // always invokes new ScopedRealtimeManager().
+  vi.runAllTimers()
+
   vi.clearAllMocks()
   mockManagerInstance.reset()
   capturedPostgresHandlers.reset()
@@ -152,6 +176,10 @@ beforeEach(() => {
   capturedPresenceHandler.reset()
   capturedPollingHandler.reset()
   mockGetProjectIdeas.mockResolvedValue([])
+})
+
+afterAll(() => {
+  vi.useRealTimers()
 })
 
 // ---------------------------------------------------------------------------
@@ -180,6 +208,9 @@ describe('useProjectRealtime', () => {
     const { unmount } = renderHook(() => useProjectRealtime(defaultOpts))
     const inst = mockManagerInstance.current!
     unmount()
+    // Advance past TEARDOWN_GRACE_MS so releaseManager's setTimeout fires
+    // and calls manager.unsubscribe().
+    vi.runAllTimers()
     expect(inst.unsubscribe).toHaveBeenCalledOnce()
   })
 
@@ -191,6 +222,8 @@ describe('useProjectRealtime', () => {
     )
     const firstInstance = mockManagerInstance.current!
     rerender({ projectId: 'p2' })
+    // Flush teardown timer for the p1 manager so unsubscribe() is called.
+    vi.runAllTimers()
     expect(MockSRM).toHaveBeenCalledTimes(2)
     expect(firstInstance.unsubscribe).toHaveBeenCalledOnce()
   })

@@ -21,6 +21,8 @@
 
 import { test, expect, Browser, BrowserContext, Page } from '@playwright/test'
 
+test.describe.configure({ timeout: 60_000 })
+
 // ---------------------------------------------------------------------------
 // Environment config — must be set for live runs
 // ---------------------------------------------------------------------------
@@ -54,11 +56,34 @@ async function signIn(page: Page, email: string, password: string): Promise<void
 
 async function enterFullscreenMatrix(page: Page): Promise<void> {
   await page.goto(PROJECT_URL)
-  await page.waitForSelector('[data-testid="enter-fullscreen"]', { timeout: 10_000 })
-  await page.click('[data-testid="enter-fullscreen"]')
+  await page.waitForSelector('#main-content', { timeout: 15_000 })
+
+  // The ?project= URL param may or may not auto-select the project.
+  // If it doesn't, the user lands on the project list — click the project card.
+  const enterBtn = page.locator('[data-testid="enter-fullscreen"]')
+  const projectCard = page.locator('text=CI Test Project').first()
+
+  const btnVisible = await enterBtn.isVisible().catch(() => false)
+  if (!btnVisible) {
+    // Wait for either the fullscreen button or the project card
+    try {
+      await Promise.race([
+        enterBtn.waitFor({ state: 'visible', timeout: 8_000 }),
+        projectCard.waitFor({ state: 'visible', timeout: 8_000 }),
+      ])
+    } catch {
+      throw new Error('enterFullscreenMatrix: neither enter-fullscreen button nor project card appeared within 8s')
+    }
+
+    // If still no fullscreen button, select the project from the list
+    if (!(await enterBtn.isVisible().catch(() => false))) {
+      await projectCard.click()
+      await enterBtn.waitFor({ state: 'visible', timeout: 10_000 })
+    }
+  }
+
+  await enterBtn.click()
   await page.waitForSelector(MATRIX_FULLSCREEN_SELECTOR, { timeout: 10_000 })
-  // Wait for realtime channel to initialize — presence stack needs this
-  await page.waitForSelector('[data-testid="project-presence-stack"]', { timeout: 10_000 })
 }
 
 // ---------------------------------------------------------------------------

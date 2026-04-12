@@ -170,6 +170,12 @@ PGPASSWORD=postgres psql -h localhost -p 54322 -U postgres -d postgres <<'EOSQL'
       NOW()
     );
 
+  -- 5b. Seed ideas for drag/drop realtime tests (T-054B-302, T-054B-303)
+  INSERT INTO ideas (id, content, x, y, priority, created_by, project_id, created_at, updated_at) VALUES
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb01', 'Test Idea Alpha', 30, 40, 'moderate', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NOW(), NOW()),
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb02', 'Test Idea Beta', 60, 70, 'high', '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NOW(), NOW())
+  ON CONFLICT (id) DO NOTHING;
+
   -- 5. Refresh admin materialized view now that all data exists
   DO $$ BEGIN
     REFRESH MATERIALIZED VIEW public.admin_user_stats;
