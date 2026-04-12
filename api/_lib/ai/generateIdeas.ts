@@ -12,8 +12,9 @@ import type { AuthenticatedRequest } from '../middleware/index.js';
 import { InputValidator, commonRules } from '../utils/validation.js';
 import { checkLimit, trackAIUsage } from '../services/subscriptionService.js';
 import { trackTokenUsage } from '../utils/supabaseAdmin.js';
-import { selectModel } from './modelRouter.js';
+import { selectModel, getProviderOptions } from './modelRouter.js';
 import { getModel } from './providers.js';
+import { getActiveProfile } from './modelProfiles.js';
 import { parseJsonResponse } from './utils/parsing.js';
 import { mapUsageToTracking } from './utils/tokenTracking.js';
 import { getProjectTypePersona } from './utils/prompts.js';
@@ -58,15 +59,17 @@ export async function handleGenerateIdeas(req: AuthenticatedRequest, res: Vercel
       });
     }
 
-    // Select model via router
+    // Select model via profile-aware router (ADR-0013 Step 3)
+    const profile = await getActiveProfile();
     const selection = selectModel({
       task: 'generate-ideas',
       hasVision: false,
       hasAudio: false,
       userTier: 'free', // TODO: wire actual user tier from subscription
-    });
+    }, profile);
 
     const model = getModel(selection.gatewayModelId);
+    const providerOptions = getProviderOptions(selection.fallbackModels);
 
     // Build persona-driven prompts
     const personaContext = getProjectTypePersona(projectType, tolerance);
@@ -120,6 +123,7 @@ ${personaContext.additionalPrompt}`;
       prompt: userPrompt,
       temperature: selection.temperature,
       maxOutputTokens: selection.maxOutputTokens,
+      ...(providerOptions ? { providerOptions } : {}),
     });
 
     const responseTimeMs = Date.now() - startTime;

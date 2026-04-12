@@ -13,8 +13,9 @@ import { generateObject } from 'ai';
 import { z } from 'zod';
 import type { VercelResponse } from '@vercel/node';
 import type { AuthenticatedRequest } from '../middleware/index.js';
-import { selectModel } from './modelRouter.js';
+import { selectModel, getProviderOptions } from './modelRouter.js';
 import { getModel } from './providers.js';
+import { getActiveProfile } from './modelProfiles.js';
 
 export const VIDEO_ANALYSIS_MIN_FRAMES = 1;
 export const VIDEO_ANALYSIS_MAX_FRAMES = 12;
@@ -59,14 +60,16 @@ export async function handleAnalyzeVideo(
       });
     }
 
-    // Vision-capable model only — analyze-image routing path covers this.
+    // Profile-aware model routing (ADR-0013 Step 3)
+    const profile = await getActiveProfile();
     const selection = selectModel({
-      task: 'analyze-image',
+      task: 'analyze-video',
       hasVision: true,
       hasAudio: false,
       userTier: 'free',
-    });
+    }, profile);
     const model = getModel(selection.gatewayModelId);
+    const providerOptions = getProviderOptions(selection.fallbackModels);
 
     const prompt = buildVideoPrompt(frames.length, projectContext);
 
@@ -89,6 +92,7 @@ export async function handleAnalyzeVideo(
       ],
       maxOutputTokens: selection.maxOutputTokens,
       temperature: selection.temperature,
+      ...(providerOptions ? { providerOptions } : {}),
     });
 
     return res.status(200).json({ analysis: object });

@@ -13,8 +13,9 @@ import { generateObject } from 'ai';
 import { z } from 'zod';
 import type { VercelResponse } from '@vercel/node';
 import type { AuthenticatedRequest } from '../middleware/index.js';
-import { selectModel } from './modelRouter.js';
+import { selectModel, getProviderOptions } from './modelRouter.js';
 import { getModel } from './providers.js';
+import { getActiveProfile } from './modelProfiles.js';
 
 // Structured output schema. The frontend (AIIdeaModal normalizeAnalysisResult)
 // expects exactly these fields — using generateObject forces the model to
@@ -92,15 +93,17 @@ async function analyzeImageWithVision(
   // Create analysis prompt based on type and project context
   const basePrompt = getImageAnalysisPrompt(analysisType, projectContext);
 
-  // AI SDK migration: selectModel ensures vision-capable model (never MiniMax per AI-04)
+  // Profile-aware model routing (ADR-0013 Step 3)
+  const profile = await getActiveProfile();
   const selection = selectModel({
     task: 'analyze-image',
     hasVision: true,
     hasAudio: false,
     userTier: 'free', // TODO: wire actual user tier from subscription
-  });
+  }, profile);
 
   const model = getModel(selection.gatewayModelId);
+  const providerOptions = getProviderOptions(selection.fallbackModels);
 
   // Structured output: forces the model to return the exact fields the UI
   // normalizer expects, eliminating the need for ad-hoc text parsing.
@@ -116,6 +119,7 @@ async function analyzeImageWithVision(
     }],
     maxOutputTokens: selection.maxOutputTokens,
     temperature: selection.temperature,
+    ...(providerOptions ? { providerOptions } : {}),
   });
 
   console.log('AI SDK vision response received (structured)');

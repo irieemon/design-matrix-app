@@ -12,7 +12,9 @@
 
 import { generateText, experimental_transcribe } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
+import { selectModel, getProviderOptions } from './modelRouter.js';
 import { getModel } from './providers.js';
+import { getActiveProfile } from './modelProfiles.js';
 import { createClient } from '@supabase/supabase-js';
 import type { VercelResponse } from '@vercel/node';
 import type { AuthenticatedRequest } from '../middleware/index.js';
@@ -118,11 +120,19 @@ export async function handleTranscribeAudio(req: AuthenticatedRequest, res: Verc
       });
     }
 
-    // Step 2: Summarize transcript via generateText (gpt-4o-mini for cost efficiency).
+    // Step 2: Summarize transcript via profile-aware routing (ADR-0013 Step 3).
     // Routes through the Vercel AI Gateway via getModel() to match all other handlers.
     // The Whisper transcription above remains a targeted @ai-sdk/openai exception (gateway
     // does not support transcription models). AI_GATEWAY_API_KEY is required for this step.
-    const summaryModel = getModel('openai/gpt-4o-mini');
+    const profile = await getActiveProfile();
+    const summarySelection = selectModel({
+      task: 'transcribe-summary',
+      hasVision: false,
+      hasAudio: false,
+      userTier: 'free',
+    }, profile);
+    const summaryModel = getModel(summarySelection.gatewayModelId);
+    const providerOptions = getProviderOptions(summarySelection.fallbackModels);
 
     const projectInfo = projectContext
       ? `\n\nProject: ${projectContext.projectName || 'Unknown'}\nType: ${projectContext.projectType || 'General'}`
@@ -142,7 +152,9 @@ Return as JSON: { "summary": "...", "keyPoints": ["point1", "point2", ...] }`;
     const { text: summaryText, usage } = await generateText({
       model: summaryModel,
       prompt: summaryPrompt,
-      maxOutputTokens: 500,
+      maxOutputTokens: summarySelection.maxOutputTokens,
+      temperature: summarySelection.temperature,
+      ...(providerOptions ? { providerOptions } : {}),
     });
 
     const tracking = mapUsageToTracking(usage as any);

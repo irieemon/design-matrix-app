@@ -8,8 +8,9 @@
 
 import { generateText } from 'ai';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { selectModel } from './modelRouter.js';
+import { selectModel, getProviderOptions } from './modelRouter.js';
 import { getModel } from './providers.js';
+import { getActiveProfile } from './modelProfiles.js';
 import { parseJsonResponse } from './utils/parsing.js';
 
 // ============================================================================
@@ -254,14 +255,17 @@ async function generateRoadmapWithAI(
   projectType: string,
   ideas: any[],
 ): Promise<Record<string, unknown>> {
+  // Profile-aware model routing (ADR-0013 Step 3)
+  const profile = await getActiveProfile();
   const selection = selectModel({
     task: 'generate-roadmap',
     hasVision: false,
     hasAudio: false,
     userTier: 'free', // TODO: wire actual user tier
-  });
+  }, profile);
 
   const model = getModel(selection.gatewayModelId);
+  const providerOptions = getProviderOptions(selection.fallbackModels);
   const projectContext = getProjectTypeContext(projectType);
 
   const systemPrompt = `${getRoadmapPersona(projectType)}
@@ -359,6 +363,7 @@ Generate a roadmap that creates a comprehensive, domain-appropriate plan.`;
     prompt: userPrompt,
     temperature: selection.temperature,
     maxOutputTokens: selection.maxOutputTokens,
+    ...(providerOptions ? { providerOptions } : {}),
   });
 
   // Parse response, fallback to empty object on failure (preserving original behavior)

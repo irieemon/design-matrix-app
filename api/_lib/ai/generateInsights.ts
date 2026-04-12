@@ -11,8 +11,10 @@
 
 import { generateText } from 'ai';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { selectModel } from './modelRouter.js';
+import { selectModel, getProviderOptions } from './modelRouter.js';
 import { getModel } from './providers.js';
+import { getActiveProfile } from './modelProfiles.js';
+import type { ModelProfile } from './modelProfiles.js';
 import { parseJsonResponse } from './utils/parsing.js';
 import { mapUsageToTracking } from './utils/tokenTracking.js';
 
@@ -362,21 +364,23 @@ export async function handleGenerateInsights(req: VercelRequest, res: VercelResp
       return res.status(500).json({ error: 'No AI service configured. Please set OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable.' });
     }
 
+    // Profile-aware model routing (ADR-0013 Step 3)
+    const profile = await getActiveProfile();
     let insights: Record<string, unknown> = {};
 
     if (openaiKey) {
       try {
-        insights = await generateInsightsWithOpenAI(ideas, projectName, projectType, roadmapContext, documentContext, focusArea);
+        insights = await generateInsightsWithOpenAI(ideas, projectName, projectType, roadmapContext, documentContext, focusArea, profile);
       } catch (openaiError) {
         console.error('OpenAI insights generation failed, trying Anthropic fallback:', openaiError);
         if (anthropicKey) {
-          insights = await generateInsightsWithAnthropic(ideas, projectName, projectType, roadmapContext, documentContext);
+          insights = await generateInsightsWithAnthropic(ideas, projectName, projectType, roadmapContext, documentContext, profile);
         } else {
           throw openaiError;
         }
       }
     } else if (anthropicKey) {
-      insights = await generateInsightsWithAnthropic(ideas, projectName, projectType, roadmapContext, documentContext);
+      insights = await generateInsightsWithAnthropic(ideas, projectName, projectType, roadmapContext, documentContext, profile);
     }
 
     // Validate response structure
@@ -407,6 +411,7 @@ async function generateInsightsWithOpenAI(
   roadmapContext: any = null,
   documentContext: any[] = [],
   focusArea: string = 'standard',
+  profile?: ModelProfile | null,
 ): Promise<Record<string, unknown>> {
   const multiModalContent = await processCachedFileAnalysis(documentContext);
 
@@ -415,9 +420,10 @@ async function generateInsightsWithOpenAI(
     hasVision: multiModalContent.hasVisualContent,
     hasAudio: multiModalContent.hasAudioContent,
     userTier: 'free', // TODO: wire actual user tier
-  });
+  }, profile);
 
   const model = getModel(selection.gatewayModelId);
+  const providerOptions = getProviderOptions(selection.fallbackModels);
 
   const systemPrompt = buildInsightsSystemPrompt(multiModalContent, focusArea);
   const userPrompt = buildInsightsUserPrompt(ideas, projectName, projectType, roadmapContext, multiModalContent);
@@ -428,6 +434,7 @@ async function generateInsightsWithOpenAI(
     prompt: userPrompt,
     temperature: selection.temperature ?? getRandomTemperature(),
     maxOutputTokens: selection.maxOutputTokens,
+    ...(providerOptions ? { providerOptions } : {}),
   });
 
   if (!text) {
@@ -447,17 +454,28 @@ async function generateInsightsWithAnthropic(
   projectType: string,
   roadmapContext: any = null,
   documentContext: any[] = [],
+  profile?: ModelProfile | null,
 ): Promise<Record<string, unknown>> {
-  // Use Anthropic model via gateway
-  const model = getModel('anthropic/claude-3-5-sonnet-20241022');
+  // Profile-aware routing replaces hardcoded anthropic model (ADR-0013 Step 3).
+  // The gateway fallback system handles provider failover via providerOptions.
+  const selection = selectModel({
+    task: 'generate-insights',
+    hasVision: false,
+    hasAudio: false,
+    userTier: 'free',
+  }, profile);
+
+  const model = getModel(selection.gatewayModelId);
+  const providerOptions = getProviderOptions(selection.fallbackModels);
 
   const prompt = buildAnthropicFallbackPrompt(ideas, projectName, projectType, roadmapContext, documentContext);
 
   const { text } = await generateText({
     model,
     prompt,
-    temperature: getRandomTemperature(),
-    maxOutputTokens: 4096,
+    temperature: selection.temperature ?? getRandomTemperature(),
+    maxOutputTokens: selection.maxOutputTokens,
+    ...(providerOptions ? { providerOptions } : {}),
   });
 
   if (!text) {

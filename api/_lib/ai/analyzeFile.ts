@@ -18,8 +18,10 @@ import { createOpenAI } from '@ai-sdk/openai';
 import type { VercelResponse } from '@vercel/node';
 import type { AuthenticatedRequest } from '../middleware/index.js';
 import { createClient } from '@supabase/supabase-js';
-import { selectModel } from './modelRouter.js';
+import { selectModel, getProviderOptions } from './modelRouter.js';
 import { getModel } from './providers.js';
+import { getActiveProfile } from './modelProfiles.js';
+import type { ModelProfile } from './modelProfiles.js';
 import { parseJsonResponse } from './utils/parsing.js';
 import { mapUsageToTracking } from './utils/tokenTracking.js';
 
@@ -122,12 +124,16 @@ export async function handleAnalyzeFile(req: AuthenticatedRequest, res: VercelRe
       return res.status(500).json({ error: 'No AI service configured' });
     }
 
+    // Profile-aware model routing (ADR-0013 Step 3)
+    const profile = await getActiveProfile();
+
     try {
       // Analyze the file based on its type
       const analysis = await analyzeFileContent(
         supabase,
         fileRecord,
         projectId,
+        profile,
       );
 
       // Save analysis results
@@ -196,6 +202,7 @@ async function analyzeFileContent(
   supabase: any,
   fileRecord: any,
   _projectId: string,
+  profile?: ModelProfile | null,
 ) {
   const mimeType = fileRecord.mime_type;
   const fileName = fileRecord.name;
@@ -218,13 +225,13 @@ async function analyzeFileContent(
   // Determine content type and analysis approach
   if (mimeType.startsWith('image/')) {
     analysis.content_type = 'image';
-    analysis = await analyzeImageFile(supabase, fileRecord, analysis);
+    analysis = await analyzeImageFile(supabase, fileRecord, analysis, profile);
   } else if (mimeType.startsWith('audio/') || mimeType.startsWith('video/')) {
     analysis.content_type = mimeType.startsWith('audio/') ? 'audio' : 'video';
-    analysis = await analyzeAudioVideoFile(supabase, fileRecord, analysis);
+    analysis = await analyzeAudioVideoFile(supabase, fileRecord, analysis, profile);
   } else if (mimeType === 'application/pdf' || mimeType.includes('text') || mimeType.includes('document')) {
     analysis.content_type = 'text';
-    analysis = await analyzeTextFile(fileRecord, analysis);
+    analysis = await analyzeTextFile(fileRecord, analysis, profile);
   } else {
     // Unknown file type - try to extract any available content
     analysis.summary = `File of type ${mimeType} uploaded but no specific analysis available.`;
@@ -240,7 +247,7 @@ async function analyzeFileContent(
  * Migrated fetch call #1: was raw fetch to OpenAI chat/completions with gpt-4o vision.
  * Uses selectModel with hasVision=true to ensure vision-capable model (never MiniMax per AI-04).
  */
-async function analyzeImageFile(supabase: any, fileRecord: any, analysis: any) {
+async function analyzeImageFile(supabase: any, fileRecord: any, analysis: any, profile?: ModelProfile | null) {
   try {
     console.log('Analyzing image:', fileRecord.name);
 
@@ -257,9 +264,10 @@ async function analyzeImageFile(supabase: any, fileRecord: any, analysis: any) {
       return analysis;
     }
 
-    // AI SDK migration: selectModel ensures vision-capable model (never MiniMax)
-    const selection = selectModel({ task: 'analyze-file', hasVision: true, hasAudio: false, userTier: 'free' });
+    // Profile-aware routing: selectModel ensures vision-capable model (never MiniMax)
+    const selection = selectModel({ task: 'analyze-file', hasVision: true, hasAudio: false, userTier: 'free' }, profile);
     const model = getModel(selection.gatewayModelId);
+    const providerOptions = getProviderOptions(selection.fallbackModels);
 
     const analysisPrompt = `Analyze this image and provide:
 1. A brief summary of what you see
@@ -279,8 +287,9 @@ Return as JSON with fields: summary, key_insights (array), visual_description, e
           { type: 'image', image: urlData.signedUrl },
         ],
       }],
-      maxOutputTokens: 1000,
-      temperature: 0.3,
+      maxOutputTokens: selection.maxOutputTokens,
+      temperature: selection.temperature,
+      ...(providerOptions ? { providerOptions } : {}),
     });
 
     try {
@@ -313,7 +322,7 @@ Return as JSON with fields: summary, key_insights (array), visual_description, e
  *
  * Uses @ai-sdk/openai for transcription model (targeted exception -- gateway does not support transcription models).
  */
-async function analyzeAudioVideoFile(supabase: any, fileRecord: any, analysis: any) {
+async function analyzeAudioVideoFile(supabase: any, fileRecord: any, analysis: any, profile?: ModelProfile | null) {
   try {
     console.log('Analyzing audio/video:', fileRecord.name);
 
@@ -353,8 +362,15 @@ async function analyzeAudioVideoFile(supabase: any, fileRecord: any, analysis: a
     analysis.extracted_text = transcript;
 
     if (transcript.length > 50) {
-      // Step 2: Summarize transcript via generateText through gateway
-      const summaryModel = getModel('openai/gpt-4o-mini');
+      // Step 2: Summarize transcript via profile-aware routing (ADR-0013 Step 3)
+      const summarySelection = selectModel({
+        task: 'transcribe-summary',
+        hasVision: false,
+        hasAudio: false,
+        userTier: 'free',
+      }, profile);
+      const summaryModel = getModel(summarySelection.gatewayModelId);
+      const summaryProviderOptions = getProviderOptions(summarySelection.fallbackModels);
 
       const summaryPrompt = `Analyze this audio transcript and provide:
 1. A brief summary of the content
@@ -368,7 +384,9 @@ Return as JSON with fields: summary, key_insights (array), relevance_score`;
       const { text: summaryText } = await generateText({
         model: summaryModel,
         prompt: summaryPrompt,
-        maxOutputTokens: 500,
+        maxOutputTokens: summarySelection.maxOutputTokens,
+        temperature: summarySelection.temperature,
+        ...(summaryProviderOptions ? { providerOptions: summaryProviderOptions } : {}),
       });
 
       try {
@@ -399,7 +417,7 @@ Return as JSON with fields: summary, key_insights (array), relevance_score`;
  * Migrated fetch call #4: was raw fetch to chat/completions with gpt-4o-mini.
  * Uses getModel directly (not selectModel) since text analysis always uses gpt-4o-mini for cost efficiency.
  */
-async function analyzeTextFile(fileRecord: any, analysis: any) {
+async function analyzeTextFile(fileRecord: any, analysis: any, profile?: ModelProfile | null) {
   try {
     console.log('Analyzing text file:', fileRecord.name);
 
@@ -412,8 +430,15 @@ async function analyzeTextFile(fileRecord: any, analysis: any) {
       return analysis;
     }
 
-    // AI SDK migration: text analysis with gpt-4o-mini for cost efficiency
-    const textModel = getModel('openai/gpt-4o-mini');
+    // Profile-aware routing replaces hardcoded gpt-4o-mini (ADR-0013 Step 3)
+    const textSelection = selectModel({
+      task: 'analyze-file',
+      hasVision: false,
+      hasAudio: false,
+      userTier: 'free',
+    }, profile);
+    const textModel = getModel(textSelection.gatewayModelId);
+    const textProviderOptions = getProviderOptions(textSelection.fallbackModels);
 
     const { text: analysisText, usage: _usage } = await generateText({
       model: textModel,
@@ -425,7 +450,9 @@ async function analyzeTextFile(fileRecord: any, analysis: any) {
 Document content: "${textContent.substring(0, 3000)}"
 
 Return as JSON with fields: summary, key_insights (array), relevance_score`,
-      maxOutputTokens: 800,
+      maxOutputTokens: textSelection.maxOutputTokens,
+      temperature: textSelection.temperature,
+      ...(textProviderOptions ? { providerOptions: textProviderOptions } : {}),
     });
 
     try {

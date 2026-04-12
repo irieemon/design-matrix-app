@@ -19,6 +19,7 @@ export { getModel } from './providers.js';
 // Model router
 export {
   selectModel,
+  getProviderOptions,
   type TaskRoutingContext,
   type ModelSelection,
 } from './modelRouter.js';
