@@ -1,59 +1,50 @@
 /**
- * withQuotaCheck middleware tests — Phase 06-02
+ * withQuotaCheck middleware tests — Phase 11.6 rewire
  *
  * Asserts:
  *  - 401 on missing token
- *  - 402 quota_exceeded on over-limit
- *  - 500 QUOTA_CHECK_FAILED on any subscriptionService throw (fail-closed BILL-03)
- *  - handler invoked + req.quota attached when allowed
- *  - incrementAiUsage called AFTER successful ai_ideas mutation, NEVER before
- *  - increment skipped for non-ai_ideas resources
- *  - increment failure swallowed
- *  - admin client passed into every subscriptionService call
- *  - subscriptionService singleton path is never invoked during a middleware request
+ *  - 401 on invalid token
+ *  - 402 quota_exceeded when checkLimit returns canUse:false (projects + users)
+ *  - 402 when checkLimit returns fail-closed shape (current=0, limit=0)
+ *  - 500 QUOTA_CHECK_FAILED when supabaseAdmin is null
+ *  - handler invoked + req.quota attached when allowed (projects + users)
+ *  - checkLimit called with correct (userId, resource) pair
+ *
+ * Mock strategy:
+ *  - supabaseAdmin mocked via vi.mock('../../utils/supabaseAdmin') — avoids
+ *    importing @supabase/supabase-js at test scope and matches how the rewritten
+ *    middleware sources its admin client (direct import, not createClient call).
+ *  - subscriptionService mocked via vi.mock('../../services/subscriptionService') —
+ *    the rewritten middleware imports checkLimit from there directly.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('@supabase/supabase-js', () => {
+vi.mock('../../utils/supabaseAdmin', () => {
   const getUser = vi.fn()
-  const admin = { auth: { getUser }, __isAdmin: true }
+  const admin = { auth: { getUser } }
   return {
-    createClient: vi.fn(() => admin),
+    supabaseAdmin: admin,
     __admin: admin,
     __getUser: getUser,
   }
 })
 
-vi.mock('../../../../src/lib/services/subscriptionService', () => {
-  class FakeSubscriptionCheckError extends Error {
-    constructor(public reason: string) {
-      super(reason)
-      this.name = 'SubscriptionCheckError'
-    }
-  }
-  const getSubscription = vi.fn()
+vi.mock('../../services/subscriptionService', () => {
   const checkLimit = vi.fn()
-  const incrementAiUsage = vi.fn()
   return {
-    subscriptionService: { getSubscription, checkLimit, incrementAiUsage },
-    SubscriptionCheckError: FakeSubscriptionCheckError,
-    __getSubscription: getSubscription,
+    checkLimit,
     __checkLimit: checkLimit,
-    __incrementAiUsage: incrementAiUsage,
   }
 })
 
-import * as supabaseLib from '@supabase/supabase-js'
-import * as svcLib from '../../../../src/lib/services/subscriptionService'
+import * as adminLib from '../../utils/supabaseAdmin'
+import * as svcLib from '../../services/subscriptionService'
 import { withQuotaCheck } from '../withQuotaCheck'
 
-const adminClient = (supabaseLib as any).__admin
-const getUserMock = (supabaseLib as any).__getUser as ReturnType<typeof vi.fn>
-const getSubscriptionMock = (svcLib as any).__getSubscription as ReturnType<typeof vi.fn>
+const adminClient = (adminLib as any).__admin
+const getUserMock = (adminLib as any).__getUser as ReturnType<typeof vi.fn>
 const checkLimitMock = (svcLib as any).__checkLimit as ReturnType<typeof vi.fn>
-const incrementAiUsageMock = (svcLib as any).__incrementAiUsage as ReturnType<typeof vi.fn>
-const FakeSubscriptionCheckError = (svcLib as any).SubscriptionCheckError
 
 function makeReq(opts: { token?: string | null } = {}) {
   const headers: Record<string, string> = {}
@@ -76,140 +67,124 @@ function makeRes() {
 
 beforeEach(() => {
   getUserMock.mockReset()
-  getSubscriptionMock.mockReset()
   checkLimitMock.mockReset()
-  incrementAiUsageMock.mockReset()
+  getUserMock.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null })
+  // env vars not strictly needed since supabaseAdmin is mocked, but kept for safety
   process.env.SUPABASE_URL = 'https://x.supabase.co'
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key'
-  getUserMock.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null })
-  getSubscriptionMock.mockResolvedValue({ tier: 'free' })
-  incrementAiUsageMock.mockResolvedValue(1)
 })
 
 describe('withQuotaCheck', () => {
   it('returns 401 when no bearer token is present', async () => {
     const handler = vi.fn()
-    const wrapped = withQuotaCheck('ai_ideas', handler)
+    const wrapped = withQuotaCheck('projects', handler)
     const res = makeRes()
     await wrapped(makeReq(), res)
     expect(res.status).toHaveBeenCalledWith(401)
     expect(handler).not.toHaveBeenCalled()
   })
 
-  it('returns 402 quota_exceeded when checkLimit.canUse is false', async () => {
-    checkLimitMock.mockResolvedValue({ canUse: false, current: 5, limit: 5, isUnlimited: false, percentageUsed: 100 })
+  it('returns 401 when adminClient.auth.getUser reports invalid token', async () => {
+    getUserMock.mockResolvedValue({ data: { user: null }, error: { message: 'invalid' } })
     const handler = vi.fn()
-    const wrapped = withQuotaCheck('ai_ideas', handler)
+    const wrapped = withQuotaCheck('projects', handler)
+    const res = makeRes()
+    await wrapped(makeReq({ token: 'bad' }), res)
+    expect(res.status).toHaveBeenCalledWith(401)
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('returns 402 quota_exceeded when checkLimit.canUse is false for projects', async () => {
+    checkLimitMock.mockResolvedValue({ canUse: false, current: 1, limit: 1, isUnlimited: false, percentageUsed: 100 })
+    const handler = vi.fn()
+    const wrapped = withQuotaCheck('projects', handler)
     const res = makeRes()
     await wrapped(makeReq({ token: 't' }), res)
     expect(res.status).toHaveBeenCalledWith(402)
     expect(res.body.error.code).toBe('quota_exceeded')
-    expect(res.body.error.resource).toBe('ai_ideas')
-    expect(res.body.error.limit).toBe(5)
-    expect(res.body.error.used).toBe(5)
-    expect(res.body.error.tier).toBe('free')
+    expect(res.body.error.resource).toBe('projects')
+    expect(res.body.error.limit).toBe(1)
+    expect(res.body.error.used).toBe(1)
     expect(res.body.error.upgradeUrl).toBe('/pricing')
     expect(handler).not.toHaveBeenCalled()
-    expect(incrementAiUsageMock).not.toHaveBeenCalled()
   })
 
-  it('returns 500 QUOTA_CHECK_FAILED when checkLimit throws (fail-closed)', async () => {
-    checkLimitMock.mockRejectedValue(new FakeSubscriptionCheckError('rpc_failed'))
+  it('returns 402 when checkLimit returns fail-closed shape (current=0, limit=0)', async () => {
+    checkLimitMock.mockResolvedValue({ canUse: false, current: 0, limit: 0, percentageUsed: 100, isUnlimited: false })
     const handler = vi.fn()
-    const wrapped = withQuotaCheck('ai_ideas', handler)
+    const wrapped = withQuotaCheck('projects', handler)
     const res = makeRes()
     await wrapped(makeReq({ token: 't' }), res)
-    expect(res.status).toHaveBeenCalledWith(500)
-    expect(res.body.error.code).toBe('QUOTA_CHECK_FAILED')
+    expect(res.status).toHaveBeenCalledWith(402)
+    expect(res.body.error.used).toBe(0)
+    expect(res.body.error.limit).toBe(0)
     expect(handler).not.toHaveBeenCalled()
   })
 
-  it('returns 500 when getSubscription throws (fail-closed)', async () => {
-    getSubscriptionMock.mockRejectedValue(new FakeSubscriptionCheckError('boom'))
-    const handler = vi.fn()
-    const wrapped = withQuotaCheck('ai_ideas', handler)
-    const res = makeRes()
-    await wrapped(makeReq({ token: 't' }), res)
-    expect(res.status).toHaveBeenCalledWith(500)
-    expect(res.body.error.code).toBe('QUOTA_CHECK_FAILED')
-  })
-
-  it('invokes handler and attaches req.quota when allowed', async () => {
-    checkLimitMock.mockResolvedValue({ canUse: true, current: 1, limit: 5, isUnlimited: false, percentageUsed: 20 })
+  it('invokes handler and attaches req.quota when allowed (projects)', async () => {
+    checkLimitMock.mockResolvedValue({ canUse: true, current: 0, limit: 1, isUnlimited: false, percentageUsed: 0 })
     const handler = vi.fn(async (req: any, res: any) => {
-      expect(req.quota).toEqual({ userId: 'u1', tier: 'free', limit: 5, used: 1, isUnlimited: false })
+      expect(req.quota).toEqual({ userId: 'u1', tier: 'unknown', limit: 1, used: 0, isUnlimited: false })
       return res.status(200).json({ ok: true })
     })
-    const wrapped = withQuotaCheck('ai_ideas', handler)
+    const wrapped = withQuotaCheck('projects', handler)
     const res = makeRes()
     await wrapped(makeReq({ token: 't' }), res)
     expect(handler).toHaveBeenCalledOnce()
   })
 
-  it('calls incrementAiUsage AFTER a successful ai_ideas mutation (D-12)', async () => {
-    checkLimitMock.mockResolvedValue({ canUse: true, current: 1, limit: 5, isUnlimited: false, percentageUsed: 20 })
-    const callOrder: string[] = []
-    incrementAiUsageMock.mockImplementation(() => {
-      callOrder.push('increment')
-      return Promise.resolve(2)
-    })
-    const handler = vi.fn(async (_req: any, res: any) => {
-      callOrder.push('handler')
-      return res.status(200).json({ ok: true })
-    })
-    const wrapped = withQuotaCheck('ai_ideas', handler)
-    await wrapped(makeReq({ token: 't' }), makeRes())
-    // wait microtask for catch chain
-    await new Promise((r) => setImmediate(r))
-    expect(callOrder).toEqual(['handler', 'increment'])
-    expect(incrementAiUsageMock).toHaveBeenCalledWith('u1', adminClient)
+  it('returns 500 QUOTA_CHECK_FAILED when supabaseAdmin is null', async () => {
+    // Temporarily override supabaseAdmin to null for this test
+    const originalAdmin = (adminLib as any).supabaseAdmin
+    ;(adminLib as any).supabaseAdmin = null
+    try {
+      const handler = vi.fn()
+      const wrapped = withQuotaCheck('projects', handler)
+      const res = makeRes()
+      await wrapped(makeReq({ token: 't' }), res)
+      expect(res.status).toHaveBeenCalledWith(500)
+      expect(res.body.error.code).toBe('QUOTA_CHECK_FAILED')
+      expect(handler).not.toHaveBeenCalled()
+    } finally {
+      ;(adminLib as any).supabaseAdmin = originalAdmin
+    }
   })
 
-  it('does NOT call incrementAiUsage for projects resource', async () => {
+  it('returns 402 quota_exceeded for users resource over-limit', async () => {
+    checkLimitMock.mockResolvedValue({ canUse: false, current: 3, limit: 3, isUnlimited: false, percentageUsed: 100 })
+    const handler = vi.fn()
+    const wrapped = withQuotaCheck('users', handler)
+    const res = makeRes()
+    await wrapped(makeReq({ token: 't' }), res)
+    expect(res.status).toHaveBeenCalledWith(402)
+    expect(res.body.error.code).toBe('quota_exceeded')
+    expect(res.body.error.resource).toBe('users')
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('invokes handler for users when canUse true', async () => {
+    checkLimitMock.mockResolvedValue({ canUse: true, current: 2, limit: 3, isUnlimited: false, percentageUsed: 66.67 })
+    const handler = vi.fn(async (_req: any, res: any) => res.status(200).json({ ok: true }))
+    const wrapped = withQuotaCheck('users', handler)
+    const res = makeRes()
+    await wrapped(makeReq({ token: 't' }), res)
+    expect(handler).toHaveBeenCalledOnce()
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('calls checkLimit with (userId, "projects") for projects wrapper', async () => {
     checkLimitMock.mockResolvedValue({ canUse: true, current: 0, limit: 1, isUnlimited: false, percentageUsed: 0 })
     const handler = vi.fn(async (_req: any, res: any) => res.status(200).json({ ok: true }))
     const wrapped = withQuotaCheck('projects', handler)
     await wrapped(makeReq({ token: 't' }), makeRes())
-    expect(incrementAiUsageMock).not.toHaveBeenCalled()
+    expect(checkLimitMock).toHaveBeenCalledWith('u1', 'projects')
   })
 
-  it('does NOT increment when handler returns >=400', async () => {
-    checkLimitMock.mockResolvedValue({ canUse: true, current: 1, limit: 5, isUnlimited: false, percentageUsed: 20 })
-    const handler = vi.fn(async (_req: any, res: any) => res.status(500).json({ error: 'oops' }))
-    const wrapped = withQuotaCheck('ai_ideas', handler)
-    await wrapped(makeReq({ token: 't' }), makeRes())
-    expect(incrementAiUsageMock).not.toHaveBeenCalled()
-  })
-
-  it('swallows incrementAiUsage failures (best-effort)', async () => {
-    checkLimitMock.mockResolvedValue({ canUse: true, current: 1, limit: 5, isUnlimited: false, percentageUsed: 20 })
-    incrementAiUsageMock.mockRejectedValue(new Error('rpc down'))
+  it('calls checkLimit with (userId, "users") for users wrapper', async () => {
+    checkLimitMock.mockResolvedValue({ canUse: true, current: 1, limit: 3, isUnlimited: false, percentageUsed: 33.33 })
     const handler = vi.fn(async (_req: any, res: any) => res.status(200).json({ ok: true }))
-    const wrapped = withQuotaCheck('ai_ideas', handler)
-    const res = makeRes()
-    await expect(wrapped(makeReq({ token: 't' }), res)).resolves.not.toThrow()
-    await new Promise((r) => setImmediate(r))
-    expect(res.statusCode).toBe(200)
-  })
-
-  it('passes the admin client to every subscriptionService call', async () => {
-    checkLimitMock.mockResolvedValue({ canUse: true, current: 1, limit: 5, isUnlimited: false, percentageUsed: 20 })
-    const handler = vi.fn(async (_req: any, res: any) => res.status(200).json({ ok: true }))
-    const wrapped = withQuotaCheck('ai_ideas', handler)
+    const wrapped = withQuotaCheck('users', handler)
     await wrapped(makeReq({ token: 't' }), makeRes())
-    await new Promise((r) => setImmediate(r))
-    expect(getSubscriptionMock).toHaveBeenCalledWith('u1', adminClient)
-    expect(checkLimitMock).toHaveBeenCalledWith('u1', 'ai_ideas', adminClient)
-    expect(incrementAiUsageMock).toHaveBeenCalledWith('u1', adminClient)
-  })
-
-  it('returns 401 when adminClient.auth.getUser reports invalid token', async () => {
-    getUserMock.mockResolvedValue({ data: { user: null }, error: { message: 'invalid' } })
-    const handler = vi.fn()
-    const wrapped = withQuotaCheck('ai_ideas', handler)
-    const res = makeRes()
-    await wrapped(makeReq({ token: 'bad' }), res)
-    expect(res.status).toHaveBeenCalledWith(401)
-    expect(handler).not.toHaveBeenCalled()
+    expect(checkLimitMock).toHaveBeenCalledWith('u1', 'users')
   })
 })
