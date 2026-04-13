@@ -5,7 +5,8 @@
   "framework": "vite",
   "functions": {
     "api/**/*.ts": {
-      "includeFiles": "src/**/*"
+      "includeFiles": "src/**/*",
+      "maxDuration": 300
     }
   },
   "rewrites": [

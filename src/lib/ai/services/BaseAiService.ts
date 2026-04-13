@@ -94,12 +94,21 @@ export abstract class BaseAiService {
   /**
    * Common fetch wrapper with error handling
    * Includes credentials for cookie-based auth (CSRF) and 401 token refresh with single retry.
+   * A 120-second internal timeout races the fetch so silent hangs surface as errors.
    * @param endpoint - API endpoint to call
    * @param payload - Request payload
    * @param isRetry - Whether this is a retry after a 401 refresh (prevents infinite loops)
+   * @param signal - Optional AbortSignal from the caller
    * @returns Response data
    */
   protected async fetchWithErrorHandling<T>(endpoint: string, payload: any, isRetry = false, signal?: AbortSignal): Promise<T> {
+    const TIMEOUT_MS = 120_000
+
+    // Build fetch options. Only attach signal to fetch when the caller provides
+    // one — this preserves the T-0015-017 backward-compat contract (no signal
+    // in fetch options when caller does not supply one).
+    // The 120s hard timeout races the fetch promise separately so it fires even
+    // when no caller signal exists, without injecting an AbortSignal into options.
     try {
       const headers = await this.getAuthHeaders()
       const fetchOptions: RequestInit = {
@@ -111,7 +120,25 @@ export abstract class BaseAiService {
       if (signal) {
         fetchOptions.signal = signal
       }
-      const response = await fetch(`${this.baseUrl}${endpoint}`, fetchOptions)
+
+      // Race the fetch against a 120s timeout. If the timeout fires first,
+      // throw a clear error rather than hanging indefinitely.
+      let timeoutId: ReturnType<typeof setTimeout> | undefined
+      const timeoutPromise = new Promise<never>((_resolve, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(Object.assign(new Error('Request timeout after 120s'), { name: 'AbortError' }))
+        }, TIMEOUT_MS)
+      })
+
+      let response: Response
+      try {
+        response = await Promise.race([
+          fetch(`${this.baseUrl}${endpoint}`, fetchOptions),
+          timeoutPromise,
+        ])
+      } finally {
+        clearTimeout(timeoutId)
+      }
 
       if (!response.ok) {
         if (response.status === 401 && !isRetry) {
