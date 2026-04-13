@@ -7,6 +7,7 @@ import { IdeaCard, Project } from '../../../types'
 import { logger } from '../../../utils/logger'
 import { BaseAiService, SecureAIServiceConfig } from './BaseAiService'
 import { getQuadrantFromPosition } from '../utils'
+import { OpenAIModelRouter, type OpenAIModel, type AITaskType } from '../openaiModelRouter'
 
 /**
  * Document context from project files
@@ -92,7 +93,8 @@ export class InsightsService extends BaseAiService {
     projectName?: string,
     projectType?: string,
     projectId?: string,
-    currentProject?: Project | null
+    currentProject?: Project | null,
+    preferredModel?: OpenAIModel
   ): Promise<InsightsReport> {
     logger.debug('🔍 Generating insights for', (ideas || []).length, 'ideas')
 
@@ -108,6 +110,7 @@ export class InsightsService extends BaseAiService {
       projectName: projectName || 'Project',
       projectType: projectType || 'General',
       projectId: projectId || 'none',
+      preferredModel: preferredModel || 'default',
       version: 'v2-multimodal' // Cache buster for new multi-modal support
     })
 
@@ -247,6 +250,42 @@ export class InsightsService extends BaseAiService {
         }
 
         try {
+          // Model selection: use OpenAIModelRouter for defaults, allow user override
+          const taskContext = {
+            type: 'strategic-insights' as AITaskType,
+            complexity: OpenAIModelRouter.analyzeComplexity({
+              ideaCount: (ideas || []).length,
+              hasFiles: (documentContext?.length || 0) > 0,
+              hasImages: documentContext?.some((doc) => doc.mimeType?.startsWith('image/')) || false,
+              hasAudio:
+                documentContext?.some(
+                  (doc) => doc.mimeType?.startsWith('audio/') || doc.mimeType?.startsWith('video/')
+                ) || false
+            }),
+            ideaCount: (ideas || []).length,
+            hasFiles: (documentContext?.length || 0) > 0,
+            hasImages: documentContext?.some((doc) => doc.mimeType?.startsWith('image/')) || false,
+            hasAudio:
+              documentContext?.some(
+                (doc) => doc.mimeType?.startsWith('audio/') || doc.mimeType?.startsWith('video/')
+              ) || false,
+            userTier: 'free' as const
+          }
+
+          let modelSelection = OpenAIModelRouter.selectModel(taskContext)
+
+          // Override with preferred model if specified by user
+          if (preferredModel) {
+            logger.debug('User selected model override:', { model: preferredModel })
+            modelSelection = {
+              ...modelSelection,
+              model: preferredModel,
+              reasoning: `User selected ${preferredModel} for testing/comparison purposes. Original recommendation: ${modelSelection.model}`
+            }
+          }
+
+          OpenAIModelRouter.logSelection(taskContext, modelSelection)
+
           const requestPayload = {
             ideas: (ideas || []).map((idea) => ({
               title: idea.content,
@@ -257,7 +296,8 @@ export class InsightsService extends BaseAiService {
             projectType: projectType || 'General',
             roadmapContext: roadmapContext,
             documentContext: documentContext,
-            projectContext: projectContext
+            projectContext: projectContext,
+            modelSelection: { model: modelSelection.model }
           }
 
           // Log what we're sending to the AI API

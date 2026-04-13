@@ -9,6 +9,7 @@ import { IdeaGenerationService, AIIdeaResponse } from './services/IdeaGeneration
 import { InsightsService } from './services/InsightsService'
 import { RoadmapService } from './services/RoadmapService'
 import { logger } from '../../utils/logger'
+import type { OpenAIModel } from './openaiModelRouter'
 
 /**
  * Facade class that provides a unified interface to all AI services
@@ -74,9 +75,10 @@ export class AiServiceFacade {
     projectName?: string,
     projectType?: string,
     projectId?: string,
-    currentProject?: any
+    currentProject?: any,
+    preferredModel?: OpenAIModel
   ): Promise<any> {
-    return this.insightsService.generateInsights(ideas, projectName, projectType, projectId, currentProject)
+    return this.insightsService.generateInsights(ideas, projectName, projectType, projectId, currentProject, preferredModel)
   }
 
   /**

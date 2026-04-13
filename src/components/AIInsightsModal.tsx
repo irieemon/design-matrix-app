@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useTransition } from 'react'
 import { Sparkles, TrendingUp, Target, CheckCircle, AlertTriangle, Download, Save, FileText, Lightbulb } from 'lucide-react'
 import { IdeaCard, Project, ProjectFile } from '../types'
-import { aiInsightsService } from '../lib/ai/aiInsightsService'
+import { aiService } from '../lib/aiService'
 import { OpenAIModel } from '../lib/ai/openaiModelRouter'
 import { FileService } from '../lib/fileService'
 import { exportGraphicalInsightsToPDF } from '../utils/pdfExportSimple'
@@ -82,8 +82,8 @@ const AIInsightsModal: React.FC<AIInsightsModalProps> = ({ isOpen, ideas, curren
         setEstimatedTime(4)
       })
 
-      // Call the new modular AI insights service
-      const report = await aiInsightsService.generateInsights(
+      // Call the AI service facade
+      const report = await aiService.generateInsights(
         ideas,
         currentProject?.name,
         currentProject?.project_type,
