@@ -496,12 +496,12 @@ export class InsightsService extends BaseAiService {
       ],
 
       priorityRecommendations: {
-        immediate: legacyInsights.priorityRecommendations?.slice(0, 3) || [
+        immediate: legacyInsights.priorityRecommendations?.immediate || [
           'Execute market validation and customer discovery initiatives',
           'Secure strategic partnerships and distribution channels',
           'Establish funding pipeline and investor relations'
         ],
-        shortTerm: legacyInsights.priorityRecommendations?.slice(3, 6) || [
+        shortTerm: legacyInsights.priorityRecommendations?.shortTerm || [
           'Scale go-to-market operations and sales processes',
           'Build product-market fit and customer success programs',
           'Develop strategic moats and competitive advantages'
@@ -514,12 +514,12 @@ export class InsightsService extends BaseAiService {
       },
 
       riskAssessment: {
-        highRisk: legacyInsights.riskAssessments || [
+        highRisk: legacyInsights.riskAssessment?.highRisk || [
           'Market entry timing and competitive response risks',
           'Customer acquisition economics and unit profitability',
           'Technology scalability and operational complexity'
         ],
-        opportunities: legacyInsights.resourceOptimization || [
+        opportunities: legacyInsights.riskAssessment?.opportunities || [
           'Market consolidation and acquisition opportunities',
           'Strategic partnership and channel expansion potential',
           'Data monetization and platform revenue streams'

@@ -22,7 +22,7 @@ import { IdeaCard, Project, ProjectFile } from '../../types'
 import { aiService } from '../../lib/aiService'
 import { FileService } from '../../lib/fileService'
 import { ProjectRepository } from '../../lib/repositories'
-import { exportInsightsToPDFProfessional } from '../../utils/pdfExportSimple'
+import { exportGraphicalInsightsToPDF } from '../../utils/pdfExportSimple'
 
 // Mock dependencies
 vi.mock('../../lib/aiService', () => ({
@@ -48,7 +48,7 @@ vi.mock('../../lib/repositories', () => ({
 }))
 
 vi.mock('../../utils/pdfExportSimple', () => ({
-  exportInsightsToPDFProfessional: vi.fn()
+  exportGraphicalInsightsToPDF: vi.fn()
 }))
 
 vi.mock('../../hooks/useAIWorker', () => ({
@@ -174,7 +174,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
     vi.mocked(FileService.getProjectFiles).mockResolvedValue(sampleFiles)
     vi.mocked(aiService.generateInsights).mockResolvedValue(sampleInsights)
     vi.mocked(ProjectRepository.saveProjectInsights).mockResolvedValue('insight123')
-    vi.mocked(exportInsightsToPDFProfessional).mockResolvedValue(undefined)
+    vi.mocked(exportGraphicalInsightsToPDF).mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -684,11 +684,9 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
       await user.click(pdfButton)
 
       await waitFor(() => {
-        expect(exportInsightsToPDFProfessional).toHaveBeenCalledWith(
+        expect(exportGraphicalInsightsToPDF).toHaveBeenCalledWith(
           sampleInsights,
-          2,
-          sampleProject,
-          sampleFiles
+          sampleProject.name
         )
       })
     })
@@ -699,7 +697,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
       // Mock window.alert
       const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {})
 
-      vi.mocked(exportInsightsToPDFProfessional).mockRejectedValue(new Error('PDF generation failed'))
+      vi.mocked(exportGraphicalInsightsToPDF).mockRejectedValue(new Error('PDF generation failed'))
 
       await act(async () => {
         render(<AIInsightsModal {...defaultProps} />)
