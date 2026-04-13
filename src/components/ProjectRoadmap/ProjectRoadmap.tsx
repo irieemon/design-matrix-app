@@ -272,7 +272,8 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       const data = await aiService.generateRoadmap(
         ideas,
         currentProject.name,
-        currentProject.project_type
+        currentProject.project_type,
+        signal
       )
 
       if (signal.aborted) return
@@ -415,105 +416,113 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
 
   return (
     <div className="space-y-4">
-      <AIProgressOverlay
-        isActive={aiGeneration.isGenerating}
-        progress={aiGeneration.progress}
-        stage={aiGeneration.stage}
-        estimatedSecondsRemaining={aiGeneration.estimatedSecondsRemaining}
-        processingSteps={aiGeneration.processingSteps}
-        stageSequence={aiGeneration.stageSequence}
-        onCancel={aiGeneration.cancel}
-        error={aiGeneration.error}
-        onRetry={aiGeneration.retry}
-      />
-
-      <RoadmapHeader
-        currentProject={currentProject}
-        roadmapData={roadmapData}
-        isLoading={state.isLoading || aiGeneration.isGenerating}
-        roadmapHistory={roadmapHistory}
-        selectedRoadmapId={state.selectedRoadmapId}
-        onGenerateRoadmap={handleGenerateRoadmap}
-        onHistorySelect={handleHistorySelect}
-        onExportClick={() => setState(prev => ({ ...prev, isExportModalOpen: true }))}
-      />
-
-      {roadmapData && (
-        <div>
-          {/* Timeline View */}
-          {viewMode === 'timeline' && (
-            <TimelineRoadmap
-              features={timelineFeatures}
-              title={currentProject?.name || 'PROJECT ROADMAP'}
-              subtitle={`${timelineFeatures.length} Features • ${roadmapData.roadmapAnalysis?.totalDuration || '6 months'}`}
-              onFeaturesChange={handleFeaturesChange}
-              projectType={currentProject?.project_type || 'software'}
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
+      {aiGeneration.isGenerating || aiGeneration.error ? (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="w-full max-w-lg">
+            <AIProgressOverlay
+              isActive={true}
+              progress={aiGeneration.progress}
+              stage={aiGeneration.stage}
+              estimatedSecondsRemaining={aiGeneration.estimatedSecondsRemaining}
+              processingSteps={aiGeneration.processingSteps}
+              stageSequence={aiGeneration.stageSequence}
+              onCancel={aiGeneration.cancel}
+              error={aiGeneration.error}
+              onRetry={aiGeneration.retry}
             />
-          )}
+          </div>
+        </div>
+      ) : (
+        <>
+          <RoadmapHeader
+            currentProject={currentProject}
+            roadmapData={roadmapData}
+            isLoading={state.isLoading}
+            roadmapHistory={roadmapHistory}
+            selectedRoadmapId={state.selectedRoadmapId}
+            onGenerateRoadmap={handleGenerateRoadmap}
+            onHistorySelect={handleHistorySelect}
+            onExportClick={() => setState(prev => ({ ...prev, isExportModalOpen: true }))}
+          />
 
-          {/* Detailed View */}
-          {viewMode === 'detailed' && (
-            <>
-              {/* Detailed View Header */}
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden w-full">
-                <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-6 py-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-xl font-bold tracking-wide">{currentProject?.name || 'PROJECT ROADMAP'}</h2>
-                      <p className="text-slate-300 text-sm mt-1">Detailed roadmap breakdown with phases and milestones</p>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      {/* View Mode Toggle */}
-                      <div className="flex space-x-1 bg-slate-700/50 rounded-lg p-1 border border-slate-600">
-                        <button
-                          onClick={() => setViewMode('timeline')}
-                          className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-slate-300 hover:text-white"
-                        >
-                          <Grid3X3 className="w-4 h-4" />
-                          <span>Timeline</span>
-                        </button>
-                        <button
-                          onClick={() => setViewMode('detailed')}
-                          className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors bg-slate-600 text-white shadow-sm"
-                        >
-                          <Map className="w-4 h-4" />
-                          <span>Detailed</span>
-                        </button>
+          {roadmapData && (
+            <div>
+              {/* Timeline View */}
+              {viewMode === 'timeline' && (
+                <TimelineRoadmap
+                  features={timelineFeatures}
+                  title={currentProject?.name || 'PROJECT ROADMAP'}
+                  subtitle={`${timelineFeatures.length} Features • ${roadmapData.roadmapAnalysis?.totalDuration || '6 months'}`}
+                  onFeaturesChange={handleFeaturesChange}
+                  projectType={currentProject?.project_type || 'software'}
+                  viewMode={viewMode}
+                  onViewModeChange={setViewMode}
+                />
+              )}
+
+              {/* Detailed View */}
+              {viewMode === 'detailed' && (
+                <>
+                  {/* Detailed View Header */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden w-full">
+                    <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-6 py-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h2 className="text-xl font-bold tracking-wide">{currentProject?.name || 'PROJECT ROADMAP'}</h2>
+                          <p className="text-slate-300 text-sm mt-1">Detailed roadmap breakdown with phases and milestones</p>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          {/* View Mode Toggle */}
+                          <div className="flex space-x-1 bg-slate-700/50 rounded-lg p-1 border border-slate-600">
+                            <button
+                              onClick={() => setViewMode('timeline')}
+                              className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-slate-300 hover:text-white"
+                            >
+                              <Grid3X3 className="w-4 h-4" />
+                              <span>Timeline</span>
+                            </button>
+                            <button
+                              onClick={() => setViewMode('detailed')}
+                              className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors bg-slate-600 text-white shadow-sm"
+                            >
+                              <Map className="w-4 h-4" />
+                              <span>Detailed</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Phase Timeline */}
-              <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-slate-900 flex items-center space-x-2">
-                      <span>Development Timeline</span>
-                    </h2>
+                  {/* Phase Timeline */}
+                  <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
+                    <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-slate-900 flex items-center space-x-2">
+                          <span>Development Timeline</span>
+                        </h2>
+                      </div>
+                    </div>
+
+                    <div className="p-6">
+                      <PhaseList
+                        phases={roadmapPhases}
+                        expandedPhases={state.expandedPhases}
+                        onTogglePhaseExpansion={togglePhaseExpansion}
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="p-6">
-                  <PhaseList
-                    phases={roadmapPhases}
-                    expandedPhases={state.expandedPhases}
-                    onTogglePhaseExpansion={togglePhaseExpansion}
+                  {/* Execution Strategy */}
+                  <MilestoneTimeline
+                    teamRecommendations={roadmapData.executionStrategy?.teamRecommendations}
+                    milestones={keyMilestones}
                   />
-                </div>
-              </div>
-
-              {/* Execution Strategy */}
-              <MilestoneTimeline
-                teamRecommendations={roadmapData.executionStrategy?.teamRecommendations}
-                milestones={keyMilestones}
-              />
-            </>
+                </>
+              )}
+            </div>
           )}
-        </div>
+        </>
       )}
 
       {/* Export Modal */}
