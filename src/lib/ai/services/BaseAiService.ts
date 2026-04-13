@@ -99,21 +99,25 @@ export abstract class BaseAiService {
    * @param isRetry - Whether this is a retry after a 401 refresh (prevents infinite loops)
    * @returns Response data
    */
-  protected async fetchWithErrorHandling<T>(endpoint: string, payload: any, isRetry = false): Promise<T> {
+  protected async fetchWithErrorHandling<T>(endpoint: string, payload: any, isRetry = false, signal?: AbortSignal): Promise<T> {
     try {
       const headers = await this.getAuthHeaders()
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const fetchOptions: RequestInit = {
         method: 'POST',
         headers,
         credentials: 'include',
-        body: JSON.stringify(payload)
-      })
+        body: JSON.stringify(payload),
+      }
+      if (signal) {
+        fetchOptions.signal = signal
+      }
+      const response = await fetch(`${this.baseUrl}${endpoint}`, fetchOptions)
 
       if (!response.ok) {
         if (response.status === 401 && !isRetry) {
           const refreshed = await this.refreshAccessToken()
           if (refreshed) {
-            return this.fetchWithErrorHandling<T>(endpoint, payload, true)
+            return this.fetchWithErrorHandling<T>(endpoint, payload, true, signal)
           }
           throw new Error('Authentication expired. Please sign in again.')
         }
@@ -127,6 +131,7 @@ export abstract class BaseAiService {
 
       return await response.json()
     } catch (_error) {
+      if (_error instanceof Error && _error.name === 'AbortError') throw _error
       logger.error(`Error calling ${endpoint}:`, _error)
       throw _error
     }

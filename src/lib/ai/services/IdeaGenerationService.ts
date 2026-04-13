@@ -30,7 +30,8 @@ export class IdeaGenerationService extends BaseAiService {
    */
   async generateIdea(
     title: string,
-    projectContext?: { name?: string; description?: string; type?: string }
+    projectContext?: { name?: string; description?: string; type?: string },
+    signal?: AbortSignal
   ): Promise<AIIdeaResponse> {
     logger.debug(`🧠 Generating idea for: "${title}" using secure server-side proxy`)
 
@@ -49,7 +50,7 @@ export class IdeaGenerationService extends BaseAiService {
             title,
             description: projectContext?.description || '',
             projectType: projectContext?.type || 'General'
-          })
+          }, false, signal)
 
           if (data.ideas && data.ideas.length > 0) {
             // Return the first idea in the expected format

@@ -94,7 +94,8 @@ export class InsightsService extends BaseAiService {
     projectType?: string,
     projectId?: string,
     currentProject?: Project | null,
-    preferredModel?: OpenAIModel
+    preferredModel?: OpenAIModel,
+    signal?: AbortSignal
   ): Promise<InsightsReport> {
     logger.debug('🔍 Generating insights for', (ideas || []).length, 'ideas')
 
@@ -330,7 +331,7 @@ export class InsightsService extends BaseAiService {
             })
           }
 
-          const data = await this.fetchWithErrorHandling<{ insights?: InsightsReport }>('/api/ai?action=generate-insights', requestPayload)
+          const data = await this.fetchWithErrorHandling<{ insights?: InsightsReport }>('/api/ai?action=generate-insights', requestPayload, false, signal)
           const insights: InsightsReport = data.insights || {}
 
           // Log what we received from the AI API
@@ -375,6 +376,8 @@ export class InsightsService extends BaseAiService {
             throw new Error('AI service returned invalid insights format. Please check your API configuration.')
           }
         } catch (apiError) {
+          if (apiError instanceof Error && apiError.name === 'AbortError') throw apiError
+
           logger.error('🚫 AI insights generation failed:', apiError)
 
           // In development, if the API is not available, provide mock data with file context

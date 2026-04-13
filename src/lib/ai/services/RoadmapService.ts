@@ -23,7 +23,7 @@ export class RoadmapService extends BaseAiService {
    * @param projectType - Project type
    * @returns Generated roadmap
    */
-  async generateRoadmap(ideas: IdeaCard[], projectName: string, projectType?: string): Promise<any> {
+  async generateRoadmap(ideas: IdeaCard[], projectName: string, projectType?: string, signal?: AbortSignal): Promise<any> {
     logger.debug('🗺️ Generating roadmap for project:', projectName)
 
     // Create cache key from core parameters
@@ -51,7 +51,7 @@ export class RoadmapService extends BaseAiService {
               description: idea.details,
               quadrant: getQuadrantFromPosition(idea.x, idea.y)
             }))
-          })
+          }, false, signal)
 
           const roadmap = data.roadmap || this.generateMockRoadmap(projectName, projectType)
 

@@ -37,9 +37,10 @@ export class AiServiceFacade {
    */
   async generateIdea(
     title: string,
-    projectContext?: { name?: string; description?: string; type?: string }
+    projectContext?: { name?: string; description?: string; type?: string },
+    signal?: AbortSignal
   ): Promise<AIIdeaResponse> {
-    return this.ideaService.generateIdea(title, projectContext)
+    return this.ideaService.generateIdea(title, projectContext, signal)
   }
 
   /**
@@ -76,9 +77,10 @@ export class AiServiceFacade {
     projectType?: string,
     projectId?: string,
     currentProject?: any,
-    preferredModel?: OpenAIModel
+    preferredModel?: OpenAIModel,
+    signal?: AbortSignal
   ): Promise<any> {
-    return this.insightsService.generateInsights(ideas, projectName, projectType, projectId, currentProject, preferredModel)
+    return this.insightsService.generateInsights(ideas, projectName, projectType, projectId, currentProject, preferredModel, signal)
   }
 
   /**
@@ -88,8 +90,8 @@ export class AiServiceFacade {
    * @param projectType - Project type
    * @returns Generated roadmap
    */
-  async generateRoadmap(ideas: IdeaCard[], projectName: string, projectType?: string): Promise<any> {
-    return this.roadmapService.generateRoadmap(ideas, projectName, projectType)
+  async generateRoadmap(ideas: IdeaCard[], projectName: string, projectType?: string, signal?: AbortSignal): Promise<any> {
+    return this.roadmapService.generateRoadmap(ideas, projectName, projectType, signal)
   }
 
   /**
