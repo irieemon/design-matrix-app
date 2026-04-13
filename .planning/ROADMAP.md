@@ -14,13 +14,16 @@
 
 **Filed:** 2026-04-11. See [milestones/v1.3-REQUIREMENTS.md](milestones/v1.3-REQUIREMENTS.md) and [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md).
 
-### v1.3 Phases (filed, not started)
+### v1.3 Phases
 
-- **Phase 11: Local CI Reproduction Environment** — Prerequisite. `supabase start` + GoTrue Admin seeding + Playwright against localhost so iteration is seconds, not pipelines.
+- **Phase 11: Local CI Reproduction Environment** — SHIPPED 2026-04-11. `supabase start` + GoTrue Admin seeding + Playwright against localhost. Acceptance bar deferred to 11.5.
+- **Phase 11.5: Local Test Auth Reconciliation** — SHIPPED 2026-04-11 (pass-through stub — proper fix in 11.6).
+- **Phase 11.6: withQuotaCheck Architectural Fix** — HIGHEST PRIORITY unshipped. Post PROD-BUG-01. Must land before public launch (billing quota enforcement currently OFF).
+- **Phase 11.7: API Backend Hardening** — Cross-import audit, api/tsconfig.json NodeNext, latent bomb fixes, PROD-BUG-01 post-mortem. Depends on 11.6.
 - **Phase 12: E2E Realtime Rendering Fix** — Fix the `strict mode: 2 design-matrix elements` root cause. Unblocks T-054B-300..305 (6 tests).
 - **Phase 13: Invite Flow + RPC + Pattern Hygiene** — T-055-101 post-accept navigation, `accept_invitation` RPC P0001 bug, `CollaborationService.ts:97` pattern fix, silent-error-swallowing ADR.
 
-To open v1.3 and begin planning: `/gsd-plan-phase 11`.
+To plan next: `/gsd-plan-phase 11.6`.
 
 ### Phase 11: Local CI Reproduction Environment
 
@@ -40,9 +43,37 @@ To open v1.3 and begin planning: `/gsd-plan-phase 11`.
 **Deliberate relaxation from initial filing:** The original roadmap criterion #3 required reproducing one of the 8 failing tests with a matching CI error signature. That bar was relaxed during `/architect` clarification to "plumbing smoke only" — the ADR explains why (coupling-to-CI-failure-signature was rejected as acceptance criterion B). Phase 11 does NOT verify parity for failing tests; it verifies the loop executes.
 
 **Plans:** 1 plan
-- [ ] 11-01-PLAN.md — Ship four-file local CI reproduction environment (env file + orchestration script + npm entry + runbook) per ADR-0010
+- [x] 11-01-PLAN.md — Ship four-file local CI reproduction environment (env file + orchestration script + npm entry + runbook) per ADR-0010
 
 *Full detail and sibling phases in [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md).*
+
+### Phase 11.6: withQuotaCheck Architectural Fix
+
+**Goal:** Restore production quota enforcement after the PROD-BUG-01 emergency stub. Create a Node-safe backend subscription service at `api/_lib/subscriptionBackend.ts` that re-implements `getSubscription`, `checkLimit`, `incrementAiUsage`, and `SubscriptionCheckError` using only `@supabase/supabase-js` and zero `src/` imports. Switch `api/_lib/middleware/withQuotaCheck.ts` from the pass-through stub back to a real quota-enforcing middleware using the new backend service. Re-enable `api/_lib/middleware/__tests__/withQuotaCheck.test.ts` against the new implementation.
+
+**Requirements satisfied:** BILLING-01 (new — quota enforcement restoration before public launch)
+**Depends on:** Phase 11.5 (closed)
+**Priority:** HIGHEST — blocks public launch. Billing quota enforcement currently OFF in production.
+
+**Discovered:** 2026-04-11 during PROD-BUG-01 emergency investigation (see commit `233408e` and `docs/pipeline/investigation-ledger.md`). Root cause: `withQuotaCheck.ts` imported `src/lib/services/subscriptionService.ts` which transitively imported `src/lib/supabase.ts` using `import.meta.env.VITE_SUPABASE_URL` at module top — a Vite-only construct that crashes Node ESM runtime. Every Vercel function loading the middleware barrel crashed at module-load with `FUNCTION_INVOCATION_FAILED`.
+
+**Current state:** `withQuotaCheck.ts` is a pass-through stub (zero quota enforcement) with a runtime `console.warn('[withQuotaCheck:STUB] quota enforcement disabled — see Phase 11.6')` flag so we cannot silently forget the stub is live. Production functional, billing quota enforcement OFF.
+
+**Success Criteria:**
+1. New file `api/_lib/subscriptionBackend.ts` exists with zero `src/` imports and passes `tsc --noEmit`
+2. `withQuotaCheck.ts` restored to real quota-enforcing middleware using the new backend service
+3. `SubscriptionTier` type inlined or imported from a Node-safe location (the original `src/lib/config/tierLimits.ts` has no browser dependencies — it MAY be safe to import with a `.js` suffix, verify empirically)
+4. `api/_lib/middleware/__tests__/withQuotaCheck.test.ts` re-enabled and passing against the new implementation
+5. Production deploy verified: `/api/projects` and `/api/invitations/create` still work AND correctly reject over-quota requests with 402
+6. The runtime `[withQuotaCheck:STUB]` warning is no longer printed (stub is gone)
+7. `SubscriptionCheckError` class unified — the stub's local copy is replaced by the backend service's real class
+8. **Acceptance bar:** Deploy to production, send a curl request to `/api/projects` as a free-tier user who has exceeded their project limit, confirm 402 Payment Required response
+
+**Out of scope (defer to Phase 11.7):** Audit of OTHER `api/ → src/` cross-imports. This phase only fixes `withQuotaCheck`.
+
+**Plans:** 2 (estimated — investigate + implement backend service, migrate + re-test middleware)
+
+*Full detail in [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md#phase-116-withquotacheck-architectural-fix-backend-quota-service).*
 
 ## Deferred to v1.4+
 
@@ -58,7 +89,10 @@ To open v1.3 and begin planning: `/gsd-plan-phase 11`.
 | 08. Operational Fixes | v1.2 | 3/3 | Complete | 2026-04-10 |
 | 09. RealtimeSubscriptionManager Bug Fix | v1.2 | 1/1 | Complete | 2026-04-10 |
 | 10. CI Test Infrastructure | v1.2 | 2/2 | Complete | 2026-04-11 |
-| 11. Local CI Reproduction Environment | v1.3 | 0/1 | Planned | — |
+| 11. Local CI Reproduction Environment | v1.3 | 1/1 | Shipped | 2026-04-11 |
+| 11.5. Local Test Auth Reconciliation | v1.3 | —/— | Shipped (stub — proper fix in 11.6) | 2026-04-11 |
+| 11.6. withQuotaCheck Architectural Fix | v1.3 | 0/? | Filed (HIGHEST priority — blocks launch) | — |
+| 11.7. API Backend Hardening | v1.3 | 0/? | Filed | — |
 | 12. E2E Realtime Rendering Fix | v1.3 | 0/? | Filed | — |
 | 13. Invite Flow + RPC + Pattern Hygiene | v1.3 | 0/? | Filed | — |
 

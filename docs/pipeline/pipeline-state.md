@@ -8,12 +8,31 @@
 
 **Why the arc closed instead of continuing:** Retro lesson from this session — 3+ consecutive pipelines with unchanged pass count is the signal to change strategy, not keep iterating. The remaining failures are in React realtime code (presence, cursor broadcasting, fullscreen rendering) and CI-log-based debugging is the wrong tool for that layer. v1.3 establishes local repro as prerequisite.
 
-## Active Pipeline — AI Gateway Model Profiles
+## Active Pipeline — None
 **Phase:** idle
-**Sizing:** Medium
+**Sizing:** —
 **Stop Reason:** completed_clean
 
-<!-- PIPELINE_STATUS: {"phase": "idle", "sizing": null, "roz_qa": null, "poirot_reviewed": null, "telemetry_captured": true, "stop_reason": "completed_clean"} -->
+<!-- PIPELINE_STATUS: {"phase": "idle", "sizing": null, "roz_qa": null, "poirot_reviewed": true, "telemetry_captured": false, "stop_reason": "completed_clean"} -->
+
+## ADR-0013 — Closed 2026-04-13
+
+**One-line status:** ADR-0013 (AI Gateway Model Profiles) complete. All 5 steps built, pushed, and verified on production. Roadmap parsing confirmed working with model profile routing. Production CSRF verified end-to-end (double-submit cookie pattern).
+
+**Production verification (2026-04-13):**
+- Roadmap generation: PASS — 5 phases, 13 epics, 6 milestones parsed correctly
+- CSRF with valid token: 200 (accepted)
+- CSRF without header: 403 CSRF_HEADER_MISSING (rejected)
+- CSRF with wrong token: 403 CSRF_TOKEN_MISMATCH (rejected)
+- Cleanup items resolved: `.env.vercel.tmp` deleted, `CSRF-DEBUG` log removed, all commits pushed
+
+**Pre-existing bugs fixed this session (not ADR-0013 scope):**
+1. `useAuth.ts` — profile fetch race condition (role: 'user' before DB query completes)
+2. `useOptimizedAuth.ts` — 401 retry with token refresh
+3. `withCSRF.ts` (both `src/` and `api/_lib/`) — dev bypass for Vite cookie forwarding issue
+4. AI services — missing X-CSRF-Token header on POST requests
+5. `ProjectRoadmap.tsx` — ReferenceError in catch blocks
+6. Multiple `_error` vs `error` mismatches across catch blocks
 
 ### ADR-0013 — AI Gateway Model Profiles — Completed 2026-04-12
 
