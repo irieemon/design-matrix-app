@@ -142,8 +142,8 @@ async function checkUserLimit(userId: string, tier: string): Promise<LimitCheckR
 
 /**
  * Check AI feature quota (ai_ideas, ai_roadmap, ai_insights)
- * Extracted from the original checkLimit body — behavior-identical to pre-Phase-11.6.
- * The `free: limitType === 'ai_ideas' ? 10 : 5` line is a pre-existing bug, preserved per D-07.
+ * Extracted from the original checkLimit body.
+ * ADR-0015 AC-10: free-tier limit is 5 for ALL AI features (matches frontend tierLimits.ts).
  */
 async function checkAiLimit(
   userId: string,
@@ -154,7 +154,7 @@ async function checkAiLimit(
   if (noSubscription) {
     console.warn(`⚠️ No subscription found for user ${userId}, defaulting to free tier`)
     // Default to free tier limits
-    const freeLimit = limitType === 'ai_ideas' ? 10 : 5
+    const freeLimit = 5
     return {
       canUse: true,
       current: 0,
@@ -192,7 +192,7 @@ async function checkAiLimit(
 
   // Define limits based on tier
   const tierLimits: Record<string, number | null> = {
-    free: limitType === 'ai_ideas' ? 10 : 5,
+    free: 5,
     team: null, // unlimited
     enterprise: null // unlimited
   }

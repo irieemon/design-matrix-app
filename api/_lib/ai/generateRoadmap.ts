@@ -7,7 +7,9 @@
  */
 
 import { generateText } from 'ai';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelResponse } from '@vercel/node';
+import type { AuthenticatedRequest } from '../middleware/index.js';
+import { checkLimit, trackAIUsage } from '../services/subscriptionService.js';
 import { selectModel, getProviderOptions } from './modelRouter.js';
 import { getModel } from './providers.js';
 import { getActiveProfile } from './modelProfiles.js';
@@ -224,7 +226,7 @@ function getRoadmapIndustryInsights(projectType: string): string {
  *
  * Validates input, generates roadmap via AI SDK, and returns { roadmap: {...} }.
  */
-export async function handleGenerateRoadmap(req: VercelRequest, res: VercelResponse) {
+export async function handleGenerateRoadmap(req: AuthenticatedRequest, res: VercelResponse) {
   try {
     const { projectName, projectType, ideas } = req.body;
 
@@ -238,7 +240,26 @@ export async function handleGenerateRoadmap(req: VercelRequest, res: VercelRespo
       return res.status(500).json({ error: 'No AI service configured' });
     }
 
+    // ADR-0015 Step 6: Quota enforcement before AI processing
+    const userId = req.user!.id;
+    const limitCheck = await checkLimit(userId, 'ai_roadmap');
+
+    if (!limitCheck.canUse) {
+      return res.status(402).json({
+        error: {
+          code: 'quota_exceeded',
+          resource: 'ai_roadmap',
+          limit: limitCheck.limit,
+          used: limitCheck.current,
+          upgradeUrl: '/pricing',
+        },
+      });
+    }
+
     const roadmap = await generateRoadmapWithAI(projectName, projectType, ideas);
+
+    // ADR-0015 Step 6: Track usage after successful generation
+    await trackAIUsage(userId, 'ai_roadmap');
 
     return res.status(200).json({ roadmap });
   } catch (error) {

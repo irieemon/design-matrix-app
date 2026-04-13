@@ -10,7 +10,9 @@
  */
 
 import { generateText } from 'ai';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelResponse } from '@vercel/node';
+import type { AuthenticatedRequest } from '../middleware/index.js';
+import { checkLimit, trackAIUsage } from '../services/subscriptionService.js';
 import { selectModel, getProviderOptions } from './modelRouter.js';
 import { getModel } from './providers.js';
 import { getActiveProfile } from './modelProfiles.js';
@@ -343,7 +345,7 @@ Provide your analysis as a JSON object with these sections:
  * Generates strategic insights from ideas using AI SDK, with Anthropic
  * fallback if the primary OpenAI call fails.
  */
-export async function handleGenerateInsights(req: VercelRequest, res: VercelResponse) {
+export async function handleGenerateInsights(req: AuthenticatedRequest, res: VercelResponse) {
   try {
     const clientIP = req.headers['x-forwarded-for'] as string || req.socket?.remoteAddress || 'unknown';
 
@@ -362,6 +364,22 @@ export async function handleGenerateInsights(req: VercelRequest, res: VercelResp
 
     if (!openaiKey && !anthropicKey) {
       return res.status(500).json({ error: 'No AI service configured. Please set OPENAI_API_KEY or ANTHROPIC_API_KEY environment variable.' });
+    }
+
+    // ADR-0015 Step 6: Quota enforcement before AI processing
+    const userId = req.user!.id;
+    const limitCheck = await checkLimit(userId, 'ai_insights');
+
+    if (!limitCheck.canUse) {
+      return res.status(402).json({
+        error: {
+          code: 'quota_exceeded',
+          resource: 'ai_insights',
+          limit: limitCheck.limit,
+          used: limitCheck.current,
+          upgradeUrl: '/pricing',
+        },
+      });
     }
 
     // Profile-aware model routing (ADR-0013 Step 3)
@@ -387,6 +405,9 @@ export async function handleGenerateInsights(req: VercelRequest, res: VercelResp
     if (!insights || typeof insights !== 'object' || Object.keys(insights).length === 0) {
       throw new Error('AI service returned empty or invalid response');
     }
+
+    // ADR-0015 Step 6: Track usage after successful generation
+    await trackAIUsage(userId, 'ai_insights');
 
     return res.status(200).json({ insights });
   } catch (error) {

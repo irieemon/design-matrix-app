@@ -177,31 +177,29 @@ describe('checkLimit — users', () => {
 // ai_ideas regression (behavior-identical to pre-Phase-11.6)
 // ---------------------------------------------------------------------------
 
-describe('checkLimit — ai_ideas regression (behavior-identical to pre-Phase-11.6)', () => {
-  it('free tier: limit is 10 (pre-existing bug preserved per D-07)', async () => {
-    // NOTE: The correct free tier limit per tierLimits.ts is 5, but the backend
-    // has always had `free: 10` hardcoded. This test is intentionally asserting
-    // the WRONG value to protect against accidental "fixes" — per D-07, this
-    // discrepancy is deferred to Phase 11.7+.
+describe('checkLimit — ai_ideas free-tier limit (ADR-0015 AC-10: fixed to 5)', () => {
+  it('free tier: limit is 5 (matches frontend tierLimits.ts)', async () => {
+    // ADR-0015 AC-10: free-tier limit fixed from 10 to 5 to match
+    // frontend src/lib/config/tierLimits.ts.
     fromMock.mockImplementation((table: string) => {
       if (table === 'subscriptions') return makeBuilder({ data: { tier: 'free', status: 'active' }, error: null })
       if (table === 'ai_usage_tracking') return makeBuilder({ count: 0, error: null })
       throw new Error(`unexpected table: ${table}`)
     })
     const result = await checkLimit('u1', 'ai_ideas')
-    expect(result.limit).toBe(10)
+    expect(result.limit).toBe(5)
     expect(result.canUse).toBe(true)
     expect(result.isUnlimited).toBe(false)
   })
 
-  it('missing subscription: defaults to free tier 10', async () => {
+  it('missing subscription: defaults to free tier 5', async () => {
     fromMock.mockImplementation((table: string) => {
       if (table === 'subscriptions') return makeBuilder({ data: null, error: { message: 'not found' } })
       // ai_usage_tracking should NOT be queried in the no-subscription path
       throw new Error(`unexpected table: ${table}`)
     })
     const result = await checkLimit('u1', 'ai_ideas')
-    expect(result).toEqual({ canUse: true, current: 0, limit: 10, percentageUsed: 0, isUnlimited: false })
+    expect(result).toEqual({ canUse: true, current: 0, limit: 5, percentageUsed: 0, isUnlimited: false })
   })
 })
 
