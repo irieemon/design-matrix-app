@@ -3,12 +3,7 @@
  * Centralized exports for all AI services and utilities
  */
 
-// Legacy services (keep for backward compatibility)
-export { AIIdeaService, aiIdeaService } from './aiIdeaService'
-export { AIInsightsService, aiInsightsService } from './aiInsightsService'
-export { AIRoadmapService, aiRoadmapService } from './aiRoadmapService'
-
-// New modular services (recommended for new code)
+// Modular services
 export { AiServiceFacade } from './AiServiceFacade'
 export { BaseAiService } from './services/BaseAiService'
 export { IdeaGenerationService } from './services/IdeaGenerationService'

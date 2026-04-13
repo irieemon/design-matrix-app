@@ -19,14 +19,17 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import AIInsightsModal from '../AIInsightsModal'
 import { IdeaCard, Project, ProjectFile } from '../../types'
-import { aiInsightsService } from '../../lib/ai/aiInsightsService'
+import { aiService } from '../../lib/aiService'
 import { FileService } from '../../lib/fileService'
 import { ProjectRepository } from '../../lib/repositories'
 import { exportInsightsToPDFProfessional } from '../../utils/pdfExportSimple'
 
 // Mock dependencies
-vi.mock('../../lib/ai/aiInsightsService', () => ({
-  aiInsightsService: {
+vi.mock('../../lib/aiService', () => ({
+  aiService: {
+    generateInsights: vi.fn()
+  },
+  default: {
     generateInsights: vi.fn()
   }
 }))
@@ -169,7 +172,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
 
     // Setup default mock implementations
     vi.mocked(FileService.getProjectFiles).mockResolvedValue(sampleFiles)
-    vi.mocked(aiInsightsService.generateInsights).mockResolvedValue(sampleInsights)
+    vi.mocked(aiService.generateInsights).mockResolvedValue(sampleInsights)
     vi.mocked(ProjectRepository.saveProjectInsights).mockResolvedValue('insight123')
     vi.mocked(exportInsightsToPDFProfessional).mockResolvedValue(undefined)
   })
@@ -239,7 +242,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
       const user = userEvent.setup()
 
       // Mock fast insights generation
-      vi.mocked(aiInsightsService.generateInsights).mockResolvedValue(sampleInsights)
+      vi.mocked(aiService.generateInsights).mockResolvedValue(sampleInsights)
 
       await act(async () => {
         render(<AIInsightsModal {...defaultProps} />)
@@ -363,7 +366,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
         ...sampleInsights,
         riskAssessment: undefined
       }
-      vi.mocked(aiInsightsService.generateInsights).mockResolvedValue(insightsWithoutRisk)
+      vi.mocked(aiService.generateInsights).mockResolvedValue(insightsWithoutRisk)
 
       await act(async () => {
         render(<AIInsightsModal {...defaultProps} />)
@@ -380,7 +383,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
 
   describe('Loading States and Progress Tracking', () => {
     it('should show progress UI during insights generation', async () => {
-      vi.mocked(aiInsightsService.generateInsights).mockImplementation(
+      vi.mocked(aiService.generateInsights).mockImplementation(
         () => new Promise(resolve => setTimeout(() => resolve(sampleInsights), 500))
       )
 
@@ -396,7 +399,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
     })
 
     it('should show analyzing stage initially', async () => {
-      vi.mocked(aiInsightsService.generateInsights).mockImplementation(
+      vi.mocked(aiService.generateInsights).mockImplementation(
         () => new Promise(resolve => setTimeout(() => resolve(sampleInsights), 1000))
       )
 
@@ -427,7 +430,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
   describe('Error Handling', () => {
     it('should display error message on insights generation failure', async () => {
       const errorMessage = 'API connection failed'
-      vi.mocked(aiInsightsService.generateInsights).mockRejectedValue(new Error(errorMessage))
+      vi.mocked(aiService.generateInsights).mockRejectedValue(new Error(errorMessage))
 
       await act(async () => {
         render(<AIInsightsModal {...defaultProps} />)
@@ -439,7 +442,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
     })
 
     it('should show Try Again button on error', async () => {
-      vi.mocked(aiInsightsService.generateInsights).mockRejectedValue(new Error('API error'))
+      vi.mocked(aiService.generateInsights).mockRejectedValue(new Error('API error'))
 
       await act(async () => {
         render(<AIInsightsModal {...defaultProps} />)
@@ -454,7 +457,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
       const user = userEvent.setup()
 
       // First call fails
-      vi.mocked(aiInsightsService.generateInsights)
+      vi.mocked(aiService.generateInsights)
         .mockRejectedValueOnce(new Error('API error'))
         .mockResolvedValueOnce(sampleInsights)
 
@@ -481,7 +484,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
         priorityRecommendations: null
       }
 
-      vi.mocked(aiInsightsService.generateInsights).mockResolvedValue(malformedInsights as any)
+      vi.mocked(aiService.generateInsights).mockResolvedValue(malformedInsights as any)
 
       await act(async () => {
         render(<AIInsightsModal {...defaultProps} />)
@@ -502,7 +505,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
         }
       }
 
-      vi.mocked(aiInsightsService.generateInsights).mockResolvedValue(emptyInsights)
+      vi.mocked(aiService.generateInsights).mockResolvedValue(emptyInsights)
 
       await act(async () => {
         render(<AIInsightsModal {...defaultProps} />)
@@ -524,7 +527,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
         }
       }
 
-      vi.mocked(aiInsightsService.generateInsights).mockResolvedValue(insightsWithoutRisk)
+      vi.mocked(aiService.generateInsights).mockResolvedValue(insightsWithoutRisk)
 
       await act(async () => {
         render(<AIInsightsModal {...defaultProps} />)
@@ -898,7 +901,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
         executiveSummary: longSummary
       }
 
-      vi.mocked(aiInsightsService.generateInsights).mockResolvedValue(longInsights)
+      vi.mocked(aiService.generateInsights).mockResolvedValue(longInsights)
 
       await act(async () => {
         render(<AIInsightsModal {...defaultProps} />)
@@ -921,7 +924,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
         }
       }
 
-      vi.mocked(aiInsightsService.generateInsights).mockResolvedValue(longInsights)
+      vi.mocked(aiService.generateInsights).mockResolvedValue(longInsights)
 
       await act(async () => {
         render(<AIInsightsModal {...defaultProps} />)
@@ -933,7 +936,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
     })
 
     it('should handle concurrent file loading and insights generation', async () => {
-      vi.mocked(aiInsightsService.generateInsights).mockImplementation(
+      vi.mocked(aiService.generateInsights).mockImplementation(
         () => new Promise(resolve => setTimeout(() => resolve(sampleInsights), 50))
       )
 
@@ -957,8 +960,8 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
       })
 
       await waitFor(() => {
-        expect(aiInsightsService.generateInsights).toHaveBeenCalled()
-        const calls = vi.mocked(aiInsightsService.generateInsights).mock.calls
+        expect(aiService.generateInsights).toHaveBeenCalled()
+        const calls = vi.mocked(aiService.generateInsights).mock.calls
         expect(calls[calls.length - 1][5]).toBe('gpt-5')
       }, { timeout: 3000 })
     })
@@ -969,7 +972,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
       })
 
       await waitFor(() => {
-        expect(aiInsightsService.generateInsights).toHaveBeenCalled()
+        expect(aiService.generateInsights).toHaveBeenCalled()
       }, { timeout: 3000 })
     })
   })
@@ -1027,7 +1030,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
     })
 
     it('should reset error state when reopening', async () => {
-      vi.mocked(aiInsightsService.generateInsights).mockRejectedValue(new Error('API error'))
+      vi.mocked(aiService.generateInsights).mockRejectedValue(new Error('API error'))
 
       const { rerender } = render(<AIInsightsModal {...defaultProps} />)
 
@@ -1038,7 +1041,7 @@ describe('AIInsightsModal - Comprehensive Test Suite', () => {
       // Close and reopen
       rerender(<AIInsightsModal {...defaultProps} isOpen={false} />)
 
-      vi.mocked(aiInsightsService.generateInsights).mockResolvedValue(sampleInsights)
+      vi.mocked(aiService.generateInsights).mockResolvedValue(sampleInsights)
 
       await act(async () => {
         rerender(<AIInsightsModal {...defaultProps} isOpen={true} />)
