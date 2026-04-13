@@ -1,5 +1,6 @@
 import { IdeaCard, Project } from '../../types'
 import { logger as newLogger } from '../logging'
+import { getCsrfToken } from '../../utils/cookieUtils'
 import { aiCache, AICache } from '../aiCache'
 import { FileService } from '../fileService'
 import { OpenAIModelRouter, TaskContext, AITaskType, OpenAIModel, ModelSelection } from './openaiModelRouter'
@@ -138,6 +139,11 @@ export class AIInsightsService {
         }
       } else {
         logger.warn('⚠️ AIInsightsService: No session found in localStorage')
+      }
+
+      const csrfToken = getCsrfToken()
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken
       }
     } catch (authError) {
       logger.warn('Failed to get auth headers:', { error: authError instanceof Error ? authError.message : String(authError) })

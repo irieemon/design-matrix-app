@@ -6,6 +6,7 @@
 import { logger } from '../../../utils/logger'
 import { aiCache, AICache } from '../../aiCache'
 import { SUPABASE_STORAGE_KEY } from '../../../lib/config'
+import { getCsrfToken } from '../../../utils/cookieUtils'
 
 export interface SecureAIServiceConfig {
   baseUrl?: string // For custom API endpoints (defaults to current domain)
@@ -66,18 +67,20 @@ export abstract class BaseAiService {
           token = parsed.access_token
           logger.debug('🔑 BaseAiService: Using access token from localStorage (bypassing getSession)')
         } catch (_error) {
-          logger.error('BaseAiService: Error parsing localStorage session:', error)
+          logger.error('BaseAiService: Error parsing localStorage session:', _error)
         }
       }
 
       if (token) {
+        const csrfToken = getCsrfToken()
         return {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
         }
       }
     } catch (_error) {
-      logger.warn('Could not get auth token:', error)
+      logger.warn('Could not get auth token:', _error)
     }
 
     // Return basic headers if no auth available
@@ -105,13 +108,15 @@ export abstract class BaseAiService {
         if (response.status === 429) {
           throw new Error('Rate limit exceeded. Please wait a moment before trying again.')
         }
-        throw new Error(`Server error: ${response.status}`)
+        const errorBody = await response.json().catch(() => ({}))
+        const errorCode = errorBody?.error?.code || errorBody?.error?.message || ''
+        throw new Error(`Server error: ${response.status} ${errorCode}`.trim())
       }
 
       return await response.json()
     } catch (_error) {
-      logger.error(`Error calling ${endpoint}:`, error)
-      throw error
+      logger.error(`Error calling ${endpoint}:`, _error)
+      throw _error
     }
   }
 

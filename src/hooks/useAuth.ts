@@ -92,7 +92,23 @@ async function bootstrapCsrfCookie() {
       }
     })
     if (!response.ok) {
-      logger.warn('CSRF bootstrap /api/auth?action=user returned non-OK', { status: response.status })
+      // Token might be expired — refresh and retry once for CSRF bootstrap
+      const { data: refreshData } = await supabase.auth.refreshSession()
+      const freshToken = refreshData?.session?.access_token
+      if (freshToken) {
+        const retryResponse = await fetch('/api/auth?action=user', {
+          headers: {
+            'Authorization': `Bearer ${freshToken}`,
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        })
+        if (retryResponse.ok) {
+          logger.debug('CSRF bootstrap succeeded on retry with refreshed token')
+          return // CSRF cookie now set by the server
+        }
+      }
+      logger.warn('CSRF bootstrap failed even after token refresh', { status: response.status })
       csrfBootstrapped = false
     }
   } catch (e) {
@@ -288,12 +304,11 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       return
     }
 
-    // Transition the UI immediately using JWT data, then update in background
-    // with the full profile (which may carry a non-default role or avatar_url).
-    setCurrentUser(jwtUser)
+    // Set auth user immediately for session tracking
     setAuthUser(authUser)
-    setIsLoading(false)
 
+    // Fetch the full profile before transitioning the UI, so the correct
+    // role is available on first render (prevents admin "Access Denied" flash).
     try {
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -302,12 +317,17 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
         .single()
 
       if (profile) {
-        logger.debug('👤 Profile fetched, updating user:', { id: profile.id, role: (profile as User).role })
+        logger.debug('👤 Profile fetched, setting user:', { id: profile.id, role: (profile as User).role })
         setCurrentUser(profile as User)
+      } else {
+        // No profile in DB — use JWT data with default role
+        setCurrentUser(jwtUser)
       }
     } catch (err) {
-      logger.warn('⚠️ Could not fetch user_profiles (JWT user already set):', err)
+      logger.warn('⚠️ Could not fetch user_profiles, using JWT fallback:', err)
+      setCurrentUser(jwtUser)
     }
+    setIsLoading(false)
   }, [])
 
   // handleAuthSuccess is kept for interface compatibility (UserContext, AuthMigration).

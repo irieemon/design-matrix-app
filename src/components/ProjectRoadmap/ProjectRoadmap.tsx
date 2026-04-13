@@ -196,7 +196,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         logger.debug('📋 Loaded most recent roadmap:', history[0].id)
       }
     } catch (_error) {
-      logger.error('Error loading roadmap history:', error)
+      logger.error('Error loading roadmap history:', _error)
     }
   }
 
@@ -286,7 +286,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
             logger.debug('✅ Roadmap saved and history updated:', { roadmapId })
           }
         } catch (_error) {
-          logger.error('Error saving roadmap:', error)
+          logger.error('Error saving roadmap:', _error)
           // Don't show error to user since roadmap generation succeeded
         }
 
@@ -296,7 +296,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         logger.error('❌ Roadmap generation failed - no data returned')
       }
     } catch (_error) {
-      logger.error('Error generating roadmap:', error)
+      logger.error('Error generating roadmap:', _error)
       setState(prev => ({ ...prev, error: 'Failed to generate roadmap. Please try again.' }))
     } finally {
       setState(prev => ({ ...prev, isLoading: false }))
@@ -372,7 +372,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         )
         logger.debug('✅ Feature changes saved successfully')
       } catch (_error) {
-        logger.error('❌ Error saving feature changes:', error)
+        logger.error('❌ Error saving feature changes:', _error)
         // Don't show error to user since they can still continue working
       }
     }, 1000)

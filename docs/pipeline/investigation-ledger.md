@@ -1,81 +1,86 @@
-# Investigation Ledger
+# Investigation Ledger — PROD-BUG-01 Ideas Empty Matrix
 
-Reset at the start of each debug flow. Tracks hypotheses, layers checked,
-evidence found, and outcomes.
+**Opened:** 2026-04-11
+**Updated:** 2026-04-11 (Roz investigation complete — awaiting runtime data)
+**Bug class:** User-reported production bug
+**Environment:** prioritas.ai on Vercel (production)
+**Reporter:** User (sean@lakehouse.net) with screenshot
+**Acceptance criterion:** Ideas populate on matrix for existing projects when logged in as sean@lakehouse.net
 
-**Threshold:** 2 rejected hypotheses at the same layer triggers mandatory
-escalation to the next layer.
+## Symptom
 
-## Current Investigation — Phase 11.5
-**Symptom:** `npm run e2e:local -- -g "T-055-100"` fails with 403 `bad_jwt` /
-"signing method ES256 is invalid" against invite API calls. CI passes the same
-test. Phase 11 script orchestration validated through step 9.
+### Reproduction context
+- Navigate to https://prioritas.ai
+- Log in (user: sean@lakehouse.net)
+- Open project "Solr App" (visible in sidebar, project loads)
+- Matrix renders empty state with "Ready to prioritize?" prompt
+- User reports same behavior on ALL their projects (not single-project)
 
-**Started:** 2026-04-11
-**Investigator:** Roz
+### Screenshot evidence
+- Project sidebar shows "Solr App" as active
+- Matrix shows the 4-quadrant grid (Quick Wins / Strategic / Reconsider / Avoid)
+- Center of matrix shows lightbulb illustration + "Ready to prioritize?" empty-state copy
+- Header shows "Full Screen", "AI Idea", "+ Create New Idea" buttons — write path available
+- User email in footer confirms authenticated session
 
-## Layers Checked
-- [x] Application — handlers, middleware, auth chain
-- [x] Transport — HTTP headers, auth tokens, Bearer format
-- [ ] Infrastructure — containers, networking
-- [x] Environment — env vars, .env.local vs shell exports, Vite loadEnv behavior
-- [x] Data / Schema — GoTrue algorithm migration, JWKS endpoint
+### What is NOT happening
+- NOT a component crash (UI renders cleanly, no white-screen / error boundary)
+- NOT a stuck loading spinner (empty state only appears after loading resolves)
+- NOT a 4xx/5xx error surfaced in UI (no error toast, no error boundary)
+- NOT a routing issue (project opens, URL updates, layout correct)
+- NOT a single-project corruption (user says "any projects")
+
+### What IS happening (hypothesis space)
+The UI's `ideas.length === 0` branch is rendering, meaning the ideas state is populated as an empty array. Possible upstream causes:
+1. Query fired, returned 200 OK with `[]` (RLS filtered, filter mismatch, or actual empty)
+2. Query fired, returned error, got swallowed by silent-error path, fell back to `[]`
+3. Query never fired (hook state bug, race condition, stale closure)
+4. Data was actually wiped (extremely unlikely but possible — DB migration, bug in delete flow)
+5. Auth session drift — JWT valid for project-reads but not for idea-reads (RLS policy difference)
+6. Recent production deploy regressed the idea fetch path
+
+### Ruled out (scoping before investigation)
+- Session's 6 pushed commits (`dba9f42..15f9f70`) — verified via `git diff --stat` — all scripts/test/docs, zero src/ or api/ changes
+- Supabase CLI 2.58.5 → 2.84.2 upgrade — LOCAL only, production runs Supabase Cloud
+- The bug is **pre-existing** relative to this session's work
+
+### Prior memories relevant (from session memory)
+- **`feedback_optimistic_updates_stale_closure.md`** — useOptimisticUpdates had a stale closure bug in `confirmUpdate` / `moveIdeaOptimistic` where pendingUpdates and baseData had to be read from refs, never closures. Retro flagged this as a recurring bug class.
+- **`feedback_rls_insert_returning_requires_select.md`** — `INSERT ... RETURNING` (`.insert().select()`) on `project_files` needed SELECT RLS on the new row or fails with 42501. Same pattern could apply to other tables if a RLS migration rolled back read policies.
+- **`feedback_supabase_auth_deadlock.md`** — `supabase.auth.getSession()` hangs after storage ops; retro says use lock-free localStorage read. Auth hydration failures could cause downstream data-fetch issues.
 
 ## Hypothesis Table
 
-| # | Hypothesis | Layer | Evidence gathered | Confidence | Verdict |
-|---|------------|-------|-----------------|------------|---------|
-| H1 | Supabase CLI 2.58.5 upgraded the local GoTrue to sign tokens with ES256 (not HS256). The script (step 9) still generates HS256 tokens. When Playwright logs in via the UI, GoTrue issues an ES256 token. The `withAuth` middleware passes that ES256 token to `supabase.auth.getUser()`, which sends it to the local GoTrue `GET /auth/v1/user`. GoTrue verifies it fine (ES256 is its own token). No rejection here. | ENVIRONMENT | JWKS endpoint `http://127.0.0.1:54321/auth/v1/.well-known/jwks.json` returns `"alg":"ES256"`. Real login via Admin API password reset + `GET /token?grant_type=password` returns token with header `{"alg":"ES256","kid":"b81269f1-21d8-4f2e-b719-c2240a840d90","typ":"JWT"}`. GoTrue accepts this real token fine (200 OK). HS256 tokens with wrong `iss` get 400 `validation_failed / Token audience doesn't match`. HS256 tokens with correct `iss`/`aud` get 200 OK — GoTrue still accepts HS256. | HIGH | PARTIAL — ES256 migration confirmed; token compatibility more nuanced |
-| H2 | The `vite.config.ts` api-development plugin loads env via `loadEnv(mode, process.cwd(), '')` at startup. This reads `.env.local` which has `SUPABASE_URL=https://vfovtgtjailvrphsgafv.supabase.co` (production). When the Vite dev server is launched by Playwright's `webServer`, the exported shell env `VITE_SUPABASE_URL=http://localhost:54321` does NOT override `.env.local`'s `SUPABASE_URL` — `loadEnv` returns `.env.local` values for `SUPABASE_URL` even when `VITE_SUPABASE_URL` is overridden. The api-development plugin injects `SUPABASE_URL: env.SUPABASE_URL || env.VITE_SUPABASE_URL` (line 80) — `env.SUPABASE_URL` wins and is `https://vfovtgtjailvrphsgafv.supabase.co`. `withAuth` then calls `supabase.auth.getUser(token)` against the PRODUCTION Supabase, not localhost. Production GoTrue rejects the locally-issued ES256 token (different signing key, different issuer). | ENVIRONMENT | `.env.local` line: `SUPABASE_URL="https://vfovtgtjailvrphsgafv.supabase.co"`. Verified via `node -e "const {loadEnv}=require('vite'); process.env.VITE_SUPABASE_URL='http://localhost:54321'; const env=loadEnv('test',process.cwd(),''); console.log(env.SUPABASE_URL)"` → outputs `https://vfovtgtjailvrphsgafv.supabase.co`. `vite.config.ts:80`: `SUPABASE_URL: env.SUPABASE_URL || env.VITE_SUPABASE_URL`. `env.SUPABASE_URL` is non-empty → `env.VITE_SUPABASE_URL` (`http://localhost:54321`) is never used. | HIGH | CONFIRMED — The Vite dev server's api-development plugin injects the PRODUCTION Supabase URL into `process.env.SUPABASE_URL` for API route calls |
-| H3 | e2e-local.sh step 9 generates HS256 tokens with `iss:'supabase-demo'` but GoTrue 2.58.5 issues tokens with `iss:'http://127.0.0.1:54321/auth/v1'`. The script-generated tokens are only used by integration tests (Vitest), not by the T-055-100 Playwright test. T-055-100 uses UI login (`signIn()`) which gets a real GoTrue token. So step 9 iss mismatch does NOT directly cause the T-055-100 failure. | ENVIRONMENT | `scripts/e2e-local.sh:191`: `iss:'supabase-demo'`. Real GoTrue token payload: `iss: 'http://127.0.0.1:54321/auth/v1'`. HS256 token with `iss:'supabase-demo'` → GoTrue returns 400 `validation_failed / Token audience doesn't match`. HS256 token with `iss:'http://127.0.0.1:54321/auth/v1'` → GoTrue returns 200 OK. T-055-100 does UI login (not script token), so this is a Vitest regression risk, not the T-055-100 Playwright failure. | HIGH | CONFIRMED (separate issue) — Vitest integration tests that use `E2E_COLLAB_OWNER_TOKEN` will fail because iss mismatch. Not the cause of T-055-100 failure but a co-present bug. |
-| H4 | The original Wave 4 hypothesis: Vite dev server API middleware verifies incoming Bearer tokens expecting ES256. | APPLICATION | Grep + full read of `vite.config.ts` api-development plugin (lines 31-197) confirms NO JWT verification. Routes requests only, does not call any JWT library. | LOW | REJECTED — Vite does not verify tokens. |
-| H5 | `withAuth.ts` line 112 returns 401 on `supabase.auth.getUser()` error (not 403). The test sees 403. Therefore `withAuth` is not where the 403 originates — the 403 with `bad_jwt` is the raw AuthApiError thrown by `supabase.auth.getUser()` being caught by a try/catch that re-surfaces the original Supabase error code. When `supabase.auth.getUser()` contacts PRODUCTION Supabase with a locally-issued ES256 token, production GoTrue returns `{status:403, code:'bad_jwt', message:'signing method ES256 is invalid'}`. This error is caught by `withAuth.ts:143-148` (`__isAuthError` check) and re-wrapped as 401. But the test error message in the failure log says 403 — this means the 403 body bubbles through BEFORE `withAuth`'s catch wraps it, OR the test is reading the body text (the `bad_jwt` message) and inferring 403 from the Supabase error object's status field. | APPLICATION | `withAuth.ts:31-38`: `sendUnauthorized` returns 401. `withAuth.ts:108`: `supabase.auth.getUser(accessToken)` — delegates to SDK. `withAuth.ts:143-148`: catches `__isAuthError` and calls `sendUnauthorized` (401). The 403 in the symptom comes from the Supabase error object's `.status` field (AuthApiError.status=403) being logged/read by the test, not from the HTTP response status code. The actual HTTP response is 401. | MEDIUM | CONFIRMED — withAuth correctly catches the AuthApiError. The "403" in the test failure is the Supabase error object's status property, not the HTTP response code. |
+| # | Hypothesis | Layer | Evidence (file:line) | Confidence | Verdict |
+|---|------------|-------|---------------------|------------|---------|
+| 1 | `useOptimizedMatrix.ts` catch blocks reference undeclared `err` (parameter is `_err`) — ReferenceError thrown INSIDE the catch block causes a secondary uncaught exception, silently breaking data flow | Application | `src/hooks/useOptimizedMatrix.ts:126`, `189`, `236`, `276`, `302`, `351` — all 6 catch blocks use `catch (_err)` but reference `err` in the body. Line 302 and 351 are in toggle/drag which are user-action paths; lines 126/189/236/276 are in load/add/update/delete | HIGH | CONFIRMED (static) — **BUT** `NewDesignMatrix.tsx` is the only consumer of this hook, and `MainApp.tsx` does NOT import or render `NewDesignMatrix`. This hook is NOT on the production data path. |
+| 2 | Same `_err`/`err` pattern in the batched position update block of `useOptimizedMatrix.ts` | Application | `src/hooks/useOptimizedMatrix.ts:82-83` — `catch (_error)` with body `logger.error('...', error)` — `error` refers to outer React state setter variable, not the caught exception | HIGH | CONFIRMED (static) — same non-production scope caveat as H1 |
+| 3 | `useIdeas.ts` `loadIdeas` useCallback has empty dependency array `[]` — ROOT_CAUSE_IDEAS_NOT_LOADING_CRITICAL.md documents this as a stale-closure bug causing `loadIdeas` to never re-create when project changes | Application | `src/hooks/useIdeas.ts:169` — `}, [])` with empty deps; `loadIdeas` uses `logger` (line 66, 74, 88, 90, 97) but logger not in deps. useEffect at line 418 has `[projectId, loadIdeas]` — since `loadIdeas` reference never changes, the effect only fires on `projectId` change, which IS the expected trigger. | MEDIUM | PARTIALLY CONFIRMED — the empty dep array is real at line 169. The ROOT_CAUSE doc's claim that this prevents the effect from firing is **mechanically weak**: `loadIdeas` being stale only matters if the effect re-runs for `loadIdeas` changes. The `projectId` dependency alone triggers the effect on project switch. The actual fetch at line 93 runs unconditionally inside the callback regardless of logger staleness. Logger staleness degrades logging only, not the fetch itself. This hypothesis is REJECTED as the primary cause but logged as a code quality issue. |
+| 4 | `loadIdeas` catch block (line 160-163) swallows ALL errors with `setIdeas([])` — if the API call returns non-OK status, or throws for any reason (auth, network, CORS), the user sees empty state with no UI indicator | Application | `src/hooks/useIdeas.ts:99-101` — `if (!response.ok) { throw new Error(...) }` then `catch (error) { logger.error(...); setIdeas([]) }` — error is swallowed and empty array is shown | HIGH | CONFIRMED (static) — this IS on the production path. Any upstream failure (auth, RLS, network) produces the exact observed symptom. **Cannot confirm which upstream failure is occurring without runtime data.** |
+| 5 | `getCachedAuthToken()` (line 79) returns null/undefined in production — the token cache may be empty on cold load, causing the API call to proceed with no Authorization header. The `withAuth.ts` middleware at line 84-92 tries cookie first then Authorization header — if neither is present, returns 401, which throws at line 100 and routes to `setIdeas([])` | Transport | `src/hooks/useIdeas.ts:79-96` + `api/_lib/middleware/withAuth.ts:84-96` — no access token = 401 from API = throw in catch = `setIdeas([])`. The warn log at line 90 would appear in browser console if this is the path. | HIGH | PENDING-RUNTIME — needs browser console check for "No access token found in localStorage" warning |
+| 6 | `validateProjectAccess` in `api/ideas.ts` calls `authClient.auth.getUser()` (line 129) — if the httpOnly cookie auth token is expired/missing AND the Authorization header token is missing, `getUser()` fails, throwing "User not authenticated" which returns 500/401 and triggers the `setIdeas([])` path | Transport | `api/ideas.ts:129-133` + `api/_lib/middleware/withAuth.ts:108` — double auth check; either layer can reject | MEDIUM | PENDING-RUNTIME — needs Vercel function logs |
+| 7 | RLS policy on `ideas` table does not exist in migrations — scout found NO matches for `CREATE POLICY.*ON\s+ideas` in `supabase/migrations/` — if the service role client bypass in `api/ideas.ts:205-211` was recently broken (env var missing), the fallback would use restricted client that RLS-filters to empty | Infrastructure | `api/ideas.ts:104-117` — `getServiceRoleClient()` throws if `SUPABASE_SERVICE_ROLE_KEY` is empty. If the env var is unset on Vercel production, this throws inside `validateProjectAccess` (line 136) before ideas are even fetched | MEDIUM | PENDING-RUNTIME — needs Vercel env var verification |
+| 8 | ROOT_CAUSE_IDEAS_NOT_LOADING_CRITICAL.md documents a prior investigation (dated 2025-10-01) identifying the exact empty-state symptom with the same code path — the document was written but the fix (add `logger` to deps) was apparently never applied, suggesting this is a **chronic unfixed bug** that has existed since October 2025 | Application | File exists at repo root, dated 2025-10-01; current `src/hooks/useIdeas.ts:169` still has `}, [])` | MEDIUM | CONFIRMED (stale doc, live bug) — but logger-staleness is rejected as the actual mechanism (see H3). The doc's diagnosis of the mechanism is incorrect; the actual risk is H4+H5. |
 
-## Root Cause Summary (CONFIRMED)
+## Layer-escalation budget
 
-**Primary root cause:** `vite.config.ts:80` — `SUPABASE_URL: env.SUPABASE_URL || env.VITE_SUPABASE_URL`
+Per investigation discipline: 2 rejected hypotheses at same layer → escalate. Four system layers:
+1. **Application** — useIdeas hook, ideaRepository, api/ideas.ts, withAuth middleware
+2. **Transport** — HTTP headers, JWT handling, cookie flow, Supabase SDK client config
+3. **Infrastructure** — Supabase Cloud RLS policies, database state, column rename
+4. **Environment** — Vercel env vars, production-specific config, feature flags
 
-`loadEnv(mode, process.cwd(), '')` reads `.env.local` at Vite startup. `.env.local` sets
-`SUPABASE_URL=https://vfovtgtjailvrphsgafv.supabase.co` (production). This value is
-non-empty, so `env.VITE_SUPABASE_URL` (`http://localhost:54321` from the shell) is never
-reached. The api-development plugin injects the production URL into `process.env.SUPABASE_URL`
-for every API route call during local E2E tests.
+Start at application layer. Escalate only if application-layer evidence rules out causes.
 
-**Failure chain:**
-1. Playwright `webServer` launches Vite dev server via `npm run dev`
-2. `vite.config.ts` `loadEnv` reads `.env.local` → `SUPABASE_URL = production URL`
-3. Test does UI login → gets real ES256 token from LOCAL GoTrue (port 54321)
-4. Test submits invite via `/api/invitations/create` with ES256 token
-5. api-development plugin routes to `api/invitations/create.ts` → `withAuth.ts`
-6. `withAuth.ts:99` creates Supabase client with `process.env.SUPABASE_URL` = PRODUCTION URL
-7. `supabase.auth.getUser(localES256Token)` → HTTP GET to PRODUCTION Supabase's `/auth/v1/user`
-8. Production GoTrue sees a token signed by local GoTrue's ES256 key → 403 `bad_jwt` / "signing method ES256 is invalid"
-9. `withAuth.ts:143-148` catches `AuthApiError` → returns HTTP 401 to the test
-10. Test fails waiting for invite success message (gets auth error instead)
+**Current status:** Application layer investigation yielded 2 confirmed findings (H1/H2 out of scope, H4 on-path) and 1 confirmed code quality issue (H3). Runtime data needed to distinguish H4 sub-causes (transport vs. environment vs. infrastructure layer).
 
-**Secondary issue (independent):**
-`scripts/e2e-local.sh:191` — `iss:'supabase-demo'`
-Vitest integration tests that use `E2E_COLLAB_OWNER_TOKEN` will fail because CLI 2.58.5
-GoTrue now validates `iss` and expects `http://127.0.0.1:54321/auth/v1` — script still
-hardcodes `iss:'supabase-demo'`. This does NOT affect T-055-100 (which uses UI login)
-but will block integration test suite.
+## Runtime Data Requested
 
-**Why CI passes:**
-CI workflow sets `VITE_SUPABASE_URL` and `SUPABASE_URL` both to `http://localhost:54321`
-in the GitHub Actions env block. GitHub Actions sets these as process.env, and when
-`loadEnv` runs on CI, there is no `.env.local` file (it is gitignored). So `env.SUPABASE_URL`
-is `http://localhost:54321` in CI — the correct local URL. CI also uses CLI defaults that
-align with the hardcoded HS256 keys. The divergence is local `.env.local` overriding the
-shell env through Vite's `loadEnv`.
+See Roz return message to Eva for full list.
 
-## Prior Investigation (archived 2026-04-11 T-055-101)
-See previous content — GoTrue UUID + withQuotaCheck empty token.
+## Notes for investigator
 
-## Recommended Next Action for Eva
-Hard-pause, present to user. Two distinct fixes needed:
-1. PRIMARY: Ensure `scripts/e2e-local.env.sh` exports `SUPABASE_URL` (non-VITE_ prefixed)
-   equal to `http://localhost:54321` so `env.SUPABASE_URL` resolves to local, not production.
-   Alternatively, fix `vite.config.ts:80` to prefer `env.VITE_SUPABASE_URL` when running
-   in test mode. Eva should present both options to user before routing Colby.
-2. SECONDARY: Fix `scripts/e2e-local.sh:191` `iss:'supabase-demo'` → `iss:'http://127.0.0.1:54321/auth/v1'`
-   to prevent Vitest integration test failures under CLI 2.58.5.
+- Do NOT propose a fix in this ledger. Only hypotheses + evidence + verdicts.
+- This is a PRODUCTION bug — no local reproduction available until we can tell if the bug is environment-specific or code-specific.
+- User runtime data (browser devtools network tab, console errors, Vercel deploy history) is ESSENTIAL — investigation should not fully commit to a hypothesis without it.
+- Roz can investigate the codebase side independently of user data; combine both streams at triage.

@@ -1,5 +1,6 @@
 import { IdeaCard } from '../../types'
 import { logger } from '../../utils/logger'
+import { getCsrfToken } from '../../utils/cookieUtils'
 import { aiCache, AICache } from '../aiCache'
 
 interface RoadmapEpic {
@@ -82,8 +83,12 @@ export class AIRoadmapService {
     try {
       // In a real implementation, get actual auth token
       headers['Authorization'] = 'Bearer placeholder-token'
+      const csrfToken = getCsrfToken()
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken
+      }
     } catch (_error) {
-      logger.warn('Failed to get auth headers:', error)
+      logger.warn('Failed to get auth headers:', _error)
     }
 
     return headers
@@ -159,12 +164,12 @@ export class AIRoadmapService {
         return this.transformLegacyRoadmap(roadmap)
 
       } catch (_error) {
-        logger.warn('🚫 AI roadmap failed, using mock:', error)
+        logger.warn('🚫 AI roadmap failed, using mock:', _error)
         logger.debug('Roadmap API error details:', {
           projectName,
           projectType,
           ideaCount: (ideas || []).length,
-          error: error instanceof Error ? error.message : String(error)
+          error: _error instanceof Error ? _error.message : String(_error)
         })
         return this.generateMockRoadmap(projectName, projectType)
       }

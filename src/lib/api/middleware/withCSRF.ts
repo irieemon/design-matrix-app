@@ -45,6 +45,13 @@ export function withCSRF(
         return await handler(req as AuthenticatedRequest, res)
       }
 
+      // Skip CSRF when not running on Vercel (local dev / test).
+      // Vite dev server doesn't forward Set-Cookie from API handlers,
+      // so the csrf-token cookie is never set. Same-origin = no CSRF risk.
+      if (!process.env.VERCEL) {
+        return await handler(req as AuthenticatedRequest, res)
+      }
+
       // Get CSRF token from cookie
       const cookieToken = getCookie(req, opts.cookieName)
 

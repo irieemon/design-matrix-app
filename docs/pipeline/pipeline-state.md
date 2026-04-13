@@ -8,12 +8,74 @@
 
 **Why the arc closed instead of continuing:** Retro lesson from this session — 3+ consecutive pipelines with unchanged pass count is the signal to change strategy, not keep iterating. The remaining failures are in React realtime code (presence, cursor broadcasting, fullscreen rendering) and CI-log-based debugging is the wrong tool for that layer. v1.3 establishes local repro as prerequisite.
 
-## Active Pipeline
-**Phase:** build
-**Sizing:** Small
-**Feature:** Phase 12 follow-up — double-mount fix + realtime timing
+## Active Pipeline — AI Gateway Model Profiles
+**Phase:** idle
+**Sizing:** Medium
+**Stop Reason:** completed_clean
 
-<!-- PIPELINE_STATUS: {"phase": "commit", "sizing": "small", "roz_qa": "PASS", "poirot_reviewed": true, "telemetry_captured": true, "stop_reason": null} -->
+<!-- PIPELINE_STATUS: {"phase": "idle", "sizing": null, "roz_qa": null, "poirot_reviewed": null, "telemetry_captured": true, "stop_reason": "completed_clean"} -->
+
+### ADR-0013 — AI Gateway Model Profiles — Completed 2026-04-12
+
+**Commits (7):**
+- `a127e68` Step 1: Migration + profile service
+- `964df70` Step 2: Model router refactor
+- `804572d` Step 3: Handler updates (7 handlers)
+- `a10dd0c` Step 3b: Handler test mock fixes
+- `ecd34e8` Step 4: Admin API endpoint
+- `dd5815b` Step 5: Admin UI component
+- `5c834f5` Roz sweep fixes (profile_name tracking, nav label, TODOs, docstring)
+
+**Files changed:** 23 | **Tests:** 94/94 | **Lines:** +2100/-150
+
+### Telemetry (Medium pipeline)
+- Agents: Cal (ADR), Roz (test spec review + test authoring + wave QA + final sweep), Colby (5 steps + fixes), Poirot (Step 1 wave), Ellis (7 commits)
+- Rework cycles: 1 (Roz final sweep → 4 fixes)
+- First-pass QA: Steps 1-4 PASS, Step 5 FAIL (profile_name gap)
+- EvoScore: 1.0 (94 tests, 0 broken)
+
+### Telemetry (Small pipeline)
+- Agents invoked: Roz (QA), Poirot (blind review), Colby-equivalent (fix agent)
+- Rework cycles: 1 (Poirot findings → fix → verify)
+- First-pass QA: PASS
+- EvoScore: 1.0 (13 tests before, 13 after, 0 broken)
+
+## Phase 12.1 — Supabase Realtime Presence Fix — 2026-04-12
+
+**Sizing:** Small. **Root cause:** `ProjectPresenceStack` created a competing local `ScopedRealtimeManager` on the first render (before context manager was ready), causing rapid channel join/leave cycles that prevented presence from establishing.
+
+### Changes
+1. `src/hooks/useProjectRealtime.ts` — Module-level manager cache (`acquireManager`/`releaseManager`) with refcounting + 2s teardown grace. Survives React StrictMode and fullscreen transitions.
+2. `src/components/project/ProjectPresenceStack.tsx` — Early-return guard when inside provider but context manager not yet ready. Prevents competing channel subscription.
+3. `tests/e2e/project-realtime-matrix.spec.ts` — Resilient `enterFullscreenMatrix` helper with project-card fallback; 60s timeout for multi-browser tests.
+4. `scripts/e2e-local.sh` — Idea seed rows with correct priorities; ON CONFLICT guard.
+5. `src/hooks/__tests__/useProjectRealtime.test.ts` — Fake-timer pattern for module-level cache test isolation.
+
+### QA
+- Roz: PASS (13/13 unit + 10/10 component)
+- Poirot: 6 findings → 4 fixed (Promise.race error msg, SQL renumber+ON CONFLICT, early-return cleanup, negative refCount guard), 1 accepted NIT (displayName key), 1 downgraded NIT (timer ordering)
+- E2E T-054B-300 (presence): PASS locally
+
+## RESUME HERE — 2026-04-12 (Phase 12 infrastructure complete, realtime blocked on local repro)
+
+**Resume command:** `npm run e2e:local -- tests/e2e/project-realtime-matrix.spec.ts`
+
+**One-line status:** Phase 12 shipped all infrastructure fixes (selectors, seed data, RLS, ws://, double-mount, timeouts). CI still fails because Supabase Realtime returns 0 participants — the channel never connects. Next step is local reproduction to determine if Realtime works locally or if it's a CI-specific configuration issue.
+
+**What shipped (2 commits):**
+- `a29993b` — ADR-0012 core: testids, seed data, RLS migration, ws:// fix
+- `795ab9b` — Follow-up: double-mount conditional unmount, realtime timeouts
+
+**Why CI still fails:** `locator resolved to hidden <div ... aria-label="Matrix viewers: 0 online">` — Supabase Realtime presence returns zero participants after 15s+ on all retries. The channel subscription either fails silently or never completes in CI.
+
+**Next actions (local repro session):**
+1. Start local Supabase: `supabase start`
+2. Run: `npm run e2e:local -- tests/e2e/project-realtime-matrix.spec.ts`
+3. If Realtime works locally → CI issue. Check if `supabase start -x ...` in CI excludes Realtime service
+4. If Realtime fails locally → app-layer issue. Debug ScopedRealtimeManager channel subscription
+5. The "hidden" flag on the presence stack element needs investigation — may be a parent CSS issue in the fullscreen portal
+
+**Do NOT re-attempt CI-based debugging.** The v1.3 roadmap explicitly called this out: "CI-log-based debugging is the wrong tool for that layer."
 
 ## Phase 12 — E2E Realtime Rendering Fix — Closed 2026-04-12
 

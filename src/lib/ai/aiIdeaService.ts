@@ -1,5 +1,6 @@
 import { IdeaCard } from '../../types'
 import { logger } from '../../utils/logger'
+import { getCsrfToken } from '../../utils/cookieUtils'
 import { aiCache, AICache } from '../aiCache'
 
 interface AIIdeaResponse {
@@ -51,8 +52,12 @@ export class AIIdeaService {
       // In a real implementation, get actual auth token
       // For now, use a placeholder
       headers['Authorization'] = 'Bearer placeholder-token'
-    } catch (error) {
-      logger.warn('Failed to get auth headers:', error)
+      const csrfToken = getCsrfToken()
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken
+      }
+    } catch (_error) {
+      logger.warn('Failed to get auth headers:', _error)
     }
 
     return headers

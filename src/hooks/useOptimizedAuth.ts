@@ -66,22 +66,36 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
       return demoUser
     }
 
-    // Real user profile fetch with timeout
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 1500)  // Fixed 1.5s timeout
-
-    try {
-      const token = (await supabase.auth.getSession()).data.session?.access_token
-      if (!token) throw new Error('No auth token available')
-
+    // Real user profile fetch with timeout and 401 retry
+    const fetchWithToken = async (token: string, signal: AbortSignal) => {
       const response = await fetch('/api/auth?action=user', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache'
         },
-        signal: controller.signal
+        signal
       })
+      return response
+    }
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3000)  // Increased from 1.5s to 3s
+
+    try {
+      let token = (await supabase.auth.getSession()).data.session?.access_token
+      if (!token) throw new Error('No auth token available')
+
+      let response = await fetchWithToken(token, controller.signal)
+
+      // If 401, the token from localStorage is expired. Refresh and retry once.
+      if (response.status === 401) {
+        const { data: refreshData } = await supabase.auth.refreshSession()
+        const freshToken = refreshData?.session?.access_token
+        if (freshToken) {
+          response = await fetchWithToken(freshToken, controller.signal)
+        }
+      }
 
       clearTimeout(timeoutId)
 
@@ -116,7 +130,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
         updated_at: new Date().toISOString()
       }
 
-      logger.warn('Using fallback user profile due to:', error)
+      logger.warn('Using fallback user profile due to:', _error)
       return fallbackUser
     }
   }
@@ -149,7 +163,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
       logger.debug('Project check result:', hasProjects ? 'has projects' : 'no projects')
 
     } catch (_error) {
-      logger.debug('Project check failed (non-critical):', error)
+      logger.debug('Project check failed (non-critical):', _error)
     }
   }
 
@@ -186,7 +200,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
       }
 
     } catch (_error) {
-      logger.error('💥 Error in auth processing:', error)
+      logger.error('💥 Error in auth processing:', _error)
 
       // Always set a user to prevent infinite loading
       setCurrentUser({
@@ -211,7 +225,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
     try {
       await handleAuthUser(authUser)
     } catch (_error) {
-      logger.error('❌ Error in auth success handler:', error)
+      logger.error('❌ Error in auth success handler:', _error)
       setIsLoading(false)  // Ensure loading stops even on error
     }
   }, [])
@@ -221,7 +235,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
       logger.debug('🚪 Logging out...')
       await supabase.auth.signOut()
     } catch (_error) {
-      logger.error('Logout error:', error)
+      logger.error('Logout error:', _error)
       // Force cleanup on error
       setCurrentUser(null)
       setAuthUser(null)
@@ -289,7 +303,7 @@ export const useOptimizedAuth = (options: UseOptimizedAuthOptions = {}): UseOpti
           }
         }
       } catch (_error) {
-        logger.error('💥 Auth initialization error:', error)
+        logger.error('💥 Auth initialization error:', _error)
         authPerformanceMonitor.finishSession('error')
         if (mounted) setIsLoading(false)
       }
