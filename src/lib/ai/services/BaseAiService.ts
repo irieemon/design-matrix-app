@@ -16,6 +16,8 @@ export interface SecureAIServiceConfig {
  * Base class for all AI services
  * Provides common functionality like authentication, HTTP requests, and caching
  */
+let refreshPromise: Promise<boolean> | null = null
+
 export abstract class BaseAiService {
   protected baseUrl: string
   protected cache: AICache
@@ -91,20 +93,30 @@ export abstract class BaseAiService {
 
   /**
    * Common fetch wrapper with error handling
+   * Includes credentials for cookie-based auth (CSRF) and 401 token refresh with single retry.
    * @param endpoint - API endpoint to call
    * @param payload - Request payload
+   * @param isRetry - Whether this is a retry after a 401 refresh (prevents infinite loops)
    * @returns Response data
    */
-  protected async fetchWithErrorHandling<T>(endpoint: string, payload: any): Promise<T> {
+  protected async fetchWithErrorHandling<T>(endpoint: string, payload: any, isRetry = false): Promise<T> {
     try {
       const headers = await this.getAuthHeaders()
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'POST',
         headers,
+        credentials: 'include',
         body: JSON.stringify(payload)
       })
 
       if (!response.ok) {
+        if (response.status === 401 && !isRetry) {
+          const refreshed = await this.refreshAccessToken()
+          if (refreshed) {
+            return this.fetchWithErrorHandling<T>(endpoint, payload, true)
+          }
+          throw new Error('Authentication expired. Please sign in again.')
+        }
         if (response.status === 429) {
           throw new Error('Rate limit exceeded. Please wait a moment before trying again.')
         }
@@ -118,6 +130,52 @@ export abstract class BaseAiService {
       logger.error(`Error calling ${endpoint}:`, _error)
       throw _error
     }
+  }
+
+  /**
+   * Attempt to refresh the access token via the auth endpoint.
+   * Uses a module-level singleton promise so concurrent 401s coalesce into one refresh.
+   * On success, persists the new token to localStorage for subsequent getAuthHeaders() calls.
+   * @returns True if refresh succeeded, false otherwise
+   */
+  private refreshAccessToken(): Promise<boolean> {
+    if (refreshPromise) {
+      logger.debug('BaseAiService: Token refresh already in-flight, reusing promise')
+      return refreshPromise
+    }
+
+    refreshPromise = (async () => {
+      try {
+        logger.debug('BaseAiService: Attempting token refresh...')
+        const response = await fetch('/api/auth?action=refresh', {
+          method: 'POST',
+          credentials: 'include',
+        })
+
+        if (!response.ok) {
+          logger.error('BaseAiService: Token refresh failed', { status: response.status })
+          return false
+        }
+
+        const data = await response.json()
+        if (data.access_token) {
+          const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
+          const session = stored ? JSON.parse(stored) : {}
+          session.access_token = data.access_token
+          localStorage.setItem(SUPABASE_STORAGE_KEY, JSON.stringify(session))
+        }
+
+        logger.debug('BaseAiService: Token refresh successful')
+        return true
+      } catch (_error) {
+        logger.error('BaseAiService: Token refresh error:', _error)
+        return false
+      } finally {
+        refreshPromise = null
+      }
+    })()
+
+    return refreshPromise
   }
 
   /**

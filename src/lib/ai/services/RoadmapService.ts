@@ -76,12 +76,12 @@ export class RoadmapService extends BaseAiService {
             }
           }
         } catch (_error) {
-          logger.warn('🚫 AI roadmap failed, using mock:', error)
+          logger.warn('🚫 AI roadmap failed, using mock:', _error)
           logger.debug('Roadmap API error details:', {
             projectName,
             projectType,
             ideaCount: (ideas || []).length,
-            error: error instanceof Error ? error.message : String(error)
+            error: _error instanceof Error ? _error.message : String(_error)
           })
           return this.generateMockRoadmap(projectName, projectType)
         }

@@ -65,10 +65,13 @@ export class IdeaGenerationService extends BaseAiService {
             return MockDataGenerator.generateMockIdea(title, projectContext)
           }
         } catch (_error) {
-          logger.error('Error generating idea:', error)
-          // Return mock idea for non-critical errors
-          const { MockDataGenerator } = await import('../mocks/MockDataGenerator')
-          return MockDataGenerator.generateMockIdea(title, projectContext)
+          logger.error('Error generating idea:', _error)
+          // Return a fallback idea preserving the original title for non-critical errors
+          return {
+            content: title,
+            details: projectContext?.description || 'AI-generated idea (fallback due to service error)',
+            priority: 'moderate' as PriorityLevel,
+          }
         }
       },
       10 * 60 * 1000 // 10 minute cache for ideas
@@ -131,7 +134,7 @@ export class IdeaGenerationService extends BaseAiService {
             return MockDataGenerator.generateMockIdeas(title, description, projectType, count)
           }
         } catch (_error) {
-          logger.warn('🚫 AI generation failed, using mock:', error)
+          logger.warn('🚫 AI generation failed, using mock:', _error)
           const { MockDataGenerator } = await import('../mocks/MockDataGenerator')
           return MockDataGenerator.generateMockIdeas(title, description, projectType, count)
         }
