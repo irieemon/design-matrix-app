@@ -5,6 +5,7 @@
  * All business logic lives in api/_lib/ai/ handlers.
  *
  * Routes:
+ * - GET  /api/ai?action=quota-status&type=ai_ideas
  * - POST /api/ai?action=generate-ideas
  * - POST /api/ai?action=generate-insights
  * - POST /api/ai?action=generate-roadmap
@@ -32,13 +33,51 @@ import {
   handleAnalyzeVideo,
   handleTranscribeAudio,
 } from './_lib/ai/index.js';
+import { checkLimit } from './_lib/services/subscriptionService.js';
+
+function getResetsAt(): string {
+  const now = new Date();
+  const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  return nextMonth.toISOString();
+}
+
+async function handleQuotaStatus(req: AuthenticatedRequest, res: VercelResponse) {
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const limitType = (req.query.type as string) || 'ai_ideas';
+  const validTypes = ['ai_ideas', 'ai_roadmap', 'ai_insights'] as const;
+  if (!validTypes.includes(limitType as typeof validTypes[number])) {
+    return res.status(400).json({ error: `Invalid type: ${limitType}` });
+  }
+
+  const result = await checkLimit(userId, limitType as typeof validTypes[number]);
+
+  return res.status(200).json({
+    canUse: result.canUse,
+    current: result.current,
+    limit: result.limit,
+    percentageUsed: result.percentageUsed,
+    isUnlimited: result.isUnlimited,
+    resetsAt: getResetsAt(),
+  });
+}
 
 async function aiRouter(req: AuthenticatedRequest, res: VercelResponse) {
+  const action = (req.query.action as string) || '';
+
+  if (action === 'quota-status') {
+    if (req.method !== 'GET') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+    return handleQuotaStatus(req, res);
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-
-  const action = (req.query.action as string) || '';
 
   switch (action) {
     case 'generate-ideas':
@@ -67,6 +106,7 @@ async function aiRouter(req: AuthenticatedRequest, res: VercelResponse) {
           'analyze-image',
           'analyze-video',
           'transcribe-audio',
+          'quota-status',
         ],
       });
   }
