@@ -14,6 +14,10 @@ import VideoAnalysisProgress, {
 } from './video/VideoAnalysisProgress'
 import { useCsrfToken } from '../hooks/useCsrfToken'
 import { useBreakpoint } from '../hooks/useBreakpoint'
+import { useAIGeneration } from '../hooks/useAIGeneration'
+import { STAGE_CONFIGS } from '../hooks/stageConfigs'
+import { useToast } from '../contexts/ToastContext'
+import AIProgressOverlay from './ui/AIProgressOverlay'
 import { DatabaseService } from '../lib/database'
 import { supabase, createAuthenticatedClientFromLocalStorage } from '../lib/supabase'
 import { Project, IdeaCard, User, ProjectType } from '../types'
@@ -47,6 +51,8 @@ interface AIStarterModalProps {
 
 const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, onProjectCreated }) => {
   const { isMobile } = useBreakpoint()
+  const { showSuccess } = useToast()
+  const aiGeneration = useAIGeneration(STAGE_CONFIGS.ideas)
   const [step, setStep] = useState<AIStarterStep>('initial')
   const [projectName, setProjectName] = useState('')
   const [projectDescription, setProjectDescription] = useState('')
@@ -177,27 +183,34 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
 
     try {
       logger.debug('🎯 Starting AI project analysis...')
-      
+
       // Analyze project context
       const contextAnalysis = analyzeProjectContext(projectName, projectDescription)
-      
+
       // Use manual selections if provided
-      const effectiveProjectType = selectedProjectType === 'auto' 
-        ? contextAnalysis.recommendedProjectType 
+      const effectiveProjectType = selectedProjectType === 'auto'
+        ? contextAnalysis.recommendedProjectType
         : selectedProjectType
       const effectiveIndustry = selectedIndustry === 'auto'
         ? contextAnalysis.industry
         : selectedIndustry
-        
-      const result = await aiService.generateProjectIdeas(
-        projectName, 
-        projectDescription,
-        effectiveProjectType,
-        ideaCount,
-        ideaTolerance
-      )
-      
-      setAnalysis({ 
+
+      let result: Awaited<ReturnType<typeof aiService.generateProjectIdeas>> | undefined
+
+      await aiGeneration.execute(async (signal: AbortSignal) => {
+        result = await aiService.generateProjectIdeas(
+          projectName,
+          projectDescription,
+          effectiveProjectType,
+          ideaCount,
+          ideaTolerance
+        )
+        if (signal.aborted) return
+      })
+
+      if (!result) return
+
+      setAnalysis({
         needsClarification: contextAnalysis.needsClarification,
         clarifyingQuestions: contextAnalysis.clarifyingQuestions,
         projectAnalysis: {
@@ -210,6 +223,9 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         },
         generatedIdeas: result
       })
+
+      showSuccess(`${result.length} ideas generated`, 3000)
+      window.dispatchEvent(new CustomEvent('ai-quota-changed'))
 
       if (contextAnalysis.needsClarification) {
         setStep('questions')
@@ -231,35 +247,41 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
     setError(null)
 
     try {
-
       logger.debug('🎯 Re-analyzing with additional context...')
-      
+
       // Enhanced description with user answers
       const enhancedDescription = generateEnhancedDescription(
         projectDescription,
         analysis.clarifyingQuestions,
         questionAnswers
       )
-      
+
       // Re-analyze with enhanced context
       const contextAnalysis = analyzeProjectContext(projectName, enhancedDescription)
-      
-      const effectiveProjectType = selectedProjectType === 'auto' 
-        ? contextAnalysis.recommendedProjectType 
+
+      const effectiveProjectType = selectedProjectType === 'auto'
+        ? contextAnalysis.recommendedProjectType
         : selectedProjectType
       const effectiveIndustry = selectedIndustry === 'auto'
         ? contextAnalysis.industry
         : selectedIndustry
-        
-      const result = await aiService.generateProjectIdeas(
-        projectName,
-        enhancedDescription,
-        effectiveProjectType,
-        ideaCount,
-        ideaTolerance
-      )
-      
-      setAnalysis({ 
+
+      let result: Awaited<ReturnType<typeof aiService.generateProjectIdeas>> | undefined
+
+      await aiGeneration.execute(async (signal: AbortSignal) => {
+        result = await aiService.generateProjectIdeas(
+          projectName,
+          enhancedDescription,
+          effectiveProjectType,
+          ideaCount,
+          ideaTolerance
+        )
+        if (signal.aborted) return
+      })
+
+      if (!result) return
+
+      setAnalysis({
         needsClarification: false,
         clarifyingQuestions: [],
         projectAnalysis: {
@@ -272,6 +294,8 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
         },
         generatedIdeas: result
       })
+      showSuccess(`${result.length} ideas generated`, 3000)
+      window.dispatchEvent(new CustomEvent('ai-quota-changed'))
       setStep('review')
     } catch (err) {
       logger.error('Error in follow-up analysis:', err)
@@ -377,6 +401,18 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
 
         {/* Content */}
         <div className="p-6">
+          <AIProgressOverlay
+            isActive={aiGeneration.isGenerating}
+            progress={aiGeneration.progress}
+            stage={aiGeneration.stage}
+            estimatedSecondsRemaining={aiGeneration.estimatedSecondsRemaining}
+            processingSteps={aiGeneration.processingSteps}
+            stageSequence={aiGeneration.stageSequence}
+            onCancel={aiGeneration.cancel}
+            error={aiGeneration.error}
+            onRetry={aiGeneration.retry}
+          />
+
           {error && (
             <div className="mb-6 rounded-lg p-4 border" style={{
               backgroundColor: 'var(--garnet-50)',
@@ -449,6 +485,7 @@ const AIStarterModal: React.FC<AIStarterModalProps> = ({ currentUser, onClose, o
               isFormValid={isFormValid}
               onCancel={onClose}
               onStartAnalysis={handleInitialAnalysis}
+              {...{ onNext: handleInitialAnalysis } as Record<string, unknown>}
             />
             </>
           )}

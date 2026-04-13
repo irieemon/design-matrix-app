@@ -4,6 +4,10 @@ import { Project, IdeaCard, ProjectRoadmap as ProjectRoadmapType } from '../../t
 import { aiService } from '../../lib/aiService'
 import { DatabaseService } from '../../lib/database'
 import { useLogger } from '../../lib/logging'
+import { useAIGeneration } from '../../hooks/useAIGeneration'
+import { STAGE_CONFIGS } from '../../hooks/stageConfigs'
+import { useToast } from '../../contexts/ToastContext'
+import AIProgressOverlay from '../ui/AIProgressOverlay'
 import TimelineRoadmap from '../TimelineRoadmap'
 import RoadmapHeader from './RoadmapHeader'
 import PhaseList from './PhaseList'
@@ -21,6 +25,8 @@ interface ProjectRoadmapProps {
 
 const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentProject, ideas }) => {
   const logger = useLogger('ProjectRoadmap')
+  const { showSuccess } = useToast()
+  const aiGeneration = useAIGeneration(STAGE_CONFIGS.roadmap)
 
   // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const [roadmapData, setRoadmapData] = useState<RoadmapData | null>(null)
@@ -156,6 +162,7 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
 
   // ✅ HOOKS FIX: Move ALL hooks BEFORE early returns (Rules of Hooks requirement)
   // These hooks use roadmapData which may be null - they handle this safely
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const timelineFeatures = useMemo(() => {
     const features = convertToTimelineFeatures()
     logger.debug('Timeline features generated', {
@@ -176,13 +183,6 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
   // Debounced save to avoid excessive database calls during drag operations
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Load existing roadmaps when component mounts or project changes
-  useEffect(() => {
-    if (currentProject?.id) {
-      loadRoadmapHistory()
-    }
-  }, [currentProject?.id])
-
   const loadRoadmapHistory = async () => {
     if (!currentProject?.id) return
 
@@ -199,6 +199,14 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       logger.error('Error loading roadmap history:', _error)
     }
   }
+
+  // Load existing roadmaps when component mounts or project changes
+  useEffect(() => {
+    if (currentProject?.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadRoadmapHistory()
+    }
+  }, [currentProject?.id])
 
   // Early return AFTER all hooks - if no project selected
   if (!currentProject) {
@@ -255,9 +263,9 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
       return
     }
 
-    setState(prev => ({ ...prev, isLoading: true, error: null, showConfirmModal: false }))
+    setState(prev => ({ ...prev, error: null, showConfirmModal: false }))
 
-    try {
+    await aiGeneration.execute(async (signal: AbortSignal) => {
       logger.debug('🗺️ Generating roadmap for project:', { projectName: currentProject.name })
       logger.debug('📋 Processing ideas', { ideaCount: (ideas || []).length })
 
@@ -266,6 +274,8 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
         currentProject.name,
         currentProject.project_type
       )
+
+      if (signal.aborted) return
 
       if (data) {
         logger.debug('🗺️ ProjectRoadmap: Setting roadmap data:', data)
@@ -287,20 +297,16 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
           }
         } catch (_error) {
           logger.error('Error saving roadmap:', _error)
-          // Don't show error to user since roadmap generation succeeded
         }
 
+        showSuccess('Roadmap generated successfully', 3000)
+        window.dispatchEvent(new CustomEvent('ai-quota-changed'))
         logger.debug('✅ Roadmap generated successfully')
       } else {
         setState(prev => ({ ...prev, error: 'Failed to generate roadmap. Please try again.' }))
         logger.error('❌ Roadmap generation failed - no data returned')
       }
-    } catch (_error) {
-      logger.error('Error generating roadmap:', _error)
-      setState(prev => ({ ...prev, error: 'Failed to generate roadmap. Please try again.' }))
-    } finally {
-      setState(prev => ({ ...prev, isLoading: false }))
-    }
+    })
   }
 
   const togglePhaseExpansion = (phaseIndex: number) => {
@@ -409,10 +415,22 @@ const ProjectRoadmap: React.FC<ProjectRoadmapProps> = ({ currentUser, currentPro
 
   return (
     <div className="space-y-4">
+      <AIProgressOverlay
+        isActive={aiGeneration.isGenerating}
+        progress={aiGeneration.progress}
+        stage={aiGeneration.stage}
+        estimatedSecondsRemaining={aiGeneration.estimatedSecondsRemaining}
+        processingSteps={aiGeneration.processingSteps}
+        stageSequence={aiGeneration.stageSequence}
+        onCancel={aiGeneration.cancel}
+        error={aiGeneration.error}
+        onRetry={aiGeneration.retry}
+      />
+
       <RoadmapHeader
         currentProject={currentProject}
         roadmapData={roadmapData}
-        isLoading={state.isLoading}
+        isLoading={state.isLoading || aiGeneration.isGenerating}
         roadmapHistory={roadmapHistory}
         selectedRoadmapId={state.selectedRoadmapId}
         onGenerateRoadmap={handleGenerateRoadmap}

@@ -14,6 +14,10 @@ import {
 import { IdeaCard, Project, User } from '../types'
 import { aiService } from '../lib/aiService'
 import { logger } from '../utils/logger'
+import { useAIGeneration } from '../hooks/useAIGeneration'
+import { STAGE_CONFIGS } from '../hooks/stageConfigs'
+import { useToast } from '../contexts/ToastContext'
+import AIProgressOverlay from './ui/AIProgressOverlay'
 import { Button } from './ui/Button'
 import { Input } from './ui/Input'
 import { FileService } from '../lib/fileService'
@@ -123,6 +127,8 @@ function mapRelevanceToPriority(score: number): IdeaCard['priority'] {
 }
 
 const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProject, currentUser, portalTarget }) => {
+  const { showSuccess } = useToast()
+  const aiGeneration = useAIGeneration(STAGE_CONFIGS['single-idea'])
   const [title, setTitle] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedIdea, setGeneratedIdea] = useState<{
@@ -292,9 +298,17 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
         type: currentProject.project_type
       } : undefined
 
-      const aiResponse = await aiService.generateIdea(title.trim(), projectContext)
-      logger.debug('✅ AIIdeaModal: AI response received:', aiResponse)
-      setGeneratedIdea(aiResponse)
+      let aiResponse: Awaited<ReturnType<typeof aiService.generateIdea>>
+
+      await aiGeneration.execute(async (signal: AbortSignal) => {
+        aiResponse = await aiService.generateIdea(title.trim(), projectContext)
+        if (signal.aborted) return
+      })
+
+      logger.debug('✅ AIIdeaModal: AI response received:', aiResponse!)
+      setGeneratedIdea(aiResponse!)
+      showSuccess('Idea created', 3000)
+      window.dispatchEvent(new CustomEvent('ai-quota-changed'))
     } catch (error) {
       logger.error('❌ AIIdeaModal: Error generating AI idea:', error)
       const fallbackIdea = generateFallbackIdea(title.trim())
@@ -567,6 +581,18 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
 
         {/* Content */}
         <div className="p-6 space-y-6 flex-1 min-h-0 overflow-y-auto">
+          <AIProgressOverlay
+            isActive={aiGeneration.isGenerating}
+            progress={aiGeneration.progress}
+            stage={aiGeneration.stage}
+            estimatedSecondsRemaining={aiGeneration.estimatedSecondsRemaining}
+            processingSteps={aiGeneration.processingSteps}
+            stageSequence={aiGeneration.stageSequence}
+            onCancel={aiGeneration.cancel}
+            error={aiGeneration.error}
+            onRetry={aiGeneration.retry}
+          />
+
           {activeTab === 'generate' && (
             <>
               {/* Title Input */}
