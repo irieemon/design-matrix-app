@@ -393,7 +393,7 @@ async function handleGetUser(req: AuthenticatedRequest, res: VercelResponse) {
         httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60,
+        maxAge: 60 * 60 * 24,
         path: '/',
       })
     }

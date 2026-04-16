@@ -123,7 +123,7 @@ export function setAuthCookies(
     httpOnly: false,  // JavaScript needs to read this for headers
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60,  // 1 hour (same as access token)
+    maxAge: 60 * 60 * 24,  // 24h — outlives access token (1h) so refresh cycles don't lose CSRF
     path: '/',
   })
 }

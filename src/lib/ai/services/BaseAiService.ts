@@ -7,6 +7,12 @@ import { logger } from '../../../utils/logger'
 import { aiCache, AICache } from '../../aiCache'
 import { SUPABASE_STORAGE_KEY } from '../../../lib/config'
 import { getCsrfToken } from '../../../utils/cookieUtils'
+// Use namespace import on the useAuth module so vi.doMock('../useAuth') in
+// tests intercepts the binding via late property access (the namespace's
+// `bootstrapCsrfCookie` property is read at call time, not at module load).
+// The ambient `useAuth` re-exports `bootstrapCsrfCookie` from
+// `./useAuth.bootstrap`; tests mock the `useAuth` module surface.
+import * as useAuthModule from '../../../hooks/useAuth'
 
 export interface SecureAIServiceConfig {
   baseUrl?: string // For custom API endpoints (defaults to current domain)
@@ -101,7 +107,13 @@ export abstract class BaseAiService {
    * @param signal - Optional AbortSignal from the caller
    * @returns Response data
    */
-  protected async fetchWithErrorHandling<T>(endpoint: string, payload: any, isRetry = false, signal?: AbortSignal): Promise<T> {
+  protected async fetchWithErrorHandling<T>(
+    endpoint: string,
+    payload: any,
+    isRetry = false,
+    signal?: AbortSignal,
+    isCsrfRetry: boolean = false
+  ): Promise<T> {
     const TIMEOUT_MS = 120_000
 
     // Build fetch options. Only attach signal to fetch when the caller provides
@@ -141,12 +153,35 @@ export abstract class BaseAiService {
       }
 
       if (!response.ok) {
+        // 401-refresh and 403-CSRF-mint budgets are INDEPENDENTLY one-shot.
+        // `isRetry` tracks whether a 401 has already triggered a token refresh;
+        // `isCsrfRetry` tracks whether a 403 CSRF_COOKIE_MISSING has already
+        // triggered a re-mint. They do not share a counter — a request can
+        // legally consume one of each (e.g. 401 -> refresh -> retry -> 403
+        // CSRF_MISSING -> bootstrap -> retry) without prematurely exhausting
+        // the other budget (Poirot #5).
         if (response.status === 401 && !isRetry) {
           const refreshed = await this.refreshAccessToken()
           if (refreshed) {
-            return this.fetchWithErrorHandling<T>(endpoint, payload, true, signal)
+            // Pass through isCsrfRetry untouched: the CSRF budget is independent
+            // of the 401 budget and must not reset just because we refreshed.
+            return this.fetchWithErrorHandling<T>(endpoint, payload, true, signal, isCsrfRetry)
           }
           throw new Error('Authentication expired. Please sign in again.')
+        }
+        if (response.status === 403) {
+          const errorBody = await response.json().catch(() => ({}))
+          if (errorBody?.error?.code === 'CSRF_COOKIE_MISSING') {
+            if (isCsrfRetry) {
+              throw new Error('CSRF cookie could not be re-established')
+            }
+            await useAuthModule.bootstrapCsrfCookie(true)
+            // Pass through isRetry untouched: the 401 budget is independent
+            // of the CSRF budget and must not reset just because we re-minted.
+            return this.fetchWithErrorHandling<T>(endpoint, payload, isRetry, signal, true)
+          }
+          const errorCode = errorBody?.error?.code || errorBody?.error?.message || ''
+          throw new Error(`Server error: 403 ${errorCode}`.trim())
         }
         if (response.status === 429) {
           throw new Error('Rate limit exceeded. Please wait a moment before trying again.')

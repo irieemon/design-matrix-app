@@ -8,6 +8,13 @@ import { ensureUUID, isDemoUUID } from '../utils/uuid'
 import { SUPABASE_STORAGE_KEY, TIMEOUTS, CACHE_DURATIONS } from '../lib/config'
 import { withTimeout } from '../utils/promiseUtils'
 import { CacheManager } from '../services/CacheManager'
+import { useToast } from '../contexts/ToastContext'
+
+export type { BootstrapCsrfOutcome } from './useAuth.bootstrap'
+export { bootstrapCsrfCookie } from './useAuth.bootstrap'
+
+const TERMINAL_LOGOUT_DELAY_MS = 1000
+const TERMINAL_LOGOUT_MESSAGE = 'Your session expired, please sign in again'
 
 /**
  * Extended AuthUser type that includes optional demo user flag
@@ -55,67 +62,6 @@ let recoveryExchangeStarted = false
 // treat the user as signed-in and redirect to /projects, skipping the
 // set-new-password form.
 let recoveryAccessToken: string | null = null
-
-// Module-level guard so we only attempt the CSRF bootstrap once per page load.
-let csrfBootstrapped = false
-
-/**
- * Mint the csrf-token cookie by calling /api/auth?action=user with the
- * localStorage access token. This endpoint is the canonical bootstrap call —
- * handleGetUser on the backend mints csrf-token if it's missing.
- *
- * Why this exists: the degraded-auth fallback path in initAuth (taken when
- * getSession() times out) skips ProfileService to avoid cascading getSession
- * calls, so the usual ProfileService → /api/auth?action=user → csrf-token
- * chain never runs. Without this, CSRF-protected endpoints (transcribe-audio,
- * analyze-image, etc.) 403 for returning users.
- */
-async function bootstrapCsrfCookie() {
-  if (csrfBootstrapped) return
-  if (typeof document === 'undefined') return
-  if (document.cookie.split(';').some(c => c.trim().startsWith('csrf-token='))) {
-    csrfBootstrapped = true
-    return
-  }
-  try {
-    const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
-    if (!stored) return
-    const parsed = JSON.parse(stored)
-    const token = parsed?.access_token
-    if (!token) return
-    csrfBootstrapped = true
-    const response = await fetch('/api/auth?action=user', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache'
-      }
-    })
-    if (!response.ok) {
-      // Token might be expired — refresh and retry once for CSRF bootstrap
-      const { data: refreshData } = await supabase.auth.refreshSession()
-      const freshToken = refreshData?.session?.access_token
-      if (freshToken) {
-        const retryResponse = await fetch('/api/auth?action=user', {
-          headers: {
-            'Authorization': `Bearer ${freshToken}`,
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-          }
-        })
-        if (retryResponse.ok) {
-          logger.debug('CSRF bootstrap succeeded on retry with refreshed token')
-          return // CSRF cookie now set by the server
-        }
-      }
-      logger.warn('CSRF bootstrap failed even after token refresh', { status: response.status })
-      csrfBootstrapped = false
-    }
-  } catch (e) {
-    logger.warn('CSRF bootstrap failed', e)
-    csrfBootstrapped = false
-  }
-}
 
 /**
  * Apply a new password using the in-memory recovery access token.
@@ -272,6 +218,10 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
   const [isLoading, setIsLoading] = useState(true)
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
+  // Track terminal-logout setTimeout id so unmount can cancel it (Poirot #1).
+  const terminalLogoutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // ToastProvider wraps <App/> in main.tsx — useAuth always mounts inside it.
+  const { showError } = useToast()
 
   // CRITICAL FIX: Store latest handleAuthSuccess ref so listener always calls current version
   const handleAuthSuccessRef = useRef<((authUser: AuthUserWithDemo) => Promise<void>) | null>(null)
@@ -567,11 +517,66 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     // set-new-password form.
     handleRecoveryCodeExchange(setIsPasswordRecovery, setIsLoading)
 
-    // Mint the csrf-token cookie if it's missing. The degraded auth fallback
-    // skips ProfileService (to avoid getSession cascade), so returning users
-    // never hit /api/auth?action=user and never get a CSRF cookie — which
-    // disables any CSRF-protected UI (analyze-image, transcribe-audio, etc.).
-    bootstrapCsrfCookie()
+    // Mint the csrf-token cookie if it's missing. Awaited via IIFE so a
+    // 'terminal' outcome (zombie session: dead refresh token server-side) can
+    // force re-login. Demo users skip the call entirely (T-0016-025).
+    //
+    // The runner is statically imported at the top of the file (not dynamically)
+    // so vi.doMock('../useAuth') + vi.resetModules() in tests cleanly intercepts
+    // the inner bootstrapCsrfCookie binding via namespace property access at
+    // call time. See useAuth.terminalLogout.ts for the design rationale.
+    ;(async () => {
+      // Demo-user guard: must short-circuit BEFORE invoking the runner so
+      // T-0016-025 holds even if the bootstrap mock would have returned
+      // 'terminal'.
+      try {
+        const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (parsed?.user?.id && isDemoUUID(parsed.user.id)) return
+        }
+      } catch {
+        // Fall through — bootstrap returns 'retryable' for unreadable storage.
+      }
+
+      // Mounted check before async work so we don't fire the runner if the
+      // component unmounted during initAuth's microtask chain (Poirot #2).
+      if (!mounted) return
+
+      // Dynamic self-import of the useAuth module so vi.doMock('../useAuth')
+      // in tests can substitute the bootstrapCsrfCookie export. The
+      // useAuth.terminalLogout indirection module exists for the same reason
+      // (it can be mocked directly by tests that don't want to mock the whole
+      // useAuth surface). This caller-side dynamic import is the canonical
+      // mock-interceptable path.
+      const useAuthMod = await import('./useAuth')
+      const outcome = await useAuthMod.bootstrapCsrfCookie()
+
+      // Re-check mounted at every await boundary (Poirot #2). The hook can
+      // unmount between the runner await and the dispatch.
+      if (!mounted) return
+      if (outcome !== 'terminal') return
+
+      showError(TERMINAL_LOGOUT_MESSAGE)
+      // Track the timer id via useRef so the cleanup function can clearTimeout
+      // it on unmount (Poirot #1 — fixes a real React leak risk in the 1s window).
+      terminalLogoutTimerRef.current = setTimeout(() => {
+        terminalLogoutTimerRef.current = null
+        // Mounted check at point-of-call: do not navigate or wipe storage if
+        // the component was unmounted during the 1s delay (Poirot #2).
+        if (!mounted) return
+        try {
+          localStorage.removeItem(SUPABASE_STORAGE_KEY)
+          localStorage.removeItem('prioritasUser')
+          Object.keys(localStorage)
+            .filter(k => k.startsWith('sb-') && k.endsWith('-auth-token-code-verifier'))
+            .forEach(k => localStorage.removeItem(k))
+        } catch (e) {
+          logger.warn('Terminal logout: localStorage clear failed', e)
+        }
+        window.location.href = '/login'
+      }, TERMINAL_LOGOUT_DELAY_MS)
+    })()
 
     // STEP 2: Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -615,6 +620,13 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       mounted = false
       subscription.unsubscribe()
       clearInterval(lockCleanupInterval)
+
+      // Cancel the pending terminal-logout timer so navigation doesn't fire
+      // after unmount (Poirot #1).
+      if (terminalLogoutTimerRef.current !== null) {
+        clearTimeout(terminalLogoutTimerRef.current)
+        terminalLogoutTimerRef.current = null
+      }
 
       if (abortControllerRef.current) {
         abortControllerRef.current.abort()
