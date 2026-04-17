@@ -8,7 +8,6 @@ import * as path from 'path';
  * CONTEXT:
  * Fixed TWO critical bugs:
  * 1. Stale closure in useAuth.ts: Added handleAuthUser dependency to handleAuthSuccess callback
- * 2. Wrong auth system: Disabled httpOnly cookie auth (VITE_FEATURE_HTTPONLY_AUTH=false)
  *
  * TEST OBJECTIVE:
  * Verify complete flow from authentication through ideas loading works end-to-end

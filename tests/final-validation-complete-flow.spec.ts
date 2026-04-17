@@ -8,8 +8,7 @@ import { fileURLToPath } from 'url';
  *
  * This test validates ALL fixes applied:
  * 1. ✅ Fixed stale closure: Added handleAuthUser to handleAuthSuccess dependencies
- * 2. ✅ Switched auth systems: Set VITE_FEATURE_HTTPONLY_AUTH=false
- * 3. ✅ Fixed auth bypass: Changed onAuthStateChange to call handleAuthSuccess
+ * 2. ✅ Fixed auth bypass: Changed onAuthStateChange to call handleAuthSuccess
  *
  * SUCCESS CRITERIA:
  * - All auth logs appear in correct order

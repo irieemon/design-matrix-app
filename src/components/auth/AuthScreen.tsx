@@ -5,20 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { updateRecoveryPassword } from '../../hooks/useAuth'
 import { useLogger } from '../../lib/logging'
 import { Button, Input } from '../ui'
-import { useSecureAuthContext } from '../../contexts/SecureAuthContext'
 import { useUser } from '../../contexts/UserContext'
-// EMERGENCY FIX: Removed useComponentState to eliminate state conflicts
-
-// ✅ HOOKS FIX: Custom hook to safely access optional context
-// This allows unconditional hook call while handling missing provider
-function useOptionalSecureAuthContext() {
-  try {
-    return useSecureAuthContext()
-  } catch {
-    // SecureAuthContext not available, return null
-    return null
-  }
-}
 
 interface AuthScreenProps {
   onAuthSuccess: (user: any) => void
@@ -28,16 +15,6 @@ type AuthMode = 'login' | 'signup' | 'forgot-password' | 'reset-password'
 
 const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const logger = useLogger('AuthScreen')
-
-  // Feature flag: use new httpOnly cookie auth or old localStorage auth
-  const useNewAuth = import.meta.env.VITE_FEATURE_HTTPONLY_AUTH === 'true'
-
-  // ✅ HOOKS FIX: Always call hook unconditionally (Rules of Hooks requirement)
-  // Optional context - will be null if provider not available
-  const secureAuth = useOptionalSecureAuthContext()
-  if (!secureAuth) {
-    logger.debug('SecureAuthContext not available, using old auth')
-  }
 
   // Access password recovery state from auth context
   const { isPasswordRecovery, clearPasswordRecovery } = useUser()
@@ -67,9 +44,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
   const passwordRef = useRef<any>(null)
   const fullNameRef = useRef<any>(null)
   const confirmPasswordRef = useRef<any>(null)
-  const submitButtonRef = useRef<any>(null)
-
-  // EMERGENCY FIX: Simplified form state - no useComponentState conflicts
 
   // Determine the correct redirect URL based on the environment
   const getRedirectUrl = () => {
@@ -165,7 +139,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
     // Start loading state
     setLoading(true)
-    submitButtonRef.current?.setState('loading')
 
     try {
       // EMERGENCY FIX: Direct Supabase calls without executeAction wrapper
@@ -205,26 +178,15 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           }
 
         } else if (mode === 'login') {
-          // Check which auth system to use based on feature flag
-          if (useNewAuth && secureAuth) {
-            // NEW AUTH SYSTEM: httpOnly cookies via API endpoint
-            logger.info('Using new httpOnly cookie authentication')
-            const loggedInUser = await secureAuth.login(email, password)
-            // secureAuth.login now returns the user — call onAuthSuccess so the
-            // main AuthenticationFlow transitions away from the login screen.
-            logger.info('Login successful with httpOnly cookies')
-            onAuthSuccess(loggedInUser)
-          } else {
-            // STANDARD: Use Supabase SDK directly.
-            // SDK stores the session in localStorage and fires the SIGNED_IN event
-            // via onAuthStateChange. We also call onAuthSuccess directly so the UI
-            // transitions immediately without waiting for the async listener.
-            logger.info('Signing in with Supabase SDK')
-            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-            if (signInError) throw new Error(signInError.message)
-            if (signInData.user) {
-              onAuthSuccess(signInData.user)
-            }
+          // Use Supabase SDK directly.
+          // SDK stores the session in localStorage and fires the SIGNED_IN event
+          // via onAuthStateChange. We also call onAuthSuccess directly so the UI
+          // transitions immediately without waiting for the async listener.
+          logger.info('Signing in with Supabase SDK')
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+          if (signInError) throw new Error(signInError.message)
+          if (signInData.user) {
+            onAuthSuccess(signInData.user)
           }
 
         } else if (mode === 'forgot-password') {
@@ -257,7 +219,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     } catch (err: any) {
       logger.error('Auth error:', err)
       setError(err.message || 'An unexpected error occurred')
-      submitButtonRef.current?.setState('error')
 
       // Set error states on relevant fields
       if (err.message?.includes('Invalid login credentials')) {
@@ -270,13 +231,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
       }
     } finally {
       setLoading(false)
-
-      // Reset button state after a delay for better UX
-      setTimeout(() => {
-        if (submitButtonRef.current?.state !== 'success') {
-          submitButtonRef.current?.setState('idle')
-        }
-      }, 500)
     }
   }
 
@@ -531,7 +485,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
 
             {/* Submit Button */}
             <Button
-              ref={submitButtonRef}
               type="submit"
               variant="primary"
               size="lg"

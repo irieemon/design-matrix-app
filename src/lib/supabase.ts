@@ -576,6 +576,46 @@ export const clearAuthenticatedClientCache = () => {
   logger.debug('Authenticated client cache cleared')
 }
 
+export interface LocalStorageAuthTokens {
+  accessToken: string | null
+  refreshToken: string | null
+}
+
+/**
+ * Lock-free localStorage read of the Supabase session tokens.
+ *
+ * Mirrors the payload shape written by the SDK when `persistSession: true`.
+ * Callers that only need the access token (e.g. Authorization header
+ * construction) use this instead of `supabase.auth.getSession()` because the
+ * latter acquires a navigator.locks lock under the GoTrueClient singleton and
+ * can deadlock in components that render during auth hydration
+ * (see createAuthenticatedClientFromLocalStorage above for the broader
+ * pattern).
+ *
+ * Returns { accessToken: null, refreshToken: null } when storage is empty or
+ * unparseable — callers are expected to fall back to anonymous headers.
+ */
+export const getAuthTokensFromLocalStorage = (): LocalStorageAuthTokens => {
+  try {
+    const stored = localStorage.getItem(SUPABASE_STORAGE_KEY)
+    if (!stored) {
+      return { accessToken: null, refreshToken: null }
+    }
+    const parsed = JSON.parse(stored)
+    if (!parsed || typeof parsed !== 'object') {
+      logger.warn('getAuthTokensFromLocalStorage: parsed value is not an object, treating as no-session', { parsed })
+      return { accessToken: null, refreshToken: null }
+    }
+    return {
+      accessToken: typeof parsed.access_token === 'string' ? parsed.access_token : null,
+      refreshToken: typeof parsed.refresh_token === 'string' ? parsed.refresh_token : null
+    }
+  } catch (error) {
+    logger.warn('getAuthTokensFromLocalStorage: failed to read session payload', error)
+    return { accessToken: null, refreshToken: null }
+  }
+}
+
 // Project helpers
 export const getUserProjects = async (userId: string) => {
   const collaboratorIds = await getCollaboratorProjectIds(userId)

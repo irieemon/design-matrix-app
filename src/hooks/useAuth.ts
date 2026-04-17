@@ -293,6 +293,14 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
     handleAuthSuccessRef.current = handleAuthSuccess
   }, [handleAuthSuccess])
 
+  const clearAuthLocalStorage = useCallback(() => {
+    try {
+      localStorage.removeItem(SUPABASE_STORAGE_KEY)
+    } catch (e) {
+      logger.warn('clearAuthLocalStorage: localStorage removal failed', e)
+    }
+  }, [])
+
   const handleLogout = useCallback(async () => {
     try {
       logger.debug('🚪 Logging out...')
@@ -345,6 +353,12 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       localStorage.removeItem('prioritasUserJoinDate')
 
       await supabase.auth.signOut()
+
+      // Explicitly remove the Supabase session so AC-LOGOUT-01 observes an
+      // empty storage slot immediately — Supabase's own signOut cleanup is
+      // async and races with the test's post-SIGNED_OUT assertion.
+      clearAuthLocalStorage()
+
       // The auth state change listener will handle the rest
     } catch (error) {
       logger.error('Error logging out:', error)
@@ -362,10 +376,14 @@ export const useAuth = (options: UseAuthOptions = {}): UseAuthReturn => {
       localStorage.removeItem('prioritasUser')
       localStorage.removeItem('prioritasUserJoinDate')
 
+      // AC-LOGOUT-02: ensure the Supabase session slot is cleared even when
+      // signOut rejects server-side.
+      clearAuthLocalStorage()
+
       // Don't set page to matrix on logout - preserve URL sharing
       logger.debug('📍 Not setting page to matrix on logout to preserve URL sharing')
     }
-  }, [setCurrentProject, setIdeas])
+  }, [clearAuthLocalStorage, setCurrentProject, setIdeas])
 
   // Initialize Supabase auth - ROBUST PATTERN with guaranteed completion
   useEffect(() => {
