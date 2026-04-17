@@ -8,6 +8,7 @@
     "dev": "vite",
     "prebuild": "node -e \"if (!process.env.CI && !process.env.VERCEL && process.getuid && process.getuid() === 0) { console.error('\\n❌ ERROR: Never run npm commands with sudo!\\n'); process.exit(1); }\"",
     "build": "vite build",
+    "verify:bundle": "node scripts/verify-bundle-no-mocks.mjs",
     "build:check": "tsc && vite build",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx,.js,.jsx --max-warnings 0",

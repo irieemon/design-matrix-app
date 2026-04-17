@@ -333,3 +333,99 @@ describe('AIProgressOverlay -- complete state', () => {
     expect(fill).toHaveStyle({ width: '100%' })
   })
 })
+
+// ---------------------------------------------------------------------------
+// T-0016-053: ADR-0016 Phase 6 -- Error surface regression guard
+//
+// Verifies that AIProgressOverlay renders the error text passed as the `error`
+// prop. This is the downstream end of the contract: useAIGeneration.error ->
+// consumer passes aiGeneration.error -> AIProgressOverlay renders it.
+//
+// Expected posture: EXPECTED-GREEN today -- AIProgressOverlay already renders
+// error at line 125 (`<p className="text-sm text-garnet-700 mb-3">{error}</p>`).
+// This test is a regression guard: if Colby's Steps 4/5/6 refactor accidentally
+// removes the error rendering, this test catches it.
+//
+// ADR reference: ADR-0016, R10 -- "Error surface verified as
+// useAIGeneration -> AIProgressOverlay, not ToastContext". Notes for Colby
+// section confirms the exact element at component line 125.
+// ---------------------------------------------------------------------------
+
+describe('T-0016-053: AIProgressOverlay renders aiGeneration.error text (regression guard)', () => {
+  it('should render the error message text from the error prop', () => {
+    // This string matches the exact error message that Steps 4/5/6 services
+    // will throw. Colby MUST NOT change this string without updating the assertion.
+    const AI_SERVICE_ERROR = 'AI returned no ideas -- please try again'
+
+    render(
+      <AIProgressOverlay
+        {...BASE_PROPS}
+        error={AI_SERVICE_ERROR}
+        onRetry={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    )
+
+    // The error message must appear in the DOM, rendered inside the garnet
+    // error region at component line 125. Exact match -- not a regex -- to
+    // lock in the exact string the services will throw.
+    expect(screen.getByText(AI_SERVICE_ERROR)).toBeInTheDocument()
+  })
+
+  it('should render roadmap error text from the error prop', () => {
+    const ROADMAP_ERROR = 'AI returned no roadmap -- please try again'
+
+    render(
+      <AIProgressOverlay
+        {...BASE_PROPS}
+        error={ROADMAP_ERROR}
+        onRetry={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText(ROADMAP_ERROR)).toBeInTheDocument()
+  })
+
+  it('should render template-content error text from the error prop', () => {
+    const TEMPLATE_ERROR = 'AI returned generic template content -- please try again'
+
+    render(
+      <AIProgressOverlay
+        {...BASE_PROPS}
+        error={TEMPLATE_ERROR}
+        onRetry={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText(TEMPLATE_ERROR)).toBeInTheDocument()
+  })
+
+  it('should NOT render any error region when error prop is null', () => {
+    render(
+      <AIProgressOverlay
+        {...BASE_PROPS}
+        error={null}
+      />
+    )
+
+    // No garnet error region should be in the DOM when error is null
+    expect(
+      document.querySelector('[aria-live="assertive"]')
+    ).toBeNull()
+  })
+
+  it('should NOT render any error region when error prop is undefined', () => {
+    render(
+      <AIProgressOverlay
+        {...BASE_PROPS}
+        // error prop omitted -- defaults to undefined
+      />
+    )
+
+    expect(
+      document.querySelector('[aria-live="assertive"]')
+    ).toBeNull()
+  })
+})

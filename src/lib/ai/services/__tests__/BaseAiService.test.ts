@@ -445,23 +445,19 @@ describe('BaseAiService — ADR-0014 Step 1 contract', () => {
   })
 
   // -------------------------------------------------------------------------
-  // T-0014-023b: RoadmapService.generateRoadmap falls back to mock on 500
+  // T-0014-023b: RoadmapService.generateRoadmap throws on 500
   //
-  // NOTE: This test will ALSO fail pre-fix due to a pre-existing source bug:
-  // RoadmapService.ts:79 references `error` (undeclared) instead of `_error`.
-  // Colby must fix this bug as part of Step 1. The test is intentionally left
-  // asserting the correct post-fix behavior (mock roadmap returned on 500).
+  // INVERTED (ADR-0016 Step 4 Precondition): changed from mock-fallback
+  // assertion to rejects.toThrow(). The underlying code must throw on error
+  // instead of returning mock data.
   // -------------------------------------------------------------------------
-  describe('T-0014-023b: RoadmapService.generateRoadmap falls back to mock on 500', () => {
-    it('should return mock roadmap data when the server returns 500', async () => {
+  describe('T-0014-023b: RoadmapService.generateRoadmap throws on 500', () => {
+    it('should throw when the server returns 500', async () => {
       mockFetch.mockResolvedValueOnce(errorResponse(500, { error: { code: 'SERVER_ERROR' } }))
 
-      const result = await roadmapService.generateRoadmap([makeIdea()], 'My Project')
-
-      expect(result).toMatchObject({
-        roadmapAnalysis: expect.objectContaining({ totalDuration: expect.any(String) }),
-        executionStrategy: expect.objectContaining({ methodology: expect.any(String) }),
-      })
+      await expect(
+        roadmapService.generateRoadmap([makeIdea()], 'My Project')
+      ).rejects.toThrow()
     })
   })
 
@@ -492,21 +488,19 @@ describe('BaseAiService — ADR-0014 Step 1 contract', () => {
   })
 
   // -------------------------------------------------------------------------
-  // T-0014-024b: IdeaGenerationService.generateIdea falls back to mock on 500
+  // T-0014-024b: IdeaGenerationService.generateIdea throws on 500
   //
-  // NOTE: This test will ALSO fail pre-fix due to a pre-existing source bug:
-  // IdeaGenerationService.ts:68 references `error` (undeclared) instead of
-  // `_error`. Colby must fix this bug as part of Step 1. The test asserts the
-  // correct post-fix behavior (mock idea returned on 500).
+  // INVERTED (ADR-0016 Step 4 Precondition): changed from mock-fallback
+  // assertion to rejects.toThrow(). The underlying code must throw on error
+  // instead of returning mock data.
   // -------------------------------------------------------------------------
-  describe('T-0014-024b: IdeaGenerationService.generateIdea falls back to mock on 500', () => {
-    it('should return a mock idea when the server returns 500', async () => {
+  describe('T-0014-024b: IdeaGenerationService.generateIdea throws on 500', () => {
+    it('should throw when the server returns 500', async () => {
       mockFetch.mockResolvedValueOnce(errorResponse(500, { error: { code: 'SERVER_ERROR' } }))
 
-      const result = await ideaService.generateIdea('Resilient Feature')
-
-      expect(result).toBeDefined()
-      expect(result.content).toBe('Resilient Feature')
+      await expect(
+        ideaService.generateIdea('Resilient Feature')
+      ).rejects.toThrow()
     })
   })
 

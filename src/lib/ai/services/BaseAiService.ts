@@ -269,12 +269,4 @@ export abstract class BaseAiService {
   protected generateCacheKey(operation: string, params: any): string {
     return AICache.generateKey(operation, params)
   }
-
-  /**
-   * Check if running in localhost/development mode
-   * @returns True if in development mode
-   */
-  protected isLocalhost(): boolean {
-    return this.baseUrl.includes('localhost')
-  }
 }

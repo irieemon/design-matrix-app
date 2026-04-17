@@ -10,9 +10,11 @@ export { IdeaGenerationService } from './services/IdeaGenerationService'
 export { InsightsService } from './services/InsightsService'
 export { RoadmapService } from './services/RoadmapService'
 
-// Mock Generators
-export { MockDataGenerator } from './mocks/MockDataGenerator'
-export { MockInsightsGenerator } from './mocks/MockInsightsGenerator'
+// Mock Generators are intentionally NOT re-exported from the barrel
+// (ADR-0016 R8). They remain on disk for developer use via direct import
+// from `./mocks/MockDataGenerator` or `./mocks/MockInsightsGenerator`, but
+// the barrel re-exports would anchor them into any prod bundle that imports
+// from this file. Tree-shake-safe by omission.
 
 // Utilities
 export * from './utils'

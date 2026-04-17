@@ -60,19 +60,17 @@ export class IdeaGenerationService extends BaseAiService {
               details: idea.description,
               priority: mapPriorityLevel(idea.impact, idea.effort)
             }
-          } else {
-            // Fallback to mock if no ideas generated
-            const { MockDataGenerator } = await import('../mocks/MockDataGenerator')
-            return MockDataGenerator.generateMockIdea(title, projectContext)
           }
-        } catch (_error) {
-          logger.error('Error generating idea:', _error)
-          // Return a fallback idea preserving the original title for non-critical errors
-          return {
-            content: title,
-            details: projectContext?.description || 'AI-generated idea (fallback due to service error)',
-            priority: 'moderate' as PriorityLevel,
-          }
+
+          // 200-empty: surface as a distinct user-visible error rather than
+          // silently returning mock data (ADR-0016 R9).
+          throw new Error('AI returned no idea -- please try again')
+        } catch (error) {
+          // Preserve AbortError propagation so callers can distinguish cancel
+          // from other failures (T-0016-031).
+          if (error instanceof Error && error.name === 'AbortError') throw error
+          logger.error('Error generating idea:', error)
+          throw error
         }
       },
       10 * 60 * 1000 // 10 minute cache for ideas
@@ -130,14 +128,17 @@ export class IdeaGenerationService extends BaseAiService {
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             }))
-          } else {
-            const { MockDataGenerator } = await import('../mocks/MockDataGenerator')
-            return MockDataGenerator.generateMockIdeas(title, description, projectType, count)
           }
-        } catch (_error) {
-          logger.warn('🚫 AI generation failed, using mock:', _error)
-          const { MockDataGenerator } = await import('../mocks/MockDataGenerator')
-          return MockDataGenerator.generateMockIdeas(title, description, projectType, count)
+
+          // 200-empty: surface as a distinct user-visible error rather than
+          // silently returning mock data (ADR-0016 R9).
+          throw new Error('AI returned no ideas -- please try again')
+        } catch (error) {
+          // Preserve AbortError propagation so callers can distinguish cancel
+          // from other failures.
+          if (error instanceof Error && error.name === 'AbortError') throw error
+          logger.error('AI generation failed:', error)
+          throw error
         }
       },
       15 * 60 * 1000 // 15 minute cache for multiple ideas

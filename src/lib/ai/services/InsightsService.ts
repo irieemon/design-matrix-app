@@ -348,17 +348,10 @@ export class InsightsService extends BaseAiService {
           const isInappropriate = this.checkForTemplateContent(insights, requestPayload)
 
           if (isInappropriate) {
+            // Surface as a distinct user-visible error rather than silently
+            // returning mock data (ADR-0016 Step 6, T-0016-047).
             logger.error("❌ AI API returned hardcoded template content that doesn't match project context")
-            logger.warn('🔧 Using project-specific insights instead of generic template response')
-
-            // Return project-specific mock insights instead of template content
-            const { MockInsightsGenerator } = await import('../mocks/MockInsightsGenerator')
-            return MockInsightsGenerator.generateProjectSpecificMockInsights(
-              ideas,
-              requestPayload.projectName,
-              requestPayload.projectType,
-              documentContext || []
-            )
+            throw new Error('AI returned generic template content -- please try again')
           }
 
           // Transform API response to match expected InsightsReport structure
@@ -380,17 +373,19 @@ export class InsightsService extends BaseAiService {
 
           logger.error('🚫 AI insights generation failed:', apiError)
 
-          // In development, if the API is not available, provide mock data with file context
-          if (this.isLocalhost()) {
-            logger.warn('🔧 Using mock insights with file context for development')
-            const { MockInsightsGenerator } = await import('../mocks/MockInsightsGenerator')
-            return MockInsightsGenerator.generateMockInsightsWithFiles(ideas, documentContext || [])
+          // Re-throw user-visible AI messages bare so callers (and overlay tests)
+          // receive the exact copy surfaced at the throw site (ADR-0016 Step 6,
+          // retro-lesson-004). Only wrap unknown/transport-layer errors.
+          const msg = apiError instanceof Error ? apiError.message : ''
+          if (msg.startsWith('AI returned') || msg.startsWith('AI service returned')) {
+            throw apiError
           }
 
-          // Don't fall back to mock data in production - let the error propagate
+          // Unconditional throw — dev-mode mock fallback removed per ADR-0016
+          // Step 6 so failures surface to users in all environments.
           throw new Error(
             `Failed to generate insights: ${
-              apiError instanceof Error ? apiError.message : 'Unknown error'
+              msg || 'Unknown error'
             }. Please check your API configuration and try again.`
           )
         }
@@ -411,6 +406,10 @@ export class InsightsService extends BaseAiService {
 
     // Check for specific hardcoded template indicators
     const templateIndicators = [
+      // Generic placeholder tell-tales -- the AI leaked its prompt scaffold
+      // instead of generating real project-specific content (T-0016-047).
+      'your project name',
+      'feature 1, feature 2, feature 3',
       "within the $5.7 billion women's health app market",
       'focusing on untapped areas beyond the oversaturated menstrual tracking segment',
       'projected annual growth rate of 17.8%',
