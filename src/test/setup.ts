@@ -36,6 +36,30 @@ Object.defineProperty(window, 'crypto', {
   }
 })
 
+// [T-0017-A14] Polyfill crypto.getRandomValues on globalThis.
+// Vitest jsdom does not ship getRandomValues, so any module that calls it at
+// import time (e.g. src/lib/api/middleware/cookies.ts) blows up before any
+// test assertions run. The window.crypto block above only mocks randomUUID —
+// getRandomValues is required by ADR-0016 cookie-middleware consumers in the
+// test environment. Math.random is sufficient here: these bytes never leave
+// the test process and security is not the contract under test.
+if (!(globalThis as any).crypto?.getRandomValues) {
+  const existing = (globalThis as any).crypto || {}
+  Object.defineProperty(globalThis, 'crypto', {
+    value: {
+      ...existing,
+      getRandomValues: <T extends ArrayBufferView | null>(array: T): T => {
+        if (array === null) return array
+        const bytes = new Uint8Array(array.buffer, array.byteOffset, array.byteLength)
+        for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256)
+        return array
+      }
+    },
+    configurable: true,
+    writable: true
+  })
+}
+
 // Mock IntersectionObserver for components that use it
 global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
