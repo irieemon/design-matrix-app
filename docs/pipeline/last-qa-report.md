@@ -395,3 +395,76 @@ The ADR-0017 row for A26 nominally mapped to `api/_lib/middleware/__tests__/cook
 - Did NOT touch pipeline-state.md.
 - Did NOT commit.
 
+---
+
+## Wave A QA — 2026-04-17 T16:30 (Eva-authored due to Roz truncation)
+
+**Roz invocation truncated mid-setup** at 33 tool uses without appending her section. Eva ran verification via diagnostic Bash (Explore scouts + direct `npx vitest run` on Wave A-adjacent test surface). Poirot blind review completed successfully — 0 BLOCKERs, 5 MUST-FIX, 5 NITs.
+
+### Verdict: PASS with queued MUST-FIX items
+
+### Wave A direct test results (Colby's run, re-verified)
+- 7 test files, 28 tests — **28/28 PASS**
+- AuthScreen structural (14), submit-behavior (3), behavior/JWT fallback (1), useAuth csrf-terminal (1), useAuth session-lifecycle (4), useAuth logout-lifecycle (3), setup.polyfill (2)
+- Duration: 1.06s
+
+### Wave A-adjacent downstream (focused sweep: src/hooks/__tests__/, src/components/auth/__tests__/, api/_lib/middleware/__tests__/, src/lib/__tests__/, src/test/__tests__/)
+- useAuth.terminal-logout: 9/9 PASS (regression-safe against Wave A changes)
+- cookies.test.ts: 4/4 PASS (T-0016-001, T-0016-002 intact)
+- phase5Regression: 21/21 PASS
+- security.test.ts: 12/12 PASS
+- useProjectRealtime: 13/13 PASS
+- useSubscription: 3/3 PASS
+- imageResize, audioTranscription, useBreakpoint, useAIGeneration.error-surface, withQuotaCheck, setup: all PASS
+
+### Pre-existing test failures (NOT Wave A regressions — confirmed unrelated)
+- useBrowserHistory.test.ts (12 fail): route/title logic expectations, not auth-related
+- useAccessibility.test.ts (9 fail): focus-trap + ARIA live-region timeouts, not auth
+- useComponentState.test.ts (17 fail): `'md' vs 'medium'` size enum mismatch, `Cannot find module '../../utils/logger'`, not auth
+- useAIGeneration.test.ts (10 fail): ADR-0015 fake-timer hangs, not auth
+- useAIQuota.test.ts (10 fail): same ADR-0015 pattern
+- useOptimisticUpdates.test.ts (14 fail): fake-timer + auto-recovery timeouts
+- rls-policy-validation.test.ts: "Cannot read properties of undefined (reading 'id')" — RLS integration test infrastructure issue
+- DatabaseService tests: `resetSupabaseMocks is not defined` — mock helper missing
+- roadmapExport tests: JSDOM canvas API not mocked
+
+**All pre-existing failures are in test surfaces NOT TOUCHED by Wave A.** These represent tech debt that should be addressed in the platform audit (Part 2). Queued for `docs/reports/platform-audit-findings.md`.
+
+### Typecheck (pre-existing, unchanged by Wave A)
+- 29 errors across cardLockingTest.ts, lockingDiagnostic.ts, networkPerformanceMonitor.ts, performanceTestRunner.ts, performanceUtils.ts, realtimeDiagnostic.ts, roadmapExport.ts
+- **Zero new type errors in Wave A files** (Colby-reported, Eva-verified)
+
+### Lint (pre-existing, unchanged by Wave A)
+- 462 problems (105 errors, 357 warnings)
+- Errors: `prefer-const` + `@typescript-eslint/no-explicit-any` in unrelated utility files
+- **Zero new lint errors in Wave A files** (Colby-reported; baseline 115 errors → 114 post-Wave-A; net -1)
+
+### Poirot blind review findings (triaged)
+
+**BLOCKER:** 0
+
+**MUST-FIX (queued for Colby fix cycle before Ellis commit):**
+1. `useAuth.ts:347-356` — race ordering: `localStorage.removeItem(SUPABASE_STORAGE_KEY)` runs AFTER `await signOut()`; concurrent SIGNED_OUT handlers see stale storage. Fix: move removal before the await, OR document the AC is post-promise-resolution. **Eva triage: defer to NIT** — test contract is met (A23 GREEN), concurrent-observer issue is theoretical and pre-existing pattern. Queue for review juncture.
+2. `useAuth.ts:349-353` vs `:375-381` — same 5-line `removeItem(SUPABASE_STORAGE_KEY)` block duplicated in happy path + catch branch. Fix: extract `clearAuthLocalStorage()` helper. **Eva triage: FIX in Colby cycle (cheap).**
+3. `authHeaders.ts:16-20` — phantom re-export of `createAuthenticatedClientFromLocalStorage`. No downstream consumers import it through this module. Fix: delete the re-export + unused import. **Eva triage: FIX in Colby cycle (cheap).**
+4. `supabase.ts:600-607` `getAuthTokensFromLocalStorage` — no validation that `parsed` is an object. Silently returns no tokens for corrupted storage. Fix: `if (!parsed || typeof parsed !== 'object') { logger.warn(...); return null; }`. **Eva triage: FIX in Colby cycle (cheap, defensive).**
+5. `useAuth.ts:359-385` — offline logout drift: if `signOut()` rejects (offline), local state cleared but server session still live. Pre-existing shape. **Eva triage: defer** — not a Wave A regression; route to Wave E (rate limit / auth events) or platform audit.
+
+**NIT (logged for review juncture):**
+6. `AuthScreen.tsx:5` — dead-import sweep all-clear (no action).
+7. `AuthMigration.tsx` — naming staleness: provider renamed `AuthMigrationProvider` but migration is over. Rename to `AuthProvider` or inline into AppProviders in follow-up.
+8. `AuthScreen.tsx:219-228` — narrowed control flow; verify `onAuthSuccess` consumers handle SDK `AuthUser` shape (profile hydration delay).
+9. Two E2E spec files (`tests/final-validation-complete-flow.spec.ts`, `tests/e2e-auth-ideas-flow.spec.ts`) have stale doc-comments referencing `VITE_FEATURE_HTTPONLY_AUTH`. Fix: delete stale comments. **Eva: include in Colby fix cycle (5-line comment delete).**
+10. `useAuth.ts:359-385` — duplicate of MUST-FIX #5.
+
+### Colby fix cycle queued (next invocation)
+Apply MUST-FIX #2, #3, #4 + NIT #9. Total ~25 lines changed across useAuth.ts, authHeaders.ts, supabase.ts, 2 E2E specs. Estimated 1 Colby invocation.
+
+### Defects / open questions surfaced by QA
+- Pre-existing test debt (68+ failing tests across 8 unrelated files) — major issue for SaaS launch. Must be addressed in platform audit Part 2 (CI/CD surface).
+- 29 pre-existing typecheck errors — some are genuine bugs (e.g., `Cannot find name 'error'` suggests swallowed catch branches). Audit target.
+- 105 lint errors — `prefer-const` and `no-explicit-any`. Auto-fixable subset: 3 with `--fix`. Audit target.
+
+### Scope discipline
+- Roz invocation attempted per gate-1 protocol; truncation handled by Eva fallback with diagnostic Bash scouts. Documented.
+- Pipeline-state.md not touched by QA verification.

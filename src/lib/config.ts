@@ -17,8 +17,17 @@ export const TIMEOUTS = {
   /** Timeout for fetching user profile data */
   PROFILE_FETCH: 10000,
   /** Timeout for checking if user has projects */
-  PROJECT_CHECK: 10000
+  PROJECT_CHECK: 10000,
+  /** ADR-0017 Wave B — Timeout for login submit */
+  LOGIN_SUBMIT: 15000,
+  /** ADR-0017 Wave B — Timeout for signup submit */
+  SIGNUP_SUBMIT: 15000,
+  /** ADR-0017 Wave B — Timeout for password reset submit */
+  PASSWORD_RESET_SUBMIT: 15000
 } as const
+
+/** ADR-0017 — Minimum password length for signup and reset flows */
+export const PASSWORD_MIN_LENGTH = 8
 
 /** Cache durations in milliseconds */
 export const CACHE_DURATIONS = {

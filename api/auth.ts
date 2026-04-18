@@ -25,6 +25,19 @@ import {
   withStrictRateLimit,
   type AuthenticatedRequest,
 } from './_lib/middleware/index.js'
+import { PASSWORD_MIN_LENGTH } from './_lib/constants.js'
+import { serializeError } from './_lib/errorSerializer.js'
+
+/**
+ * Generate a request id for error correlation. Falls back to a timestamp +
+ * random segment if crypto.randomUUID is not available (older Node runtimes).
+ */
+function newRequestId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `req_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+}
 
 // Runtime environment variables (not VITE_ build-time vars)
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || ''
@@ -58,10 +71,10 @@ async function handleSignup(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    if (password.length < 8) {
+    if (password.length < PASSWORD_MIN_LENGTH) {
       return res.status(400).json({
         error: {
-          message: 'Password must be at least 8 characters',
+          message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters`,
           code: 'WEAK_PASSWORD',
         },
         timestamp: new Date().toISOString(),
@@ -92,13 +105,12 @@ async function handleSignup(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!data.user) {
-      return res.status(500).json({
-        error: {
-          message: 'User creation failed',
-          code: 'USER_CREATION_FAILED',
-        },
-        timestamp: new Date().toISOString(),
-      })
+      return res.status(500).json(
+        serializeError(
+          { message: 'User creation failed', code: 'USER_CREATION_FAILED' },
+          newRequestId()
+        )
+      )
     }
 
     if (!data.session) {
@@ -134,13 +146,12 @@ async function handleSignup(req: VercelRequest, res: VercelResponse) {
     })
   } catch (error) {
     console.error('Signup handler error:', error)
-    return res.status(500).json({
-      error: {
-        message: 'Internal server error during signup',
-        code: 'SIGNUP_ERROR',
-      },
-      timestamp: new Date().toISOString(),
-    })
+    return res.status(500).json(
+      serializeError(
+        { message: 'Internal server error during signup', code: 'SIGNUP_ERROR' },
+        newRequestId()
+      )
+    )
   }
 }
 
@@ -207,13 +218,12 @@ async function handleLogin(req: VercelRequest, res: VercelResponse) {
     })
   } catch (error) {
     console.error('Login handler error:', error)
-    return res.status(500).json({
-      error: {
-        message: 'Internal server error during login',
-        code: 'LOGIN_ERROR',
-      },
-      timestamp: new Date().toISOString(),
-    })
+    return res.status(500).json(
+      serializeError(
+        { message: 'Internal server error during login', code: 'LOGIN_ERROR' },
+        newRequestId()
+      )
+    )
   }
 }
 
@@ -313,13 +323,12 @@ async function handleRefresh(req: VercelRequest, res: VercelResponse) {
     console.error('Refresh handler error:', error)
     clearAuthCookies(res)
 
-    return res.status(500).json({
-      error: {
-        message: 'Internal server error during token refresh',
-        code: 'REFRESH_ERROR',
-      },
-      timestamp: new Date().toISOString(),
-    })
+    return res.status(500).json(
+      serializeError(
+        { message: 'Internal server error during token refresh', code: 'REFRESH_ERROR' },
+        newRequestId()
+      )
+    )
   }
 }
 
@@ -857,13 +866,12 @@ async function handleAdminVerify(req: AuthenticatedRequest, res: VercelResponse)
     })
   } catch (error) {
     console.error('Admin verify handler error:', error)
-    return res.status(500).json({
-      error: {
-        message: 'Internal server error during admin verification',
-        code: 'VERIFICATION_ERROR',
-      },
-      timestamp: new Date().toISOString(),
-    })
+    return res.status(500).json(
+      serializeError(
+        { message: 'Internal server error during admin verification', code: 'VERIFICATION_ERROR' },
+        newRequestId()
+      )
+    )
   }
 }
 

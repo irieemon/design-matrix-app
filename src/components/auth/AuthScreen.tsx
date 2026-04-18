@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { flushSync } from 'react-dom'
 import { Target, Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles, AlertCircle, CheckCircle } from 'lucide-react'
 import PrioritasLogo from '../PrioritasLogo'
 import { supabase } from '../../lib/supabase'
@@ -6,6 +7,9 @@ import { updateRecoveryPassword } from '../../hooks/useAuth'
 import { useLogger } from '../../lib/logging'
 import { Button, Input } from '../ui'
 import { useUser } from '../../contexts/UserContext'
+import { TIMEOUTS, PASSWORD_MIN_LENGTH } from '../../lib/config'
+import { withTimeout } from '../../utils/promiseUtils'
+import { mapErrorToCopy } from '../../lib/auth/errorCopy'
 
 interface AuthScreenProps {
   onAuthSuccess: (user: any) => void
@@ -141,7 +145,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
     setLoading(true)
 
     try {
-      // EMERGENCY FIX: Direct Supabase calls without executeAction wrapper
+      // ADR-0017 Wave B: every SDK call is wrapped with a 15s timeout via
+      // withTimeout. Errors raised from these paths — timeouts, SDK
+      // rejections, 4xx/5xx objects — are normalized through
+      // mapErrorToCopy so the UI only ever renders canonical, non-enumerating
+      // copy. Raw SDK messages and stack traces never reach the DOM.
         if (mode === 'signup') {
           const redirectUrl = getRedirectUrl()
           const fullRedirectUrl = `${redirectUrl}`
@@ -151,16 +159,20 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
             hasFullName: !!fullName
           })
 
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              emailRedirectTo: fullRedirectUrl,
-              data: {
-                full_name: fullName.trim(),
+          const { data, error } = await withTimeout(
+            supabase.auth.signUp({
+              email,
+              password,
+              options: {
+                emailRedirectTo: fullRedirectUrl,
+                data: {
+                  full_name: fullName.trim(),
+                }
               }
-            }
-          })
+            }),
+            TIMEOUTS.SIGNUP_SUBMIT,
+            'Request timed out. Please try again.'
+          )
 
           logger.info('Signup response received', {
             userId: data?.user?.id,
@@ -183,23 +195,58 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           // via onAuthStateChange. We also call onAuthSuccess directly so the UI
           // transitions immediately without waiting for the async listener.
           logger.info('Signing in with Supabase SDK')
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-          if (signInError) throw new Error(signInError.message)
+          // ADR-0017 Wave B — login timeout handling via a side-effecting
+          // setTimeout callback. We do NOT await a Promise.race rejection
+          // here because, under React's async act() combined with vitest
+          // fake timers, a pending (never-settling) upstream promise in a
+          // race prevents act from flushing — the act thenable only
+          // resolves when _every_ pending work queue drains. Instead, the
+          // setTimeout directly commits the TIMEOUT copy via flushSync,
+          // which settles React synchronously. If the SDK resolves first
+          // we clear the timer; if the timer fires first we short-circuit
+          // by flagging `timedOut` and returning without awaiting further.
+          let loginTimeoutId: ReturnType<typeof setTimeout> | undefined
+          let timedOut = false
+          loginTimeoutId = setTimeout(() => {
+            timedOut = true
+            flushSync(() => {
+              setError(mapErrorToCopy(new Error('Request timed out. Please try again.')))
+              setLoading(false)
+            })
+          }, TIMEOUTS.LOGIN_SUBMIT)
+
+          const signInResult = await supabase.auth.signInWithPassword({ email, password })
+
+          if (loginTimeoutId) clearTimeout(loginTimeoutId)
+          if (timedOut) {
+            // Timer fired first — error/loading already committed.
+            return
+          }
+
+          const { data: signInData, error: signInError } = signInResult
+          // Throw the original SDK error object (preserves status/code for
+          // mapErrorToCopy) rather than re-wrapping in `new Error(message)`
+          // which would strip status/code fields.
+          if (signInError) throw signInError
           if (signInData.user) {
             onAuthSuccess(signInData.user)
           }
 
         } else if (mode === 'forgot-password') {
-          const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin
-          })
+          const { error } = await withTimeout(
+            supabase.auth.resetPasswordForEmail(email, {
+              redirectTo: window.location.origin
+            }),
+            TIMEOUTS.PASSWORD_RESET_SUBMIT,
+            'Request timed out. Please try again.'
+          )
 
           if (error) throw error
           setSuccess('Password reset email sent! Check your inbox.')
           setMode('login')
         } else if (mode === 'reset-password') {
-          if (newPassword.length < 8) {
-            setError('Password must be at least 8 characters')
+          if (newPassword.length < PASSWORD_MIN_LENGTH) {
+            setError(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
             return
           }
           if (newPassword !== confirmNewPassword) {
@@ -216,19 +263,15 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           setConfirmNewPassword('')
           setMode('login')
         }
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Auth error:', err)
-      setError(err.message || 'An unexpected error occurred')
-
-      // Set error states on relevant fields
-      if (err.message?.includes('Invalid login credentials')) {
-        emailRef.current?.setError('Invalid email or password')
-        passwordRef.current?.setError('Invalid email or password')
-      } else if (err.message?.includes('email')) {
-        emailRef.current?.setError(err.message)
-      } else if (err.message?.includes('password')) {
-        passwordRef.current?.setError(err.message)
-      }
+      // ADR-0017 Wave B — route all errors (timeouts, SDK rejections,
+      // 4xx/5xx objects) through the canonical copy map so raw SDK
+      // messages, fetch bodies, and stack traces never reach the DOM.
+      flushSync(() => {
+        setError(mapErrorToCopy(err))
+        setLoading(false)
+      })
     } finally {
       setLoading(false)
     }
@@ -355,7 +398,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                   type={showPassword ? 'text' : 'password'}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password (min 8 characters)"
+                  placeholder={`Enter new password (min ${PASSWORD_MIN_LENGTH} characters)`}
                   icon={<Lock />}
                   variant="primary"
                   size="lg"
@@ -374,7 +417,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
                   }
                   onValidate={(value) => {
                     if (!value) return { isValid: false, error: 'Password is required' }
-                    if (value.length < 8) return { isValid: false, error: 'Password must be at least 8 characters' }
+                    if (value.length < PASSWORD_MIN_LENGTH) return { isValid: false, error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters` }
                     return { isValid: true }
                   }}
                 />
