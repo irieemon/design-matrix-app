@@ -4,10 +4,20 @@
  *
  * POST /api/brainstorm/validate-token
  * Validates session access token and returns session details
+ *
+ * AUTH NOTE (P0-01): This endpoint is INTENTIONALLY unauthenticated.
+ * It is the pre-auth entry point for mobile participants arriving via QR
+ * code or magic-link join URL — they do not yet have a Supabase session.
+ * CSRF + rate limiting are applied; `withAuth` is deliberately omitted.
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import {
+  withUserRateLimit,
+  withCSRF,
+  compose,
+} from '../_lib/middleware/index.js'
 
 // ============================================
 // Types (inline to avoid src/ imports)
@@ -59,7 +69,7 @@ function getSupabaseClient() {
 // Main Handler
 // ============================================
 
-export default async function handler(
+async function validateTokenHandler(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<VercelResponse> {
@@ -186,3 +196,11 @@ export default async function handler(
     })
   }
 }
+
+// ✅ SECURITY (P0-01): Rate limit + CSRF protection ONLY.
+// withAuth is intentionally omitted — this is the pre-auth entry point for
+// mobile participants who have not yet established a session (QR / magic-link).
+export default compose(
+  withUserRateLimit(),
+  withCSRF()
+)(validateTokenHandler)

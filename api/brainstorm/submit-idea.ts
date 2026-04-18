@@ -9,6 +9,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
+import {
+  withUserRateLimit,
+  withCSRF,
+  withAuth,
+  compose,
+} from '../_lib/middleware/index.js'
 
 // ============================================
 // Types (inline to avoid src/ imports)
@@ -115,7 +121,7 @@ function getSupabaseClient() {
 // Main Handler
 // ============================================
 
-export default async function handler(
+async function submitIdeaHandler(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<VercelResponse> {
@@ -358,3 +364,12 @@ export default async function handler(
     })
   }
 }
+
+// ✅ SECURITY (P0-01): Rate limit per user, CSRF protection, and authentication
+// Previously unauthenticated — any actor could submit ideas against
+// arbitrary sessions/participants via service-role client.
+export default compose(
+  withUserRateLimit(),
+  withCSRF(),
+  withAuth
+)(submitIdeaHandler)
