@@ -27,6 +27,30 @@ import {
 } from './_lib/middleware/index.js'
 import { PASSWORD_MIN_LENGTH } from './_lib/constants.js'
 import { serializeError } from './_lib/errorSerializer.js'
+import { logAuthEvent } from './_lib/auditLogger.js'
+
+/**
+ * Fire-and-forget audit wrapper: never throws, never awaited by callers.
+ * Extracts IP + UA from the request so handler sites stay concise.
+ */
+function auditFromRequest(
+  req: VercelRequest,
+  params: Omit<Parameters<typeof logAuthEvent>[0], 'ipAddress' | 'userAgent'>
+): void {
+  const ipAddress =
+    (req.headers['x-forwarded-for'] as string) ||
+    req.socket?.remoteAddress ||
+    undefined
+  const userAgent = req.headers['user-agent']
+
+  logAuthEvent({
+    ...params,
+    ipAddress,
+    userAgent,
+  }).catch(() => {
+    /* auditLogger already swallows; double-guard for defense in depth */
+  })
+}
 
 /**
  * Generate a request id for error correlation. Falls back to a timestamp +
@@ -95,6 +119,11 @@ async function handleSignup(req: VercelRequest, res: VercelResponse) {
 
     if (error) {
       console.error('Signup error:', error)
+      auditFromRequest(req, {
+        event: 'SIGNUP_FAILURE',
+        email,
+        context: { reason: 'supabase_error', code: 'SIGNUP_ERROR' },
+      })
       return res.status(400).json({
         error: {
           message: error.message,
@@ -105,6 +134,11 @@ async function handleSignup(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!data.user) {
+      auditFromRequest(req, {
+        event: 'SIGNUP_FAILURE',
+        email,
+        context: { reason: 'user_creation_failed' },
+      })
       return res.status(500).json(
         serializeError(
           { message: 'User creation failed', code: 'USER_CREATION_FAILED' },
@@ -114,6 +148,11 @@ async function handleSignup(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!data.session) {
+      auditFromRequest(req, {
+        event: 'SIGNUP_SUCCESS',
+        email,
+        context: { requiresEmailConfirmation: true },
+      })
       return res.status(200).json({
         success: true,
         message: 'Please check your email to confirm your account',
@@ -134,6 +173,12 @@ async function handleSignup(req: VercelRequest, res: VercelResponse) {
       csrfToken,
     })
 
+    auditFromRequest(req, {
+      event: 'SIGNUP_SUCCESS',
+      email,
+      sessionRef: data.session.access_token,
+    })
+
     return res.status(201).json({
       success: true,
       user: {
@@ -146,6 +191,10 @@ async function handleSignup(req: VercelRequest, res: VercelResponse) {
     })
   } catch (error) {
     console.error('Signup handler error:', error)
+    auditFromRequest(req, {
+      event: 'SIGNUP_FAILURE',
+      context: { reason: 'handler_exception' },
+    })
     return res.status(500).json(
       serializeError(
         { message: 'Internal server error during signup', code: 'SIGNUP_ERROR' },
@@ -178,6 +227,11 @@ async function handleLogin(req: VercelRequest, res: VercelResponse) {
 
     if (error || !data.session) {
       console.error('Login error:', error)
+      auditFromRequest(req, {
+        event: 'LOGIN_FAILURE',
+        email,
+        context: { reason: 'invalid_credentials' },
+      })
       return res.status(401).json({
         error: {
           message: error?.message || 'Invalid credentials',
@@ -193,6 +247,12 @@ async function handleLogin(req: VercelRequest, res: VercelResponse) {
       accessToken: data.session.access_token,
       refreshToken: data.session.refresh_token,
       csrfToken,
+    })
+
+    auditFromRequest(req, {
+      event: 'LOGIN_SUCCESS',
+      email,
+      sessionRef: data.session.access_token,
     })
 
     return res.status(200).json({
@@ -218,6 +278,10 @@ async function handleLogin(req: VercelRequest, res: VercelResponse) {
     })
   } catch (error) {
     console.error('Login handler error:', error)
+    auditFromRequest(req, {
+      event: 'LOGIN_FAILURE',
+      context: { reason: 'handler_exception' },
+    })
     return res.status(500).json(
       serializeError(
         { message: 'Internal server error during login', code: 'LOGIN_ERROR' },
@@ -228,9 +292,9 @@ async function handleLogin(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handleLogout(req: VercelRequest, res: VercelResponse) {
-  try {
-    const accessToken = getCookie(req, COOKIE_NAMES.ACCESS_TOKEN)
+  const accessToken = getCookie(req, COOKIE_NAMES.ACCESS_TOKEN)
 
+  try {
     if (accessToken) {
       const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         global: {
@@ -245,6 +309,11 @@ async function handleLogout(req: VercelRequest, res: VercelResponse) {
 
     clearAuthCookies(res)
 
+    auditFromRequest(req, {
+      event: 'LOGOUT_SUCCESS',
+      sessionRef: accessToken || undefined,
+    })
+
     return res.status(200).json({
       success: true,
       message: 'Logged out successfully',
@@ -253,6 +322,12 @@ async function handleLogout(req: VercelRequest, res: VercelResponse) {
   } catch (error) {
     console.error('Logout handler error:', error)
     clearAuthCookies(res)
+
+    auditFromRequest(req, {
+      event: 'LOGOUT_SUCCESS',
+      sessionRef: accessToken || undefined,
+      context: { warning: 'cleared_with_errors' },
+    })
 
     return res.status(200).json({
       success: true,
@@ -985,9 +1060,15 @@ async function authRouter(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-// ✅ SECURITY: Apply strict rate limiting (5 req/15min in prod)
+// ✅ SECURITY: Apply strict rate limiting (5 req/15min in prod, 100/15min in dev).
+// skipSuccessfulRequests:true → only failed attempts count toward the limit.
 // Auth endpoints do NOT use withCSRF — pre-authentication requests (login, signup,
 // password reset) don't have CSRF tokens. Rate limiting prevents brute-force instead.
+//
+// Wave E coverage (AC-RL-01, AC-RL-02): the router-level wrapping covers every
+// action dispatched by authRouter — signup, session (login/logout), refresh,
+// user, clear-cache, performance, admin-verify. When reset / reset-confirm
+// handlers are added in Wave D they inherit the same limiter automatically.
 export default compose(
   withStrictRateLimit()
 )(authRouter)

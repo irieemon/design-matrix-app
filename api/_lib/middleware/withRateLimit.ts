@@ -7,6 +7,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type { AuthenticatedRequest, MiddlewareHandler, MiddlewareWrapper, RateLimitConfig } from './types.js'
+import { logAuthEvent } from '../auditLogger.js'
 
 /**
  * Environment detection for rate limiting configuration
@@ -141,6 +142,20 @@ export function withRateLimit(
       // Check if rate limit exceeded
       if (entry.count > opts.maxRequests) {
         res.setHeader('Retry-After', resetInSeconds.toString())
+
+        // Fire-and-forget audit event. Do not await — rate-limit responses
+        // must not be delayed by the audit write.
+        logAuthEvent({
+          event: 'RATE_LIMIT_BLOCKED',
+          ipAddress: req.headers['x-forwarded-for'] as string || req.socket?.remoteAddress,
+          userAgent: req.headers['user-agent'] as string | undefined,
+          context: {
+            path: req.url,
+            limit: opts.maxRequests,
+            windowMs: opts.windowMs,
+          },
+        }).catch(() => { /* swallow — auditLogger already logs */ })
+
         return res.status(429).json({
           error: {
             message: 'Too many requests. Please try again later.',
