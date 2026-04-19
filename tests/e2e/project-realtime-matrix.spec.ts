@@ -284,7 +284,7 @@ test('T-054B-303: drop propagates position in browser B within 2s', async ({ bro
 // T-054B-304: Disconnect shows reconnecting badge
 // ---------------------------------------------------------------------------
 
-test('T-054B-304: disconnect shows reconnecting badge (Playwright route block)', async ({ browser }: { browser: Browser }) => {
+test('T-054B-304: disconnect shows reconnecting badge (Playwright offline mode)', async ({ browser }: { browser: Browser }) => {
   test.skip(SKIP_LIVE, 'Requires live Supabase (set CI_SUPABASE=true)');
   const ctxA: BrowserContext = await browser.newContext()
   const pageA: Page = await ctxA.newPage()
@@ -293,17 +293,14 @@ test('T-054B-304: disconnect shows reconnecting badge (Playwright route block)',
     await signIn(pageA, USER_A_EMAIL, USER_A_PASSWORD)
     await enterFullscreenMatrix(pageA)
 
-    // Block WebSocket connections to simulate disconnect
-    await pageA.route('wss://**', (route) => route.abort())
-    await pageA.route('ws://**', (route) => route.abort())
+    // Take the context offline to simulate disconnect (kills existing WS connections)
+    await ctxA.setOffline(true)
 
     // Assert: reconnecting badge appears within 1.5s of silence
     await expect(
       pageA.getByRole('status', { name: /Reconnecting/i })
     ).toBeVisible({ timeout: 3_000 })
   } finally {
-    await pageA.unroute('wss://**')
-    await pageA.unroute('ws://**')
     await ctxA.close()
   }
 })
@@ -321,18 +318,16 @@ test('T-054B-305: reconnect shows recovery toast', async ({ browser }: { browser
     await signIn(pageA, USER_A_EMAIL, USER_A_PASSWORD)
     await enterFullscreenMatrix(pageA)
 
-    // Block then restore WebSocket to simulate reconnect
-    await pageA.route('wss://**', (route) => route.abort())
-    await pageA.route('ws://**', (route) => route.abort())
+    // Take the context offline to simulate disconnect (kills existing WS connections)
+    await ctxA.setOffline(true)
 
     // Wait for reconnecting badge
     await expect(
       pageA.getByRole('status', { name: /Reconnecting/i })
     ).toBeVisible({ timeout: 3_000 })
 
-    // Restore WebSocket connections
-    await pageA.unroute('wss://**')
-    await pageA.unroute('ws://**')
+    // Restore the context online to simulate reconnect
+    await ctxA.setOffline(false)
 
     // Assert: recovery toast appears within 10s (CI cold-start)
     await expect(
