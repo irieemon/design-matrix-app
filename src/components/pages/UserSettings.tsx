@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase'
 import type { Subscription } from '../../types/subscription'
 import { useNavigation } from '../../contexts/NavigationContext'
 import FAQAdmin from '../admin/FAQAdmin'
+import { AdminService } from '../../lib/adminService'
 
 interface UserSettingsProps {
   currentUser: User | null
@@ -490,14 +491,16 @@ const UserSettings: React.FC<UserSettingsProps> = ({ currentUser: propCurrentUse
           </button>
         </div>
 
-        {/* FAQ Admin Panel */}
-        <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-          <div className="flex items-center space-x-2 mb-4">
-            <HelpCircle className="w-5 h-5 text-slate-600" />
-            <h4 className="text-sm font-semibold text-slate-900">Content Management</h4>
+        {/* FAQ Admin Panel — super_admin only */}
+        {AdminService.isSuperAdmin(currentUser) && (
+          <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="flex items-center space-x-2 mb-4">
+              <HelpCircle className="w-5 h-5 text-slate-600" />
+              <h4 className="text-sm font-semibold text-slate-900">Content Management</h4>
+            </div>
+            <FAQAdmin />
           </div>
-          <FAQAdmin />
-        </div>
+        )}
       </div>
 
       {/* Danger Zone */}

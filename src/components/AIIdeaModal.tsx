@@ -127,10 +127,11 @@ function mapRelevanceToPriority(score: number): IdeaCard['priority'] {
 }
 
 const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProject, currentUser, portalTarget }) => {
-  const { showSuccess } = useToast()
+  const { showSuccess, showError } = useToast()
   const aiGeneration = useAIGeneration(STAGE_CONFIGS['single-idea'])
   const [title, setTitle] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
   const [generatedIdea, setGeneratedIdea] = useState<{
     content: string
     details: string
@@ -289,6 +290,7 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
     if (!title.trim()) return
 
     setIsGenerating(true)
+    setGenerateError(null)
 
     try {
       logger.debug('🎯 AIIdeaModal: Calling AI service with project context...')
@@ -311,22 +313,11 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
       window.dispatchEvent(new CustomEvent('ai-quota-changed'))
     } catch (error) {
       logger.error('❌ AIIdeaModal: Error generating AI idea:', error)
-      const fallbackIdea = generateFallbackIdea(title.trim())
-      setGeneratedIdea(fallbackIdea)
-    }
-
-    setIsGenerating(false)
-  }
-
-  const generateFallbackIdea = (title: string): {
-    content: string
-    details: string
-    priority: IdeaCard['priority']
-  } => {
-    return {
-      content: title.trim(),
-      details: `AI service temporarily unavailable. ${title} represents an interesting opportunity that should be explored further with detailed analysis and stakeholder input.`,
-      priority: 'moderate' as const
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      setGenerateError(`Generation failed: ${message}. Please try again.`)
+      showError(`AI generation failed: ${message}. Please try again.`)
+    } finally {
+      setIsGenerating(false)
     }
   }
 
@@ -600,13 +591,18 @@ const AIIdeaModal: React.FC<AIIdeaModalProps> = ({ onClose, onAdd, currentProjec
                 label="Brief Idea Title"
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => { setTitle(e.target.value); setGenerateError(null) }}
                 placeholder="Enter a brief title for your idea..."
                 onKeyPress={(e) => e.key === 'Enter' && !isGenerating && generateIdea()}
                 fullWidth
                 variant="primary"
                 size="md"
               />
+
+              {/* Inline error — shown when AI generation fails */}
+              {generateError && (
+                <p className="text-sm text-red-600" role="alert">{generateError}</p>
+              )}
 
               {/* Generate Button */}
               <div className="text-center">
