@@ -1,86 +1,85 @@
-# Investigation Ledger — PROD-BUG-01 Ideas Empty Matrix
+# Investigation Ledger — v1.3 Phase 12 Category A
 
-**Opened:** 2026-04-11
-**Updated:** 2026-04-11 (Roz investigation complete — awaiting runtime data)
-**Bug class:** User-reported production bug
-**Environment:** prioritas.ai on Vercel (production)
-**Reporter:** User (sean@lakehouse.net) with screenshot
-**Acceptance criterion:** Ideas populate on matrix for existing projects when logged in as sean@lakehouse.net
+**Pipeline:** phase12-cat-a-realtime-broadcast-96eaa321
+**Investigator:** Roz (Opus)
+**Date:** 2026-04-19
 
 ## Symptom
 
-### Reproduction context
-- Navigate to https://prioritas.ai
-- Log in (user: sean@lakehouse.net)
-- Open project "Solr App" (visible in sidebar, project loads)
-- Matrix renders empty state with "Ready to prioritize?" prompt
-- User reports same behavior on ALL their projects (not single-project)
-
-### Screenshot evidence
-- Project sidebar shows "Solr App" as active
-- Matrix shows the 4-quadrant grid (Quick Wins / Strategic / Reconsider / Avoid)
-- Center of matrix shows lightbulb illustration + "Ready to prioritize?" empty-state copy
-- Header shows "Full Screen", "AI Idea", "+ Create New Idea" buttons — write path available
-- User email in footer confirms authenticated session
-
-### What is NOT happening
-- NOT a component crash (UI renders cleanly, no white-screen / error boundary)
-- NOT a stuck loading spinner (empty state only appears after loading resolves)
-- NOT a 4xx/5xx error surfaced in UI (no error toast, no error boundary)
-- NOT a routing issue (project opens, URL updates, layout correct)
-- NOT a single-project corruption (user says "any projects")
-
-### What IS happening (hypothesis space)
-The UI's `ideas.length === 0` branch is rendering, meaning the ideas state is populated as an empty array. Possible upstream causes:
-1. Query fired, returned 200 OK with `[]` (RLS filtered, filter mismatch, or actual empty)
-2. Query fired, returned error, got swallowed by silent-error path, fell back to `[]`
-3. Query never fired (hook state bug, race condition, stale closure)
-4. Data was actually wiped (extremely unlikely but possible — DB migration, bug in delete flow)
-5. Auth session drift — JWT valid for project-reads but not for idea-reads (RLS policy difference)
-6. Recent production deploy regressed the idea fetch path
-
-### Ruled out (scoping before investigation)
-- Session's 6 pushed commits (`dba9f42..15f9f70`) — verified via `git diff --stat` — all scripts/test/docs, zero src/ or api/ changes
-- Supabase CLI 2.58.5 → 2.84.2 upgrade — LOCAL only, production runs Supabase Cloud
-- The bug is **pre-existing** relative to this session's work
-
-### Prior memories relevant (from session memory)
-- **`feedback_optimistic_updates_stale_closure.md`** — useOptimisticUpdates had a stale closure bug in `confirmUpdate` / `moveIdeaOptimistic` where pendingUpdates and baseData had to be read from refs, never closures. Retro flagged this as a recurring bug class.
-- **`feedback_rls_insert_returning_requires_select.md`** — `INSERT ... RETURNING` (`.insert().select()`) on `project_files` needed SELECT RLS on the new row or fails with 42501. Same pattern could apply to other tables if a RLS migration rolled back read policies.
-- **`feedback_supabase_auth_deadlock.md`** — `supabase.auth.getSession()` hangs after storage ops; retro says use lock-free localStorage read. Auth hydration failures could cause downstream data-fetch issues.
+T-054B-301 + T-054B-302: Browser B never observes broadcast-driven DOM elements
+(`[data-testid^="live-cursor-"]`, `[data-testid="locked-card-overlay-${ideaId}"]`)
+after Browser A moves the mouse / starts a drag. Presence stack test T-054B-300
+PASSES on the same channel, same auth, same local Supabase stack.
 
 ## Hypothesis Table
 
-| # | Hypothesis | Layer | Evidence (file:line) | Confidence | Verdict |
-|---|------------|-------|---------------------|------------|---------|
-| 1 | `useOptimizedMatrix.ts` catch blocks reference undeclared `err` (parameter is `_err`) — ReferenceError thrown INSIDE the catch block causes a secondary uncaught exception, silently breaking data flow | Application | `src/hooks/useOptimizedMatrix.ts:126`, `189`, `236`, `276`, `302`, `351` — all 6 catch blocks use `catch (_err)` but reference `err` in the body. Line 302 and 351 are in toggle/drag which are user-action paths; lines 126/189/236/276 are in load/add/update/delete | HIGH | CONFIRMED (static) — **BUT** `NewDesignMatrix.tsx` is the only consumer of this hook, and `MainApp.tsx` does NOT import or render `NewDesignMatrix`. This hook is NOT on the production data path. |
-| 2 | Same `_err`/`err` pattern in the batched position update block of `useOptimizedMatrix.ts` | Application | `src/hooks/useOptimizedMatrix.ts:82-83` — `catch (_error)` with body `logger.error('...', error)` — `error` refers to outer React state setter variable, not the caught exception | HIGH | CONFIRMED (static) — same non-production scope caveat as H1 |
-| 3 | `useIdeas.ts` `loadIdeas` useCallback has empty dependency array `[]` — ROOT_CAUSE_IDEAS_NOT_LOADING_CRITICAL.md documents this as a stale-closure bug causing `loadIdeas` to never re-create when project changes | Application | `src/hooks/useIdeas.ts:169` — `}, [])` with empty deps; `loadIdeas` uses `logger` (line 66, 74, 88, 90, 97) but logger not in deps. useEffect at line 418 has `[projectId, loadIdeas]` — since `loadIdeas` reference never changes, the effect only fires on `projectId` change, which IS the expected trigger. | MEDIUM | PARTIALLY CONFIRMED — the empty dep array is real at line 169. The ROOT_CAUSE doc's claim that this prevents the effect from firing is **mechanically weak**: `loadIdeas` being stale only matters if the effect re-runs for `loadIdeas` changes. The `projectId` dependency alone triggers the effect on project switch. The actual fetch at line 93 runs unconditionally inside the callback regardless of logger staleness. Logger staleness degrades logging only, not the fetch itself. This hypothesis is REJECTED as the primary cause but logged as a code quality issue. |
-| 4 | `loadIdeas` catch block (line 160-163) swallows ALL errors with `setIdeas([])` — if the API call returns non-OK status, or throws for any reason (auth, network, CORS), the user sees empty state with no UI indicator | Application | `src/hooks/useIdeas.ts:99-101` — `if (!response.ok) { throw new Error(...) }` then `catch (error) { logger.error(...); setIdeas([]) }` — error is swallowed and empty array is shown | HIGH | CONFIRMED (static) — this IS on the production path. Any upstream failure (auth, RLS, network) produces the exact observed symptom. **Cannot confirm which upstream failure is occurring without runtime data.** |
-| 5 | `getCachedAuthToken()` (line 79) returns null/undefined in production — the token cache may be empty on cold load, causing the API call to proceed with no Authorization header. The `withAuth.ts` middleware at line 84-92 tries cookie first then Authorization header — if neither is present, returns 401, which throws at line 100 and routes to `setIdeas([])` | Transport | `src/hooks/useIdeas.ts:79-96` + `api/_lib/middleware/withAuth.ts:84-96` — no access token = 401 from API = throw in catch = `setIdeas([])`. The warn log at line 90 would appear in browser console if this is the path. | HIGH | PENDING-RUNTIME — needs browser console check for "No access token found in localStorage" warning |
-| 6 | `validateProjectAccess` in `api/ideas.ts` calls `authClient.auth.getUser()` (line 129) — if the httpOnly cookie auth token is expired/missing AND the Authorization header token is missing, `getUser()` fails, throwing "User not authenticated" which returns 500/401 and triggers the `setIdeas([])` path | Transport | `api/ideas.ts:129-133` + `api/_lib/middleware/withAuth.ts:108` — double auth check; either layer can reject | MEDIUM | PENDING-RUNTIME — needs Vercel function logs |
-| 7 | RLS policy on `ideas` table does not exist in migrations — scout found NO matches for `CREATE POLICY.*ON\s+ideas` in `supabase/migrations/` — if the service role client bypass in `api/ideas.ts:205-211` was recently broken (env var missing), the fallback would use restricted client that RLS-filters to empty | Infrastructure | `api/ideas.ts:104-117` — `getServiceRoleClient()` throws if `SUPABASE_SERVICE_ROLE_KEY` is empty. If the env var is unset on Vercel production, this throws inside `validateProjectAccess` (line 136) before ideas are even fetched | MEDIUM | PENDING-RUNTIME — needs Vercel env var verification |
-| 8 | ROOT_CAUSE_IDEAS_NOT_LOADING_CRITICAL.md documents a prior investigation (dated 2025-10-01) identifying the exact empty-state symptom with the same code path — the document was written but the fix (add `logger` to deps) was apparently never applied, suggesting this is a **chronic unfixed bug** that has existed since October 2025 | Application | File exists at repo root, dated 2025-10-01; current `src/hooks/useIdeas.ts:169` still has `}, [])` | MEDIUM | CONFIRMED (stale doc, live bug) — but logger-staleness is rejected as the actual mechanism (see H3). The doc's diagnosis of the mechanism is incorrect; the actual risk is H4+H5. |
+| # | Hypothesis | Layer | Evidence for | Evidence against | Verdict |
+|---|-----------|-------|--------------|------------------|---------|
+| a | Channel subscribed before auth is ready | Application | `subscribe()` fires synchronously in `acquireManager` (useProjectRealtime.ts:71) before any React re-render could sync auth state | T-054B-300 presence reaches `SUBSCRIBED` status (both browsers see each other in the stack). Auth is fine -- the channel is open. | REJECTED |
+| b | RLS / private-channel authorization denies broadcast delivery | Transport | — | Channel names `project:${id}` are *custom broadcast* channels, not DB-bound; default Supabase broadcast is public. No `private: true` anywhere. Presence on the SAME channel works — if auth-on-channel were denying, presence would also fail. | REJECTED |
+| c | Ghost / uncleaned subscription handlers | Application | Module-level `managerCache` in useProjectRealtime.ts:42 survives StrictMode re-mount | Failure mode is SILENCE (zero handlers firing), not duplicates. Uncleaned handlers produce N-times firing, not zero. | REJECTED |
+| d | Server emitting on wrong channel name | Application | — | Channel name `${scope.type}:${scope.id}` is symmetric on both sides (one class, one naming rule). Presence cross-delivery on that name proves the two browsers share a channel. | REJECTED |
+| **e** | **Broadcast listeners never wired to underlying Supabase channel — ordering bug between `ScopedRealtimeManager.subscribe()` and consumer `onBroadcast()` calls** | **Application** | See detailed trace below. Direct code-read. Presence (hard-wired in `buildChannel`) explains asymmetry with broadcast (registry-driven in `buildChannel`). | None found. | **ACCEPTED** |
 
-## Layer-escalation budget
+## Root Cause — hypothesis (e)
 
-Per investigation discipline: 2 rejected hypotheses at same layer → escalate. Four system layers:
-1. **Application** — useIdeas hook, ideaRepository, api/ideas.ts, withAuth middleware
-2. **Transport** — HTTP headers, JWT handling, cookie flow, Supabase SDK client config
-3. **Infrastructure** — Supabase Cloud RLS policies, database state, column rename
-4. **Environment** — Vercel env vars, production-specific config, feature flags
+**Shared failure point. Two collaborating files:**
+- `src/hooks/useProjectRealtime.ts:71` — `acquireManager()` synchronously fires `void manager.subscribe()` inside `new ScopedRealtimeManager(...)` construction.
+- `src/lib/realtime/ScopedRealtimeManager.ts:126-136` — `onBroadcast()` only pushes into the in-memory `broadcastListeners[]` registry; it does NOT call `this.channel.on('broadcast', …)` on the live channel.
+- `src/lib/realtime/ScopedRealtimeManager.ts:236-275` — `buildChannel()` iterates the CURRENT contents of `broadcastListeners[]` and wires each to `ch.on('broadcast', {event}, …)`.
 
-Start at application layer. Escalate only if application-layer evidence rules out causes.
+**Lifecycle trace:**
 
-**Current status:** Application layer investigation yielded 2 confirmed findings (H1/H2 out of scope, H4 on-path) and 1 confirmed code quality issue (H3). Runtime data needed to distinguish H4 sub-causes (transport vs. environment vs. infrastructure layer).
+1. `useProjectRealtime` useEffect runs → `acquireManager(...)` (line 113).
+2. `acquireManager` constructs `ScopedRealtimeManager` and immediately calls `void manager.subscribe()` (line 71).
+3. `subscribe()` calls `this.channel = this.buildChannel()` (line 182). At this instant, `broadcastListeners[]` is **empty** — `useLiveCursors` and `useDragLock` have not yet received the manager (they receive it via React state that won't be set until `setManager(mgr)` on line 130). No `ch.on('broadcast', …)` is registered on the underlying Supabase channel.
+4. `this.channel.subscribe(...)` lands at `SUBSCRIBED` (presence wiring succeeds because `buildChannel` hard-codes `ch.on('presence', ...)` at lines 278-294 regardless of handler registry).
+5. React re-renders. `useLiveCursors` (line 107) and `useDragLock` (lines 102, 127) now receive a non-null manager and call `manager.onBroadcast('cursor_move'/'drag_lock'/'drag_release', handler)`. These calls only push into `broadcastListeners[]` (lines 131-134). **They never touch `this.channel.on(...)`**.
+6. Inbound broadcast events arrive on the Supabase channel and find zero registered `broadcast` handlers. They are silently dropped.
+7. Outbound `sendBroadcast` (line 219) still works because `this.channel.send(...)` does not require prior `ch.on`. This is why sender-side traces may show traffic going out with no visible errors.
 
-## Runtime Data Requested
+**Why presence works:** `buildChannel()` registers presence listeners unconditionally (lines 278-294), regardless of whether `presenceHandlers[]` is populated. Presence wiring is hard-coded; broadcast wiring is registry-driven and runs once at build time.
 
-See Roz return message to Eva for full list.
+**Why the documented contract is violated:** ScopedRealtimeManager.ts:106-107 comment says "Listeners registered BEFORE subscribe()". The consumer pattern in `useProjectRealtime` violates that contract — `subscribe()` is invoked inside `acquireManager`, strictly before any React render that could run `onBroadcast` calls. The bug is that `onBroadcast` does NOT compensate for late registration by attaching to the live channel.
 
-## Notes for investigator
+**Cache doesn't save us:** On manager cache hit (same projectId/userId), the cached manager's channel is already built with an empty `broadcastListeners[]`. New `onBroadcast` calls still hit only the registry.
 
-- Do NOT propose a fix in this ledger. Only hypotheses + evidence + verdicts.
-- This is a PRODUCTION bug — no local reproduction available until we can tell if the bug is environment-specific or code-specific.
-- User runtime data (browser devtools network tab, console errors, Vercel deploy history) is ESSENTIAL — investigation should not fully commit to a hypothesis without it.
-- Roz can investigate the codebase side independently of user data; combine both streams at triage.
+## Verdict
+
+**SHARED.** One fix unblocks both T-054B-301 (cursor broadcast) and T-054B-302
+(drag-lock broadcast). Confirmed by code read, cross-checked against the
+presence-passes-broadcast-fails asymmetry.
+
+**Proposed fix (brief — Colby spec):** In `ScopedRealtimeManager.onBroadcast`
+(and symmetrically `onPostgresChange`, though not tested by this phase),
+attach the handler to the live channel when `this.channel !== null`, in
+addition to updating the registry. The registry is retained so
+`resubscribe() → buildChannel()` (reconnect path) still works. Cleanest
+shape: refactor `buildChannel` to register a single broadcast-event dispatcher
+at `ch.on('broadcast', { event: '*' or per-event })` that reads the live
+registry at dispatch time — that way late-registered listeners receive
+events without needing channel mutation. Add a regression test that
+registers a broadcast listener AFTER `subscribe()` has returned and verifies
+delivery.
+
+## Confidence: HIGH
+
+Direct code evidence. The presence-passes-broadcast-fails asymmetry is
+explained completely and uniquely by this bug. No alternative hypothesis
+survives the presence cross-check.
+
+## Recommendation for Eva
+
+- **Route to Colby** as a single Micro/Small spec. Scope is narrow and
+  internal to `ScopedRealtimeManager`; `onBroadcast` public shape preserved.
+- **No ADR needed** — implementation detail inside the class, contract
+  compatible.
+- **Roz regression test** to accompany: register `onBroadcast` handler
+  AFTER `subscribe()` resolves, verify the handler receives a simulated
+  inbound broadcast. This is the missing test that would have caught the
+  bug. Apply the same regression shape to `onPostgresChange`.
+- **Latent risk worth flagging to Cal/Colby but NOT blocking this fix:**
+  `onPostgresChange` has the same ordering bug. Any consumer that
+  subscribes to postgres_changes via the manager AFTER `subscribe()` will
+  silently miss row events. No test covers that path today. Fold into the
+  same fix.
