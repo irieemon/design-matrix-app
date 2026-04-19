@@ -309,3 +309,51 @@ describe('Phase 05.3 Migration 4 — accept_invitation returns project_id OUT pa
     }
   })
 })
+
+// ---------------------------------------------------------------------------
+// Sentinel #2 (CWE-862): accept_invitation rejects when auth.email() != invitation.email
+//
+// SQL verified: migration 20260419100000 adds
+//   and lower(email) = lower(auth.email())
+// to the SELECT WHERE clause. A user possessing a valid (unexpired, unaccepted)
+// raw token addressed to a DIFFERENT email must not be able to accept it.
+// ---------------------------------------------------------------------------
+
+describe('Sentinel #2 — accept_invitation rejects wrong-email caller (migration 20260419100000)', () => {
+  it('RPC rejects when caller email does not match invitation email', async () => {
+    if (!process.env['CI_SUPABASE'] || !prerequisitesMet) {
+      console.log('Skipping: requires CI_SUPABASE=true and all E2E_COLLAB_* env vars');
+      return;
+    }
+
+    // PREREQUISITE: E2E_INVITE_RAW_TOKEN_WRONG_EMAIL must be the raw token of
+    // an invitation whose `email` column is addressed to a user DIFFERENT from
+    // the collabClient's authenticated user. The invitation must still be
+    // unaccepted and unexpired (so the only reason the RPC should fail is
+    // the email mismatch introduced by migration 20260419100000).
+    const rawToken = getEnv('E2E_INVITE_RAW_TOKEN_WRONG_EMAIL')
+    if (!rawToken) {
+      console.warn('E2E_INVITE_RAW_TOKEN_WRONG_EMAIL not set — skipping Sentinel #2 DB-layer assertion')
+      return
+    }
+
+    // Act: call the RPC as the collab user — whose auth.email() does NOT match
+    // the invitation.email. Without migration 20260419100000 applied this
+    // would succeed (CWE-862). With the migration, the WHERE clause filters
+    // out the row and the RPC raises 'invalid_or_expired'.
+    const { data, error } = await collabClient.rpc('accept_invitation', {
+      p_token: rawToken,
+    })
+
+    // Assert: either the RPC raises an exception (SQLSTATE P0001 with
+    // 'invalid_or_expired'), or it returns empty data — both indicate the
+    // row did not match. Any returned row is a test FAIL because it would
+    // mean a wrong-email user joined a project they weren't invited to.
+    if (error) {
+      expect(error.message.toLowerCase()).toContain('invalid_or_expired')
+    } else {
+      const row = Array.isArray(data) ? data[0] : data
+      expect(row?.project_id ?? null).toBeNull()
+    }
+  })
+})

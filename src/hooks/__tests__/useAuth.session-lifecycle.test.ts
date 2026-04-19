@@ -37,15 +37,16 @@
  *   ("isLoading === false within MAX_AUTH_INIT_TIME"). The test advances
  *   past both deadlines and asserts the observable.
  *
- * ── ADR drift note (A22) ──────────────────────────────────────────────────
- * ADR-0017 T-0017-A22 row text says "MAX_AUTH_INIT_TIME (15000ms)", but the
- * production constant at useAuth.ts:380 is 5000ms. This test asserts against
- * the PRODUCTION VALUE (5000ms) because tests must match executable
- * behavior. The ADR row is an authoring-spec artifact to be reconciled in
- * Wave A wrap-up.
- *   TODO(roz): Route ADR vs code drift to Cal — ADR-0017 A22 row should be
- *   updated to MAX_AUTH_INIT_TIME=5000ms OR the code constant bumped to
- *   15000ms. Filed via Eva at Roz #2c authoring.
+ * ── ADR drift note (A22) — RESOLVED 2026-04-19 ────────────────────────────
+ * Historical drift: ADR-0017 T-0017-A22 row once referenced MAX_AUTH_INIT_TIME=15000ms,
+ * while the production constant at useAuth.ts:398 is 5000ms. This test asserts
+ * against the PRODUCTION VALUE (5000ms) because tests must match executable
+ * behavior, not documentation aspirations.
+ *
+ * Resolution (Session 6, 2026-04-19): ADR-0017 row corrected via erratum; code
+ * value stands. Rationale: 5000ms is the zombie-session watchdog (useAuth.ts:396);
+ * the ADR's AC-SESSION-04 15s bound was always composed of MAX_AUTH_INIT_TIME
+ * (5000) + submit timeout (~10000), not the constant value alone.
  *
  * ── Harness notes ─────────────────────────────────────────────────────────
  *   - Lazy-arrow vi.mock pattern; mocks declared before imports that bind.
