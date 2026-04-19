@@ -1,13 +1,12 @@
 import React, { useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { Plus, Sparkles, FolderOpen, Target, Lightbulb, Maximize2 } from 'lucide-react'
+import { Plus, Sparkles, Target, Lightbulb, Maximize2 } from 'lucide-react'
 import { User, Project, IdeaCard } from '../../types'
 import DesignMatrix from '../DesignMatrix'
 import ProjectHeader from '../ProjectHeader'
 import ProjectFiles from '../ProjectFiles'
 import MatrixFullScreenView from '../matrix/MatrixFullScreenView'
 import { useProjectFiles } from '../../hooks/useProjectFiles'
-import { generateDemoUUID } from '../../utils/uuid'
 import { Button } from '../ui/Button'
 import { logger } from '../../utils/logger'
 
@@ -15,7 +14,6 @@ interface MatrixPageProps {
   currentUser: User
   currentProject: Project | null
   onProjectChange: (project: Project | null) => void
-  onNavigateToProjects: () => void
   onShowAddModal: () => void
   onShowAIModal: () => void
   // Props passed from AppLayout
@@ -43,7 +41,6 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
   currentUser,
   currentProject,
   onProjectChange,
-  onNavigateToProjects,
   onShowAddModal,
   onShowAIModal,
   activeId,
@@ -149,51 +146,7 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
           />
         
         {/* Conditional Content Based on Project Selection */}
-        {!currentProject ? (
-          <div className="text-center py-16">
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-12">
-              <FolderOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">No Project Selected</h3>
-              <p className="text-slate-600 mb-6">
-                Select an existing project or create a new one to start working. All tools (Design Matrix, Roadmap, etc.) are organized around your projects.
-              </p>
-              <div className="flex gap-3 justify-center">
-                <Button
-                  onClick={onNavigateToProjects}
-                  variant="primary"
-                  size="lg"
-                  icon={<FolderOpen className="w-5 h-5" />}
-                >
-                  Go to Projects
-                </Button>
-                <Button
-                  onClick={() => {
-                    // Create temporary demo project for immediate matrix access
-                    const demoProject = {
-                      id: generateDemoUUID('matrix'),
-                      name: 'Demo Matrix Access',
-                      description: 'Temporary project for testing matrix functionality',
-                      project_type: 'other' as const,
-                      status: 'active' as const,
-                      priority_level: 'medium' as const,
-                      visibility: 'private' as const,
-                      owner_id: currentUser.id,
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString()
-                    }
-                    onProjectChange(demoProject)
-                    logger.debug('🎯 Demo project created for immediate matrix access')
-                  }}
-                  variant="success"
-                  size="lg"
-                  icon={<Target className="w-5 h-5" />}
-                >
-                  Access Matrix Now
-                </Button>
-              </div>
-            </div>
-          </div>
-        ) : (
+        {currentProject ? (
           <>
             {/* Add Idea Buttons */}
             <div className="flex justify-end gap-3 mb-6">
@@ -284,7 +237,7 @@ const MatrixPage: React.FC<MatrixPageProps> = ({
               />
             </div>
           </>
-        )}
+        ) : null}
         </main>
       </div>
     </>

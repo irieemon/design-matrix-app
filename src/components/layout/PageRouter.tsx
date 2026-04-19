@@ -153,7 +153,6 @@ const PageRouter: React.FC<PageRouterProps> = ({
             currentUser={currentUser}
             currentProject={currentProject}
             onProjectChange={onProjectSelect}
-            onNavigateToProjects={() => onPageChange('projects')}
             onShowAddModal={onShowAddModal}
             onShowAIModal={onShowAIModal}
             activeId={activeId}

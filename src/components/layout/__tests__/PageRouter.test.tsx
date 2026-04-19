@@ -23,10 +23,9 @@ import { mockUser, mockProject, mockIdeas } from '../../../test/utils/test-utils
 
 // Mock page components
 vi.mock('../../pages/MatrixPage', () => ({
-  default: ({ onNavigateToProjects, onShowAddModal, onShowAIModal }: any) => (
+  default: ({ onShowAddModal, onShowAIModal }: any) => (
     <div data-testid="matrix-page">
       Matrix Page
-      <button onClick={onNavigateToProjects} data-testid="matrix-nav-projects">Go to Projects</button>
       <button onClick={onShowAddModal} data-testid="matrix-add-modal">Add Idea</button>
       <button onClick={onShowAIModal} data-testid="matrix-ai-modal">AI Ideas</button>
     </div>
@@ -481,13 +480,6 @@ describe('PageRouter', () => {
   })
 
   describe('Navigation Between Pages', () => {
-    it('should handle navigation from matrix to projects', async () => {
-      render(<PageRouter {...defaultProps} currentPage="matrix" />)
-
-      await user.click(screen.getByTestId('matrix-nav-projects'))
-      expect(mockOnPageChange).toHaveBeenCalledWith('projects')
-    })
-
     it('should handle navigation from projects to matrix', async () => {
       render(<PageRouter {...defaultProps} currentPage="projects" />)
 
@@ -779,21 +771,6 @@ describe('PageRouter', () => {
   })
 
   describe('Integration Tests', () => {
-    it('should complete full navigation workflow', async () => {
-      const { rerender } = render(<PageRouter {...defaultProps} currentPage="matrix" />)
-
-      expect(screen.getByTestId('matrix-page')).toBeInTheDocument()
-
-      await user.click(screen.getByTestId('matrix-nav-projects'))
-      expect(mockOnPageChange).toHaveBeenCalledWith('projects')
-
-      rerender(<PageRouter {...defaultProps} currentPage="projects" />)
-      expect(screen.getByTestId('projects-page')).toBeInTheDocument()
-
-      await user.click(screen.getByTestId('projects-nav-matrix'))
-      expect(mockOnPageChange).toHaveBeenCalledWith('matrix')
-    })
-
     it('should handle project lifecycle', async () => {
       const { rerender } = render(<PageRouter {...defaultProps} currentPage="projects" />)
 
