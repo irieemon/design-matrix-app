@@ -89,12 +89,21 @@ export class ScopedRealtimeManager {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private isDestroyed = false
 
-  // Listener registries — populated before subscribe()
+  // Listener registries — listeners may be registered before OR after subscribe().
+  // T-054B-301/302 fix: a single dispatcher is attached per unique event name /
+  // postgres filter key at subscribe time (and lazily in the register methods
+  // for late arrivals). The dispatcher reads the registry at dispatch time so
+  // handlers registered after subscribe() still fire.
   private readonly postgresListeners: PostgresListenerEntry[] = []
   private readonly broadcastListeners: BroadcastListenerEntry[] = []
   private readonly presenceHandlers: PresenceHandler[] = []
   private readonly connectionStateHandlers: Set<ConnectionStateHandler> = new Set()
   private readonly pollingEntries: PollingEntry[] = []
+
+  // Tracks which broadcast event names already have a channel-level dispatcher.
+  private readonly registeredBroadcastEvents: Set<string> = new Set()
+  // Tracks which postgres filter keys already have a channel-level dispatcher.
+  private readonly registeredPostgresKeys: Set<string> = new Set()
 
   constructor(config: ScopedRealtimeConfig) {
     this.config = config
@@ -103,7 +112,11 @@ export class ScopedRealtimeManager {
   }
 
   // ---------------------------------------------------------------------------
-  // Listener registration — MUST be called before subscribe()
+  // Listener registration — May be called before OR after subscribe(). Late
+  // registrations are wired lazily via ensureBroadcastDispatcher /
+  // ensurePostgresDispatcher. Note: presence handlers are still wired
+  // unconditionally inside buildChannel() and should be registered before
+  // subscribe() to avoid missing the initial sync event.
   // ---------------------------------------------------------------------------
 
   onPostgresChange<T = Record<string, unknown>>(
@@ -117,6 +130,14 @@ export class ScopedRealtimeManager {
       handler: handler as PostgresListenerEntry['handler'],
     }
     this.postgresListeners.push(entry)
+
+    // T-054B-301/302 fix: if the channel is already live, attach a dispatcher
+    // for this table/event/filter combination lazily. Handlers registered
+    // before subscribe() are covered by buildChannel().
+    if (this.channel !== null) {
+      this.ensurePostgresDispatcher(this.channel, entry)
+    }
+
     return () => {
       const idx = this.postgresListeners.indexOf(entry)
       if (idx !== -1) this.postgresListeners.splice(idx, 1)
@@ -129,6 +150,15 @@ export class ScopedRealtimeManager {
       handler: handler as BroadcastListenerEntry['handler'],
     }
     this.broadcastListeners.push(entry)
+
+    // T-054B-301/302 fix: if the channel is already live, attach a dispatcher
+    // for this event name lazily (once per unique event name). The dispatcher
+    // reads the registry at dispatch time so subsequent handlers on the same
+    // event are picked up automatically without needing another ch.on().
+    if (this.channel !== null) {
+      this.ensureBroadcastDispatcher(this.channel, event)
+    }
+
     return () => {
       const idx = this.broadcastListeners.indexOf(entry)
       if (idx !== -1) this.broadcastListeners.splice(idx, 1)
@@ -241,37 +271,22 @@ export class ScopedRealtimeManager {
       },
     })
 
-    // Register postgres_changes listeners
+    // Reset per-channel dispatcher tracking. Each new channel (initial or
+    // post-reconnect) starts with zero channel-level handlers attached.
+    this.registeredBroadcastEvents.clear()
+    this.registeredPostgresKeys.clear()
+
+    // Attach one dispatcher per postgres entry currently in the registry.
     for (const entry of this.postgresListeners) {
-      ch.on(
-        'postgres_changes' as never,
-        {
-          event: entry.filter.event,
-          schema: 'public',
-          table: entry.table,
-          ...(entry.filter.filter ? { filter: entry.filter.filter } : {}),
-        } as never,
-        (payload: {
-          new: Record<string, unknown>
-          old: Record<string, unknown> | null
-          eventType: string
-        }) => {
-          // Poirot Finding 1 fix: pass eventType through so handlers can use
-          // `payload.eventType === 'DELETE'` instead of heuristics.
-          entry.handler({ new: payload.new ?? {}, old: payload.old ?? null, eventType: payload.eventType })
-        }
-      )
+      this.ensurePostgresDispatcher(ch, entry)
     }
 
-    // Register broadcast listeners
+    // Attach one dispatcher per unique broadcast event name currently in the
+    // registry. Multiple handlers for the same event share one ch.on call;
+    // the dispatcher reads the registry at dispatch time so late registrations
+    // for the same event name are picked up automatically.
     for (const entry of this.broadcastListeners) {
-      ch.on(
-        'broadcast' as never,
-        { event: entry.event } as never,
-        (msg: { payload: unknown }) => {
-          entry.handler(msg.payload)
-        }
-      )
+      this.ensureBroadcastDispatcher(ch, entry.event)
     }
 
     // Register presence sync listener
@@ -294,6 +309,89 @@ export class ScopedRealtimeManager {
     )
 
     return ch as RealtimeChannel
+  }
+
+  private ensureBroadcastDispatcher(ch: RealtimeChannel, event: string): void {
+    if (this.registeredBroadcastEvents.has(event)) return
+    this.registeredBroadcastEvents.add(event)
+
+    ;(ch as unknown as {
+      on(
+        type: string,
+        opts: { event: string },
+        handler: (msg: { payload: unknown }) => void
+      ): RealtimeChannel
+    }).on('broadcast', { event }, (msg: { payload: unknown }) => {
+      // Snapshot before iteration so a handler that mutates broadcastListeners
+      // (e.g. via its own unsub call) cannot corrupt the current dispatch pass.
+      for (const listener of [...this.broadcastListeners]) {
+        if (listener.event !== event) continue
+        try {
+          listener.handler(msg.payload)
+        } catch (error) {
+          logger.warn('[ScopedRealtimeManager] broadcast handler threw', {
+            event,
+            scope: this.config.scope,
+            error,
+          })
+        }
+      }
+    })
+  }
+
+  private ensurePostgresDispatcher(
+    ch: RealtimeChannel,
+    entry: PostgresListenerEntry
+  ): void {
+    const key = this.postgresFilterKey(entry)
+    if (this.registeredPostgresKeys.has(key)) return
+    this.registeredPostgresKeys.add(key)
+
+    ;(ch as unknown as {
+      on(
+        type: string,
+        filter: Record<string, unknown>,
+        handler: (payload: {
+          new: Record<string, unknown>
+          old: Record<string, unknown> | null
+          eventType: string
+        }) => void
+      ): RealtimeChannel
+    }).on(
+      'postgres_changes',
+      {
+        event: entry.filter.event,
+        schema: 'public',
+        table: entry.table,
+        ...(entry.filter.filter ? { filter: entry.filter.filter } : {}),
+      },
+      (payload) => {
+        // Snapshot before iteration so a handler that mutates postgresListeners
+        // (e.g. via its own unsub call) cannot corrupt the current dispatch pass.
+        for (const listener of [...this.postgresListeners]) {
+          if (this.postgresFilterKey(listener) !== key) continue
+          try {
+            // Poirot Finding 1 fix: pass eventType through so handlers can use
+            // `payload.eventType === 'DELETE'` instead of heuristics.
+            listener.handler({
+              new: payload.new ?? {},
+              old: payload.old ?? null,
+              eventType: payload.eventType,
+            })
+          } catch (error) {
+            logger.warn('[ScopedRealtimeManager] postgres handler threw', {
+              key,
+              scope: this.config.scope,
+              error,
+            })
+          }
+        }
+      }
+    )
+  }
+
+  private postgresFilterKey(entry: PostgresListenerEntry): string {
+    return `${entry.table}|${entry.filter.event}|${entry.filter.filter ?? ''}`
   }
 
   private async trackSelf(): Promise<void> {

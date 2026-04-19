@@ -497,6 +497,147 @@ describe('handler unsubscribe returns (D-09 exception, Wave 2 prerequisite)', ()
   })
 })
 
+// T-054B-301/302: late-registered broadcast and postgres listeners fire.
+// Regression for the ScopedRealtimeManager broadcast registration bug:
+// useLiveCursors and useDragLock call manager.onBroadcast inside a useEffect
+// that runs AFTER useProjectRealtime fires manager.subscribe(). Before the
+// fix, buildChannel() iterated broadcastListeners[] once at subscribe time,
+// so the registry was empty and no ch.on('broadcast', ...) handlers were
+// attached → incoming broadcasts from other clients were silently dropped.
+// Fix: buildChannel() attaches one dispatcher per unique event name that
+// reads the registry at dispatch time, and onBroadcast() attaches a dispatcher
+// lazily for any new event name when the channel is already live.
+describe('T-054B-301/302: late-registered listeners receive incoming events', () => {
+  it('onBroadcast registered AFTER subscribe receives incoming broadcast', async () => {
+    const ch = makeFreshChannel()
+    mockSupabase.channel.mockReturnValue(ch)
+
+    const manager = new ScopedRealtimeManager({
+      scope: { type: 'project', id: 'p-late' },
+      userId: 'u1',
+      displayName: 'Alice',
+    })
+
+    // Subscribe first — registry is empty at buildChannel time.
+    await manager.subscribe()
+
+    // Register the broadcast handler AFTER subscribe, mirroring useLiveCursors'
+    // useEffect timing.
+    const handler = vi.fn()
+    manager.onBroadcast<{ userId: string; x: number }>('cursor_move', handler)
+
+    // Simulate an incoming broadcast from another client. The mock channel's
+    // send() synchronously dispatches to every registered broadcast handler
+    // whose event matches — i.e., it exercises ch.on('broadcast', ...) wiring.
+    ch.send({ type: 'broadcast', event: 'cursor_move', payload: { userId: 'u2', x: 50 } })
+
+    expect(handler).toHaveBeenCalledWith({ userId: 'u2', x: 50 })
+  })
+
+  it('multiple onBroadcast handlers for the same event all fire on one incoming broadcast', async () => {
+    const ch = makeFreshChannel()
+    mockSupabase.channel.mockReturnValue(ch)
+
+    const manager = new ScopedRealtimeManager({
+      scope: { type: 'project', id: 'p-multi' },
+      userId: 'u1',
+      displayName: 'Alice',
+    })
+
+    await manager.subscribe()
+
+    const handlerA = vi.fn()
+    const handlerB = vi.fn()
+    manager.onBroadcast('drag_lock', handlerA)
+    manager.onBroadcast('drag_lock', handlerB)
+
+    ch.send({ type: 'broadcast', event: 'drag_lock', payload: { ideaId: 'i1' } })
+
+    expect(handlerA).toHaveBeenCalledWith({ ideaId: 'i1' })
+    expect(handlerB).toHaveBeenCalledWith({ ideaId: 'i1' })
+  })
+
+  it('onBroadcast returned unsubscribe removes a late-registered handler from dispatch', async () => {
+    const ch = makeFreshChannel()
+    mockSupabase.channel.mockReturnValue(ch)
+
+    const manager = new ScopedRealtimeManager({
+      scope: { type: 'project', id: 'p-unsub' },
+      userId: 'u1',
+      displayName: 'Alice',
+    })
+
+    await manager.subscribe()
+
+    const handler = vi.fn()
+    const unsub = manager.onBroadcast('drag_release', handler)
+    unsub()
+
+    ch.send({ type: 'broadcast', event: 'drag_release', payload: { ideaId: 'i1' } })
+
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('onPostgresChange registered AFTER subscribe receives incoming change', async () => {
+    const ch = makeFreshChannel()
+    mockSupabase.channel.mockReturnValue(ch)
+
+    const manager = new ScopedRealtimeManager({
+      scope: { type: 'project', id: 'p-pg-late' },
+      userId: 'u1',
+      displayName: 'Alice',
+    })
+
+    await manager.subscribe()
+
+    const handler = vi.fn()
+    manager.onPostgresChange('idea_votes', { event: 'INSERT' }, handler)
+
+    ch.emitPostgresChange({
+      table: 'idea_votes',
+      event: 'INSERT',
+      new: { idea_id: 'i1', user_id: 'u2' },
+    })
+
+    expect(handler).toHaveBeenCalledWith(
+      expect.objectContaining({ new: { idea_id: 'i1', user_id: 'u2' } })
+    )
+  })
+})
+
+// T-054B-303: broadcast dispatcher continues after a throwing handler
+describe('T-054B-303: broadcast dispatcher resilience', () => {
+  it('broadcast dispatcher continues to other handlers when one throws', async () => {
+    const ch = makeFreshChannel()
+    mockSupabase.channel.mockReturnValue(ch)
+
+    const manager = new ScopedRealtimeManager({
+      scope: { type: 'project', id: 'p-throw' },
+      userId: 'u1',
+      displayName: 'Alice',
+    })
+
+    await manager.subscribe()
+
+    const { logger } = await import('../../../utils/logger')
+    const warnSpy = vi.spyOn(logger, 'warn')
+
+    const throwingHandler = vi.fn(() => { throw new Error('boom') })
+    const secondHandler = vi.fn()
+
+    manager.onBroadcast('test_event', throwingHandler)
+    manager.onBroadcast('test_event', secondHandler)
+
+    ch.send({ type: 'broadcast', event: 'test_event', payload: { x: 42 } })
+
+    expect(secondHandler).toHaveBeenCalledWith({ x: 42 })
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[ScopedRealtimeManager] broadcast handler threw',
+      expect.objectContaining({ event: 'test_event' })
+    )
+  })
+})
+
 // T-054A-023b: resubscribe null race
 // Poirot Finding 4: if unsubscribe() fires while a resubscribe() is pending in
 // setTimeout, the captured channel reference must not be passed as null to
