@@ -94,7 +94,7 @@ export class CollaborationService extends BaseService {
       if (existingMockIds.length > 0) {
         const { data: existingCollaborations } = await supabase
           .from('project_collaborators')
-          .select('id, user_id')
+          .select('user_id') // Composite PK (project_id, user_id) — no surrogate id; mirrors api/ideas.ts:157 (commit 568a72e)
           .eq('project_id', projectId)
           .in('user_id', existingMockIds)
 
