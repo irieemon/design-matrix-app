@@ -611,8 +611,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthSuccess }) => {
           {mode === 'signup' && (
             <div className="mt-6 text-center text-xs text-muted">
               By creating an account, you agree to our{' '}
-              <a href="#" className="text-info-600 hover:underline">Terms of Service</a> and{' '}
-              <a href="#" className="text-info-600 hover:underline">Privacy Policy</a>
+              <a href="https://prioritas.ai/terms" target="_blank" rel="noopener noreferrer" className="text-info-600 hover:underline">Terms of Service</a> and{' '}
+              <a href="https://prioritas.ai/privacy" target="_blank" rel="noopener noreferrer" className="text-info-600 hover:underline">Privacy Policy</a>
             </div>
           )}
         </div>
