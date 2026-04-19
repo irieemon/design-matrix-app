@@ -35,3 +35,8 @@ get WARN injection into the relevant agent's invocation prompt.
 
 - Error: unknown
 - Message: unknown
+
+### StopFailure: unknown at 2026-04-19T21:55:03Z
+
+- Error: server_error
+- Message: unknown
