@@ -385,6 +385,8 @@ export const OptimizedIdeaCard: React.FC<OptimizedIdeaCardProps> = ({
             boxShadow: 'var(--shadow-sm)',
             // PHASE 2 FIX: Isolated hover state management
             opacity: isHovered && !isDragging && !isDragOverlay ? 1 : 0,
+            // T-054B-303 fix-wave 2: invisible = non-interactive (mirror of 69d911f for OptimizedIdeaCard)
+            pointerEvents: isHovered && !isDragging && !isDragOverlay ? 'auto' : 'none',
             // Ensure proper layering above expand/collapse buttons
             zIndex: 20
           }}
