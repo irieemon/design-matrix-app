@@ -262,7 +262,7 @@ export default function FAQPage() {
             Can't find what you're looking for? Our support team is here to help.
           </p>
           <a
-            href="mailto:support@prioritas.app"
+            href="mailto:support@prioritas.ai"
             className="inline-block px-6 py-3 rounded-lg font-semibold transition-all bg-sapphire-600 text-white"
           >
             Contact Support

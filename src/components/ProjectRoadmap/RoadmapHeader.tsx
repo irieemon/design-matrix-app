@@ -1,8 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Map, Download, History, Sparkles, Loader, ChevronDown } from 'lucide-react'
-import { Project, ProjectRoadmap as ProjectRoadmapType } from '../../types'
+import { Project, ProjectRoadmap as ProjectRoadmapType, ProjectType } from '../../types'
 import { RoadmapData } from './types'
 import { Button } from '../ui/Button'
+
+const PROJECT_TYPE_LABEL: Record<ProjectType, string> = {
+  software: 'software project',
+  business_plan: 'business plan project',
+  product_development: 'product development project',
+  marketing: 'marketing project',
+  operations: 'operations project',
+  research: 'research project',
+  other: 'project',
+}
 
 interface RoadmapHeaderProps {
   currentProject: Project | null
@@ -60,7 +70,7 @@ const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({
             {currentProject.name} Roadmap
           </h1>
           <p className="text-slate-600">
-            Strategic execution plan for your {currentProject.project_type?.toLowerCase()} project
+            Strategic execution plan for your {currentProject.project_type ? PROJECT_TYPE_LABEL[currentProject.project_type] : 'project'}
           </p>
         </div>
 

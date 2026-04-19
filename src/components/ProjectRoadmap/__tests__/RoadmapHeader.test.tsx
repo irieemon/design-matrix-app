@@ -9,7 +9,7 @@ const mockProject: Project = {
   id: 'test-project-id',
   name: 'Test Project',
   description: 'A test project',
-  project_type: 'Software',
+  project_type: 'software',
   status: 'active',
   owner_id: 'test-user-id',
   created_at: '2024-01-01T00:00:00.000Z',

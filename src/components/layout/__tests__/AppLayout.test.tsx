@@ -72,10 +72,6 @@ vi.mock('../../EditIdeaModal', () => ({
     ) : null
 }))
 
-vi.mock('../../../hooks/useAccessibility', () => ({
-  useSkipLinks: vi.fn()
-}))
-
 vi.mock('../../../utils/accessibility', () => ({
   getAccessibleLandmarkProps: vi.fn((role, label) => ({
     role,
@@ -572,13 +568,6 @@ describe('AppLayout', () => {
 
       const mainContent = screen.getByRole('main')
       expect(mainContent).toHaveAttribute('aria-label', expect.stringContaining('Test Project'))
-    })
-
-    it('should call useSkipLinks hook for accessibility', async () => {
-      const { useSkipLinks } = await import('../../../hooks/useAccessibility')
-      render(<AppLayout {...defaultProps} />)
-
-      expect(useSkipLinks).toHaveBeenCalled()
     })
 
     it('should set drag overlay ARIA label', () => {

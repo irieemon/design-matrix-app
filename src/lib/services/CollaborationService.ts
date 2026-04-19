@@ -131,7 +131,7 @@ export class CollaborationService extends BaseService {
         const invitationUrl = EmailService.generateInvitationUrl(projectId)
         const emailSuccess = await EmailService.sendCollaborationInvitation({
           inviterName: inviterName || 'Project Owner',
-          inviterEmail: inviterEmail || 'noreply@prioritas.app',
+          inviterEmail: inviterEmail || 'noreply@prioritas.ai',
           inviteeEmail: userEmail,
           projectName: projectName || 'Untitled Project',
           role,

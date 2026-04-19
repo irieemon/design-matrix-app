@@ -169,7 +169,7 @@ If you didn't expect this invitation, you can safely ignore this email.`
 
   // Method to generate invitation URL (you can customize this)
   static generateInvitationUrl(projectId: string, invitationToken?: string): string {
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://prioritas.app'
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://prioritas.ai'
     return `${baseUrl}/?project=${projectId}&invite=${invitationToken || 'demo'}`
   }
 

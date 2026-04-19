@@ -120,7 +120,7 @@ export default function PricingPage() {
 
     if (tier.tier === 'enterprise') {
       // For enterprise, open email client
-      window.location.href = 'mailto:sales@prioritas.app?subject=Enterprise Plan Inquiry'
+      window.location.href = 'mailto:sales@prioritas.ai?subject=Enterprise Plan Inquiry'
       return
     }
 
@@ -363,7 +363,7 @@ export default function PricingPage() {
             Need help choosing the right plan?
           </p>
           <a
-            href="mailto:support@prioritas.app"
+            href="mailto:support@prioritas.ai"
             className="inline-block py-3 px-8 rounded-lg font-semibold transition-all bg-graphite-800 text-white"
           >
             Contact Support

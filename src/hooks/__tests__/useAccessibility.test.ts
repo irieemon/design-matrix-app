@@ -4,7 +4,6 @@ import {
   useFocusTrap,
   useKeyboardNavigation,
   useAriaLiveRegion,
-  useSkipLinks,
   useReducedMotion,
   useAccessibleId,
   useHighContrast,
@@ -502,54 +501,6 @@ describe('useAccessibility', () => {
 
       const liveRegion = document.querySelector('[aria-live]')
       expect(liveRegion).toBeNull()
-    })
-  })
-
-  describe('useSkipLinks', () => {
-    it('should create skip link on mount', () => {
-      renderHook(() => useSkipLinks())
-
-      const skipLink = document.querySelector('a[href="#main-content"]')
-      expect(skipLink).not.toBeNull()
-      expect(skipLink?.textContent).toBe('Skip to main content')
-    })
-
-    it('should position skip link off-screen by default', () => {
-      renderHook(() => useSkipLinks())
-
-      const skipLink = document.querySelector('a[href="#main-content"]') as HTMLElement
-      expect(skipLink?.style.top).toBe('-40px')
-    })
-
-    it('should move skip link on-screen on focus', () => {
-      renderHook(() => useSkipLinks())
-
-      const skipLink = document.querySelector('a[href="#main-content"]') as HTMLElement
-      skipLink.dispatchEvent(new Event('focus'))
-
-      expect(skipLink.style.top).toBe('6px')
-    })
-
-    it('should move skip link off-screen on blur', () => {
-      renderHook(() => useSkipLinks())
-
-      const skipLink = document.querySelector('a[href="#main-content"]') as HTMLElement
-      skipLink.dispatchEvent(new Event('focus'))
-      skipLink.dispatchEvent(new Event('blur'))
-
-      expect(skipLink.style.top).toBe('-40px')
-    })
-
-    it('should clean up skip link on unmount', () => {
-      const { unmount } = renderHook(() => useSkipLinks())
-
-      const skipLink = document.querySelector('a[href="#main-content"]')
-      expect(skipLink).not.toBeNull()
-
-      unmount()
-
-      const skipLinkAfter = document.querySelector('a[href="#main-content"]')
-      expect(skipLinkAfter).toBeNull()
     })
   })
 

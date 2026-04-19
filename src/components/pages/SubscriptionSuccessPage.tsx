@@ -226,7 +226,7 @@ export default function SubscriptionSuccessPage() {
           <p className="text-sm text-graphite-600">
             Need help?{' '}
             <a
-              href="mailto:support@prioritas.app"
+              href="mailto:support@prioritas.ai"
               className="font-semibold text-sapphire-600"
             >
               Contact Support

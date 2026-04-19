@@ -7,7 +7,6 @@ import { OptimizedIdeaCard } from '../matrix/OptimizedIdeaCard'
 const AddIdeaModal = lazy(() => import('../AddIdeaModal'))
 const AIIdeaModal = lazy(() => import('../AIIdeaModal'))
 const EditIdeaModal = lazy(() => import('../EditIdeaModal'))
-import { useSkipLinks } from '../../hooks/useAccessibility'
 import { getAccessibleLandmarkProps } from '../../utils/accessibility'
 import { useBreakpoint } from '../../hooks/useBreakpoint'
 import MobileShell from '../mobile/MobileShell'
@@ -69,9 +68,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isInFullscreen, setIsInFullscreen] = useState(false)
   const { isMobile } = useBreakpoint()
-
-  // Initialize skip links for accessibility
-  useSkipLinks()
 
   // Track fullscreen state changes to prevent duplicate modal rendering
   React.useEffect(() => {
