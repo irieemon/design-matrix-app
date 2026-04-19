@@ -20,7 +20,8 @@ export const config = {
   },
 }
 
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import type { VercelResponse } from '@vercel/node'
+import { withRateLimit, type AuthenticatedRequest } from './_lib/middleware/index.js'
 
 const MAX_REPORT_BYTES = 8192
 
@@ -30,8 +31,8 @@ function ipFromHeader(xff: string | string[] | undefined): string {
   return value.split(',')[0].trim() || 'unknown'
 }
 
-export default async function handler(
-  req: VercelRequest,
+async function handler(
+  req: AuthenticatedRequest,
   res: VercelResponse
 ): Promise<VercelResponse | void> {
   res.setHeader('X-Content-Type-Options', 'nosniff')
@@ -74,3 +75,5 @@ export default async function handler(
 
   return res.status(204).end()
 }
+
+export default withRateLimit({ windowMs: 60_000, maxRequests: 60 })(handler)
