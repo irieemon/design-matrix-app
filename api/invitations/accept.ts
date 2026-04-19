@@ -102,11 +102,29 @@ export default async function handler(
       const tokenHash = hashToken(token)
       const { data: invRow } = await admin
         .from('project_invitations')
-        .select('project_id, role')
+        .select('project_id, role, email, expires_at, accepted_at, invited_by')
         .eq('token_hash', tokenHash)
         .maybeSingle()
 
       if (invRow?.project_id) {
+        // Sentinel BLOCKER #5 (CWE-863): the self-heal path below would insert
+        // the authenticated caller into project_collaborators solely on the
+        // basis of token_hash match. Require the invitation's addressee email
+        // to match the caller's authenticated email before trusting any row.
+        if (
+          typeof userData.user.email !== 'string' ||
+          typeof invRow.email !== 'string' ||
+          userData.user.email.toLowerCase() !== invRow.email.toLowerCase()
+        ) {
+          return res.status(403).json({ error: 'email_mismatch' })
+        }
+        // Sentinel #5 (continued): self-heal must mirror the RPC's temporal
+        // guarantees. An invitation that is expired or already accepted must
+        // not become a membership-creation primitive via this branch.
+        const nowIso = new Date().toISOString()
+        if (invRow.accepted_at !== null || invRow.expires_at < nowIso) {
+          return res.status(400).json({ error: 'invalid_or_expired' })
+        }
         const { data: collabRow } = await admin
           .from('project_collaborators')
           .select('role')
@@ -129,9 +147,16 @@ export default async function handler(
             project_id: invRow.project_id,
             user_id: userData.user.id,
             role: invRow.role,
+            invited_by: invRow.invited_by,
             joined_at: new Date().toISOString(),
           })
         if (!insertErr) {
+          // Mark invitation consumed so subsequent self-heal calls take the
+          // existing-collab branch and cannot re-use this token.
+          await admin
+            .from('project_invitations')
+            .update({ accepted_at: nowIso })
+            .eq('token_hash', tokenHash)
           return res.status(200).json({
             projectId: invRow.project_id,
             role: invRow.role,
