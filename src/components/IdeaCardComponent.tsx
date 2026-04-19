@@ -221,7 +221,7 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = memo(({
       onDoubleClick={handleDoubleClick}
       onKeyDown={handleKeyDown}
       className={`
-        idea-card-base gpu-accelerated
+        group idea-card-base gpu-accelerated
         ${isCollapsed ? 'is-collapsed' : ''}
         ${isDragging || isBeingDragged ? 'is-dragging' : ''}
         ${isLockedByOther ? 'is-disabled' : ''}
@@ -237,14 +237,14 @@ const IdeaCardComponent: React.FC<IdeaCardProps> = memo(({
         Position: {Math.round(idea.x)}, {Math.round(idea.y)} in priority matrix
       </div>
 
-      {/* Modern Delete Button */}
+      {/* T-054B-303 fix: pointer-events-none when opacity-0 so Delete button doesn't intercept drag on adjacent cards */}
       <Button
         data-testid="idea-delete-button"
         onClick={handleDelete}
         variant="ghost"
         size="xs"
         icon={<Trash2 className="w-3.5 h-3.5" aria-hidden="true" />}
-        className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-xl opacity-0 hover:opacity-100 transition-all duration-200 hover:bg-red-600 z-10 shadow-lg hover:scale-110"
+        className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-200 hover:bg-red-600 z-10 shadow-lg hover:scale-110"
         style={{
           opacity: isDragging || isBeingDragged ? 0 : undefined,
           zIndex: 10
