@@ -1,10 +1,22 @@
 # Pipeline State
 
-<!-- PIPELINE_STATUS: {"phase":"idle","sizing":null,"wave":null,"branch_name":null,"worktree_path":null,"session_id":null,"brain_available":true,"brain_name":"HAL","roz_qa":null,"poirot_reviewed":null,"telemetry_captured":true,"stop_reason":"completed_clean","last_pipeline_id":"session6-hygiene-875ee72c","last_commit":"6eaa623","last_completed_at":"2026-04-19"} -->
+<!-- PIPELINE_STATUS: {"phase":"idle","sizing":null,"wave":null,"branch_name":null,"worktree_path":null,"session_id":null,"brain_available":true,"brain_name":"HAL","roz_qa":null,"poirot_reviewed":null,"telemetry_captured":true,"stop_reason":"completed_clean","last_pipeline_id":"session7-polish-bf4dd734","last_commit":"b3ee810","last_completed_at":"2026-04-19"} -->
 
 **Phase:** idle
 **Stop Reason:** completed_clean
-**Last Pipeline:** `session6-hygiene-875ee72c` shipped at `6eaa623` on main (2026-04-19). Hygiene wave: STATE.md resync, ADR-0017 MAX_AUTH_INIT_TIME errata, Sentinel #2 integration test, Wave A review brief, queue bifurcation, brain container restart policy.
+**Last Pipeline:** `session7-polish-bf4dd734` shipped across 5 commits (`8b0b83d`, `0444e32`, `2073898`, `96167c0`, `b3ee810`) on `main` (2026-04-19). All 8 P0 items from Sable's production-polish audit closed across 4 waves: onboarding empty-state reconciliation, FAQAdmin super_admin gate, silent AI-failure replacement with explicit error surface, RoadmapHeader enum-to-label map, sitewide `prioritas.app` → `prioritas.ai` domain swap (6 files), duplicate skip-link deduplication, and signup legal-link rewire to `https://prioritas.ai/terms` + `/privacy`. Session branch `session/bf4dd734` ff-merged to main and deleted. Worktree removed.
+**Prior:** `session6-hygiene-875ee72c` shipped at `6eaa623` on main (2026-04-19). Hygiene wave: STATE.md resync, ADR-0017 MAX_AUTH_INIT_TIME errata, Sentinel #2 integration test, Wave A review brief, queue bifurcation, brain container restart policy.
+
+## State-Save Checkpoint — 2026-04-19 (post-Session 7)
+
+Session 7 completed as a clean polish pass. v1.3 surfaces are production-polish-ready. All 8 P0 audit items closed. P1/P2 items from Sable's audit documented in `docs/reports/ui-polish-audit.md` + `docs/reports/ai-interaction-audit.md` for next-session pickup. Sean-action-queue delta is net zero — no new blockers added. Seven brain pattern thoughts captured (IDs: `4147c42e`, `e16faa0d`, `bd2dab4b`, `302127a8`, `7a173718`, `af0543a3`, `ef9f042a`) cataloging the reusable polish patterns surfaced this session.
+
+## Recent Pipeline Summary (newest first, ledger-style)
+
+### 2026-04-19 — `session7-polish-bf4dd734` — SHIPPED `8b0b83d` → `b3ee810`
+Session 7 production-polish pass. Sable-led across 4 waves. All 8 P0s closed: P0-01 legal links, P0-02+03 duplicate onboarding empty states + phantom demo button, P0-04 enum leak, P0-05 domain swap (6 files), P0-06 FAQAdmin admin gate, P0-07 duplicate skip-link, P0-AI-01 silent AI-failure. Every UI change Chrome-verified with before/after screenshots (26 PNGs landed in `docs/reports/session-7-polish/screenshots/`). Scout fan-out + mandatory gates (Roz, Poirot) enforced per wave. Three severity-disagreements with Poirot recorded with rationale (Wave 2 client-only admin gate; Wave 2 inline+toast duplication per Sable spec; Wave 3 null render correct because ProjectHeader owns canonical first-run card). Ledger commit `b3ee810` adds the autonomous-run-report Session 7 entry + 26 screenshots.
+
+### 2026-04-19 — `session6-hygiene-875ee72c` — SHIPPED `6eaa623`
 **Prior:** `session6-csp-hardening-875ee72c` shipped at `c083fcb` (2026-04-19). CSP #1 + #2 — rate-limit `/api/csp-report` + `Reporting-Endpoints` / `report-to`.
 
 ## State-Save Checkpoint — 2026-04-19 (post-Session 6)
